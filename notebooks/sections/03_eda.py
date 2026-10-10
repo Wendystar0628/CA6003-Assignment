@@ -885,7 +885,7 @@ nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e for e in G.edges if e not in m
                        arrowsize=14, node_size=2600, edge_color="0.35", connectionstyle="arc3,rad=0.06")
 nx.draw_networkx_edges(G, POS, ax=ax, edgelist=mediator_edges, arrows=True, arrowsize=16, width=2.2, node_size=2600,
                        edge_color=C.OKABE_ITO["vermillion"], style="dashed", connectionstyle="arc3,rad=0.06")
-nx.draw_networkx_labels(G, POS, ax=ax, labels={n: n.replace(" (measured)", "\n(measured)").replace(": ", ":\n").replace(" / ", "/\n") for n in G},
+nx.draw_networkx_labels(G, POS, ax=ax, labels={n: n.replace(" (measured)", "\n(measured)").replace(": ", ":\n").replace(" / ", "/\n").replace("/ancestry", "/\nancestry").replace("ExamSelection", "Exam\nSelection") for n in G},
                         font_size=8)
 from matplotlib.patches import Patch
 ax.legend(handles=[Patch(color=KCOL[k], label=lab) for k, lab in
@@ -920,6 +920,151 @@ reg("DR-S4-07", "method", "In the DAG, BMI is a descendant of race (race -> adip
 # HbA1c ≥ 6.5 (as the undiagnosed domain does) inherits the treatment-masking problem quantified in
 # S5. The prediction models of S7 are not causal: their coefficients are associations conditional on
 # everything else in the model (Westreich & Greenland's "Table 2 fallacy").
+
+# %% [markdown]
+# ## 4.9 Redundancy and collinearity
+# **Why.** Several candidate features are arithmetic functions of each other (BMI = weight/height²,
+# WHtR = waist/height, LDL is computed from TC, HDL and triglycerides) or repeated measurements of
+# one quantity (three systolic and three diastolic readings). Such redundancy inflates coefficient
+# variance and makes coefficients uninterpretable. Variance inflation factors (VIF) quantify it; they
+# are read with O'Brien (2007) in mind – a high VIF is a reason to look at the structure, not an
+# automatic deletion rule.
+
+# %%
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import statsmodels.api as sm
+
+VIF_SETS = {
+    "raw_anthropometry": ["BMXWT", "BMXHT", "BMXBMI", "BMXWAIST", "BMXHIP", "BMXARMC"],
+    "ht_bmi": ["BMXHT", "BMXBMI"],
+    "bmi_waist": ["BMXBMI", "BMXWAIST"],
+    "bp_readings": ["BPXOSY1", "BPXOSY2", "BPXOSY3", "BPXODI1", "BPXODI2", "BPXODI3"],
+    "bp_means": ["bp_sys_mean", "bp_dia_mean"],
+    "tier1_candidates": ["RIDAGEYR", "BMXBMI", "BMXWAIST", "bp_sys_mean", "INDFMPIR"],
+    "tier2_candidates": ["RIDAGEYR", "BMXBMI", "bp_sys_mean", "LBXTC", "LBDHDD"],
+}
+vif_rows = []
+for set_name, cols in VIF_SETS.items():
+    x = coh[cols].dropna()
+    X = sm.add_constant(x.to_numpy(float))
+    for i, c in enumerate(cols):
+        vif_rows.append({"set": set_name, "variable": c, "vif": variance_inflation_factor(X, i + 1), "n": len(x)})
+VIF = pd.DataFrame(vif_rows)
+VIF.to_csv(S4_DIR / "vif_table.csv", index=False)
+print(VIF.pivot_table(index="variable", columns="set", values="vif", sort=False).round(1).fillna("").to_string())
+print("n per set:", VIF.groupby("set", sort=False).n.first().to_dict())
+
+v = VIF.set_index(["set", "variable"]).vif
+assert abs(v[("raw_anthropometry", "BMXWT")] - 95.7) < 0.1 and abs(v[("raw_anthropometry", "BMXBMI")] - 97.6) < 0.1
+bp = VIF.query("set == 'bp_readings'").vif
+assert abs(bp.min() - 8.8) < 0.1 and abs(bp.max() - 11.7) < 0.1
+
+a = coh[["BMXBMI", "BMXWT", "BMXHT"]].dropna()
+r_struct = np.corrcoef(np.log(a.BMXBMI), np.log(a.BMXWT) - 2 * np.log(a.BMXHT / 100))[0, 1]
+fast_ok = coh[C.WEIGHT_FASTING].fillna(0) > 0
+lip = coh.loc[fast_ok, ["LBXTC", "LBDLDL"]].dropna()
+r_tc_ldl = lip.corr().iloc[0, 1]
+print(f"\nstructural redundancy: corr(log BMI, log W - 2 log H) = {r_struct:.5f} (n = {len(a):,})")
+print(f"TC vs LDL (fasting subsample, n = {len(lip):,}): Pearson r = {r_tc_ldl:.3f}")
+OUT["vif"] = {s: {r.variable: r.vif for r in g.itertuples()} for s, g in VIF.groupby("set", sort=False)}
+OUT["redundancy"] = {"r_logbmi_logw_2logh": r_struct, "r_tc_ldl": r_tc_ldl, "n_tc_ldl": len(lip)}
+
+# %%
+import seaborn as sns
+from scipy.cluster import hierarchy
+from scipy.spatial.distance import squareform
+
+SPEAR_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWT": "weight", "BMXHT": "height", "BMXWAIST": "waist",
+              "BMXHIP": "hip", "BMXARMC": "arm circ.", "whtr": "WHtR", "BPXOSY1": "SBP 1", "BPXOSY2": "SBP 2",
+              "BPXOSY3": "SBP 3", "BPXODI1": "DBP 1", "BPXODI2": "DBP 2", "BPXODI3": "DBP 3",
+              "bp_sys_mean": "SBP mean", "bp_dia_mean": "DBP mean", "LBXTC": "TC", "LBDHDD": "HDL",
+              "LBDLDL": "LDL*", "LBXTLG": "TG*", "INDFMPIR": "PIR"}
+sp = coh[list(SPEAR_VARS)].copy()
+sp.loc[~fast_ok, ["LBDLDL", "LBXTLG"]] = np.nan                     # fasting analytes only where valid
+rho = sp.rename(columns=SPEAR_VARS).corr(method="spearman")          # pairwise complete
+dist = 1 - rho.abs()
+link = hierarchy.linkage(squareform(dist.to_numpy(), checks=False), method="average")
+cg = sns.clustermap(rho, row_linkage=link, col_linkage=link, cmap="RdBu_r", vmin=-1, vmax=1, center=0,
+                    annot=True, fmt=".2f", annot_kws={"fontsize": 6}, figsize=(11, 10),
+                    cbar_kws={"label": "Spearman ρ"}, dendrogram_ratio=0.12)
+cg.fig.suptitle("Redundancy clusters (distance 1 − |ρ|, average linkage): body size, BP readings, lipids", y=1.01)
+plots.savefig(cg.fig, "S4_spearman_clustermap",
+              caption="Clustered Spearman correlation heatmap of candidate predictors (pairwise complete; *LDL and "
+                      "triglycerides on the valid fasting subsample only).")
+plt.show()
+clusters = pd.Series(hierarchy.fcluster(link, t=1 - 0.7, criterion="distance"), index=rho.index)
+groups = [list(g.index) for _, g in clusters.groupby(clusters) if len(g) > 1]
+print("clusters with |rho| >= 0.7 (average linkage):", groups)
+OUT["redundancy"]["clusters_rho07"] = groups
+
+# %% [markdown]
+# **So what.** Weight (VIF 95.7) and BMI (97.6) are almost perfectly predictable from the other body
+# measurements, and the reason is structural, not statistical: log BMI is an exact linear function of
+# log weight and log height (correlation 0.99999). Height and BMI on their own are unrelated (VIF 1.0),
+# BMI and waist share variance (5.1) but measure different things (total vs central adiposity), and
+# the six blood-pressure readings (8.8–11.7) collapse to VIF 1.6 once replaced by their means. The
+# candidate Tier-1 set [age, BMI, waist, SBP, PIR] stays below 6 and the Tier-2 set [age, BMI, SBP,
+# TC, HDL] below 1.2. TC and LDL correlate at 0.94 because LDL is calculated from TC. Decision:
+# drop weight, height, hip and arm circumference (structural duplicates of BMI/waist), use mean SBP/DBP,
+# exclude LDL (fasting-only and derived from TC), and keep BMI + waist with L2 penalisation as the
+# second line of defence. The clustered heatmap shows the same three redundancy blocks (body size,
+# blood pressure, lipids) visually.
+
+# %% [markdown]
+# ## 4.10 Skewness
+# **Why.** Strong right skew lets a few extreme values dominate a linear predictor and the
+# penalisation. We measure skewness before and after log and Yeo–Johnson transforms. Triglycerides
+# are a fasting analyte: they are only valid where the fasting weight is positive (8–24 h fast).
+
+# %%
+SKEW_VARS = [("BMXBMI", "BMI"), ("bp_sys_mean", "SBP mean"), ("LBDHDD", "HDL"), ("BMXWAIST", "waist"),
+             ("LBXTC", "total cholesterol"), ("INDFMPIR", "PIR")]
+skew_rows = []
+def _skew_row(x, var, label, subsample):
+    x = x.dropna().astype(float)
+    yj, lam = stats.yeojohnson(x)
+    return {"variable": var, "label": label, "subsample": subsample, "n": len(x), "skew_raw": stats.skew(x),
+            "skew_log": stats.skew(np.log(x)) if (x > 0).all() else np.nan, "skew_yj": stats.skew(yj), "yj_lambda": lam}
+for var, label in SKEW_VARS:
+    skew_rows.append(_skew_row(coh[var], var, label, "cohort"))
+skew_rows.append(_skew_row(coh.loc[fast_ok, "LBXTLG"], "LBXTLG", "triglycerides", "fasting (WTSAF2YR > 0)"))
+skew_rows.append(_skew_row(coh["LBXTLG"], "LBXTLG", "triglycerides", "all with a value (incl. WTSAF2YR = 0)"))
+SKEW = pd.DataFrame(skew_rows)
+SKEW.to_csv(S4_DIR / "skew_table.csv", index=False)
+print(SKEW.round(2).to_string(index=False))
+sk = SKEW.set_index(["variable", "subsample"])
+assert abs(sk.loc[("BMXBMI", "cohort"), "skew_raw"] - 1.22) < 0.01 and abs(sk.loc[("BMXBMI", "cohort"), "skew_yj"]) < 0.01
+tg_f, tg_all = sk.loc[("LBXTLG", "fasting (WTSAF2YR > 0)")], sk.loc[("LBXTLG", "all with a value (incl. WTSAF2YR = 0)")]
+print(f"\ntriglycerides: valid fasting n = {tg_f.n:,}, skew {tg_f.skew_raw:.2f} -> log {tg_f.skew_log:.2f}; "
+      f"including {tg_all.n - tg_f.n} non-fasting rows: skew {tg_all.skew_raw:.2f} -> log {tg_all.skew_log:.2f}")
+OUT["skew"] = {f"{r.variable}|{r.subsample}": {"n": r.n, "raw": r.skew_raw, "log": r.skew_log, "yj": r.skew_yj,
+                                               "lambda": r.yj_lambda} for r in SKEW.itertuples()}
+
+reg("DR-S4-08", "preparation", "Structural redundancy: weight VIF 95.7, BMI 97.6 (BMI = W/H^2, r = 0.99999); six BP readings VIF 8.8-11.7; TC-LDL r = 0.94.",
+    "results/S4/vif_table.csv; figures/S4_spearman_clustermap.png",
+    f"BP means VIF {v[('bp_means', 'bp_sys_mean')]:.1f}; Tier-1 max VIF {VIF[VIF.set == 'tier1_candidates'].vif.max():.1f}; "
+    f"Tier-2 max {VIF[VIF.set == 'tier2_candidates'].vif.max():.1f}",
+    "Drop weight, height, hip, arm circumference; average BP readings; exclude LDL; keep BMI + waist (or WHtR, S8) under L2.",
+    "Automatic VIF > 10 deletion (O'Brien 2007); PCA of body measures (destroys interpretability).",
+    check_note="VIFs re-computed; n = 5,388 for the raw anthropometry set")
+reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; triglycerides 6.62 on the valid fasting subsample.",
+    "results/S4/skew_table.csv",
+    f"BMI 1.22 -> log {sk.loc[('BMXBMI','cohort'),'skew_log']:.2f} -> YJ {sk.loc[('BMXBMI','cohort'),'skew_yj']:.2f}; TG {tg_f.skew_raw:.2f} (n {tg_f.n}) vs {tg_all.skew_raw:.2f} incl. non-fasting",
+    "Offer Yeo-Johnson as a toggleable step fitted inside training folds only; the S7 ablation decides; triglycerides are not a T1/T2 feature.",
+    "Transform on the full data before splitting (leakage of lambda); log for variables that can be 0 (PIR).",
+    check_verdict="PASS-FIX", check_note="process doc 6.23 for triglycerides includes 235 non-fasting rows (WTSAF2YR = 0); valid fasting value 6.62")
+
+# %% [markdown]
+# **So what.** BMI, SBP and HDL are moderately right-skewed (≈ 0.9–1.2); a log transform removes most
+# of it and Yeo–Johnson removes all of it (BMI λ ≈ −0.65). Total cholesterol and waist are nearly
+# symmetric. Triglycerides are extremely skewed (≈ 6.6 on the 2,820 valid fasting adults). The
+# process document's 6.23 was computed without the fasting-weight restriction; in the cohort that
+# adds 235 people whose fast fell outside 8–24 h (`WTSAF2YR = 0`), whose values are not valid fasting
+# measurements (and the 6.23 → 0.54 pair matches all 3,517 participants with a value, teenagers
+# included). This is the same trap that the XPT zero artefact sets (a zero weight read as
+# 5.4 × 10⁻⁷⁹ passes a `> 0` filter). Because logistic regression is not distributional, skewness
+# matters only through leverage; the transform is therefore a toggleable preparation step whose λ is
+# fitted inside the training folds, and whether it helps is decided by the S7 ablation, not here.
 
 # %% [markdown]
 # ## Save results and register
