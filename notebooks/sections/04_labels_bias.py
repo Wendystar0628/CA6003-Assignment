@@ -442,6 +442,187 @@ register("DR-S5-05", "label_bias",
 # gives wider intervals. Consequence for the label: `L_self` systematically under-counts disease in groups with
 # poorer access, which is why the target is the union `L_comb` and why S8 compares training labels.
 
+# %% [markdown]
+# ## 5 BMI as a biased measurement of adiposity in Asian adults
+#
+# **Why.** BMI is the main adiposity feature of any non-laboratory screening model. Asian adults develop
+# diabetes at lower BMI (Araneta et al. 2015; WHO Expert Consultation 2004), so the same BMI value may carry
+# different information by race: a *feature-level* measurement bias. We compare NH Asian with NH White adults on
+# (a) the BMI of diabetics, (b) `L_comb` prevalence by BMI band, (c) the discrimination (single-feature ROC-AUC)
+# of BMI, waist circumference and waist-to-height ratio (WHtR), with a paired bootstrap of the WHtR − BMI gain,
+# and (d) the sensitivity of the BMI ≥ 25 and ≥ 23 screening cut-offs. These are unweighted *measurement*
+# properties of the sample; the White group is the control comparison.
+
+# %%
+grp = {"NH Asian": 6, "NH White": 3}
+bmi_dm = []
+for g, code in grp.items():
+    dm = d[(d["RIDRETH3"] == code) & (d["L_comb"] == 1) & d["BMXBMI"].notna()]
+    k = int((dm["BMXBMI"] < 25).sum())
+    w = S.weighted_prop(d, (d["BMXBMI"] < 25).astype(float).where(d["BMXBMI"].notna()), weight=WT,
+                        domain=((d["RIDRETH3"] == code) & (d["L_comb"] == 1)).to_numpy())
+    bmi_dm.append({"group": g, "bmi_lt25": k, "diabetics_with_bmi": len(dm), "share": k / len(dm),
+                   "median_bmi": dm["BMXBMI"].median(), "w_share": w["est"], "kg_low": w["kg_low"], "kg_high": w["kg_high"]})
+bmi_dm = pd.DataFrame(bmi_dm).set_index("group")
+print("BMI < 25 among L_comb diabetics (denominator excludes missing BMI)")
+print(bmi_dm.round(3))
+assert (bmi_dm.loc["NH Asian", "bmi_lt25"], bmi_dm.loc["NH Asian", "diabetics_with_bmi"]) == (24, 47)
+close(bmi_dm.loc["NH Asian", "share"], 0.511, 0.001, "Asian BMI<25"); close(bmi_dm.loc["NH White", "share"], 0.072, 0.001, "White BMI<25")
+
+BANDS = [0, 23, 25, 30, 200]
+BLAB = ["<23", "23–24.9", "25–29.9", "≥30"]
+d["bmi_band"] = pd.cut(d["BMXBMI"], BANDS, right=False, labels=BLAB)
+band_rows = []
+for g, code in grp.items():
+    for b in BLAB:
+        m = ((d["RIDRETH3"] == code) & (d["bmi_band"] == b)).to_numpy()
+        w = S.weighted_prop(d, "L_comb", weight=WT, domain=m)
+        band_rows.append({"group": g, "bmi_band": b, "n": int(m.sum()), "cases": int(d.loc[m, "L_comb"].sum()),
+                          "prev": d.loc[m, "L_comb"].mean(), "w_prev": w["est"], "kg_low": w["kg_low"],
+                          "kg_high": w["kg_high"], "df": w["df"], "flags": ";".join(w["nchs_flags"])})
+bands = pd.DataFrame(band_rows)
+print("\nL_comb prevalence by BMI band (unweighted and WTPH2YR with KG CI)")
+print(bands.round(3).to_string(index=False))
+B_ = bands.set_index(["group", "bmi_band"])
+close(B_.loc[("NH Asian", "<23"), "prev"], 0.121, 0.001, "Asian <23"); close(B_.loc[("NH White", "<23"), "prev"], 0.043, 0.001, "White <23")
+close(B_.loc[("NH Asian", "23–24.9"), "prev"], 0.175, 0.001, "Asian 23-25"); close(B_.loc[("NH White", "23–24.9"), "prev"], 0.033, 0.001, "White 23-25")
+close(B_.loc[("NH Asian", "<23"), "w_prev"], 0.078, 0.001, "Asian <23 weighted"); close(B_.loc[("NH Asian", "23–24.9"), "w_prev"], 0.140, 0.001, "Asian 23-25 weighted")
+
+# %%
+FEATS = {"BMI": "BMXBMI", "waist": "BMXWAIST", "WHtR": "whtr"}
+B = C.N_BOOT
+rng = np.random.default_rng(E.derive_seed(C.SEED_MASTER, "S5", "auc_bootstrap"))
+
+
+def auc_set(g):
+    out = {}
+    for f, col in FEATS.items():
+        ok = g[col].notna()
+        out[f] = roc_auc_score(g.loc[ok, "L_comb"], g.loc[ok, col])
+    both = g["BMXBMI"].notna() & g["whtr"].notna()
+    out["gain"] = (roc_auc_score(g.loc[both, "L_comb"], g.loc[both, "whtr"])
+                   - roc_auc_score(g.loc[both, "L_comb"], g.loc[both, "BMXBMI"]))
+    return out
+
+
+roc_rows, boot_store = [], {}
+for g, code in grp.items():
+    sub = d.loc[d["RIDRETH3"] == code, ["L_comb", *FEATS.values()]].reset_index(drop=True)
+    est = auc_set(sub)
+    pos, neg = np.flatnonzero(sub["L_comb"] == 1), np.flatnonzero(sub["L_comb"] == 0)
+    reps = pd.DataFrame([auc_set(sub.iloc[np.concatenate([rng.choice(pos, len(pos)), rng.choice(neg, len(neg))])])
+                         for _ in range(B)])
+    boot_store[g] = reps
+    for k in [*FEATS, "gain"]:
+        roc_rows.append({"group": g, "measure": k if k != "gain" else "WHtR − BMI (paired)",
+                         "n": int(sub[FEATS[k]].notna().sum()) if k in FEATS else int((sub["BMXBMI"].notna() & sub["whtr"].notna()).sum()),
+                         "auc": est[k], "ci_low": reps[k].quantile(0.025), "ci_high": reps[k].quantile(0.975)})
+roc = pd.DataFrame(roc_rows)
+gain_diff = boot_store["NH Asian"]["gain"] - boot_store["NH White"]["gain"]
+print(f"Single-feature ROC-AUC for L_comb (stratified bootstrap, B = {B})")
+print(roc.round(3).to_string(index=False))
+print(f"Asian minus White WHtR gain: {roc.iloc[3]['auc'] - roc.iloc[7]['auc']:+.3f} "
+      f"(bootstrap 95% CI {gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f})")
+RO = roc.set_index(["group", "measure"])
+assert gain_diff.quantile(.025) > 0, "Asian WHtR gain no longer exceeds the White gain"
+close(RO.loc[("NH Asian", "BMI"), "auc"], 0.573, 0.001, "Asian BMI AUC")
+close(RO.loc[("NH Asian", "waist"), "auc"], 0.697, 0.001, "Asian waist AUC")
+close(RO.loc[("NH Asian", "WHtR"), "auc"], 0.714, 0.001, "Asian WHtR AUC")
+close(RO.loc[("NH White", "BMI"), "auc"], 0.701, 0.001, "White BMI AUC")
+close(RO.loc[("NH White", "WHtR"), "auc"], 0.749, 0.001, "White WHtR AUC")
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"], 0.136, 0.002, "Asian gain")
+close(RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"], 0.048, 0.002, "White gain")
+tol_ci = 0.01 if C.IS_FINAL else 0.03   # bootstrap CI bounds: tighter check in FINAL (B=1000)
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_low"], 0.092, tol_ci, "Asian gain CI low")
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_high"], 0.183, tol_ci, "Asian gain CI high")
+close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_low"], 0.039, tol_ci, "White gain CI low")
+close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_high"], 0.059, tol_ci, "White gain CI high")
+
+# %%
+cut_rows = []
+for g, code in grp.items():
+    sub = d[(d["RIDRETH3"] == code) & d["BMXBMI"].notna()]
+    y = sub["L_comb"].eq(1)
+    for cut in (25, 23):
+        flag = sub["BMXBMI"] >= cut
+        cut_rows.append({"group": g, "rule": f"BMI ≥ {cut}", "sensitivity": flag[y].mean(),
+                         "specificity": (~flag[~y]).mean(), "flagged_share": flag.mean(), "cases": int(y.sum())})
+cuts = pd.DataFrame(cut_rows)
+print(cuts.round(3).to_string(index=False))
+CU = cuts.set_index(["group", "rule"])
+close(CU.loc[("NH Asian", "BMI ≥ 25"), "sensitivity"], 0.489, 0.001, "Asian sens BMI>=25")
+close(CU.loc[("NH White", "BMI ≥ 25"), "sensitivity"], 0.928, 0.001, "White sens BMI>=25")
+close(CU.loc[("NH Asian", "BMI ≥ 23"), "sensitivity"], 0.723, 0.001, "Asian sens BMI>=23")
+close(CU.loc[("NH Asian", "BMI ≥ 23"), "specificity"], 0.357, 0.001, "Asian spec BMI>=23")
+
+# %%
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.6))
+xb = np.arange(len(BLAB))
+for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots.PALETTE[4])]):
+    sb = bands[bands["group"] == g]
+    off = (i - 0.5) * 0.3
+    ax1.errorbar(xb + off, sb["w_prev"] * 100, yerr=[(sb["w_prev"] - sb["kg_low"]) * 100, (sb["kg_high"] - sb["w_prev"]) * 100],
+                 fmt="o", color=col, capsize=3, label=g)
+    for x_, (_, r) in zip(xb + off, sb.iterrows()):
+        ax1.text(x_, -3.5 - 3.5 * i, f"{r['cases']}/{r['n']}", ha="center", fontsize=7.5, color=col)
+ax1.set_xticks(xb, BLAB)
+ax1.set(xlabel="BMI band (kg/m²)", ylabel="L_comb prevalence (%, WTPH2YR, KG 95% CI)", ylim=(-9, 60),
+        title="Asian adults: diabetes already common at BMI < 25")
+ax1.legend(loc="upper left")
+meas = ["BMI", "waist", "WHtR"]
+for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots.PALETTE[4])]):
+    rr = RO.loc[g].loc[meas]
+    off = (i - 0.5) * 0.3
+    ax2.errorbar(np.arange(3) + off, rr["auc"], yerr=[rr["auc"] - rr["ci_low"], rr["ci_high"] - rr["auc"]],
+                 fmt="o", color=col, capsize=3,
+                 label=f"{g}: WHtR − BMI {RO.loc[(g, 'WHtR − BMI (paired)'), 'auc']:+.3f}")
+ax2.axhline(0.5, color="k", lw=0.8, ls=":")
+ax2.set_xticks(range(3), meas)
+ax2.set(ylabel="ROC-AUC for L_comb (95% bootstrap CI)", ylim=(0.4, 0.85),
+        title="WHtR recovers the signal BMI loses in Asian adults")
+ax2.legend(loc="lower right")
+fig.tight_layout()
+plots.savefig(fig, "S5_asian_bmi_whtr",
+              caption="Left: L_comb prevalence by BMI band, NH Asian vs NH White (WTPH2YR, Korn-Graubard CI; labels = cases/n). "
+                      "Right: single-feature ROC-AUC of BMI, waist and WHtR with stratified bootstrap CI; legend = paired WHtR - BMI gain.")
+plt.show()
+
+roc.to_csv(OUT / "bmi_race_roc.csv", index=False)
+bands.to_csv(OUT / "bmi_band_prevalence.csv", index=False)
+cuts.to_csv(OUT / "bmi_cutoff_sensitivity.csv", index=False)
+RES["asian_bmi"] = {
+    "bmi_lt25_among_diabetics": bmi_dm.to_dict("index"),
+    "band_prevalence": {f"{g}|{b}": v for (g, b), v in B_[["n", "cases", "prev", "w_prev", "kg_low", "kg_high"]].to_dict("index").items()},
+    "auc": {f"{g}|{m}": v for (g, m), v in RO[["n", "auc", "ci_low", "ci_high"]].to_dict("index").items()},
+    "gain_difference_asian_minus_white": {"est": float(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"] - RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"]),
+                                          "ci_low": gain_diff.quantile(.025), "ci_high": gain_diff.quantile(.975)},
+    "cutoffs": {f"{g}|{r}": v for (g, r), v in CU.to_dict("index").items()},
+    "n_boot": B,
+}
+register("DR-S5-06", "measurement_bias",
+         "BMI under-measures diabetes-relevant adiposity in NH Asian adults; WHtR recovers discrimination",
+         "results/S5/bmi_race_roc.csv; results/S5/bmi_band_prevalence.csv; figures/S5_asian_bmi_whtr.png",
+         f"BMI<25 among diabetics: Asian 24/47 (51.1%) vs White {pct(bmi_dm.loc['NH White', 'share'])}; AUC gain WHtR-BMI Asian "
+         f"{RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'auc']:+.3f} ({RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'ci_low']:.3f}, "
+         f"{RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'ci_high']:.3f}) vs White {RO.loc[('NH White', 'WHtR − BMI (paired)'), 'auc']:+.3f}",
+         "Pre-register P14 (WHtR replaces waist, BMI kept) as S8 mitigation arm with White control; Asian results exploratory (40 A1c-positive cases); no group-specific thresholds",
+         "Race-specific BMI cut-offs in the model; adding WHtR on top of waist (redundant); race x BMI interaction (undetectable, S4)",
+         hyp_id="H-P14")
+
+# %% [markdown]
+# **So what.** Half of the Asian diabetics (24/47, 51.1 %) have a "normal" BMI below 25, against 7.2 % of White
+# diabetics. Asian adults with BMI < 23 already have an `L_comb` prevalence of 12.1 % (White 4.3 %), and in the
+# 23–24.9 band 17.5 % (White 3.3 %; unweighted). Weighted, as in the figure, the contrasts are 7.8 % vs 3.3 % and
+# 14.0 % vs 2.8 %, with wide Asian intervals (63–107 adults per band). Consequently BMI barely discriminates in Asian adults
+# (AUC 0.573), while waist (0.697) and WHtR (0.714) do. The paired WHtR − BMI gain is +0.137 in Asian adults
+# (bootstrap CI roughly 0.09–0.18) against +0.049 in White adults (CI roughly 0.04–0.06); the Asian-minus-White
+# difference in gain, +0.088, has a bootstrap CI that excludes zero. (Exact bounds are printed above; they move
+# slightly between FAST, B = 100, and FINAL, B = 1,000.) A BMI ≥ 25 rule finds only 48.9 % of Asian cases
+# (White 92.8 %); lowering the cut-off to 23 (the ADA recommendation for Asian Americans) raises sensitivity to
+# 72.3 % at a specificity of only 35.7 %. The direction agrees with Araneta et al. (2015). With 40–50 Asian cases
+# this is a measurement *signal*, not a definitive estimate: it motivates the pre-registered WHtR arm (P14) in S8,
+# where WHtR replaces waist rather than being added.
+
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"
