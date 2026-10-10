@@ -882,24 +882,28 @@ OUT["dag"] = {"n_nodes": G.number_of_nodes(), "n_edges": G.number_of_edges(),
               "bmi_adjustment_valid": bool(DAG_TAB.loc[6, "valid (back-door)"]), "exam_selection_opens_path": bool(indep_without and not indep_given_sel)}
 
 # %%
-POS = {"U: birth cohort / migration": (0, 4.2), "Race/ancestry": (0, 2.6), "Age": (0, 5.8), "Sex": (0, 0.8),
-       "SES": (2, 2.2), "Medicare": (2, 6.2), "Insurance": (4, 5.4), "UsualCare": (6, 5.4),
-       "Adiposity": (2.6, 0.5), "BMI (measured)": (4.6, -0.6), "Diabetes": (6, 1.6), "Diagnosis": (8, 4.0),
-       "Treatment": (10, 4.0), "HbA1c (measured)": (10, 1.6), "ExamSelection": (8, -0.6)}
+POS = {"Age": (0, 6.4), "U: birth cohort / migration": (0, 4.4), "Race/ancestry": (0, 2.4), "Sex": (0, 0.0),
+       "Medicare": (2.2, 7.6), "Insurance": (4.4, 7.0), "UsualCare": (6.8, 5.6), "SES": (2.4, 4.0),
+       "Adiposity": (2.8, 1.2), "BMI (measured)": (3.4, -1.2), "Diabetes": (6.0, 2.0), "Diagnosis": (8.8, 4.4),
+       "Treatment": (11.0, 4.4), "HbA1c (measured)": (11.0, 1.6), "ExamSelection": (8.4, -1.0)}
 KIND = {n: "latent" for n in LATENT} | {"BMI (measured)": "measure", "HbA1c (measured)": "measure",
                                         "ExamSelection": "selection", "Diagnosis": "process", "Treatment": "process",
                                         "UsualCare": "process"}
 KCOL = {"latent": C.OKABE_ITO["grey"], "measure": C.OKABE_ITO["orange"], "selection": C.OKABE_ITO["vermillion"],
         "process": C.OKABE_ITO["green"], "observed": C.OKABE_ITO["sky"]}
-fig, ax = plt.subplots(figsize=(12, 6.5))
+fig, ax = plt.subplots(figsize=(13, 7.5))
 cols_ = [KCOL[KIND.get(n, "observed")] for n in G.nodes]
 nx.draw_networkx_nodes(G, POS, ax=ax, node_color=cols_, node_size=2600, alpha=0.9,
                        node_shape="o", linewidths=1, edgecolors="k")
 mediator_edges = [("Race/ancestry", "Adiposity"), ("Adiposity", "BMI (measured)"), ("Race/ancestry", "BMI (measured)")]
-nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e for e in G.edges if e not in mediator_edges], arrows=True,
-                       arrowsize=14, node_size=2600, edge_color="0.35", connectionstyle="arc3,rad=0.06")
-nx.draw_networkx_edges(G, POS, ax=ax, edgelist=mediator_edges, arrows=True, arrowsize=16, width=2.2, node_size=2600,
-                       edge_color=C.OKABE_ITO["vermillion"], style="dashed", connectionstyle="arc3,rad=0.06")
+EDGE_RAD = {("Race/ancestry", "BMI (measured)"): 0.35, ("Age", "UsualCare"): -0.12, ("Age", "Diabetes"): -0.08,
+            ("Age", "ExamSelection"): -0.28, ("Age", "Adiposity"): 0.12, ("SES", "ExamSelection"): 0.10}
+for e in G.edges:                                   # draw edge by edge so overlapping paths can be curved apart
+    med = e in mediator_edges
+    nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e], arrows=True, arrowsize=16 if med else 13, node_size=2600,
+                           width=2.2 if med else 1.0, style="dashed" if med else "solid",
+                           edge_color=C.OKABE_ITO["vermillion"] if med else "0.35",
+                           connectionstyle=f"arc3,rad={EDGE_RAD.get(e, 0.04)}")
 nx.draw_networkx_labels(G, POS, ax=ax, labels={n: n.replace(" (measured)", "\n(measured)").replace(": ", ":\n").replace(" / ", "/\n").replace("/ancestry", "/\nancestry").replace("ExamSelection", "Exam\nSelection") for n in G},
                         font_size=8)
 from matplotlib.patches import Patch
