@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ABS_PATH = re.compile(r"[A-Za-z]:[\\/](Study|Users)[\\/]", re.I)
+ABS_PATH = re.compile(r"[A-Za-z]:[\\/]+(?:Study|Users|ADMINI~1|AppData)[\\/]", re.I)
 TEXT_SUFFIX = {".py", ".md", ".csv", ".json", ".txt", ".ipynb", ".html", ".yaml", ".yml"}
 
 
