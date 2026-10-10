@@ -70,11 +70,9 @@ TEXT_INPUTS = [
     "governance/genai_log.csv",
 ]
 REGISTER_GLOB = "governance/register/S*.csv"
-# Stored artefacts that a section reads BEFORE the section that creates it has run, or that cannot be
-# recomputed without git history. Everything else under results/ is produced by the notebook itself.
+# Stored artefacts that cannot be recomputed from a single notebook (git history), or that a section reads before
+# the section that creates it has run. Everything else under results/ is produced by the notebook itself.
 SEED_RESULTS = [
-    "results/S2/minimisation_report.csv",    # read in §1 (data minimisation), recomputed in §2
-    "results/S2/minimisation_columns.csv",
     "results/S6/prereg_lock.json",           # git-history record of the pre-registration lock (S6 fallback without git)
 ]
 CODEBOOK_DIR = "data/nhanes_2021_2023/codebooks"
@@ -205,8 +203,7 @@ WORKSPACE = Path(os.environ.get("CA6003_WORKSPACE", "ca6003_workspace"))
 if not WORKSPACE.is_absolute():
     WORKSPACE = START_DIR / WORKSPACE
 for sub in ("src", "config", "governance/register", "data/nhanes_2021_2023/raw", "data/nhanes_2021_2023/codebooks",
-            "results", "figures",
-            "notebooks/sections", "tools"):          # placeholders only: section 0 lists them in its layout table
+            "results", "figures"):
     (WORKSPACE / sub).mkdir(parents=True, exist_ok=True)
 os.chdir(WORKSPACE)                                      # all relative paths below are inside the workspace
 os.environ["CA6003_ROOT"] = str(WORKSPACE)               # read by src/config.py
@@ -285,7 +282,7 @@ display(tbl.T)
 print(f"{len(status['verified'])}/{status['n_files']} files verified against MANIFEST.sha256 ({source});",
       "mismatched:", status["mismatched"] or "none")'''
 
-RESULTS_ARTEFACT_NOTE = """**So what.** The workspace now holds exactly the repository files the analysis depends on, the raw data are present and hash-verified, and every later section starts by calling `new_section()`, which clears the namespace so each section depends only on files (never on hidden variables). Three small stored artefacts (`results/S2/minimisation_*.csv`, `results/S6/prereg_lock.json`) are shipped inside this notebook because a section reads them before the section that regenerates them has run, or because they record git history that a single `.ipynb` cannot reproduce; the pre-registration lock is shown with its commit and timestamp in §6."""
+RESULTS_ARTEFACT_NOTE = """**So what.** The workspace now holds exactly the repository files the analysis depends on, the raw data are present and hash-verified, and every later section starts by calling `new_section()`, which clears the namespace so each section depends only on files (never on hidden variables). One small stored artefact (`results/S6/prereg_lock.json`) is shipped inside this notebook because it records git history (the pre-registration lock commit) that a single `.ipynb` cannot reproduce; the pre-registration lock is shown with its commit and timestamp in §6."""
 
 
 def setup_cells(section_no: int) -> list:
