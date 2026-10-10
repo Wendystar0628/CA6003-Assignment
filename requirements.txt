@@ -9,4 +9,8 @@ seaborn==0.13.2
 pyarrow==26.0.0
 networkx==3.7
 PyYAML==6.0.2
-jupyter
+jupytext==1.19.6
+nbformat
+nbclient==0.11.0
+nbconvert
+ipykernel
