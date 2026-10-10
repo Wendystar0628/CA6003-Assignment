@@ -399,7 +399,9 @@ def load_merged(files=None, *, fix: bool = True, sentinels: str = "per_variable"
     Columns are reduced to the spec's included variables (data minimisation); duplicate
     weight columns in TCHOL/HDL/TRIGLY are excluded in the spec. ``fix`` repairs the XPT
     zero artefact; ``sentinels`` in {"per_variable", "blanket", "none"}.
-    ``df.attrs`` carries ``n_fixed`` (per file) and ``sentinel_audit``.
+    ``df.attrs`` carries ``n_fixed`` (dict per file) and ``sentinel_audit`` as a list of
+    plain dict records (never a DataFrame: pandas compares attrs with ``==`` in concat);
+    use ``sentinel_audit_of(df)`` to get it back as a DataFrame.
     """
     spec = load_spec()
     files = list(files or C.NHANES_FILES)
@@ -416,7 +418,7 @@ def load_merged(files=None, *, fix: bool = True, sentinels: str = "per_variable"
         df = df.merge(part, on="SEQN", how="left", validate="one_to_one")
     df, audit = apply_sentinels(df, spec, mode=sentinels)
     df.attrs["n_fixed"] = n_fixed
-    df.attrs["sentinel_audit"] = audit
+    df.attrs["sentinel_audit"] = audit.to_dict("records")
     return df
 
 
@@ -461,7 +463,7 @@ def build_cohort(df: pd.DataFrame | None = None, *, sentinels: str = "per_variab
     coh["SEQN"] = coh["SEQN"].astype(int)
     assert len(coh) == COHORT_N, f"cohort has {len(coh)} rows, expected {COHORT_N}"
     assert coh["SEQN"].is_unique
-    coh.attrs["sentinel_audit"] = audit
+    coh.attrs["sentinel_audit"] = audit.to_dict("records")
     coh.attrs["sentinels"] = sentinels
     return coh
 
@@ -481,6 +483,11 @@ def funnel(df: pd.DataFrame | None = None) -> pd.DataFrame:
     out = pd.DataFrame(steps, columns=["step", "n"])
     out["dropped"] = (-out["n"].diff()).fillna(0).astype(int)
     return out
+
+
+def sentinel_audit_of(df: pd.DataFrame) -> pd.DataFrame:
+    """Sentinel audit attached by `load_merged` / `build_cohort`, as a DataFrame."""
+    return pd.DataFrame(df.attrs.get("sentinel_audit", []))
 
 
 def zero_weights_to_nan(df: pd.DataFrame, cols=WEIGHTS) -> pd.DataFrame:
