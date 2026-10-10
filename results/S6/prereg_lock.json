@@ -2,6 +2,6 @@
  "commit": "9fb6aefd8a15457c4398b9bf6deb8fec8961d375",
  "timestamp": "2026-10-11T02:17:18+08:00",
  "sha256": "de032f4d200fa1ff9e51affd75d35183bf351714374cb35acf261b66b611610c",
- "first_exp_commit": null,
- "first_exp_timestamp": null
+ "first_exp_commit": "f2ba69dccc160ff66a0cf9b9d59382d50b1ea483",
+ "first_exp_timestamp": "2026-10-11T02:34:13+08:00"
 }

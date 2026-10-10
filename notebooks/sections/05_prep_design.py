@@ -420,7 +420,7 @@ try:
                                       capture_output=True, check=True).stdout
         sha_locked = hashlib.sha256(locked_bytes).hexdigest()
         assert sha_locked == recorded, "hypotheses.md at the lock commit does not match the recorded SHA-256"
-        first_exp = subprocess.run(["git", "log", "--reverse", "--format=%H %cI", "--grep=^exp(S7)", "-E"],
+        first_exp = subprocess.run(["git", "log", "--reverse", "--format=%H %cI", r"--grep=^exp\(S7\)", "-E"],
                                    cwd=C.ROOT, capture_output=True, text=True).stdout.split("\n")[0].split()
         lock = dict(commit=h, timestamp=ts, sha256=sha_locked, first_exp_commit=first_exp[0] if first_exp else None,
                     first_exp_timestamp=first_exp[1] if first_exp else None)
