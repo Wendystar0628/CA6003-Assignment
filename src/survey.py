@@ -18,7 +18,8 @@ empty-in-a-PSU domains are handled correctly.
 Presentation follows the NCHS data presentation standards for proportions
 (Parker et al. 2017): Korn-Graubard intervals with a degrees-of-freedom
 adjusted effective sample size, and an estimate is flagged when n < 30, the
-effective n < 30, the absolute CI width >= 0.30 or the df < 8. Domain degrees of
+effective n < 30, the absolute CI width >= 0.30, or the CI width is in (0.05, 0.30)
+with relative width > 130 %; df < 8 or 0 events trigger review. Domain degrees of
 freedom follow the NCHS rule: (number of PSUs containing domain observations) -
 (number of strata containing domain observations).
 
@@ -190,8 +191,22 @@ def korn_graubard_ci(p: float, n_eff: float, df: int, alpha: float = 0.05, *,
     return lo, hi
 
 
-def nchs_flags(n: int, n_eff: float, ci_width: float, df: int) -> list[str]:
-    """NCHS presentation flags for a proportion (empty list = meets the standard)."""
+SUPPRESS_FLAGS = ("n<30", "n_eff<30", "ci_width>=0.30", "rel_ci_width>130%")
+REVIEW_FLAGS = ("df<8", "events=0_or_all")
+
+
+def nchs_flags(n: int, n_eff: float, ci_width: float, df: int, *, p: float | None = None,
+               n_events: int | None = None) -> list[str]:
+    """NCHS presentation flags for a proportion (Parker et al. 2017); empty list = present.
+
+    Suppression criteria: n < 30; effective n < 30; absolute CI width >= 0.30; absolute
+    CI width in (0.05, 0.30) with relative CI width (width / p) > 130 %.
+    Review criteria (statistical review by a clearance official): df < 8; 0 events (or
+    all events). Footnote: if p meets the criteria but its complement 1 - p has relative
+    CI width > 130 %, p is shown with a note that the complement may be unreliable
+    ("complement_rel_ci_width>130%"). `p` (and `n_events`) are optional so that the
+    original four-argument call keeps working; without `p` the relative rules are skipped.
+    """
     flags = []
     if n < C.NCHS_MIN_N:
         flags.append("n<30")
@@ -199,9 +214,25 @@ def nchs_flags(n: int, n_eff: float, ci_width: float, df: int) -> list[str]:
         flags.append("n_eff<30")
     if not np.isfinite(ci_width) or ci_width >= C.NCHS_CI_WIDTH_MAX:
         flags.append("ci_width>=0.30")
+    elif p is not None and np.isfinite(p) and 0.05 < ci_width < C.NCHS_CI_WIDTH_MAX:
+        if p <= 0 or ci_width / p > 1.30:
+            flags.append("rel_ci_width>130%")
+        elif p >= 1 or ci_width / (1 - p) > 1.30:
+            flags.append("complement_rel_ci_width>130%")
     if df < C.NCHS_MIN_DF:
         flags.append("df<8")
+    if n_events is not None and (n_events == 0 or n_events == n):
+        flags.append("events=0_or_all")
     return flags
+
+
+def nchs_status(flags: list[str]) -> str:
+    """Collapse NCHS flags into 'suppress', 'review' or 'present' (Parker et al. 2017)."""
+    if any(f in SUPPRESS_FLAGS for f in flags):
+        return "suppress"
+    if any(f in REVIEW_FLAGS for f in flags):
+        return "review"
+    return "present"
 
 
 def _ratio_fn(yv: np.ndarray, dm: np.ndarray) -> Callable[[pd.DataFrame, np.ndarray], float]:
@@ -223,7 +254,7 @@ def weighted_prop(df: pd.DataFrame, y, *, weight: str, domain=None, strata: str 
     Returns est, se, ci_low/ci_high (JK Wald, t with domain df), n (unweighted
     domain size with non-missing y), n_events, n_eff_kish, n_eff (design-based,
     p(1-p)/se^2 capped at n), df (domain df), kg_low/kg_high (Korn-Graubard),
-    ci_width (KG), deff and nchs_flags.
+    ci_width (KG), deff, nchs_flags and nchs_status (present / review / suppress).
     """
     yv = _as_values(df, y)
     dm = _as_mask(df, domain)
@@ -245,7 +276,8 @@ def weighted_prop(df: pd.DataFrame, y, *, weight: str, domain=None, strata: str 
         "n": n, "n_events": n_events, "n_eff_kish": kish_neff(w[ok]), "n_eff": float(n_eff_design),
         "df": ddf, "kg_low": kg[0], "kg_high": kg[1], "ci_width": width,
         "deff": float(se ** 2 / var_srs) if var_srs and var_srs > 0 else float("nan"),
-        "nchs_flags": nchs_flags(n, n_eff_design, width, ddf),
+        "nchs_flags": (fl := nchs_flags(n, n_eff_design, width, ddf, p=p, n_events=n_events)),
+        "nchs_status": nchs_status(fl),
     }
 
 

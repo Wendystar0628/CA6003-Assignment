@@ -164,7 +164,7 @@ for name, y, dom in [("L_comb, all adults", "L_comb", None),
     p_t, se_t = taylor_se_ratio(coh, y, C.WEIGHT_PHLEB, dom)
     checks.append({"estimate": name, "n": jk["n"], "p": jk["est"], "se_jk": jk["se"], "se_taylor": se_t,
                    "ratio": jk["se"] / se_t, "domain_df": jk["df"], "kg_low": jk["kg_low"],
-                   "kg_high": jk["kg_high"], "flags": ",".join(jk["nchs_flags"]) or "–"})
+                   "kg_high": jk["kg_high"], "flags": ",".join(jk["nchs_flags"]) or "–", "nchs": jk["nchs_status"]})
 checks = pd.DataFrame(checks)
 print(checks.round(4).to_string(index=False))
 assert np.allclose(checks.ratio, 1, atol=0.02), "jackknife and Taylor SEs disagree"
@@ -175,7 +175,7 @@ print(f"\nAsian undiagnosed domain: {len(drop)} rows in {drop[C.STRATA].nunique(
       f"{drop[[C.STRATA, C.PSU]].drop_duplicates().shape[0]} PSUs -> domain df = PSUs - strata = "
       f"{S.domain_df(coh, undx_dom & asian)} (flag df<8: {S.domain_df(coh, undx_dom & asian) < C.NCHS_MIN_DF}); "
       f"a strata-count approximation would give {S.domain_df(coh, undx_dom & asian, method='strata')}")
-OUT["variance_check"] = checks.drop(columns="flags").to_dict("records")
+OUT["variance_check"] = checks.drop(columns=["flags"]).to_dict("records")
 OUT["asian_undx_domain_df"] = S.domain_df(coh, undx_dom & asian)
 
 # %% [markdown]
@@ -444,10 +444,12 @@ for gcol in ["race", "sex", "insurance", "usual_care"]:
     std_tabs.append(t)
 STD_TAB = pd.concat(std_tabs, ignore_index=True)
 STD_TAB["kg_width"] = STD_TAB.crude_kg_high - STD_TAB.crude_kg_low
-STD_TAB["nchs_flags"] = [",".join(S.nchs_flags(r.n, S._design_neff(r.crude, r.crude_se, r.n), r.kg_width, r.df)) or ""
-                         for r in STD_TAB.itertuples()]
+_fl = [S.nchs_flags(r.n, S._design_neff(r.crude, r.crude_se, r.n), r.kg_width, r.df, p=r.crude, n_events=r.n_events)
+       for r in STD_TAB.itertuples()]
+STD_TAB["nchs_flags"] = [",".join(f) for f in _fl]
+STD_TAB["nchs_status"] = [S.nchs_status(f) for f in _fl]
 STD_TAB.to_csv(S4_DIR / "std_prev_table.csv", index=False)
-show = STD_TAB[["grouping", "group", "n", "df", "crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high", "nchs_flags"]].copy()
+show = STD_TAB[["grouping", "group", "n", "df", "crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high", "nchs_status"]].copy()
 show[["crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high"]] *= 100
 print(show.round(1).to_string(index=False))
 

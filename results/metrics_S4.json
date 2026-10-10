@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:33:34+00:00"
+    "written_utc": "2026-10-10T18:34:38+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -22,7 +22,8 @@
       "ratio": 1.0004333030506578,
       "domain_df": 15,
       "kg_low": 0.12470184034390722,
-      "kg_high": 0.1571835824499728
+      "kg_high": 0.1571835824499728,
+      "nchs": "present"
     },
     {
       "estimate": "L_comb, NH Asian",
@@ -33,7 +34,8 @@
       "ratio": 1.0087716265554463,
       "domain_df": 14,
       "kg_low": 0.08017283464100544,
-      "kg_high": 0.16095684428556062
+      "kg_high": 0.16095684428556062,
+      "nchs": "present"
     },
     {
       "estimate": "undiagnosed share, HbA1c>=6.5",
@@ -44,7 +46,8 @@
       "ratio": 1.00014051871247,
       "domain_df": 15,
       "kg_low": 0.17132899344317445,
-      "kg_high": 0.26659988038975113
+      "kg_high": 0.26659988038975113,
+      "nchs": "present"
     },
     {
       "estimate": "undiagnosed share, Asian HbA1c>=6.5",
@@ -55,7 +58,8 @@
       "ratio": 1.0116241868966598,
       "domain_df": 4,
       "kg_low": 0.1314904444586585,
-      "kg_high": 0.6519764524160738
+      "kg_high": 0.6519764524160738,
+      "nchs": "suppress"
     }
   ],
   "asian_undx_domain_df": 4,
