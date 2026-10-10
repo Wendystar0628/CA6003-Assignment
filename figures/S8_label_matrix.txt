@@ -1,0 +1,1 @@
+F8-2. 3x3 label matrix: arm S trained on L_self, L_A1c or L_comb (identical folds, steps and C0) and scored on D-uncontrolled, D-controlled and Undiagnosed cases against the common NonDiabetic negatives. Left: recall at specificity 0.80 with 95 % stratified bootstrap CI (thresholds re-estimated per replicate); right: ROC-AUC.

@@ -3,7 +3,7 @@
     "section": "S8",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T19:01:45+00:00"
+    "written_utc": "2026-10-10T19:04:58+00:00"
   },
   "mode": "FAST",
   "cv": "5x2",
@@ -2134,5 +2134,259 @@
     ],
     "max_abs_eod_shift": 0.07758088689059339
   },
-  "runtime_seconds": 2.2438111305236816
+  "label_matrix": {
+    "cells": [
+      {
+        "train_label": "L_self",
+        "stratum": "D_uncontrolled",
+        "n_pos": 455,
+        "n_neg": 3807,
+        "recall": 0.73846,
+        "recall_lo": 0.68665,
+        "recall_hi": 0.77802,
+        "recall_se": 0.02296,
+        "auc": 0.85938,
+        "auc_lo": 0.84356,
+        "auc_hi": 0.8748,
+        "auc_se": 0.0075
+      },
+      {
+        "train_label": "L_self",
+        "stratum": "D_controlled",
+        "n_pos": 195,
+        "n_neg": 3807,
+        "recall": 0.62051,
+        "recall_lo": 0.54359,
+        "recall_hi": 0.69013,
+        "recall_se": 0.04037,
+        "auc": 0.80993,
+        "auc_lo": 0.78646,
+        "auc_hi": 0.83145,
+        "auc_se": 0.01312
+      },
+      {
+        "train_label": "L_self",
+        "stratum": "Undiagnosed",
+        "n_pos": 127,
+        "n_neg": 3807,
+        "recall": 0.48819,
+        "recall_lo": 0.41319,
+        "recall_hi": 0.58268,
+        "recall_se": 0.04557,
+        "auc": 0.76485,
+        "auc_lo": 0.73528,
+        "auc_hi": 0.79973,
+        "auc_se": 0.01729
+      },
+      {
+        "train_label": "L_A1c",
+        "stratum": "D_uncontrolled",
+        "n_pos": 455,
+        "n_neg": 3807,
+        "recall": 0.73187,
+        "recall_lo": 0.69231,
+        "recall_hi": 0.76934,
+        "recall_se": 0.01986,
+        "auc": 0.85889,
+        "auc_lo": 0.8461,
+        "auc_hi": 0.87482,
+        "auc_se": 0.0077
+      },
+      {
+        "train_label": "L_A1c",
+        "stratum": "D_controlled",
+        "n_pos": 195,
+        "n_neg": 3807,
+        "recall": 0.57949,
+        "recall_lo": 0.49231,
+        "recall_hi": 0.66179,
+        "recall_se": 0.04328,
+        "auc": 0.79729,
+        "auc_lo": 0.76873,
+        "auc_hi": 0.82282,
+        "auc_se": 0.01376
+      },
+      {
+        "train_label": "L_A1c",
+        "stratum": "Undiagnosed",
+        "n_pos": 127,
+        "n_neg": 3807,
+        "recall": 0.54331,
+        "recall_lo": 0.45669,
+        "recall_hi": 0.63406,
+        "recall_se": 0.04726,
+        "auc": 0.78269,
+        "auc_lo": 0.75151,
+        "auc_hi": 0.81367,
+        "auc_se": 0.0156
+      },
+      {
+        "train_label": "L_comb",
+        "stratum": "D_uncontrolled",
+        "n_pos": 455,
+        "n_neg": 3807,
+        "recall": 0.73626,
+        "recall_lo": 0.70214,
+        "recall_hi": 0.77363,
+        "recall_se": 0.01987,
+        "auc": 0.8619,
+        "auc_lo": 0.84777,
+        "auc_hi": 0.87684,
+        "auc_se": 0.00768
+      },
+      {
+        "train_label": "L_comb",
+        "stratum": "D_controlled",
+        "n_pos": 195,
+        "n_neg": 3807,
+        "recall": 0.59487,
+        "recall_lo": 0.52308,
+        "recall_hi": 0.66962,
+        "recall_se": 0.04046,
+        "auc": 0.80911,
+        "auc_lo": 0.78545,
+        "auc_hi": 0.83113,
+        "auc_se": 0.01272
+      },
+      {
+        "train_label": "L_comb",
+        "stratum": "Undiagnosed",
+        "n_pos": 127,
+        "n_neg": 3807,
+        "recall": 0.50394,
+        "recall_lo": 0.42894,
+        "recall_hi": 0.61417,
+        "recall_se": 0.05068,
+        "auc": 0.77907,
+        "auc_lo": 0.74864,
+        "auc_hi": 0.81167,
+        "auc_se": 0.01613
+      }
+    ],
+    "recall": {
+      "D_uncontrolled": {
+        "L_self": 0.73846,
+        "L_A1c": 0.73187,
+        "L_comb": 0.73626
+      },
+      "D_controlled": {
+        "L_self": 0.62051,
+        "L_A1c": 0.57949,
+        "L_comb": 0.59487
+      },
+      "Undiagnosed": {
+        "L_self": 0.48819,
+        "L_A1c": 0.54331,
+        "L_comb": 0.50394
+      }
+    },
+    "auc": {
+      "D_uncontrolled": {
+        "L_self": 0.85938,
+        "L_A1c": 0.85889,
+        "L_comb": 0.8619
+      },
+      "D_controlled": {
+        "L_self": 0.80993,
+        "L_A1c": 0.79729,
+        "L_comb": 0.80911
+      },
+      "Undiagnosed": {
+        "L_self": 0.76485,
+        "L_A1c": 0.78269,
+        "L_comb": 0.77907
+      }
+    },
+    "contrasts": [
+      {
+        "element": "E1",
+        "contrast": "Undiagnosed: L_self - L_A1c",
+        "est": -0.05512,
+        "lo": -0.1185,
+        "hi": 0.01988,
+        "se": 0.03543,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      },
+      {
+        "element": "E1",
+        "contrast": "Undiagnosed: L_self - L_comb",
+        "est": -0.01575,
+        "lo": -0.08287,
+        "hi": 0.02362,
+        "se": 0.02867,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      },
+      {
+        "element": "E2",
+        "contrast": "D_controlled: L_A1c - L_self",
+        "est": -0.04103,
+        "lo": -0.10256,
+        "hi": 0.00513,
+        "se": 0.02844,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      },
+      {
+        "element": "E2",
+        "contrast": "D_controlled: L_A1c - L_comb",
+        "est": -0.01538,
+        "lo": -0.07179,
+        "hi": 0.02051,
+        "se": 0.02442,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      },
+      {
+        "element": "E3",
+        "contrast": "worst-cell gap: L_comb - L_self",
+        "est": -0.01575,
+        "lo": -0.08172,
+        "hi": 0.03563,
+        "se": 0.02866,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      },
+      {
+        "element": "E3",
+        "contrast": "worst-cell gap: L_comb - L_A1c",
+        "est": -0.00166,
+        "lo": -0.07145,
+        "hi": 0.05927,
+        "se": 0.03382,
+        "predicted": "< 0",
+        "verdict": "inconclusive",
+        "reversed_ci_excl_0": false
+      }
+    ],
+    "element_verdicts": {
+      "E1": "inconclusive",
+      "E2": "inconclusive",
+      "E3": "inconclusive"
+    },
+    "verdict": "inconclusive",
+    "row_wise_min": {
+      "L_self": "Undiagnosed",
+      "L_A1c": "Undiagnosed",
+      "L_comb": "Undiagnosed"
+    },
+    "worst_gap": {
+      "L_self": 0.05512,
+      "L_A1c": 0.04103,
+      "L_comb": 0.03937
+    },
+    "strata_train": {
+      "NonDiabetic": 3807,
+      "D_uncontrolled": 455,
+      "D_controlled": 195,
+      "Undiagnosed": 127
+    }
+  },
+  "runtime_seconds": 5.9717772006988525
 }

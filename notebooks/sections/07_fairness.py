@@ -452,6 +452,107 @@ S8["tier2_summary"] = dict(eod=ET2.round(5).to_dict("records"), permutation=PERM
 # the direction of the gaps is not. Tier 1 remains the primary audit.
 
 # %% [markdown]
+# ## 6 3 × 3 label matrix
+# **Why.** RQ3 asks whether the *label* decides who the model misses. Hypothesis H3 is pre-registered (`prior_exposure =
+# none`): train the identical arm-S pipeline (same folds, same steps, same C0, same class and survey weights) on three
+# labels – self-report `L_self`, HbA1c `L_A1c` and the frozen union `L_comb` – and score every model on three kinds of
+# diabetes: **D-uncontrolled** (self-report and HbA1c ≥ 6.5), **D-controlled** (self-report, HbA1c < 6.5 – treatment
+# masking) and **Undiagnosed** (HbA1c ≥ 6.5 without a diagnosis). Each cell is the recall at the threshold that gives
+# specificity 0.80 on the common non-diabetic negatives (the same negatives for all nine cells); AUC is secondary.
+# Locked prediction: `L_self` misses Undiagnosed most, `L_A1c` misses D-controlled most, `L_comb` has the smallest
+# worst-cell gap; differences below 0.05 count as equivalent.
+#
+# Operational reading (fixed before looking at the matrix, coded in `fairness.h3_elements`): "misses most" is read
+# **column-wise** – among the three training labels, which one serves a given kind of diabetes worst, holding the
+# stratum and the negatives fixed; the worst-cell gap of a training label is its largest shortfall against the best
+# label in any column. Contrasts are paired bootstrap differences (the same resampled people for all rows) judged with
+# `evalkit.verdict` at SESOI 0.05. The matrix uses the training part (80 % of the 569 / 250 / 152 / 4,759 people
+# frozen in `label_freeze.md`); the hold-out stays untouched.
+
+# %%
+LABELS3 = ("L_self", "L_A1c", "L_comb")
+YL = {lab: cl[lab].to_numpy().astype(int) for lab in LABELS3}
+assert np.array_equal(YL["L_comb"], y)
+from joblib import Parallel, delayed
+t0 = time.time()
+mk_S = lambda: P.build_pipeline(cfgS, 1, C_=C0)
+new = Parallel(n_jobs=2)(delayed(ek.cv_predict)(mk_S, X1, YL[lab], folds, fit_params=fpS) for lab in ("L_self", "L_A1c"))
+OOF3 = {"L_self": new[0], "L_A1c": new[1], "L_comb": OOF[("S", 1, "lr")]}
+PM3 = {lab: ek.mean_oof(OOF3[lab], n) for lab in LABELS3}
+cnt = pd.Series(strat).value_counts()
+full = L.strata_counts(clean)
+print(f"refitted arm S on L_self and L_A1c: {2 * len(folds)} fits, {time.time() - t0:.0f} s")
+print("training-part strata (share of the frozen full-cohort counts):",
+      {k: f"{int(cnt[k])} ({cnt[k] / full[k]:.2f})" for k in L.STRATA_3X3})
+assert all(0.75 < cnt[k] / full[k] < 0.85 for k in L.STRATA_3X3)
+LM = F.label_matrix(strat, PM3, n_boot=C.N_BOOT, seed=ek.derive_seed(C.SEED_MASTER, "S8", "3x3"))
+cells = LM["cells"]
+# consistency: L_comb row, Undiagnosed column = E-SCREEN recall of arm S (same positives, same negatives)
+assert abs(LM["recall"].loc["L_comb", "Undiagnosed"] - rec_s) < 1e-12
+print("\nrecall at specificity 0.80 on the common NonDiabetic negatives (rows: training label):")
+print(LM["recall"].round(3).to_string())
+print("\nROC-AUC against the common negatives:")
+print(LM["auc"].round(3).to_string())
+print()
+print(cells[["train_label", "stratum", "n_pos", "recall", "recall_lo", "recall_hi", "auc", "auc_lo", "auc_hi"]].round(3).to_string(index=False))
+H3E = F.h3_elements(LM)
+print("\npre-registered contrasts (predicted sign: negative):")
+print(H3E.round(3).to_string(index=False))
+# row-wise reading (secondary): in which stratum does each training label have its lowest recall?
+roww = LM["recall"].idxmin(axis=1).to_dict()
+print(f"\nrow-wise reading (secondary): lowest-recall stratum per training label {roww}")
+gaps = F._worst_gap(LM["point"]["tpr"][0])
+print("worst-cell gap per training label:", dict(zip(LABELS3, np.round(gaps, 3))))
+
+# %%
+elem_v = {}
+for el, g in H3E.groupby("element"):
+    elem_v[el] = ek.combine_verdicts(g["verdict"].tolist())
+h3_v = ek.combine_verdicts(list(elem_v.values()))
+if H3E["reversed_ci_excl_0"].any():                       # locked falsifier
+    h3_v = "refuted"
+print(f"H3 element verdicts {elem_v} -> H3 {h3_v}")
+cells.to_csv(OUT / "label_matrix_cells.csv", index=False)
+H3E.to_csv(OUT / "h3_contrasts.csv", index=False)
+S8["label_matrix"] = dict(cells=cells.round(5).to_dict("records"), recall=LM["recall"].round(5).to_dict(),
+                          auc=LM["auc"].round(5).to_dict(), contrasts=H3E.round(5).to_dict("records"),
+                          element_verdicts=elem_v, verdict=h3_v, row_wise_min=roww,
+                          worst_gap=dict(zip(LABELS3, gaps.round(5))), strata_train=cnt.to_dict())
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.2), gridspec_kw={"width_ratios": [1.25, 1]})
+for ax, (mat, key, ttl) in zip(axes, [(LM["recall"], "recall", "Recall at specificity 0.80"), (LM["auc"], "auc", "ROC-AUC (secondary)")]):
+    im = ax.imshow(mat.to_numpy(), cmap="Blues", vmin=0 if key == "recall" else 0.5, vmax=1)
+    for i, lab in enumerate(LABELS3):
+        for j, st in enumerate(F.POS_STRATA):
+            r = cells[(cells["train_label"] == lab) & (cells["stratum"] == st)].iloc[0]
+            v = mat.loc[lab, st]
+            ax.text(j, i, f"{v:.2f}\n({r[key + '_lo']:.2f}–{r[key + '_hi']:.2f})", ha="center", va="center",
+                    fontsize=9, color="white" if v > (0.6 if key == "recall" else 0.8) else "black")
+    ax.set_xticks(range(3)); ax.set_xticklabels([f"{s}\n(n={int(cnt[s])})" for s in F.POS_STRATA], fontsize=9)
+    ax.set_yticks(range(3)); ax.set_yticklabels([f"trained on {l}" for l in LABELS3])
+    ax.set_title(ttl); ax.grid(False)
+    fig.colorbar(im, ax=ax, fraction=0.046)
+fig.suptitle(f"3 × 3 label matrix (arm S, Tier 1, training part; {int(cnt['NonDiabetic'])} common negatives) – H3: {h3_v}", fontsize=11)
+fig.tight_layout()
+f82 = plots.savefig(fig, "S8_label_matrix", caption="F8-2. 3x3 label matrix: arm S trained on L_self, L_A1c or L_comb "
+                    "(identical folds, steps and C0) and scored on D-uncontrolled, D-controlled and Undiagnosed cases against "
+                    "the common NonDiabetic negatives. Left: recall at specificity 0.80 with 95 % stratified bootstrap CI "
+                    "(thresholds re-estimated per replicate); right: ROC-AUC.")
+plt.show()
+
+# %% [markdown]
+# **So what.** Every element of the locked pattern points the predicted way: in the Undiagnosed column the
+# self-report model has the lowest recall, in the D-controlled column the HbA1c-only model has the lowest recall, and
+# the union label has the smallest worst-cell gap. But the differences are small – a few percentage points, at most
+# about 0.06 – and every paired CI includes 0 while also reaching beyond ±0.05, so H3 is **inconclusive**: neither the
+# predicted ordering nor equivalence is established (verdict line above). The row-wise reading tells the stronger
+# story: *whatever* the training label, the Undiagnosed column is the hardest, and the AUCs show the same order. With
+# non-laboratory features the model cannot see the diagnosis gap: undiagnosed people lack the care traces and the
+# treatment-era profile that the features pick up, and changing the label only moves the threshold marginally. The
+# label therefore shapes *what the model claims to measure* (§5 counts: 152 vs 250 people silently dropped by the two
+# single labels) more than *whom this feature set can find*.
+
+# %% [markdown]
 # ## 14 Storage
 # **Why.** Every number of this section is stored in `results/metrics_S8.json` (via `results_io`) and the tables in
 # `results/S8/`, so that S10 and the slides read them instead of re-typing them.
