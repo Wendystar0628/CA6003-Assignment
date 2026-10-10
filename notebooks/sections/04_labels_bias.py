@@ -348,10 +348,10 @@ for g in ("uninsured", "no usual place", "NH Asian"):
     assert P.loc[g, "ci_width"] >= C.NCHS_CI_WIDTH_MAX and P.loc[g, "nchs_status"] == "suppress"
 assert P.loc["insured", "nchs"] == "meets NCHS standard"
 RD = rds.set_index("contrast")
-for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual place - usual place": (20.0, -1.6, 41.6),
+for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual place - usual place": (19.9, -1.6, 41.5),
                           "NH Asian - NH White": (15.6, -5.7, 36.9)}.items():
-    close(RD.loc[name, "rd_pp"], e, 0.15, name); close(RD.loc[name, "ci_low_pp"], lo, 0.15, name + " low")
-    close(RD.loc[name, "ci_high_pp"], hi, 0.15, name + " high")
+    close(RD.loc[name, "rd_pp"], e, 0.06, name); close(RD.loc[name, "ci_low_pp"], lo, 0.06, name + " low")
+    close(RD.loc[name, "ci_high_pp"], hi, 0.06, name + " high")
 
 # %% [markdown]
 # **Adjusted models.** The risk differences above are crude. To check whether they survive confounding, each
@@ -582,13 +582,13 @@ close(RO.loc[("NH Asian", "waist"), "auc"], 0.697, 0.001, "Asian waist AUC")
 close(RO.loc[("NH Asian", "WHtR"), "auc"], 0.714, 0.001, "Asian WHtR AUC")
 close(RO.loc[("NH White", "BMI"), "auc"], 0.701, 0.001, "White BMI AUC")
 close(RO.loc[("NH White", "WHtR"), "auc"], 0.749, 0.001, "White WHtR AUC")
-close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"], 0.136, 0.002, "Asian gain")
-close(RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"], 0.048, 0.002, "White gain")
-tol_ci = 0.01 if C.IS_FINAL else 0.03   # bootstrap CI bounds: tighter check in FINAL (B=1000)
-close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_low"], 0.092, tol_ci, "Asian gain CI low")
-close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_high"], 0.183, tol_ci, "Asian gain CI high")
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"], 0.137, 0.0006, "Asian gain")
+close(RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"], 0.049, 0.0006, "White gain")
+tol_ci = 0.002 if C.IS_FINAL else 0.03   # bootstrap CI bounds: FINAL (B=1000) reproduces 0.093-0.181 / 0.039-0.058
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_low"], 0.093, tol_ci, "Asian gain CI low")
+close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_high"], 0.181, tol_ci, "Asian gain CI high")
 close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_low"], 0.039, tol_ci, "White gain CI low")
-close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_high"], 0.059, tol_ci, "White gain CI high")
+close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_high"], 0.058, tol_ci, "White gain CI high")
 
 # %%
 cut_rows = []
