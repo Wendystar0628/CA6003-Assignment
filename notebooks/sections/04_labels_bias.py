@@ -68,8 +68,17 @@ def pct(x, nd=1):
     return f"{100 * x:.{nd}f}%"
 
 
+NCHS_LABEL = {"present": "meets NCHS standard", "review": "exploratory, NCHS statistical review (df < 8)",
+              "suppress": "exploratory, does not meet NCHS standard"}
+
+
+def nchs_label(r):
+    """Presentation label from survey.nchs_status (Parker et al. 2017): present / review / suppress."""
+    return NCHS_LABEL[r["nchs_status"]]
+
+
 def kg_text(r):
-    flag = "exploratory, does not meet NCHS standard" if r["nchs_flags"] else "meets NCHS standard"
+    flag = nchs_label(r)
     return (f"{pct(r['est'])} (KG {pct(r['kg_low'])}–{pct(r['kg_high'])}, width {r['ci_width']:.2f}; "
             f"n={r['n']}, events={r['n_events']}, df={r['df']}) -> {flag}")
 
@@ -246,7 +255,7 @@ for name, s in care.items():
     w = S.weighted_prop(d, y.astype(float), weight=WT, domain=und_mask)
     rows.append({"contact": name, "n": int(s.sum()), "of": len(und), "share": s.sum() / len(und),
                  "w_est": w["est"], "kg_low": w["kg_low"], "kg_high": w["kg_high"], "df": w["df"],
-                 "flags": ";".join(w["nchs_flags"])})
+                 "flags": ";".join(w["nchs_flags"]), "nchs": nchs_label(w)})
 care_tab = pd.DataFrame(rows)
 print(care_tab.round(3).to_string(index=False))
 print(f"DIQ180 missing among undiagnosed: {int(und['DIQ180'].isna().sum())}; DIQ160 missing: {int(und['DIQ160'].isna().sum())} "
@@ -279,8 +288,10 @@ register("DR-S5-04", "label_semantics",
 # **Why.** If the undiagnosed share differs by insurance, access or race, then `L_self` is a biased label
 # and a model trained on it inherits the bias. The domain is all adults with HbA1c ≥ 6.5 % (n = 721) and the
 # outcome is "not self-reported". Following NCHS presentation standards, proportions get Korn–Graubard intervals
-# with the design-based effective sample size and domain df (strata containing the domain), and every estimate
-# whose CI width is ≥ 0.30 (or n/n_eff < 30, df < 8) is labelled *exploratory, does not meet NCHS standard*.
+# with the design-based effective sample size and the NCHS domain df (PSUs containing the domain minus strata
+# containing it). An estimate with n or effective n < 30, an absolute CI width ≥ 0.30, or a CI width > 0.05 with
+# a relative width > 130 % is labelled *exploratory, does not meet NCHS standard*; df < 8 additionally triggers
+# NCHS statistical review.
 # The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife, df = domain df) rather than a
 # small-cell proportion.
 
@@ -292,7 +303,7 @@ a1c_dom = d["L_A1c"].eq(1).to_numpy()
 
 
 def risk_difference(df, y, ga, gb, weight=WT):
-    """Weighted risk difference p(a) - p(b) with JK CI (df = strata containing a or b)."""
+    """Weighted risk difference p(a) - p(b) with JK CI (df = NCHS domain df of a or b)."""
     yv = df[y].to_numpy(float)
     ok = ~np.isnan(yv)
     a, b = np.asarray(ga) & ok, np.asarray(gb) & ok
@@ -314,8 +325,7 @@ for name, col, a, b, la, lb in contrasts:
         r = S.weighted_prop(d, "undx", weight=WT, domain=a1c_dom & d[col].eq(lev).to_numpy())
         prop_rows.append({"group": lab, "contrast": name, **{k: r[k] for k in
                           ("n", "n_events", "est", "kg_low", "kg_high", "ci_width", "n_eff", "df")},
-                          "nchs": "exploratory, does not meet NCHS standard" if r["nchs_flags"] else "meets NCHS standard",
-                          "flags": ";".join(r["nchs_flags"])})
+                          "nchs": nchs_label(r), "nchs_status": r["nchs_status"], "flags": ";".join(r["nchs_flags"])})
     rd = risk_difference(d, "undx", a1c_dom & d[col].eq(a).to_numpy(), a1c_dom & d[col].eq(b).to_numpy())
     rd_rows.append({"contrast": name, "rd_pp": 100 * rd["est"], "ci_low_pp": 100 * rd["ci_low"],
                     "ci_high_pp": 100 * rd["ci_high"], "df": rd["df"]})
@@ -328,13 +338,14 @@ print(rds.round(1).to_string(index=False))
 
 P = props.set_index("group")
 close(P.loc["uninsured", "est"], 0.430, 0.0015, "uninsured share"); assert P.loc["uninsured", "n"] == 49
-close(P.loc["uninsured", "kg_low"], 0.248, 0.002, "uninsured KG low"); close(P.loc["uninsured", "kg_high"], 0.627, 0.002, "uninsured KG high")
+close(P.loc["uninsured", "kg_low"], 0.242, 0.002, "uninsured KG low"); close(P.loc["uninsured", "kg_high"], 0.635, 0.002, "uninsured KG high")
+assert P.loc["uninsured", "df"] == 9 and P.loc["no usual place", "df"] == 9
 close(P.loc["insured", "est"], 0.199, 0.0015, "insured share")
 close(P.loc["no usual place", "est"], 0.403, 0.0015, "no usual place share"); assert P.loc["no usual place", "n"] == 41
-close(P.loc["NH Asian", "est"], 0.362, 0.0015, "Asian share"); assert P.loc["NH Asian", "n"] == 40 and P.loc["NH Asian", "df"] == 8
-close(P.loc["NH Asian", "kg_low"], 0.165, 0.002, "Asian KG low"); close(P.loc["NH Asian", "kg_high"], 0.601, 0.002, "Asian KG high")
+close(P.loc["NH Asian", "est"], 0.362, 0.0015, "Asian share"); assert P.loc["NH Asian", "n"] == 40 and P.loc["NH Asian", "df"] == 4
+close(P.loc["NH Asian", "kg_low"], 0.131, 0.002, "Asian KG low"); close(P.loc["NH Asian", "kg_high"], 0.652, 0.002, "Asian KG high")
 for g in ("uninsured", "no usual place", "NH Asian"):
-    assert P.loc[g, "ci_width"] >= C.NCHS_CI_WIDTH_MAX and P.loc[g, "nchs"].startswith("exploratory")
+    assert P.loc[g, "ci_width"] >= C.NCHS_CI_WIDTH_MAX and P.loc[g, "nchs_status"] == "suppress"
 assert P.loc["insured", "nchs"] == "meets NCHS standard"
 RD = rds.set_index("contrast")
 for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual place - usual place": (20.0, -1.6, 41.6),
@@ -401,6 +412,7 @@ for yi, (g, r) in zip(yy, pp.iterrows()):
 ax1.set_yticks(yy, order)
 ax1.set(xlim=(0, 100), xlabel="undiagnosed share among HbA1c ≥ 6.5 (%, KG 95% CI)",
         title="Undiagnosed share (hollow = exploratory, NCHS standard not met)")
+ax1.title.set_fontsize(10.5)
 yr = np.arange(len(rds))[::-1]
 ax2.errorbar(rds["rd_pp"], yr, xerr=[rds["rd_pp"] - rds["ci_low_pp"], rds["ci_high_pp"] - rds["rd_pp"]],
              fmt="o", color=plots.PALETTE[4], capsize=4)
@@ -410,7 +422,7 @@ ax2.set(xlabel="risk difference (pp, jackknife 95% CI)", title="Risk differences
 fig.tight_layout()
 plots.savefig(fig, "S5_undiagnosed_inequality",
               caption="Share of HbA1c-positive adults who do not report diabetes (WTPH2YR, Korn-Graubard CI) and risk "
-                      "differences with delete-one-PSU jackknife CI. Hollow markers: CI width >= 0.30, exploratory.")
+                      "differences with delete-one-PSU jackknife CI. Hollow markers: fails the NCHS presentation standard (exploratory).")
 plt.show()
 
 props.to_csv(OUT / "undiagnosed_by_group.csv", index=False)
@@ -435,8 +447,9 @@ register("DR-S5-05", "label_bias",
 # **So what.** Among HbA1c-positive adults, 43.0 % of the uninsured but 19.9 % of the insured do not know their
 # diagnosis: a risk difference of +23.2 pp (6.2, 40.1) whose interval excludes zero. Without a usual place of care
 # the difference is +19.9 pp (−1.6, 41.5) and for NH Asian versus NH White adults +15.6 pp (−5.7, 36.9); both
-# intervals include zero. All three group proportions have KG intervals wider than 0.30 (Asian: n = 40,
-# df = 8), so they are *exploratory and do not meet the NCHS standard*; they are not headlines. Adjusted for age,
+# intervals include zero. All three group proportions have KG intervals wider than 0.30 (uninsured 24.2–63.5 %,
+# df = 9; Asian 13.1–65.2 %, n = 40, df = 4), so they are *exploratory and do not meet the NCHS standard*; they
+# are not headlines. Adjusted for age,
 # sex, BMI and each other (complete cases, n = 704), lacking a usual place of care remains associated with being
 # undiagnosed (OR 2.6, CI excludes 1), the insurance and Asian ORs are imprecise (CIs include 1), and the design-based weighted fit
 # gives wider intervals. Consequence for the label: `L_self` systematically under-counts disease in groups with
@@ -479,11 +492,15 @@ for g, code in grp.items():
         w = S.weighted_prop(d, "L_comb", weight=WT, domain=m)
         band_rows.append({"group": g, "bmi_band": b, "n": int(m.sum()), "cases": int(d.loc[m, "L_comb"].sum()),
                           "prev": d.loc[m, "L_comb"].mean(), "w_prev": w["est"], "kg_low": w["kg_low"],
-                          "kg_high": w["kg_high"], "df": w["df"], "flags": ";".join(w["nchs_flags"])})
+                          "kg_high": w["kg_high"], "ci_width": w["ci_width"], "df": w["df"],
+                          "nchs_status": w["nchs_status"], "flags": ";".join(w["nchs_flags"])})
 bands = pd.DataFrame(band_rows)
 print("\nL_comb prevalence by BMI band (unweighted and WTPH2YR with KG CI)")
 print(bands.round(3).to_string(index=False))
 B_ = bands.set_index(["group", "bmi_band"])
+n_flag_asian = int((bands.loc[bands["group"] == "NH Asian", "nchs_status"] != "present").sum())
+print(f"NH Asian BMI bands failing the NCHS presentation standard: {n_flag_asian} of {len(BLAB)}")
+assert n_flag_asian >= 3
 close(B_.loc[("NH Asian", "<23"), "prev"], 0.121, 0.001, "Asian <23"); close(B_.loc[("NH White", "<23"), "prev"], 0.043, 0.001, "White <23")
 close(B_.loc[("NH Asian", "23–24.9"), "prev"], 0.175, 0.001, "Asian 23-25"); close(B_.loc[("NH White", "23–24.9"), "prev"], 0.033, 0.001, "White 23-25")
 close(B_.loc[("NH Asian", "<23"), "w_prev"], 0.078, 0.001, "Asian <23 weighted"); close(B_.loc[("NH Asian", "23–24.9"), "w_prev"], 0.140, 0.001, "Asian 23-25 weighted")
@@ -562,13 +579,17 @@ for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots
     sb = bands[bands["group"] == g]
     off = (i - 0.5) * 0.3
     ax1.errorbar(xb + off, sb["w_prev"] * 100, yerr=[(sb["w_prev"] - sb["kg_low"]) * 100, (sb["kg_high"] - sb["w_prev"]) * 100],
-                 fmt="o", color=col, capsize=3, label=g)
+                 fmt="none", ecolor=col, capsize=3)
+    ok = (sb["nchs_status"] == "present").to_numpy()
+    ax1.plot((xb + off)[ok], sb["w_prev"].to_numpy()[ok] * 100, "o", color=col, label=g if ok.any() else None)
+    ax1.plot((xb + off)[~ok], sb["w_prev"].to_numpy()[~ok] * 100, "o", color=col, mfc="white",
+             label=f"{g} (exploratory, NCHS standard not met)" if (~ok).any() else None)
     for x_, (_, r) in zip(xb + off, sb.iterrows()):
         ax1.text(x_, -3.5 - 3.5 * i, f"{r['cases']}/{r['n']}", ha="center", fontsize=7.5, color=col)
 ax1.set_xticks(xb, BLAB)
 ax1.set(xlabel="BMI band (kg/m²)", ylabel="L_comb prevalence (%, WTPH2YR, KG 95% CI)", ylim=(-9, 60),
-        title="Asian adults: diabetes already common at BMI < 25")
-ax1.legend(loc="upper left")
+        title="Asian vs White prevalence by BMI band (hollow = exploratory)")
+ax1.legend(loc="upper left", fontsize=8)
 meas = ["BMI", "waist", "WHtR"]
 for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots.PALETTE[4])]):
     rr = RO.loc[g].loc[meas]
@@ -583,7 +604,8 @@ ax2.set(ylabel="ROC-AUC for L_comb (95% bootstrap CI)", ylim=(0.4, 0.85),
 ax2.legend(loc="lower right")
 fig.tight_layout()
 plots.savefig(fig, "S5_asian_bmi_whtr",
-              caption="Left: L_comb prevalence by BMI band, NH Asian vs NH White (WTPH2YR, Korn-Graubard CI; labels = cases/n). "
+              caption="Left: L_comb prevalence by BMI band, NH Asian vs NH White (WTPH2YR, Korn-Graubard CI; labels = cases/n; "
+                      "hollow markers fail the NCHS presentation standard and are exploratory). "
                       "Right: single-feature ROC-AUC of BMI, waist and WHtR with stratified bootstrap CI; legend = paired WHtR - BMI gain.")
 plt.show()
 
@@ -611,9 +633,12 @@ register("DR-S5-06", "measurement_bias",
 
 # %% [markdown]
 # **So what.** Half of the Asian diabetics (24/47, 51.1 %) have a "normal" BMI below 25, against 7.2 % of White
-# diabetics. Asian adults with BMI < 23 already have an `L_comb` prevalence of 12.1 % (White 4.3 %), and in the
-# 23–24.9 band 17.5 % (White 3.3 %; unweighted). Weighted, as in the figure, the contrasts are 7.8 % vs 3.3 % and
-# 14.0 % vs 2.8 %, with wide Asian intervals (63–107 adults per band). Consequently BMI barely discriminates in Asian adults
+# diabetics. In the BMI bands below 25 the sample prevalence among Asian adults is 12.1 % (< 23) and 17.5 %
+# (23–24.9) against 4.3 % and 3.3 % among White adults (weighted, as in the figure: 7.8 % vs 3.3 % and 14.0 % vs
+# 2.8 %). These band estimates rest on 44–107 Asian adults each and all four fail the NCHS presentation standard
+# (relative CI width > 130 % or absolute width ≥ 0.30, two with df < 8), so they are exploratory: they are
+# compatible with diabetes occurring at lower BMI in Asian adults but do not establish band-specific rates. The
+# robust part of the evidence is the case-based BMI share above and the discrimination analysis below: BMI barely discriminates in Asian adults
 # (AUC 0.573), while waist (0.697) and WHtR (0.714) do. The paired WHtR − BMI gain is +0.137 in Asian adults
 # (bootstrap CI roughly 0.09–0.18) against +0.049 in White adults (CI roughly 0.04–0.06); the Asian-minus-White
 # difference in gain, +0.088, has a bootstrap CI that excludes zero. (Exact bounds are printed above; they move

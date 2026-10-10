@@ -1,1 +1,1 @@
-Share of HbA1c-positive adults who do not report diabetes (WTPH2YR, Korn-Graubard CI) and risk differences with delete-one-PSU jackknife CI. Hollow markers: CI width >= 0.30, exploratory.
+Share of HbA1c-positive adults who do not report diabetes (WTPH2YR, Korn-Graubard CI) and risk differences with delete-one-PSU jackknife CI. Hollow markers: fails the NCHS presentation standard (exploratory).
