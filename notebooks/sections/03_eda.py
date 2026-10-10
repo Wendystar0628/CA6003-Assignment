@@ -986,6 +986,24 @@ r_tc_ldl = lip.corr().iloc[0, 1]
 print(f"\nstructural redundancy: corr(log BMI, log W - 2 log H) = {r_struct:.5f} (n = {len(a):,})")
 print(f"TC vs LDL (fasting subsample, n = {len(lip):,}): Pearson r = {r_tc_ldl:.3f}")
 OUT["vif"] = {s: {r.variable: r.vif for r in g.itertuples()} for s, g in VIF.groupby("set", sort=False)}
+
+
+def prune_vif(x, protect, thresh=10.0):
+    """Iteratively drop the unprotected column with the largest VIF while any VIF exceeds `thresh`."""
+    cols, dropped = list(x.columns), []
+    while True:
+        X = sm.add_constant(x[cols].to_numpy(float))
+        vifs = pd.Series([variance_inflation_factor(X, i + 1) for i in range(len(cols))], index=cols)
+        cand = vifs.drop(labels=[c for c in protect if c in cols]).sort_values(ascending=False)
+        if cand.empty or cand.iloc[0] <= thresh:
+            return dropped, vifs
+        dropped.append(cand.index[0]); cols.remove(cand.index[0])
+
+
+_dropped, _vifs_after = prune_vif(coh[VIF_SETS["raw_anthropometry"]].dropna(), protect=["BMXBMI", "BMXWAIST"])
+print(f"iterative VIF > 10 pruning (BMI, waist protected) on the raw anthropometry set drops {_dropped}; "
+      f"remaining max VIF {_vifs_after.max():.1f} ({_vifs_after.idxmax()})")
+OUT["vif_pruning_illustration"] = {"dropped": _dropped, "vif_after": _vifs_after.to_dict()}
 OUT["redundancy"] = {"r_logbmi_logw_2logh": r_struct, "r_tc_ldl": r_tc_ldl, "n_tc_ldl": len(lip)}
 
 # %%
@@ -1023,10 +1041,12 @@ OUT["redundancy"]["clusters_rho07"] = groups
 # BMI and waist share variance (5.1) but measure different things (total vs central adiposity), and
 # the six blood-pressure readings (8.8–11.7) collapse to VIF 1.6 once replaced by their means. The
 # candidate Tier-1 set [age, BMI, waist, SBP, PIR] stays below 6 and the Tier-2 set [age, BMI, SBP,
-# TC, HDL] below 1.2. TC and LDL correlate at 0.94 because LDL is calculated from TC. Decision:
-# drop weight, height, hip and arm circumference (structural duplicates of BMI/waist), use mean SBP/DBP,
-# exclude LDL (fasting-only and derived from TC), and keep BMI + waist with L2 penalisation as the
-# second line of defence. The clustered heatmap shows the same three redundancy blocks (body size,
+# TC, HDL] below 1.2. TC and LDL correlate at 0.94 because LDL is calculated from TC. Decision: use
+# mean SBP/DBP, exclude LDL (fasting-only and derived from TC), and remove the structural duplicates
+# of BMI by iterative VIF > 10 pruning inside each training fold with BMI and waist protected (on the
+# full anthropometry set this removes only weight, the arithmetic twin of BMI, as printed above). The
+# protected BMI then still has a VIF above 20 because hip and arm circumference stay in that set,
+# which is why L2 penalisation is the second line of defence. The clustered heatmap shows the same three redundancy blocks (body size,
 # blood pressure, lipids) visually.
 
 # %% [markdown]
@@ -1067,8 +1087,9 @@ reg("DR-S4-08", "preparation", "Structural redundancy: weight VIF 95.7, BMI 97.6
     "results/S4/vif_table.csv; figures/S4_spearman_clustermap.png",
     f"BP means VIF {VIFS[('bp_means', 'bp_sys_mean')]:.1f}; Tier-1 max VIF {VIF[VIF.set == 'tier1_candidates'].vif.max():.1f}; "
     f"Tier-2 max {VIF[VIF.set == 'tier2_candidates'].vif.max():.1f}",
-    "Drop weight, height, hip, arm circumference; average BP readings; exclude LDL; keep BMI + waist (or WHtR, S8) under L2.",
-    "Automatic VIF > 10 deletion (O'Brien 2007); PCA of body measures (destroys interpretability).",
+    "Average BP readings; exclude LDL; prune structural duplicates of BMI inside the training folds (iterative VIF > 10, BMI and waist protected; "
+    "removes weight); keep BMI + waist (or WHtR, S8) under L2.",
+    "Unprotected VIF deletion (O'Brien 2007: VIF alone is not a reason to drop BMI or waist); PCA of body measures (destroys interpretability).",
     check_note="VIFs re-computed; n = 5,388 for the raw anthropometry set")
 reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; triglycerides 6.62 on the valid fasting subsample.",
     "results/S4/skew_table.csv",
@@ -1292,8 +1313,10 @@ DAJ = pd.DataFrame([
      "Interaction terms with this power add variance without detectable gain; 'not detectable' is not 'absent'"),
     ("Structural redundancy", f"VIF weight {VIFS[('raw_anthropometry','BMXWT')]:.1f}, BMI {VIFS[('raw_anthropometry','BMXBMI')]:.1f}; "
                               f"BP readings {bp.min():.1f}-{bp.max():.1f}; corr(log BMI, log W - 2 log H) = {r_struct:.5f}",
-     "Drop weight, height, hip, arm; average BP readings; exclude LDL; L2 penalty as second line of defence",
-     "Mechanical VIF > 10 rule (O'Brien 2007) or PCA (loses interpretability)"),
+     "Average BP readings; exclude LDL; remove structural duplicates of BMI by in-fold iterative VIF > 10 pruning with BMI and "
+     "waist protected (preparation step P05, which removes weight); L2 penalty as second line of defence",
+     "Unprotected VIF deletion (could drop BMI or waist, which measure different aspects of adiposity; O'Brien 2007); "
+     "PCA of body measures (loses interpretability); pruning on the full data (leaks into the folds)"),
     ("Skewness", f"BMI {sk.loc[('BMXBMI','cohort'),'skew_raw']:.2f}, HDL {sk.loc[('LBDHDD','cohort'),'skew_raw']:.2f}, SBP {sk.loc[('bp_sys_mean','cohort'),'skew_raw']:.2f}; YJ -> ~0",
      "Yeo-Johnson as a toggleable step fitted inside training folds; kept only if the S7 ablation supports it",
      "Transforming before the split leaks lambda; log fails at 0"),

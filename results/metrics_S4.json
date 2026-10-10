@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:39:24+00:00"
+    "written_utc": "2026-10-10T18:40:29+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -378,6 +378,18 @@
       "bp_sys_mean": 1.1659481443132709,
       "LBXTC": 1.0830290924748154,
       "LBDHDD": 1.1840356234496023
+    }
+  },
+  "vif_pruning_illustration": {
+    "dropped": [
+      "BMXWT"
+    ],
+    "vif_after": {
+      "BMXHT": 1.9501363739987083,
+      "BMXBMI": 24.20986712513581,
+      "BMXWAIST": 6.842554721527732,
+      "BMXHIP": 7.636413678028368,
+      "BMXARMC": 6.562434491161201
     }
   },
   "redundancy": {
@@ -839,8 +851,8 @@
     {
       "diagnostic": "Structural redundancy",
       "evidence": "VIF weight 95.7, BMI 97.6; BP readings 8.8-11.7; corr(log BMI, log W - 2 log H) = 0.99999",
-      "decision": "Drop weight, height, hip, arm; average BP readings; exclude LDL; L2 penalty as second line of defence",
-      "why_not_alternative": "Mechanical VIF > 10 rule (O'Brien 2007) or PCA (loses interpretability)"
+      "decision": "Average BP readings; exclude LDL; remove structural duplicates of BMI by in-fold iterative VIF > 10 pruning with BMI and waist protected (preparation step P05, which removes weight); L2 penalty as second line of defence",
+      "why_not_alternative": "Unprotected VIF deletion (could drop BMI or waist, which measure different aspects of adiposity; O'Brien 2007); PCA of body measures (loses interpretability); pruning on the full data (leaks into the folds)"
     },
     {
       "diagnostic": "Skewness",
