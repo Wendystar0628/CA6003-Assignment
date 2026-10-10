@@ -1,0 +1,1 @@
+Composition of the 971 L_comb positives. 819 (84.3%) already reported a diagnosis; only 152 are undiagnosed with HbA1c >= 6.5 and form the E-SCREEN positive class.

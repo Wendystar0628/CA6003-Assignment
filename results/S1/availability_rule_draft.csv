@@ -1,0 +1,30 @@
+variable,file,meaning,admissible,reason
+LBXGH,GHB_L,HbA1c,N,part of the target (diagnostic criterion)
+LBXGLU,GLU_L,fasting plasma glucose,N,diagnostic criterion; fasting subsample only
+DIQ010,DIQ_L,doctor-diagnosed diabetes,N,part of the target
+DIQ050,DIQ_L,taking insulin,N,consequence of diagnosis
+DIQ070,DIQ_L,taking diabetic pills,N,consequence of diagnosis; also asked of undiagnosed respondents
+DID040,DIQ_L,age at diagnosis,N,consequence of diagnosis
+DID060,DIQ_L,duration of insulin use,N,consequence of diagnosis
+DIQ160,DIQ_L,told prediabetes,N,consequence of a glucose test; care-contact trace
+DIQ180,DIQ_L,blood sugar tested in past 3 years,N,consequence of care contact
+LBXTLG,TRIGLY_L,triglycerides,N,fasting subsample only; side analysis
+LBDLDL,TRIGLY_L,LDL cholesterol,N,"derived from TC, HDL and triglycerides; fasting subsample only"
+RIDRETH3,DEMO_L,race and ethnicity,N,"audit and fairness variable, not a default predictor"
+HIQ011,HIQ_L,health insurance,N,audit variable (access to care)
+HUQ030,HUQ_L,usual place of care,N,audit variable (access to care)
+RIDAGEYR,DEMO_L,age (top-coded at 80),T1,known at any contact
+RIAGENDR,DEMO_L,sex,T1,known at any contact
+INDFMPIR,DEMO_L,income-to-poverty ratio (top-coded at 5),T1,interview item; 12.8 % missing
+DMDEDUC2,DEMO_L,education,T1,interview item
+BMXBMI,BMX_L,body mass index,T1,basic measurement
+BMXWAIST,BMX_L,waist circumference,T1,basic measurement
+whtr,derived,waist / height,T1,basic measurement; replaces waist in the WHtR arm
+bp_sys_mean,BPXO_L,mean systolic blood pressure of up to 3 readings,T1,basic measurement
+bp_dia_mean,BPXO_L,mean diastolic blood pressure of up to 3 readings,T1,basic measurement
+BPQ020,BPQ_L,told high blood pressure,T1,questionnaire; care-contact trace
+BPQ080,BPQ_L,told high cholesterol,T1,questionnaire; care-contact trace
+SMQ020,SMQ_L,smoked 100 cigarettes in life,T1,questionnaire
+PAD790Q,PAQ_L,"physical activity (recreational, weekly minutes derived)",T1,questionnaire
+LBXTC,TCHOL_L,total cholesterol,T2,same-visit lipid panel
+LBDHDD,HDL_L,HDL cholesterol,T2,same-visit lipid panel

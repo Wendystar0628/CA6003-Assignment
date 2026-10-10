@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "section": "S1",
+    "nb_mode": "FAST",
+    "seed_master": 20261011,
+    "written_utc": "2026-10-10T18:01:32+00:00"
+  },
+  "loader": "src.nhanes_io",
+  "n_cohort": 5730,
+  "funnel": {
+    "DEMO_L participants": 11933,
+    "Age >= 20": 7809,
+    "Interviewed and MEC-examined (RIDSTATR = 2)": 6064,
+    "HbA1c measured (LBXGH present)": 5767,
+    "Not pregnant (RIDEXPRG != 1)": 5730
+  },
+  "labels": {
+    "L_self": 819,
+    "L_A1c": 721,
+    "L_comb": 971,
+    "known_share_of_comb": 0.84346035015448
+  },
+  "e_all": {
+    "rows": 5730,
+    "positives": 971
+  },
+  "e_screen": {
+    "rows": 4911,
+    "positives": 152,
+    "negatives": 4759
+  },
+  "strata_3x3": {
+    "D_uncontrolled": 569,
+    "D_controlled": 250,
+    "Undiagnosed": 152,
+    "NonDiabetic": 4759
+  },
+  "prevalence_comb": {
+    "unweighted": 0.1694589877835951,
+    "weighted": 0.14035739528195537,
+    "ci_low": 0.12438333225970571,
+    "ci_high": 0.15633145830420503,
+    "df": 15
+  },
+  "kish_deff": 1.5459276715354544,
+  "age60_share": {
+    "sample": 0.46160558464223383,
+    "weighted": 0.31366906222516455
+  },
+  "disclosure": {
+    "age_top": 321,
+    "pir_top": 1282,
+    "pir_missing": 734,
+    "strata": 15,
+    "psu": 30
+  },
+  "availability_rule": {
+    "n_rule_rows": 29,
+    "by_tier": {
+      "N": 14,
+      "T1": 13,
+      "T2": 2
+    },
+    "spec": {
+      "n_spec": 175,
+      "n_shared": 26,
+      "disagreements": 0
+    }
+  },
+  "ada_lite": {
+    "items": 7,
+    "available": 5,
+    "missing": 2
+  },
+  "hypotheses": {
+    "n": 8,
+    "prior_exposure": {
+      "analysis_seen": 4,
+      "descriptive_seen": 1,
+      "none": 3
+    }
+  },
+  "minimisation": "report from nhanes_io",
+  "response_rates": {
+    "interview": 0.346,
+    "mec": 0.257,
+    "source": "NCHS cycle overview"
+  }
+}
