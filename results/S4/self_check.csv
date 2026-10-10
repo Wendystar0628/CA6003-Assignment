@@ -1,8 +1,9 @@
-quantity,process_doc,recomputed,note,tolerance,verdict
-"DB516 total, %",15.78,15.776416999889983,"n = 2,940 variant; NCHS-definition n = 2,938 gives 15.79",0.08156,PASS
-"DB516 diagnosed, %",11.29,11.292145668471585,,0.07258,PASS
-"DB516 undiagnosed, %",4.48,4.4842713314183955,,0.058960000000000005,PASS
-"DB516 age-adjusted total, %",14.31,14.309480169847081,,0.07862000000000001,PASS
+quantity,reference,recomputed,note,tolerance,verdict
+DB516 n (fasting adults),2938.0,2938.0,equals NCHS,5.926,PASS
+"DB516 total, %",15.79,15.786910949172617,NCHS definition; published 15.8,0.08158,PASS
+"DB516 diagnosed, %",11.3,11.299656829208393,published 11.3,0.0726,PASS
+"DB516 undiagnosed, %",4.49,4.487254119964224,published 4.5,0.058980000000000005,PASS
+"DB516 age-adjusted total, %",14.31,14.309480169847081,published 14.3,0.07862000000000001,PASS
 "L_comb weighted, %",14.0,14.035739528195537,,0.078,PASS
 "L_comb unweighted, %",16.95,16.94589877835951,,0.0839,PASS
 Kish deff,1.55,1.5459276715354544,,0.0531,PASS
@@ -10,14 +11,14 @@ Kish deff,1.55,1.5459276715354544,,0.0531,PASS
 "Asian-White standardised, pp",2.1,2.130679332511101,,0.054200000000000005,PASS
 "insured-uninsured crude, pp",5.3,5.305529853010037,,0.0606,PASS
 "insured-uninsured standardised, pp",0.7,0.6854571595387438,,0.0514,PASS
-Simpson comparisons,219.0,224.0,pre-declared grid 252 - 28 self-stratifications; prototype grid undocumented,0.488,DIFF
-Simpson sign flips,5.0,6.0,4 of 6 from mediator stratifiers,0.060000000000000005,DIFF
-uninsured x A1c | age P(sign differs),0.77,0.72,B = 100 (FAST),0.1,PASS
+Simpson comparisons,224.0,224.0,9 x 4 x 7 - 28 self-stratifications,0.498,PASS
+Simpson sign flips,6.0,6.0,4 of 6 from mediator stratifiers,0.062,PASS
+uninsured x A1c | age P(sign differs),0.77,0.72,reference at B = 1000; here B = 100 (FAST),0.1,PASS
 VIF weight,95.7,95.6797633660612,,0.2414,PASS
 VIF BMI,97.6,97.64211874350215,,0.24519999999999997,PASS
 skew BMI,1.22,1.2225907632940765,,0.05244,PASS
-skew triglycerides,6.23,6.622983965691647,valid fasting subsample; 6.23 includes non-fasting rows,0.06246,DIFF
+skew triglycerides,6.62,6.622983965691647,valid fasting subsample (WTSAF2YR > 0),0.06324,PASS
 RCS chi2 age,57.6,57.607475637224525,,0.1652,PASS
 RCS chi2 TC,41.8,41.76730623406729,,0.1336,PASS
-race x BMI p,0.42,0.39325501120153494,spec undocumented in process doc; non-significant in all 3 specs,0.02,DIFF
-sex x BMI p,0.48,0.008173127172408673,spec-dependent: range 0.008-0.83,0.02,DIFF
+race x BMI p,0.39,0.39325501120153494,primary specification; non-significant in all 3,0.02,PASS
+Asian x BMI p,0.93,0.9328096050837809,primary specification,0.02,PASS

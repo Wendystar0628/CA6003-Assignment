@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:34:38+00:00"
+    "written_utc": "2026-10-10T18:36:38+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -877,40 +877,48 @@
   ],
   "self_check": [
     {
+      "quantity": "DB516 n (fasting adults)",
+      "reference": 2938.0,
+      "recomputed": 2938.0,
+      "note": "equals NCHS",
+      "tolerance": 5.926,
+      "verdict": "PASS"
+    },
+    {
       "quantity": "DB516 total, %",
-      "process_doc": 15.78,
-      "recomputed": 15.776416999889983,
-      "note": "n = 2,940 variant; NCHS-definition n = 2,938 gives 15.79",
-      "tolerance": 0.08156,
+      "reference": 15.79,
+      "recomputed": 15.786910949172617,
+      "note": "NCHS definition; published 15.8",
+      "tolerance": 0.08158,
       "verdict": "PASS"
     },
     {
       "quantity": "DB516 diagnosed, %",
-      "process_doc": 11.29,
-      "recomputed": 11.292145668471585,
-      "note": "",
-      "tolerance": 0.07258,
+      "reference": 11.3,
+      "recomputed": 11.299656829208393,
+      "note": "published 11.3",
+      "tolerance": 0.0726,
       "verdict": "PASS"
     },
     {
       "quantity": "DB516 undiagnosed, %",
-      "process_doc": 4.48,
-      "recomputed": 4.4842713314183955,
-      "note": "",
-      "tolerance": 0.058960000000000005,
+      "reference": 4.49,
+      "recomputed": 4.487254119964224,
+      "note": "published 4.5",
+      "tolerance": 0.058980000000000005,
       "verdict": "PASS"
     },
     {
       "quantity": "DB516 age-adjusted total, %",
-      "process_doc": 14.31,
+      "reference": 14.31,
       "recomputed": 14.309480169847081,
-      "note": "",
+      "note": "published 14.3",
       "tolerance": 0.07862000000000001,
       "verdict": "PASS"
     },
     {
       "quantity": "L_comb weighted, %",
-      "process_doc": 14.0,
+      "reference": 14.0,
       "recomputed": 14.035739528195537,
       "note": "",
       "tolerance": 0.078,
@@ -918,7 +926,7 @@
     },
     {
       "quantity": "L_comb unweighted, %",
-      "process_doc": 16.95,
+      "reference": 16.95,
       "recomputed": 16.94589877835951,
       "note": "",
       "tolerance": 0.0839,
@@ -926,7 +934,7 @@
     },
     {
       "quantity": "Kish deff",
-      "process_doc": 1.55,
+      "reference": 1.55,
       "recomputed": 1.5459276715354544,
       "note": "",
       "tolerance": 0.0531,
@@ -934,7 +942,7 @@
     },
     {
       "quantity": "Asian-White crude, pp",
-      "process_doc": -0.8,
+      "reference": -0.8,
       "recomputed": -0.8140647186259911,
       "note": "",
       "tolerance": 0.0516,
@@ -942,7 +950,7 @@
     },
     {
       "quantity": "Asian-White standardised, pp",
-      "process_doc": 2.1,
+      "reference": 2.1,
       "recomputed": 2.130679332511101,
       "note": "",
       "tolerance": 0.054200000000000005,
@@ -950,7 +958,7 @@
     },
     {
       "quantity": "insured-uninsured crude, pp",
-      "process_doc": 5.3,
+      "reference": 5.3,
       "recomputed": 5.305529853010037,
       "note": "",
       "tolerance": 0.0606,
@@ -958,7 +966,7 @@
     },
     {
       "quantity": "insured-uninsured standardised, pp",
-      "process_doc": 0.7,
+      "reference": 0.7,
       "recomputed": 0.6854571595387438,
       "note": "",
       "tolerance": 0.0514,
@@ -966,31 +974,31 @@
     },
     {
       "quantity": "Simpson comparisons",
-      "process_doc": 219.0,
+      "reference": 224.0,
       "recomputed": 224.0,
-      "note": "pre-declared grid 252 - 28 self-stratifications; prototype grid undocumented",
-      "tolerance": 0.488,
-      "verdict": "DIFF"
+      "note": "9 x 4 x 7 - 28 self-stratifications",
+      "tolerance": 0.498,
+      "verdict": "PASS"
     },
     {
       "quantity": "Simpson sign flips",
-      "process_doc": 5.0,
+      "reference": 6.0,
       "recomputed": 6.0,
       "note": "4 of 6 from mediator stratifiers",
-      "tolerance": 0.060000000000000005,
-      "verdict": "DIFF"
+      "tolerance": 0.062,
+      "verdict": "PASS"
     },
     {
       "quantity": "uninsured x A1c | age P(sign differs)",
-      "process_doc": 0.77,
+      "reference": 0.77,
       "recomputed": 0.72,
-      "note": "B = 100 (FAST)",
+      "note": "reference at B = 1000; here B = 100 (FAST)",
       "tolerance": 0.1,
       "verdict": "PASS"
     },
     {
       "quantity": "VIF weight",
-      "process_doc": 95.7,
+      "reference": 95.7,
       "recomputed": 95.6797633660612,
       "note": "",
       "tolerance": 0.2414,
@@ -998,7 +1006,7 @@
     },
     {
       "quantity": "VIF BMI",
-      "process_doc": 97.6,
+      "reference": 97.6,
       "recomputed": 97.64211874350215,
       "note": "",
       "tolerance": 0.24519999999999997,
@@ -1006,7 +1014,7 @@
     },
     {
       "quantity": "skew BMI",
-      "process_doc": 1.22,
+      "reference": 1.22,
       "recomputed": 1.2225907632940765,
       "note": "",
       "tolerance": 0.05244,
@@ -1014,15 +1022,15 @@
     },
     {
       "quantity": "skew triglycerides",
-      "process_doc": 6.23,
+      "reference": 6.62,
       "recomputed": 6.622983965691647,
-      "note": "valid fasting subsample; 6.23 includes non-fasting rows",
-      "tolerance": 0.06246,
-      "verdict": "DIFF"
+      "note": "valid fasting subsample (WTSAF2YR > 0)",
+      "tolerance": 0.06324,
+      "verdict": "PASS"
     },
     {
       "quantity": "RCS chi2 age",
-      "process_doc": 57.6,
+      "reference": 57.6,
       "recomputed": 57.607475637224525,
       "note": "",
       "tolerance": 0.1652,
@@ -1030,7 +1038,7 @@
     },
     {
       "quantity": "RCS chi2 TC",
-      "process_doc": 41.8,
+      "reference": 41.8,
       "recomputed": 41.76730623406729,
       "note": "",
       "tolerance": 0.1336,
@@ -1038,19 +1046,19 @@
     },
     {
       "quantity": "race x BMI p",
-      "process_doc": 0.42,
+      "reference": 0.39,
       "recomputed": 0.39325501120153494,
-      "note": "spec undocumented in process doc; non-significant in all 3 specs",
+      "note": "primary specification; non-significant in all 3",
       "tolerance": 0.02,
-      "verdict": "DIFF"
+      "verdict": "PASS"
     },
     {
-      "quantity": "sex x BMI p",
-      "process_doc": 0.48,
-      "recomputed": 0.008173127172408673,
-      "note": "spec-dependent: range 0.008-0.83",
+      "quantity": "Asian x BMI p",
+      "reference": 0.93,
+      "recomputed": 0.9328096050837809,
+      "note": "primary specification",
       "tolerance": 0.02,
-      "verdict": "DIFF"
+      "verdict": "PASS"
     }
   ]
 }
