@@ -25,8 +25,8 @@ We then compare minimally vs systematically prepared data with the same model. K
 |---|---|
 | `docs/development_process.md` | End-to-end development process: stages S0–S12, feedback loops, freezes, roles, per-stage plans (Chinese) |
 | `docs/topic_brief.html` | Topic-selection brief shown to the team (bilingual) |
-| `data/nhanes_2021_2023/` | Data notes (`README.md`), `MANIFEST.sha256`, CDC `codebooks/`; `raw/` is created by the download script and not tracked |
-| `scripts/download_nhanes.py` | Downloads the 16 XPT files and codebooks from CDC and verifies hashes |
+| `data/nhanes_2021_2023/` | Raw XPT files (`raw/`, 16 files, ~13 MB), CDC `codebooks/`, data notes (`README.md`), `MANIFEST.sha256` |
+| `scripts/download_nhanes.py` | Verifies local files against `MANIFEST.sha256`; re-downloads from CDC with `--force` |
 | `profiling/` | First-pass profiling scripts and outputs |
 | `notebooks/` | Member notebooks and the final assembled notebook (to come) |
 | `src/` | Shared helpers: `nhanes_io.py`, `survey.py`, `prep.py`, `evalkit.py` (to come) |
@@ -38,13 +38,13 @@ We then compare minimally vs systematically prepared data with the same model. K
 python -m venv .venv
 .venv\Scripts\activate          # Windows; use `source .venv/bin/activate` on macOS/Linux
 pip install -r requirements.txt
-python scripts/download_nhanes.py
+python scripts/download_nhanes.py   # optional: verify hashes (data already included)
 python -I profiling/nhanes_deep.py data/nhanes_2021_2023/raw
 ```
 
 ## Data governance
 
-- Raw data are not redistributed in this repository; they are fetched from CDC, and file integrity is recorded in `MANIFEST.sha256`.
+- Raw data are the unmodified CDC public-use files (downloaded 2026-10-10), included for reproducibility; integrity is recorded in `MANIFEST.sha256` and the original source is https://wwwn.cdc.gov/nchs/nhanes/.
 - Use follows the [NCHS Data User Agreement](https://www.cdc.gov/nchs/policy/data-user-agreement.html): statistical analysis only, no re-identification, and no linkage to other individual-level data.
 - Course materials (brief, group list) are kept local only.
 

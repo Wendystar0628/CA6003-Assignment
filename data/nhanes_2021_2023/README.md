@@ -4,7 +4,7 @@
 - Source: CDC / NCHS, https://wwwn.cdc.gov/nchs/nhanes/ – files from `.../Public/2021/DataFiles/`
 - Use governed by the NCHS Data User Agreement (statistical use only, no re-identification)
 - Downloaded: 2026-10-10
-- `raw/` (not in git – run `python scripts/download_nhanes.py`; integrity checked against `MANIFEST.sha256`): 16 SAS XPT files – DEMO, GHB (HbA1c), GLU (fasting glucose), BMX (body measures), BPXO (blood pressure),
+- `raw/` (unmodified CDC files, integrity checked against `MANIFEST.sha256`; `python scripts/download_nhanes.py --force` re-downloads): 16 SAS XPT files – DEMO, GHB (HbA1c), GLU (fasting glucose), BMX (body measures), BPXO (blood pressure),
   TCHOL, HDL, TRIGLY (triglycerides/LDL), DIQ (diabetes questionnaire), BPQ, MCQ, INQ (income), HIQ (insurance),
   HUQ (healthcare access), SMQ (smoking), PAQ (physical activity). Join key: `SEQN`
 - `codebooks/`: matching CDC codebooks (.htm) – check value codes here before recoding

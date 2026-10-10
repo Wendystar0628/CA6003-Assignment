@@ -1,10 +1,8 @@
 # Course materials (copyrighted / contain personal data) – keep local only
 course/
 
-# Raw NHANES data – downloaded by scripts/download_nhanes.py, verified by MANIFEST.sha256
-data/nhanes_2021_2023/raw/
+# Intermediate data (raw NHANES XPT files ARE tracked; see data/nhanes_2021_2023/MANIFEST.sha256)
 data/interim/
-*.xpt
 *.part
 
 # Python / Jupyter

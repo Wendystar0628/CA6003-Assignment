@@ -1,7 +1,7 @@
 """Download the NHANES Aug 2021 – Aug 2023 public-use files used in this project.
 
-Raw data are not committed to git (data minimisation; the source is CDC/NCHS).
-Run from the repository root:
+The raw files are included in the repository; this script verifies them against
+MANIFEST.sha256 and can re-fetch them from CDC/NCHS. Run from the repository root:
 
     python scripts/download_nhanes.py            # download missing files, verify hashes
     python scripts/download_nhanes.py --force    # re-download everything
