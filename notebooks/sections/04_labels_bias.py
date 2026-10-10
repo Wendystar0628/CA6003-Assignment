@@ -264,6 +264,11 @@ assert int(bl.sum()) == 213 and int(d.loc[bl, "L_A1c"].sum()) == 36 and len(und)
 assert care_tab["n"].tolist() == [36, 104, 48]
 close(p_bl, 0.169, 0.001, "borderline A1c+ share")
 close(p_no, 0.025, 0.001, "DIQ010=2 A1c+ share")
+CT = care_tab.set_index("contact")
+t180 = CT.loc["blood test past 3 years (DIQ180=1)"]
+close(t180["w_est"], 0.625, 0.0015, "DIQ180 weighted share")
+print(f"population estimate (WTPH2YR): {pct(t180['w_est'])} of undiagnosed adults had a blood test in the past 3 years "
+      f"(KG {pct(t180['kg_low'])}-{pct(t180['kg_high'])}); unweighted sample share {pct(t180['share'])}")
 care_tab.to_csv(OUT / "undiagnosed_care_contact.csv", index=False)
 RES["undiagnosed_meaning"] = {"borderline_n": int(bl.sum()), "borderline_a1c_pos": int(d.loc[bl, "L_A1c"].sum()),
                               "borderline_a1c_share": p_bl, "no_a1c_share": p_no, "undiagnosed": len(und),
@@ -271,14 +276,16 @@ RES["undiagnosed_meaning"] = {"borderline_n": int(bl.sum()), "borderline_a1c_pos
 register("DR-S5-04", "label_semantics",
          "Most undiagnosed adults had contact with the health system: the gap is diagnosis/communication, not only access",
          "results/S5/undiagnosed_care_contact.csv; §5.3",
-         f"of 152 undiagnosed: 36 told borderline (24%), 104 blood-tested in past 3 y (68%), 48 told prediabetes",
+         f"undiagnosed adults blood-tested in past 3 y: {pct(t180['w_est'])} weighted (KG {pct(t180['kg_low'])}-{pct(t180['kg_high'])}; "
+         f"sample 104/152 = 68%); 36/152 told borderline; 48 told prediabetes",
          "Frame E-SCREEN positives as 'not diagnosed despite contact'; DIQ160/DIQ180 excluded as features (post-test information); borderline kept negative in L_comb and flagged",
          "Describe undiagnosed as 'no access to care'; use DIQ180 as a screening feature")
 
 # %% [markdown]
 # **So what.** Borderline respondents are almost seven times as likely to be HbA1c-positive as those answering
-# "no" (16.9 % vs 2.5 %). Of the 152 undiagnosed, 104 (68 %) had a blood-sugar test in the past three years,
-# 36 (24 %) were told they were borderline and 48 were told they had prediabetes. "Undiagnosed" is therefore
+# "no" (16.9 % vs 2.5 %). An estimated 62.5 % (KG 53.5–70.9 %, WTPH2YR) of undiagnosed adults in the population
+# had a blood-sugar test in the past three years (in the sample 104 of 152, 68 %); 36 of the 152 (24 %) were told
+# they were borderline and 48 were told they had prediabetes. "Undiagnosed" is therefore
 # mostly a diagnosis and communication gap, not a lack of any contact. This is also why DIQ160 and DIQ180 are
 # excluded as features: they record the result of a glucose test, which the screening use case comes before.
 
