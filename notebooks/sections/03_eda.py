@@ -563,6 +563,230 @@ reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.
 # must control for age before attributing differences to access to care.
 
 # %% [markdown]
+# ## 4.7 Simpson scan
+# **Why.** §4.5–4.6 examined two contrasts chosen in advance. A systematic scan asks the general
+# question: across all exposure × outcome × stratifier combinations, how often does stratification
+# change the *sign* of a weighted difference (Simpson's paradox) or shrink it by more than half?
+# The scan is exploratory and suffers from multiple comparisons, so (a) every row carries a
+# jackknife CI, (b) sign flips get a design-based bootstrap probability, and (c) only flips that the
+# DAG (§4.8) supports as de-confounding – stratifier is a confounder, not a mediator – may become
+# claims.
+#
+# Grid (fixed before looking at the results): 9 binary exposures × 4 outcomes × 7 stratifiers, minus
+# the combinations where the stratifier *is* the exposure variable. Difference = exposure − reference,
+# WTPH2YR; standardised difference uses the pooled weighted stratum shares of the comparison domain
+# (internal standard). Flip: crude and standardised differences of opposite sign, both |Δ| > 1 pp.
+# Attenuation: same sign, |crude| > 1 pp and |standardised| < ½ |crude|.
+
+# %%
+r3 = coh.RIDRETH3
+EXPOSURES = {   # name: (indicator with NaN outside the comparison, reference description)
+    "female": (coh.sex.map({"Female": 1.0, "Male": 0.0}), "male"),
+    "asian": (pd.Series(np.select([r3 == 6, r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
+    "black": (pd.Series(np.select([r3 == 4, r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
+    "hispanic": (pd.Series(np.select([r3.isin([1, 2]), r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
+    "uninsured": (coh.HIQ011.map({2: 1.0, 1: 0.0}), "insured"),
+    "no_usual_care": (coh.HUQ030.map({2: 1.0, 1: 0.0, 3: 0.0}), "has usual place"),
+    "low_income": (pd.Series(np.where(coh.INDFMPIR.isna(), np.nan, (coh.INDFMPIR < 1.3).astype(float))), "PIR >= 1.3"),
+    "ever_smoker": (coh.SMQ020.map({1: 1.0, 2: 0.0}), "never smoker"),
+    "low_education": (coh.DMDEDUC2.map({1: 1.0, 2: 1.0, 3: 0.0, 4: 0.0, 5: 0.0}), "high school or more"),
+}
+OUTCOMES = {"L_comb": coh.L_comb.astype(float), "L_A1c": coh.L_A1c.astype(float),
+            "L_self": coh.L_self.astype(float), "undiagnosed (E-SCREEN)": coh.y_escreen.astype(float)}
+_cut = lambda x, b, l: pd.cut(x, b, labels=l, right=False).astype(object)
+STRATIFIERS = {
+    "age": coh.age3.astype(object),
+    "sex": coh.sex.astype(object),
+    "race": coh.RIDRETH3.map({1: "Hispanic", 2: "Hispanic", 3: "White", 4: "Black", 6: "Asian", 7: "Other"}),
+    "income": _cut(coh.INDFMPIR, [0, 1.3, 3.5, 99], ["<1.3", "1.3-3.5", ">=3.5"]),
+    "bmi": _cut(coh.BMXBMI, [0, 25, 30, 999], ["<25", "25-30", ">=30"]),
+    "insurance": coh.insurance.astype(object),
+    "education": coh.DMDEDUC2.map({1: "<HS", 2: "<HS", 3: "HS", 4: ">HS", 5: ">HS"}),
+}
+SELF = {"female": "sex", "asian": "race", "black": "race", "hispanic": "race", "uninsured": "insurance",
+        "low_income": "income", "low_education": "education"}
+RACE_EXP = {"asian", "black", "hispanic"}
+SES_EXP = {"uninsured", "no_usual_care", "low_income", "low_education"}
+
+
+def stratifier_role(exposure, strat):
+    """DAG role of the stratifier for this exposure (see §4.8)."""
+    if strat == "bmi":
+        return "mediator"                       # exposure -> adiposity -> BMI -> diabetes
+    if strat == "age":
+        return "confounder"                     # age -> exposure (Medicare, cohort, migration) and age -> diabetes
+    if exposure in RACE_EXP:
+        return "confounder" if strat == "sex" else "mediator"      # race -> SES/insurance -> diabetes
+    if exposure in SES_EXP:
+        return "confounder" if strat in ("sex", "race") else "ambiguous"   # SES siblings
+    if exposure == "female":
+        return "ambiguous"
+    return "confounder" if strat in ("sex", "race", "income", "education", "insurance") else "ambiguous"
+
+
+def scan_one(e, y, s, W):
+    """Crude and internally standardised differences for every column of the weight matrix W."""
+    ok = ~np.isnan(e) & ~np.isnan(y) & pd.notna(s) & (W[:, 0] > 0)
+    levels = sorted(set(s[ok]))
+    cols = []
+    for g in (0.0, 1.0):
+        for lv in levels:
+            m = ok & (e == g) & (s == lv)
+            cols += [m, m * np.nan_to_num(y)]
+    M = np.column_stack(cols).astype(float)
+    A = W.T @ M                                      # R x (2 groups * k levels * 2)
+    k = len(levels)
+    den = A[:, 0::2].reshape(-1, 2, k)
+    num = A[:, 1::2].reshape(-1, 2, k)
+    crude = num.sum(2) / den.sum(2)                  # R x 2
+    share = den.sum(1) / den.sum((1, 2))[:, None]    # pooled stratum shares, R x k
+    with np.errstate(invalid="ignore", divide="ignore"):
+        rate = num / den
+    std = (rate * share[:, None, :]).sum(2)
+    min_cell = int(min(((ok & (e == g) & (s == lv)).sum()) for g in (0.0, 1.0) for lv in levels))
+    return 100 * (crude[:, 1] - crude[:, 0]), 100 * (std[:, 1] - std[:, 0]), min_cell, int(ok.sum())
+
+
+W_full = coh[C.WEIGHT_PHLEB].to_numpy(float)
+W_jk, jk_factor = S.replicate_weights(coh, C.WEIGHT_PHLEB)
+W_all = np.column_stack([W_full, W_jk])
+t15 = stats.t.ppf(0.975, DF_DESIGN)
+rows = []
+for en, (ev, ref) in EXPOSURES.items():
+    ev = ev.to_numpy(float)
+    for on, yv in OUTCOMES.items():
+        yv = yv.to_numpy(float)
+        for sn, sv in STRATIFIERS.items():
+            if SELF.get(en) == sn:
+                continue
+            cr, sd, min_cell, n = scan_one(ev, yv, sv.to_numpy(object), W_all)
+            se_c = np.sqrt(np.sum(jk_factor * (cr[1:] - cr[0]) ** 2))
+            se_s = np.sqrt(np.sum(jk_factor * (sd[1:] - sd[0]) ** 2))
+            rows.append({"exposure": en, "reference": ref, "outcome": on, "stratifier": sn,
+                         "role": stratifier_role(en, sn), "n": n, "min_cell": min_cell,
+                         "crude": cr[0], "crude_low": cr[0] - t15 * se_c, "crude_high": cr[0] + t15 * se_c,
+                         "std": sd[0], "std_low": sd[0] - t15 * se_s, "std_high": sd[0] + t15 * se_s})
+SCAN = pd.DataFrame(rows)
+SCAN["flip"] = (np.sign(SCAN.crude) != np.sign(SCAN["std"])) & (SCAN.crude.abs() > 1) & (SCAN["std"].abs() > 1)
+SCAN["attenuation_50"] = (np.sign(SCAN.crude) == np.sign(SCAN["std"])) & (SCAN.crude.abs() > 1) & \
+                         (SCAN["std"].abs() < 0.5 * SCAN.crude.abs())
+SCAN["any_flip"] = np.sign(SCAN.crude) != np.sign(SCAN["std"])
+n_grid = len(EXPOSURES) * len(OUTCOMES) * len(STRATIFIERS)
+n_self = len(OUTCOMES) * len(SELF)
+print(f"grid {len(EXPOSURES)} x {len(OUTCOMES)} x {len(STRATIFIERS)} = {n_grid}; minus {n_self} self-stratifications "
+      f"-> {len(SCAN)} comparisons (smallest exposure x stratum cell: {SCAN.min_cell.min()})")
+print(f"sign flips (both |d| > 1 pp): {int(SCAN.flip.sum())}; any sign change: {int(SCAN.any_flip.sum())}; "
+      f"attenuation > 50 %: {int(SCAN.attenuation_50.sum())}")
+print("flips by stratifier role:", SCAN[SCAN.flip].role.value_counts().to_dict())
+
+# %% [markdown]
+# **Design-based bootstrap of the flips.** A flip of a few points can be produced by sampling noise
+# alone. For every flagged flip – and for the pre-specified Asian × `L_comb` × age contrast – we
+# repeat the scan statistic on Rao–Wu rescaled bootstrap replicates (PSU resampling within strata with
+# *m_h = n_h − 1*, the standard choice for two-PSU designs) and report P(crude and standardised signs
+# differ) and P(standardised sign equals the point estimate's sign).
+
+# %%
+B = C.N_BOOT
+W_boot = S.rao_wu_weights(coh, C.WEIGHT_PHLEB, B, seed=int(RNG_SEEDS[0].generate_state(1)[0]))
+probe = SCAN[SCAN.flip | ((SCAN.exposure == "asian") & (SCAN.outcome == "L_comb") & (SCAN.stratifier == "age"))]
+boot_rows = []
+for idx, r in probe.iterrows():
+    ev = EXPOSURES[r.exposure][0].to_numpy(float)
+    yv = OUTCOMES[r.outcome].to_numpy(float)
+    sv = STRATIFIERS[r.stratifier].to_numpy(object)
+    cr, sd, _, _ = scan_one(ev, yv, sv, np.column_stack([W_full, W_boot]))
+    cr_b, sd_b = cr[1:], sd[1:]
+    boot_rows.append({"idx": idx, "p_sign_differs": float(np.mean(np.sign(cr_b) != np.sign(sd_b))),
+                      "p_std_sign_as_point": float(np.mean(np.sign(sd_b) == np.sign(r["std"]))),
+                      "p_flip_rule": float(np.mean((np.sign(cr_b) != np.sign(sd_b)) & (np.abs(cr_b) > 1) & (np.abs(sd_b) > 1)))})
+boot = pd.DataFrame(boot_rows).set_index("idx")
+SCAN = SCAN.join(boot)
+SCAN["dag_supported"] = SCAN.flip & (SCAN.role == "confounder")
+SCAN.to_csv(S4_DIR / "simpson_scan.csv", index=False)
+cols = ["exposure", "outcome", "stratifier", "role", "crude", "crude_low", "crude_high", "std", "std_low", "std_high",
+        "p_sign_differs", "p_std_sign_as_point", "dag_supported"]
+print(f"Rao-Wu bootstrap replicates: B = {B} ({C.NB_MODE} mode)")
+print(SCAN.loc[probe.index, cols].round(2).to_string(index=False))
+print("\nlargest attenuations (|crude| > 1 pp):")
+print(SCAN[SCAN.attenuation_50].assign(ratio=lambda d: d["std"] / d.crude).sort_values("ratio")
+      [["exposure", "outcome", "stratifier", "role", "crude", "std"]].round(2).head(12).to_string(index=False))
+
+ex_ins = SCAN.query("exposure == 'uninsured' and outcome == 'L_A1c' and stratifier == 'age'").iloc[0]
+ex_as = SCAN.query("exposure == 'asian' and outcome == 'L_comb' and stratifier == 'age'").iloc[0]
+OUT["simpson"] = {"n_comparisons": len(SCAN), "grid": [len(EXPOSURES), len(OUTCOMES), len(STRATIFIERS)],
+                  "n_flips": int(SCAN.flip.sum()), "n_any_sign_change": int(SCAN.any_flip.sum()),
+                  "n_attenuation_50": int(SCAN.attenuation_50.sum()), "n_boot": B, "bootstrap": "Rao-Wu rescaled, m_h = n_h - 1",
+                  "flips": SCAN[SCAN.flip][cols].to_dict("records"),
+                  "uninsured_A1c_age": {k: ex_ins[k] for k in ["crude", "std", "p_sign_differs", "p_std_sign_as_point"]},
+                  "asian_Lcomb_age": {k: ex_as[k] for k in ["crude", "std", "p_sign_differs", "p_std_sign_as_point"]},
+                  "n_dag_supported_flips": int(SCAN.dag_supported.sum())}
+
+# %%
+fig, ax = plt.subplots(figsize=(7.5, 6.5))
+role_col = {"confounder": C.OKABE_ITO["blue"], "mediator": C.OKABE_ITO["vermillion"], "ambiguous": C.OKABE_ITO["grey"]}
+for role, g in SCAN.groupby("role"):
+    ax.scatter(g.crude, g["std"], s=14, alpha=0.6, color=role_col[role], label=f"stratifier = {role} ({len(g)})")
+fl = SCAN[SCAN.flip]
+ax.scatter(fl.crude, fl["std"], s=90, facecolors="none", edgecolors="k", lw=1.2, label=f"sign flip, |Δ| > 1 pp ({len(fl)})")
+key = []
+for i, r in enumerate(fl.itertuples(), 1):
+    ax.annotate(str(i), (r.crude, r.std), fontsize=8, fontweight="bold", xytext=(-9, 5), textcoords="offset points")
+    key.append(f"{i}: {r.exposure} × {r.outcome.split(' ')[0]}, by {r.stratifier} ({r.role})")
+ax.text(0.98, 0.03, chr(10).join(key), transform=ax.transAxes, ha="right", va="bottom", fontsize=8, multialignment="left",
+        bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+lim = np.nanmax(np.abs(SCAN[["crude", "std"]].to_numpy())) * 1.05
+ax.plot([-lim, lim], [-lim, lim], color="k", lw=0.6, ls="--")
+ax.axhline(0, color="k", lw=0.6); ax.axvline(0, color="k", lw=0.6)
+ax.fill_between([0, lim], -lim, 0, color=C.OKABE_ITO["yellow"], alpha=0.15)
+ax.fill_between([-lim, 0], 0, lim, color=C.OKABE_ITO["yellow"], alpha=0.15)
+ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
+ax.set_xlabel("Crude difference, pp"); ax.set_ylabel("Stratum-standardised difference, pp")
+ax.set_title(f"Simpson scan: {len(SCAN)} comparisons, {len(fl)} sign flips (shaded quadrants)")
+ax.legend(fontsize=8, loc="upper left")
+fig.tight_layout()
+plots.savefig(fig, "S4_simpson_scan",
+              caption="Crude vs stratum-standardised weighted differences for every exposure x outcome x stratifier "
+                      "combination; shaded quadrants = sign change; circled = flips with both |difference| > 1 pp. "
+                      "Colour = DAG role of the stratifier.")
+plt.show()
+
+reg("DR-S4-06", "interpretation",
+    f"Simpson scan: {len(SCAN)} comparisons, {int(SCAN.flip.sum())} sign flips, {int(SCAN.attenuation_50.sum())} attenuations > 50%; "
+    f"{int((SCAN.flip & (SCAN.role == 'mediator')).sum())} flips come from mediator stratifiers (BMI, education).",
+    "results/S4/simpson_scan.csv; figures/S4_simpson_scan.png",
+    f"uninsured x L_A1c | age {ex_ins.crude:+.1f} -> {ex_ins['std']:+.1f} pp, P(sign differs) = {ex_ins.p_sign_differs:.2f}; "
+    f"Asian x L_comb | age P(sign differs) = {ex_as.p_sign_differs:.2f} (B = {B})",
+    "Treat the scan as exploratory; promote only DAG-supported (confounder-stratified) flips with CIs; never read BMI-stratified "
+    "'flips' as de-confounding (BMI is a mediator / mismeasured proxy of adiposity).",
+    "Reporting all flips as findings (multiple comparisons, mediator conditioning); hiding the scan.",
+    check_note=f"process doc quotes 219 comparisons / 5 flips; the pre-declared grid here gives {len(SCAN)} (= 252 - 28 self-stratifications)")
+
+# %% [markdown]
+# **So what.** Sign flips are rare (a handful out of more than two hundred comparisons) and small:
+# every flipped standardised difference has a jackknife CI that includes zero, and the bootstrap
+# puts the probability that crude and standardised signs really differ well short of certainty. Two
+# kinds of flips must be read differently:
+#
+# * **Age-stratified flips** (uninsured × `L_A1c`, Asian × `L_self`) are DAG-supported – age is a
+#   confounder – and repeat the §4.5–4.6 message: younger groups look healthier until age is
+#   removed. They remain exploratory because their intervals cover zero.
+# * **BMI- and education-stratified flips** (Asian × `L_comb`/`L_A1c` | BMI, Hispanic | education)
+#   are *mediator artefacts*. BMI sits on the path race → adiposity → BMI → diabetes, so comparing
+#   Asian and White adults "at the same BMI" answers a different question – and because BMI
+#   under-states adiposity in Asian adults (S5), equal-BMI strata are not equal-risk strata. This is
+#   the measurement-bias finding of S5 seen from another angle, not de-confounding.
+#
+# Attenuations of more than half outnumber the flips. The largest is uninsured × `L_comb` | age
+# (about −5.3 → −0.1 pp): the same age-confounding mechanism as §4.6, now visible because uninsured
+# adults are younger. Most other attenuations involve SES "siblings" (income, education), which
+# partly measure the same construct and therefore also absorb each other. The process document's
+# "219 comparisons / 5 flips" came from an earlier, undocumented prototype grid; the pre-declared
+# grid above gives 224 comparisons, and its counts are reported as they are. The two quoted bootstrap
+# examples agree with that prototype (uninsured × `L_A1c` | age about −2.8 → +1.1 pp with a sign-change
+# probability around 0.7–0.8; Asian × `L_comb` | age close to a coin flip).
+
+# %% [markdown]
 # ## Save results and register
 
 # %%

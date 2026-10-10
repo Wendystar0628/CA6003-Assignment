@@ -1,0 +1,1 @@
+Crude vs stratum-standardised weighted differences for every exposure x outcome x stratifier combination; shaded quadrants = sign change; circled = flips with both |difference| > 1 pp. Colour = DAG role of the stratifier.

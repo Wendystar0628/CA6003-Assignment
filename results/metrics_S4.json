@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:07:26+00:00"
+    "written_utc": "2026-10-10T18:09:49+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -192,5 +192,123 @@
         }
       ]
     }
+  },
+  "simpson": {
+    "n_comparisons": 224,
+    "grid": [
+      9,
+      4,
+      7
+    ],
+    "n_flips": 6,
+    "n_any_sign_change": 12,
+    "n_attenuation_50": 10,
+    "n_boot": 100,
+    "bootstrap": "Rao-Wu rescaled, m_h = n_h - 1",
+    "flips": [
+      {
+        "exposure": "asian",
+        "outcome": "L_comb",
+        "stratifier": "bmi",
+        "role": "mediator",
+        "crude": -1.3200783650289718,
+        "crude_low": -5.497023829442777,
+        "crude_high": 2.856867099384833,
+        "std": 3.405171995094272,
+        "std_low": -3.610612961174767,
+        "std_high": 10.420956951363312,
+        "p_sign_differs": 0.52,
+        "p_std_sign_as_point": 0.78,
+        "dag_supported": false
+      },
+      {
+        "exposure": "asian",
+        "outcome": "L_A1c",
+        "stratifier": "bmi",
+        "role": "mediator",
+        "crude": -1.272537220341248,
+        "crude_low": -3.824280838047244,
+        "crude_high": 1.2792063973647483,
+        "std": 2.3787321421785466,
+        "std_low": -1.411547886804943,
+        "std_high": 6.169012171162036,
+        "p_sign_differs": 0.75,
+        "p_std_sign_as_point": 0.89,
+        "dag_supported": false
+      },
+      {
+        "exposure": "asian",
+        "outcome": "L_self",
+        "stratifier": "age",
+        "role": "confounder",
+        "crude": -2.0118225004004078,
+        "crude_low": -6.371311778618456,
+        "crude_high": 2.3476667778176408,
+        "std": 1.4378105595735116,
+        "std_low": -3.3569747266534673,
+        "std_high": 6.232595845800491,
+        "p_sign_differs": 0.45,
+        "p_std_sign_as_point": 0.65,
+        "dag_supported": true
+      },
+      {
+        "exposure": "hispanic",
+        "outcome": "L_comb",
+        "stratifier": "education",
+        "role": "mediator",
+        "crude": 2.0984280758543026,
+        "crude_low": -3.472284948904746,
+        "crude_high": 7.669141100613351,
+        "std": -1.1806508417722448,
+        "std_low": -6.742298031737934,
+        "std_high": 4.380996348193444,
+        "p_sign_differs": 0.48,
+        "p_std_sign_as_point": 0.71,
+        "dag_supported": false
+      },
+      {
+        "exposure": "hispanic",
+        "outcome": "L_self",
+        "stratifier": "education",
+        "role": "mediator",
+        "crude": 1.1166247540678977,
+        "crude_low": -3.2731409648384115,
+        "crude_high": 5.506390472974207,
+        "std": -1.464417807542974,
+        "std_low": -5.5976853305291,
+        "std_high": 2.6688497154431525,
+        "p_sign_differs": 0.5,
+        "p_std_sign_as_point": 0.83,
+        "dag_supported": false
+      },
+      {
+        "exposure": "uninsured",
+        "outcome": "L_A1c",
+        "stratifier": "age",
+        "role": "confounder",
+        "crude": -2.818674102542504,
+        "crude_low": -5.846605462108298,
+        "crude_high": 0.2092572570232898,
+        "std": 1.1081454072812496,
+        "std_low": -1.9245369866285817,
+        "std_high": 4.140827801191081,
+        "p_sign_differs": 0.72,
+        "p_std_sign_as_point": 0.75,
+        "dag_supported": true
+      }
+    ],
+    "uninsured_A1c_age": {
+      "crude": -2.818674102542504,
+      "std": 1.1081454072812496,
+      "p_sign_differs": 0.72,
+      "p_std_sign_as_point": 0.75
+    },
+    "asian_Lcomb_age": {
+      "crude": -0.8140647186259884,
+      "std": 3.270297886320675,
+      "p_sign_differs": 0.56,
+      "p_std_sign_as_point": 0.88
+    },
+    "n_dag_supported_flips": 2
   }
 }
