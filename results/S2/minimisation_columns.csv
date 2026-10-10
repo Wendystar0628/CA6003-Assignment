@@ -1,0 +1,176 @@
+file,var,decision,use_tier,role,reason
+DEMO_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+DEMO_L,SDDSRVYR,drop,excluded,excluded,constant cycle identifier (12)
+DEMO_L,RIDSTATR,keep,core,cohort_filter,cohort_filter: cohort filter (interview + MEC exam)
+DEMO_L,RIAGENDR,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+DEMO_L,RIDAGEYR,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+DEMO_L,RIDAGEMN,drop,excluded,excluded,child-only item (age in months)
+DEMO_L,RIDRETH1,drop,excluded,excluded,superseded by RIDRETH3 (adds NH Asian)
+DEMO_L,RIDRETH3,keep,core,audit,audit: excluded from models by design (S1 §3): stratification / fairness variable only
+DEMO_L,RIDEXMON,drop,excluded,excluded,exam season (Nov-Apr / May-Oct): not used
+DEMO_L,RIDEXAGM,drop,excluded,excluded,child-only item (age in months at exam)
+DEMO_L,DMQMILIZ,drop,excluded,excluded,military service: not needed (minimisation)
+DEMO_L,DMDBORN4,drop,excluded,excluded,country of birth: not needed; quasi-identifier (minimisation)
+DEMO_L,DMDYRUSR,drop,excluded,excluded,years in the US: not needed; quasi-identifier (minimisation)
+DEMO_L,DMDEDUC2,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+DEMO_L,DMDMARTZ,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+DEMO_L,RIDEXPRG,keep,core,cohort_filter,cohort_filter: cohort filter (pregnancy)
+DEMO_L,DMDHHSIZ,drop,excluded,excluded,"household size (top-coded 7): not needed, PIR already accounts for household size"
+DEMO_L,DMDHRGND,drop,excluded,excluded,"household reference person attribute, not the participant"
+DEMO_L,DMDHRAGZ,drop,excluded,excluded,"household reference person attribute, not the participant"
+DEMO_L,DMDHREDZ,drop,excluded,excluded,"household reference person attribute, not the participant"
+DEMO_L,DMDHRMAZ,drop,excluded,excluded,"household reference person attribute, not the participant"
+DEMO_L,DMDHSEDZ,drop,excluded,excluded,"spouse attribute, not the participant"
+DEMO_L,WTINT2YR,keep,core,weight,weight: survey weight
+DEMO_L,WTMEC2YR,keep,core,weight,weight: survey weight
+DEMO_L,SDMVSTRA,keep,core,design,design: survey design variable
+DEMO_L,SDMVPSU,keep,core,design,design: survey design variable
+DEMO_L,INDFMPIR,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+GHB_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+GHB_L,WTPH2YR,keep,core,weight,weight: survey weight
+GHB_L,LBXGH,keep,core,label,label: diagnostic criterion: defines the target L_A1c / L_comb (HbA1c >= 6.5%)
+GLU_L,SEQN,keep,side_analysis,id,"id: respondent identifier, join key only"
+GLU_L,WTSAF2YR,keep,side_analysis,weight,weight: survey weight
+GLU_L,LBXGLU,keep,side_analysis,leak,leak: diagnostic criterion (fasting plasma glucose >= 126 mg/dL)
+GLU_L,LBDGLUSI,drop,excluded,excluded,SI-unit duplicate of LBXGLU
+BMX_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+BMX_L,BMDSTATS,drop,excluded,excluded,exam status code: not used
+BMX_L,BMXWT,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMIWT,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXRECUM,drop,excluded,excluded,infant-only measure (recumbent length)
+BMX_L,BMIRECUM,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXHEAD,drop,excluded,excluded,infant-only measure (head circumference)
+BMX_L,BMIHEAD,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXHT,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMIHT,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXBMI,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMDBMIC,drop,excluded,excluded,child-only BMI category (2-19 years)
+BMX_L,BMXLEG,drop,excluded,excluded,not needed (minimisation)
+BMX_L,BMILEG,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXARML,drop,excluded,excluded,not needed (minimisation)
+BMX_L,BMIARML,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXARMC,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMIARMC,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXWAIST,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMIWAIST,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BMX_L,BMXHIP,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BMX_L,BMIHIP,drop,excluded,excluded,measurement comment code (could not obtain etc.): not needed
+BPXO_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+BPXO_L,BPAOARM,drop,excluded,excluded,protocol metadata (arm used)
+BPXO_L,BPAOCSZ,drop,excluded,excluded,protocol metadata (cuff size)
+BPXO_L,BPXOSY1,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXODI1,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXOSY2,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXODI2,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXOSY3,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXODI3,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXOPLS1,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXOPLS2,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+BPXO_L,BPXOPLS3,keep,core,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+TCHOL_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+TCHOL_L,WTPH2YR,drop,excluded,excluded,duplicate of GHB_L.WTPH2YR (identical values on common SEQN); special codes: 0=No blood sample provided
+TCHOL_L,LBXTC,keep,core,feature,feature: same-visit non-glycaemic lipid panel; allowed in Tier 2 only (S1 rule)
+TCHOL_L,LBDTCSI,drop,excluded,excluded,SI-unit duplicate of LBXTC
+HDL_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+HDL_L,WTPH2YR,drop,excluded,excluded,duplicate of GHB_L.WTPH2YR (identical values on common SEQN); special codes: 0=No blood sample provided
+HDL_L,LBDHDD,keep,core,feature,feature: same-visit non-glycaemic lipid panel; allowed in Tier 2 only (S1 rule)
+HDL_L,LBDHDDSI,drop,excluded,excluded,SI-unit duplicate of LBDHDD
+TRIGLY_L,SEQN,keep,side_analysis,id,"id: respondent identifier, join key only"
+TRIGLY_L,WTSAF2YR,drop,excluded,excluded,duplicate of GLU_L.WTSAF2YR (identical values on common SEQN); special codes: 0=No Lab Result or Not Fasting for 8 to <24 hours
+TRIGLY_L,LBXTLG,keep,side_analysis,side,side: fasting subsample only (about half the cohort missing by design); not in the T2 list
+TRIGLY_L,LBDTRSI,drop,excluded,excluded,SI-unit duplicate of LBXTLG
+TRIGLY_L,LBDLDL,keep,side_analysis,side,"side: fasting subsample only; Friedewald-derived from TC, HDL and TG (structural redundancy)"
+TRIGLY_L,LBDLDLSI,drop,excluded,excluded,SI-unit duplicate of LBDLDL
+TRIGLY_L,LBDLDLM,drop,excluded,excluded,alternative LDL equation (Martin-Hopkins): not needed
+TRIGLY_L,LBDLDMSI,drop,excluded,excluded,SI-unit duplicate
+TRIGLY_L,LBDLDLN,drop,excluded,excluded,alternative LDL equation (NIH): not needed
+TRIGLY_L,LBDLDNSI,drop,excluded,excluded,SI-unit duplicate
+DIQ_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+DIQ_L,DIQ010,keep,core,label,label: defines the target (L_self / L_comb)
+DIQ_L,DID040,keep,core,leak,leak: consequence of diagnosis (age at diagnosis)
+DIQ_L,DIQ160,keep,core,leak,leak: result of a prior glycaemic test (told prediabetes)
+DIQ_L,DIQ180,keep,core,leak,leak: prior blood-glucose testing in last 3 years: care-contact trace of glycaemic testing
+DIQ_L,DIQ050,keep,core,leak,leak: treatment = consequence of diagnosis (insulin)
+DIQ_L,DID060,keep,core,leak,leak: consequence of diagnosis (insulin duration)
+DIQ_L,DIQ060U,keep,core,leak,leak: consequence of diagnosis (unit of DID060)
+DIQ_L,DIQ070,keep,core,leak,leak: treatment = consequence of diagnosis or prediabetes (oral medication)
+BPQ_L,SEQN,keep,recommended,id,"id: respondent identifier, join key only"
+BPQ_L,BPQ020,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target; care-contact trace (prior BP/cholesterol check) -> dropped in the T1-minus-care arm"
+BPQ_L,BPQ030,drop,excluded,excluded,follow-up of BPQ020 (told twice): not needed
+BPQ_L,BPQ150,drop,excluded,excluded,antihypertensive treatment item: not needed
+BPQ_L,BPQ080,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target; care-contact trace (prior BP/cholesterol check) -> dropped in the T1-minus-care arm"
+BPQ_L,BPQ101D,drop,excluded,excluded,cholesterol medication: treatment item partly downstream of diabetes care (statins recommended for diabetics)
+MCQ_L,SEQN,keep,optional,id,"id: respondent identifier, join key only"
+MCQ_L,MCQ010,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ035,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ040,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ050,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,AGQ030,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ053,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ149,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ160A,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ195,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ160B,keep,optional,optional,optional: passes the timing rule but outside the frozen T1 list; prior-diagnosis history (care-contact trace)
+MCQ_L,MCQ160C,keep,optional,optional,optional: passes the timing rule but outside the frozen T1 list; prior-diagnosis history (care-contact trace)
+MCQ_L,MCQ160D,keep,optional,optional,optional: passes the timing rule but outside the frozen T1 list; prior-diagnosis history (care-contact trace)
+MCQ_L,MCQ160E,keep,optional,optional,optional: passes the timing rule but outside the frozen T1 list; prior-diagnosis history (care-contact trace)
+MCQ_L,MCQ160F,keep,optional,optional,optional: passes the timing rule but outside the frozen T1 list; prior-diagnosis history (care-contact trace)
+MCQ_L,MCQ160M,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ170M,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ160P,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ160L,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ170L,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ500,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510A,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510B,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510C,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510D,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510E,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ510F,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ550,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ560,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ220,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ230A,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ230B,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ230C,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,MCQ230D,drop,excluded,excluded,unrelated MCQ item (minimisation)
+MCQ_L,OSQ230,drop,excluded,excluded,unrelated MCQ item (minimisation)
+INQ_L,SEQN,keep,redundancy_demo,id,"id: respondent identifier, join key only"
+INQ_L,INDFMMPI,keep,redundancy_demo,redundancy,redundancy: redundant with INDFMPIR (monthly vs annual poverty ratio); redundancy demo only
+INQ_L,INDFMMPC,keep,redundancy_demo,redundancy,redundancy: categorised version of INDFMMPI; redundancy demo only
+INQ_L,INQ300,drop,excluded,excluded,"family savings: not needed (sensitive, minimisation)"
+INQ_L,IND310,drop,excluded,excluded,"family assets: not needed (sensitive, minimisation)"
+HIQ_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+HIQ_L,HIQ011,keep,core,audit,audit: excluded from models by design (S1 §3): access-to-care audit / stratification variable
+HIQ_L,HIQ032A,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032B,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032C,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032D,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032E,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032F,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032H,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ032I,drop,excluded,excluded,insurance type: HIQ011 carries the access signal (minimisation)
+HIQ_L,HIQ210,drop,excluded,excluded,time without insurance: HIQ011 carries the access signal
+HUQ_L,SEQN,keep,core,id,"id: respondent identifier, join key only"
+HUQ_L,HUQ010,drop,excluded,excluded,self-rated general health: partly downstream of diagnosis; not needed
+HUQ_L,HUQ030,keep,core,audit,audit: excluded from models by design (S1 §3): access-to-care audit / stratification variable
+HUQ_L,HUQ042,drop,excluded,excluded,type of usual place: not needed
+HUQ_L,HUQ055,drop,excluded,excluded,telehealth use: not needed
+HUQ_L,HUQ090,drop,excluded,excluded,"mental-health visit: not needed (sensitive, minimisation)"
+SMQ_L,SEQN,keep,recommended,id,"id: respondent identifier, join key only"
+SMQ_L,SMQ020,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+SMQ_L,SMQ040,drop,excluded,excluded,current smoking detail beyond SMQ020: not needed
+SMQ_L,SMD641,drop,excluded,excluded,smoking detail: not needed
+SMQ_L,SMD650,drop,excluded,excluded,smoking detail: not needed; special codes: 1=1 cigarette or less
+SMQ_L,SMD100MN,drop,excluded,excluded,cigarette brand detail: not needed
+SMQ_L,SMQ621,drop,excluded,excluded,youth smoking item: not needed
+SMQ_L,SMD630,drop,excluded,excluded,age started smoking: not needed; special codes: 6=6 years or less
+SMQ_L,SMAQUEX2,drop,excluded,excluded,questionnaire mode: not needed
+PAQ_L,SEQN,keep,recommended,id,"id: respondent identifier, join key only"
+PAQ_L,PAD790Q,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD790U,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD800,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD810Q,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD810U,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD820,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"
+PAQ_L,PAD680,keep,recommended,feature,"feature: available at a pre-glycaemic screening visit (questionnaire/basic exam); not a diagnostic criterion, not a consequence of diagnosis, not derived from the target"

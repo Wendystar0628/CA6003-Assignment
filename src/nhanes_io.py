@@ -490,3 +490,30 @@ def zero_weights_to_nan(df: pd.DataFrame, cols=WEIGHTS) -> pd.DataFrame:
         if c in out.columns:
             out[c] = out[c].mask(out[c] == 0)
     return out
+
+
+def minimisation_report(spec: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Data-minimisation report from the spec (S2 §6).
+
+    Returns ``(per_file, per_column)``: per file the raw rows/columns and the number of
+    kept and dropped columns; per column the decision and its reason (``note`` for
+    excluded columns, ``role``/``admiss_reason`` for kept ones).
+    """
+    spec = load_spec() if spec is None else spec
+    files, cols = [], []
+    for name in C.NHANES_FILES:
+        raw = read_xpt(name)
+        s = spec[spec["file"] == name]
+        kept = s[s["use_tier"] != "excluded"]
+        dropped = s[s["use_tier"] == "excluded"]
+        tier = kept.loc[kept["var"] != "SEQN", "use_tier"]
+        files.append({"file": name, "use_tier": tier.iloc[0] if len(tier) else "excluded",
+                      "rows": len(raw), "cols_raw": raw.shape[1], "cols_kept": len(kept),
+                      "cols_dropped": len(dropped),
+                      "kept": " ".join(kept["var"]), "dropped": " ".join(dropped["var"])})
+        for _, r in s.iterrows():
+            keep = r["use_tier"] != "excluded"
+            cols.append({"file": name, "var": r["var"], "decision": "keep" if keep else "drop",
+                         "use_tier": r["use_tier"], "role": r["role"],
+                         "reason": f"{r['role']}: {r['admiss_reason']}" if keep else r["note"]})
+    return pd.DataFrame(files), pd.DataFrame(cols)
