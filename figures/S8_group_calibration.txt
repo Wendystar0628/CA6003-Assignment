@@ -1,0 +1,1 @@
+F8-4. Within-group calibration of arm S-B6a (arm S without class weights, AUC-equivalent): calibration curves by race (quantile bins) and observed/expected ratio by audit group with stratified bootstrap 95 % CI (E-ALL, Tier 1, training part OOF).

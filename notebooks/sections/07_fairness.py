@@ -167,7 +167,9 @@ S8["n_suppressed"] = n_supp
 # Intervals come from a stratified bootstrap (rows resampled within group × label, B = `config.N_BOOT`) in which the
 # threshold is **re-estimated in every replicate**, so the threshold's own uncertainty is included. Arm S is
 # class-weighted (P11), so its probabilities are inflated by design and its O:E is far below 1 everywhere; only
-# differences in O:E between groups are informative for S (absolute calibration is examined in section 12).
+# differences in O:E between groups are informative for S (absolute calibration is examined in section 12). Because the
+# bootstrap is label-stratified, each group's prevalence is held at its observed value: intervals for TPR and FPR are
+# the natural conditional ones, those for selection rate and PPV are conditional on the observed prevalence.
 
 # %%
 AUD = {}   # (attr, pop, tier, arms) -> (point, boot, codes, mask)
@@ -183,8 +185,10 @@ def audit(attr, pop="E-ALL", tier=1, arms=("S",), weights="simple", preds=None):
     Pm = np.vstack([(PM[(a, tier, "lr")] if preds is None or a not in preds else preds[a])[m] for a in arms])
     point = F.boot_engine(yy[m], Pm, codes, len(lv))
     seed = ek.derive_seed(C.SEED_MASTER, "S8", attr, pop, tier, weights)
-    if weights == "simple":
+    if weights == "simple":          # label-stratified: group size and group positives fixed (TPR, FPR, EOD)
         W = F.stratified_counts(np.char.add(codes.astype(str), np.char.add("|", yy[m].astype(str))), C.N_BOOT, seed)
+    elif weights == "group":         # group-stratified only: observed cases vary (O:E, calibration)
+        W = F.stratified_counts(codes.astype(str), C.N_BOOT, seed)
     else:
         W = F.psu_counts(cl.loc[m, [C.STRATA, C.PSU]].reset_index(drop=True), C.N_BOOT, seed)
     boot = F.boot_engine(yy[m], Pm, codes, len(lv), W)
@@ -732,7 +736,8 @@ def add_whtr(name, pt_fn):
     for wt in ("simple", "psu"):
         point, boot = res[wt]
         e, lo, hi, se = F.summarise(pt_fn(point)[0], pt_fn(boot))
-        row.update({"est": e, f"{wt}_lo": lo, f"{wt}_hi": hi, f"{wt}_se": se})
+        bvals = np.asarray(pt_fn(boot), float)
+        row.update({"est": e, f"{wt}_lo": lo, f"{wt}_hi": hi, f"{wt}_se": se, f"{wt}_boot_mean": float(np.nanmean(bvals))})
     wide = "psu" if (row["psu_hi"] - row["psu_lo"]) >= (row["simple_hi"] - row["simple_lo"]) else "simple"
     row.update(lo=row[f"{wide}_lo"], hi=row[f"{wide}_hi"], interval=wide)
     whtr_rows.append(row)
@@ -750,7 +755,7 @@ r_aA = add_whtr("ΔAUC within NH Asian", lambda d: d["auc"][:, 1, iA] - d["auc"]
 r_aW = add_whtr("ΔAUC within NH White", lambda d: d["auc"][:, 1, iW] - d["auc"][:, 0, iW])
 r_h4 = add_whtr("ΔAUC Asian − ΔAUC White (H4b, model level)", lambda d: (d["auc"][:, 1, iA] - d["auc"][:, 0, iA]) - (d["auc"][:, 1, iW] - d["auc"][:, 0, iW]))
 WH = pd.DataFrame(whtr_rows)
-print(WH[["quantity", "est", "simple_lo", "simple_hi", "psu_lo", "psu_hi", "interval"]].round(3).to_string(index=False))
+print(WH[["quantity", "est", "simple_lo", "simple_hi", "simple_boot_mean", "psu_lo", "psu_hi", "psu_boot_mean", "interval"]].round(3).to_string(index=False))
 # E-SCREEN (secondary; NH Asian has 11 positives -> suppressed, numbers only)
 pt_s, bt_s, _, _ = audit("race", "E-SCREEN", 1, ("S", "S+WHtR"))
 dA_s = F.summarise(pt_s["tpr"][0, 1, iA] - pt_s["tpr"][0, 0, iA], bt_s["tpr"][:, 1, iA] - bt_s["tpr"][:, 0, iA])
@@ -857,6 +862,127 @@ S8["group_threshold_counterfactual"] = GTHR
 # (numbers above).
 # The project therefore keeps one threshold for everybody and treats the Asian gap as a **measurement** problem (section
 # 9) and a **data** problem (too few Asian cases in this cycle), not as something to be patched at the decision step.
+# %% [markdown]
+# ## 11 Fairness–performance trade-off
+# **Why.** A mitigation is only worth adopting if it narrows a gap without costing discrimination. The four mitigation
+# arms are placed in one plane: x = ΔAUC against S on E-ALL (locked S7 interval: the wider of corrected t and paired
+# bootstrap), y = change of the absolute gap |EOD| for the group each mitigation targets (paired bootstrap, threshold
+# re-estimated per arm). The shaded box marks "no practical change" (|ΔAUC| < 0.01, |Δ|EOD|| < 0.05).
+
+# %%
+wh_auc = compare_auc(OOF[("S+WHtR", 1, "lr")], OOF[("S", 1, "lr")], "E-ALL", tag="whtr")
+TO = []
+for attr, tgt in RW_TARGET.items():
+    a = RWT[(RWT["arm"] == f"S+RW({attr})") & (RWT["pop"] == "E-ALL")].iloc[0]
+    e = RWE[(RWE["arm"] == f"S+RW({attr})") & (RWE["group"] == tgt)].iloc[0]
+    TO.append({"arm": f"S+RW({attr})", "target": tgt, "d_auc": a["est"], "d_auc_lo": a["lo"], "d_auc_hi": a["hi"],
+               "d_abs_eod": e["d_abs_eod"], "d_abs_eod_lo": e["d_abs_lo"], "d_abs_eod_hi": e["d_abs_hi"]})
+TO.append({"arm": "S+WHtR", "target": "NH Asian", "d_auc": wh_auc["est"], "d_auc_lo": wh_auc["lo"], "d_auc_hi": wh_auc["hi"],
+           "d_abs_eod": r_eod["est"], "d_abs_eod_lo": r_eod["lo"], "d_abs_eod_hi": r_eod["hi"]})
+TO = pd.DataFrame(TO)
+TO["in_no_change_box"] = (TO["d_auc_lo"] > -0.01) & (TO["d_auc_hi"] < 0.01) & (TO["d_abs_eod_lo"] > -GAP) & (TO["d_abs_eod_hi"] < GAP)
+print(TO.round(4).to_string(index=False))
+TO.to_csv(OUT / "tradeoff.csv", index=False)
+S8["tradeoff"] = TO.round(5).to_dict("records")
+
+fig, ax = plt.subplots(figsize=(7.5, 5))
+ax.add_patch(plt.Rectangle((-0.01, -GAP), 0.02, 2 * GAP, color=C.OKABE_ITO["grey"], alpha=0.15, lw=0))
+cols = [C.OKABE_ITO["blue"], C.OKABE_ITO["green"], C.OKABE_ITO["purple"], C.OKABE_ITO["orange"]]
+for (_, r), col in zip(TO.iterrows(), cols):
+    ax.errorbar(r["d_auc"], r["d_abs_eod"], xerr=[[r["d_auc"] - r["d_auc_lo"]], [r["d_auc_hi"] - r["d_auc"]]],
+                yerr=[[r["d_abs_eod"] - r["d_abs_eod_lo"]], [r["d_abs_eod_hi"] - r["d_abs_eod"]]], fmt="o", color=col,
+                capsize=3, ms=7, label=f"{r['arm']} – gap of {r['target']}")
+ax.axhline(0, color="black", lw=0.7); ax.axvline(0, color="black", lw=0.7)
+ax.set_xlabel("ΔAUC vs S, E-ALL (95 % CI)")
+ax.set_ylabel("change of |TPR gap| of the targeted group (95 % CI)\nnegative = gap narrows")
+ax.set_xlim(-0.03, 0.03)
+ax.legend(fontsize=8, loc="upper left")
+ax.set_title("Fairness–performance trade-off of the mitigation arms\n(grey box: |ΔAUC| < 0.01 and |Δ gap| < 0.05)")
+f85 = plots.savefig(fig, "S8_tradeoff", caption="F8-5. Fairness-performance plane for the mitigation arms (Tier 1): ΔAUC "
+                    "against arm S on E-ALL (wider of corrected-t and paired-bootstrap CI) versus the change in the absolute "
+                    "TPR gap of the targeted group at specificity 0.80 (paired stratified bootstrap); grey box = no practical change.")
+plt.show()
+
+# %% [markdown]
+# **So what.** All four mitigations sit on the vertical line: none costs discrimination (every ΔAUC CI inside ±0.01).
+# All four point downwards – each narrows the gap it targets – but every gap interval still crosses zero, and the
+# intervals are wider than ±0.05, so no mitigation reaches the "no change" box either: the data cannot tell a small
+# improvement from none. The WHtR fix shows the largest point gain for its target. There is no trade-off to manage
+# because there is no demonstrated benefit to trade against; with the present sample sizes the honest summary is
+# "cheap, harmless, not shown to help".
+
+# %% [markdown]
+# ## 12 Within-group calibration
+# **Why.** Equal sensitivity is one fairness criterion; calibration within groups (a predicted 20 % meaning 20 % in
+# every group) is another, and the two cannot in general hold together when prevalences differ (Chouldechova 2017).
+# Arm S is class-weighted, so its probabilities are inflated by design and only *relative* calibration across groups
+# can be read from it. Absolute calibration is therefore checked on **S−B6a** – arm S without class weights, equivalent
+# in AUC (§7) – which is the calibrated sibling of S. For each group: observed-to-expected ratio O:E (bootstrap CI),
+# calibration-in-the-large (CITL, log-odds offset; 0 = calibrated) and calibration slope (1 = calibrated). Here the
+# bootstrap resamples within groups but *not* within label, so the number of observed cases varies across replicates
+# (a label-stratified bootstrap would fix the numerator of O:E and understate its uncertainty).
+
+# %%
+pC = PM[("S-B6a", 1, "lr")]
+cal_rows = []
+for attr in F.ATTRIBUTES:
+    point, boot, codes, mm = audit(attr, "E-ALL", 1, ("S-B6a", "S"), weights="group")
+    lvls = F.LEVELS[attr]
+    oe_all_S = y.sum() / pS.sum()
+    for g_i, g_nm in enumerate(lvls):
+        m = grp[attr].eq(g_nm).to_numpy()
+        slope, icpt, citl = ek._calibration(y[m], pC[m])
+        e, lo, hi, _ = F.summarise(point["oe"][0, 0, g_i], boot["oe"][:, 0, g_i])
+        cal_rows.append({"attribute": attr, "group": g_nm, "n": int(m.sum()), "n_pos": int(y[m].sum()),
+                         "mean_pred": pC[m].mean(), "observed": y[m].mean(), "oe": e, "oe_lo": lo, "oe_hi": hi,
+                         "citl": citl, "slope": slope, "oe_S_relative": point["oe"][0, 1, g_i] / oe_all_S})
+CAL = pd.DataFrame(cal_rows)
+CAL["oe_ci_excludes_1"] = (CAL["oe_lo"] > 1) | (CAL["oe_hi"] < 1)
+slope_all, _, citl_all = ek._calibration(y, pC)
+print(f"S-B6a overall: O:E {y.sum() / pC.sum():.3f}, CITL {citl_all:+.3f}, slope {slope_all:.3f}")
+print(CAL.round(3).to_string(index=False))
+CAL.to_csv(OUT / "group_calibration.csv", index=False)
+S8["calibration"] = dict(table=CAL.round(5).to_dict("records"), overall=dict(oe=float(y.sum() / pC.sum()), citl=citl_all, slope=slope_all),
+                         groups_oe_ci_excl_1=CAL.loc[CAL["oe_ci_excludes_1"], ["attribute", "group", "oe"]].round(3).to_dict("records"))
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.8), gridspec_kw={"width_ratios": [1, 1.3]})
+ax = axes[0]
+for g_nm, col in zip(F.LEVELS["race"], plots.PALETTE):
+    m = grp["race"].eq(g_nm).to_numpy()
+    nb = 5 if m.sum() < 600 else 10
+    q = pd.qcut(pC[m], nb, labels=False, duplicates="drop")
+    d_ = pd.DataFrame({"p": pC[m], "y": y[m], "q": q}).groupby("q").mean()
+    ax.plot(d_["p"], d_["y"], "o-", color=col, label=f"{g_nm} (n={int(m.sum())})", ms=4)
+ax.plot([0, 0.7], [0, 0.7], color="black", lw=0.8, ls="--")
+ax.set_xlabel("mean predicted probability (S−B6a, quantile bins)"); ax.set_ylabel("observed share with diabetes")
+ax.set_title("Calibration curves by race"); ax.legend(fontsize=7)
+ax = axes[1]
+k = 0; yt, yl = [], []
+for attr in F.ATTRIBUTES:
+    for _, r in CAL[CAL["attribute"] == attr].iterrows():
+        ax.errorbar(r["oe"], -k, xerr=[[r["oe"] - r["oe_lo"]], [r["oe_hi"] - r["oe"]]], fmt="o",
+                    color=C.OKABE_ITO["vermillion"] if r["oe_ci_excludes_1"] else C.OKABE_ITO["blue"], capsize=2)
+        yt.append(-k); yl.append(f"{attr}: {r['group']}"); k += 1
+    k += 0.5
+ax.axvline(1, color="black", lw=0.8, ls="--")
+ax.set_yticks(yt); ax.set_yticklabels(yl, fontsize=8)
+ax.set_xlabel("observed / expected cases (S−B6a, 95 % bootstrap CI); red = CI excludes 1")
+ax.set_title("Calibration-in-the-large by group")
+fig.tight_layout()
+f84 = plots.savefig(fig, "S8_group_calibration", caption="F8-4. Within-group calibration of arm S-B6a (arm S without class "
+                    "weights, AUC-equivalent): calibration curves by race (quantile bins) and observed/expected ratio by audit "
+                    "group with stratified bootstrap 95 % CI (E-ALL, Tier 1, training part OOF).")
+plt.show()
+
+# %% [markdown]
+# **So what.** The calibrated sibling is well calibrated overall (O:E about 1.02, slope about 0.97) and across insurance,
+# access, income and sex, but **not across race**: it under-predicts for NH Black, NH Asian and Mexican American adults
+# (about 30–40 % more cases than predicted, CIs excluding 1) and over-predicts for NH White adults. This is the price of a
+# race-blind model when prevalence differs by race at the same feature values: the score is an average over groups. It is
+# also the second face of the TPR gap for Asian adults – their scores are too low on both the ranking and the
+# probability scale. Correcting it would require race as an input or a race-specific recalibration, which the project
+# excludes for the same reasons as group thresholds (section 10); it is reported as a limitation, and any use of the
+# probabilities for individual counselling should carry this caveat.
 # %% [markdown]
 # ## 14 Storage
 # **Why.** Every number of this section is stored in `results/metrics_S8.json` (via `results_io`) and the tables in

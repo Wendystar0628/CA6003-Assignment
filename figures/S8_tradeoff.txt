@@ -1,0 +1,1 @@
+F8-5. Fairness-performance plane for the mitigation arms (Tier 1): ΔAUC against arm S on E-ALL (wider of corrected-t and paired-bootstrap CI) versus the change in the absolute TPR gap of the targeted group at specificity 0.80 (paired stratified bootstrap); grey box = no practical change.
