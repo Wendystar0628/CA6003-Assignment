@@ -1,0 +1,1 @@
+Leave-one-block-out ΔROC-AUC = AUC(arm with the block) − AUC(arm without it) with conservative 95 % CIs, Tier 1 (blue) and Tier 2 (orange), E-ALL and E-SCREEN; grey band = ±SESOI 0.01. For B2 the sign is negative because adding the rule removes leakage; 'minus care' = T1-minus-care − S.

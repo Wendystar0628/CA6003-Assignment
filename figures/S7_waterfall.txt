@@ -1,0 +1,1 @@
+Waterfall of the pooled-OOF ROC-AUC along the cumulative path M0 -> +B2 -> +B1 -> +B3 -> +B4 -> +B5 -> +B6a -> +B6b (= S), Tier 1; bars are step increments with the conservative 95 % CI of the paired difference (E-ALL: wider of corrected t and bootstrap; E-SCREEN: bootstrap). Red = decrease, green = increase; dotted line = S.

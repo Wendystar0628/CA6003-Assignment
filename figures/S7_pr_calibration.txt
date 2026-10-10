@@ -1,0 +1,1 @@
+Top: precision-recall curves (average precision in the legend; dotted line = prevalence). Bottom: calibration by deciles of the predicted probability. Left E-ALL, right E-SCREEN; Tier 1 pooled OOF predictions. S uses balanced class weights; S-B6a is S without them.

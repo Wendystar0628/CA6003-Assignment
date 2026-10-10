@@ -1,0 +1,1 @@
+ROC-AUC of the naive arm M0, the availability-screened arm M1 and the systematic arm S (logistic regression) and of depth-3 trees, on E-ALL and E-SCREEN, Tier 1, with 95 % bootstrap CIs. The drop from M0 to M1 is the leakage removed by the availability rule.
