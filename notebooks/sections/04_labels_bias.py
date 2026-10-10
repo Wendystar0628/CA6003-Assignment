@@ -182,16 +182,18 @@ assert (n_ctrl, n_ctrl_med, len(unmed), n_unmed_pre, len(on_med)) == (250, 165, 
 close(n_ctrl / len(sr), 0.305, 0.001, "masking share")
 close(share_med_below, 0.238, 0.001, "treated with HbA1c < 6.5")
 
-fig, ax = plt.subplots(figsize=(7.5, 4))
-bins = np.arange(4.0, 14.01, 0.25)
-for flag, lab, col in [(1, f"insulin or pills (n={len(on_med)})", plots.PALETTE[4]),
-                       (0, f"no medication (n={len(sr) - len(on_med)})", plots.PALETTE[0])]:
-    ax.hist(sr.loc[sr["on_med"] == flag, "LBXGH"], bins=bins, histtype="step", lw=2, color=col,
-            density=True, label=lab)
+fig, ax = plt.subplots(figsize=(8, 4))
+bins = np.arange(4.0, 12.01, 0.25)
+ax.axvspan(4.0, C.HBA1C_DIABETES, color="0.92", zorder=0)
+for flag, lab, col in [(1, "insulin or pills", plots.PALETTE[4]), (0, "no medication", plots.PALETTE[0])]:
+    x = sr.loc[sr["on_med"] == flag, "LBXGH"].clip(upper=11.99)
+    below = int((x < C.HBA1C_DIABETES).sum())
+    ax.hist(x, bins=bins, histtype="step", lw=2, color=col, label=f"{lab}: {below}/{len(x)} below 6.5 %")
 ax.axvline(C.HBA1C_DIABETES, color="k", ls="--", lw=1)
-ax.text(C.HBA1C_DIABETES - 0.1, ax.get_ylim()[1] * 0.92, "HbA1c 6.5 %:\nlabel threshold", ha="right", fontsize=9)
-ax.set(xlabel="HbA1c (%)", ylabel="density", title="Self-reported diabetics: treatment pushes HbA1c below the label threshold")
-ax.legend(loc="upper right")
+ax.text(4.15, ax.get_ylim()[1] * 0.9, f"labelled negative by L_A1c:\n{n_ctrl} self-reported diabetics", fontsize=9, va="top")
+ax.set(xlabel="HbA1c (%; values ≥ 12 shown in the last bin)", ylabel="adults per 0.25 % bin",
+       title=f"{pct(n_ctrl / len(sr))} of self-reported diabetics fall below the HbA1c label threshold")
+ax.legend(loc="upper right", title="Self-reported diabetics")
 plots.savefig(fig, "S5_a1c_by_medication",
               caption=f"HbA1c distribution of the {len(sr)} self-reported diabetics by current insulin/pill use. "
                       f"{n_ctrl} ({pct(n_ctrl / len(sr))}) are below 6.5 %, {n_ctrl_med} of them treated.")
