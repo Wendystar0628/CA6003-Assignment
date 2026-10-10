@@ -1043,6 +1043,10 @@ assert abs(sk.loc[("BMXBMI", "cohort"), "skew_raw"] - 1.22) < 0.01 and abs(sk.lo
 tg_f, tg_all = sk.loc[("LBXTLG", "fasting (WTSAF2YR > 0)")], sk.loc[("LBXTLG", "all with a value (incl. WTSAF2YR = 0)")]
 print(f"\ntriglycerides: valid fasting n = {tg_f.n:,}, skew {tg_f.skew_raw:.2f} -> log {tg_f.skew_log:.2f}; "
       f"including {tg_all.n - tg_f.n} non-fasting rows: skew {tg_all.skew_raw:.2f} -> log {tg_all.skew_log:.2f}")
+_raw_w = io.read_xpt("GLU_L")[C.WEIGHT_FASTING]          # unfixed transport-file read
+_tiny = _raw_w[(_raw_w > 0) & (_raw_w < C.XPT_ZERO_EPS)]
+print(f"unfixed GLU_L read: {len(_tiny)} fasting weights stored as 0 appear as {_tiny.max():.1e} and pass a '> 0' filter")
+OUT["skew_tg_unfixed_zero_weights"] = {"n": len(_tiny), "value": float(_tiny.max()) if len(_tiny) else None}
 OUT["skew"] = {f"{r.variable}|{r.subsample}": {"n": r.n, "raw": r.skew_raw, "log": r.skew_log, "yj": r.skew_yj,
                                                "lambda": r.yj_lambda} for r in SKEW.itertuples()}
 
@@ -1064,10 +1068,11 @@ reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; trigly
 # **So what.** BMI, SBP and HDL are moderately right-skewed (≈ 0.9–1.2); a log transform removes most
 # of it and Yeo–Johnson removes all of it (BMI λ ≈ −0.65). Total cholesterol and waist are nearly
 # symmetric. Triglycerides are extremely skewed (≈ 6.6 on the 2,820 valid fasting adults). Without
-# the fasting-weight restriction the value would be 6.23; in the cohort that restriction removes 235 people whose fast fell outside 8–24 h (`WTSAF2YR = 0`), whose values are not valid fasting
-# measurements (and the 6.23 → 0.54 pair matches all 3,517 participants with a value, teenagers
-# included). This is the same trap that the XPT zero artefact sets (a zero weight read as
-# 5.4 × 10⁻⁷⁹ passes a `> 0` filter). Because logistic regression is not distributional, skewness
+# the fasting-weight restriction the value would be 6.23: in the cohort that restriction removes 235
+# people whose fast fell outside 8–24 h (`WTSAF2YR = 0`), and their values are not valid fasting
+# measurements. The trap is easy to fall into because of the transport-file artefact shown above: in
+# an unfixed read, a fasting weight stored as 0 appears as a tiny positive number and passes a `> 0`
+# filter. Because logistic regression is not distributional, skewness
 # matters only through leverage; the transform is therefore a toggleable preparation step whose λ is
 # fitted inside the training folds, and whether it helps is decided by the S7 ablation, not here.
 
