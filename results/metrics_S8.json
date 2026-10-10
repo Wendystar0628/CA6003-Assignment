@@ -3,7 +3,7 @@
     "section": "S8",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T19:12:38+00:00"
+    "written_utc": "2026-10-10T19:18:02+00:00"
   },
   "mode": "FAST",
   "cv": "5x2",
@@ -3272,5 +3272,72 @@
       }
     ]
   },
-  "runtime_seconds": 78.90346384048462
+  "scoreboard": {
+    "H3": {
+      "E1 L_self misses Undiagnosed most": "inconclusive",
+      "E2 L_A1c misses D_controlled most": "inconclusive",
+      "E3 L_comb smallest worst-cell gap": "inconclusive",
+      "overall": "inconclusive"
+    },
+    "H4b": {
+      "single feature (S5)": "supported",
+      "model level (S8, secondary)": "inconclusive",
+      "overall": "supported"
+    },
+    "P14": {
+      "(a) |ΔAUC| < 0.01 (from S7)": "supported",
+      "(b) NH Asian ΔTPR ≥ +0.05": "inconclusive",
+      "overall": "inconclusive"
+    }
+  },
+  "verdicts": {
+    "H3": "inconclusive",
+    "P14": "inconclusive",
+    "P14b": "inconclusive",
+    "H4b": "supported",
+    "H4b_model_level": "inconclusive"
+  },
+  "substantive_gaps": {
+    "E-ALL": [
+      {
+        "attribute": "race",
+        "group": "NH Asian",
+        "eod": -0.2185,
+        "eod_lo": -0.3524,
+        "eod_hi": -0.0798
+      },
+      {
+        "attribute": "income",
+        "group": "PIR 1.3-3.49",
+        "eod": 0.1115,
+        "eod_lo": 0.0128,
+        "eod_hi": 0.1901
+      },
+      {
+        "attribute": "income",
+        "group": "PIR < 1.3",
+        "eod": 0.1901,
+        "eod_lo": 0.0928,
+        "eod_hi": 0.28
+      }
+    ],
+    "E-SCREEN": [
+      {
+        "attribute": "sex",
+        "group": "Female",
+        "eod": -0.2283,
+        "eod_lo": -0.3522,
+        "eod_hi": -0.0542
+      }
+    ]
+  },
+  "figures": [
+    "figures/S8_group_tpr.png",
+    "figures/S8_permutation_null.png",
+    "figures/S8_label_matrix.png",
+    "figures/S8_whtr_asian_white.png",
+    "figures/S8_group_calibration.png",
+    "figures/S8_tradeoff.png"
+  ],
+  "runtime_seconds": 46.31513214111328
 }

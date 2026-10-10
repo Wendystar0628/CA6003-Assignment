@@ -43,6 +43,7 @@ N_JOBS = min(12, max(1, (os.cpu_count() or 2) - 2))
 N_PERM_GROUP = 200          # group-label permutations (process doc S8 step 2)
 SPEC = C.SPEC_FIXED
 GAP, GAP_SUB = C.SESOI["group_tpr_gap"], C.SESOI["group_tpr_gap_substantive"]
+AUC_SESOI = C.SESOI["roc_auc"]
 T_START = time.time()
 S8 = {"mode": C.NB_MODE, "cv": f"{C.CV_SPLITS}x{C.CV_REPEATS}", "n_boot": C.N_BOOT, "n_perm_group": N_PERM_GROUP,
       "spec": SPEC}
@@ -672,8 +673,7 @@ for attr, w_rw in RW_W.items():
     for pop in ("E-ALL", "E-SCREEN"):
         r = compare_auc(OOF_RW[attr], OOF[("S", 1, "lr")], pop, tag=f"rw_{attr}")
         r.update(arm=f"S+RW({attr})", w_min=w_rw.min(), w_max=w_rw.max(),
-                 verdict_auc=("equivalent" if (r["lo"] > -0.01 and r["hi"] < 0.01) else
-                              ek.verdict(r["lo"], r["hi"], 0.01, "+", r["est"])))
+                 verdict_auc=ek.verdict(r["lo"], r["hi"], AUC_SESOI, "+", r["est"]))
         RW_ROWS.append(r)
     point, boot, codes, mm = audit(attr, "E-ALL", 1, ("S", "RW"), preds={"RW": PMx})
     lvls = F.LEVELS[attr]
@@ -764,11 +764,11 @@ p14a = next(r for r in S7m["scoreboard_detail"] if r["hyp_id"] == "P14" and r["s
 print(f"P14-a from §7 (E-ALL, corrected t): ΔAUC {p14a['est']:+.4f} ({p14a['lo']:+.4f}, {p14a['hi']:+.4f}) -> {p14a['verdict']}")
 
 # %%
-v_p14b = ek.verdict(r_dA["lo"], r_dA["hi"], 0.05, "+", r_dA["est"])
-v_p14b = "refuted" if (v_p14b == "equivalent" or r_dA["hi"] < 0.05) else v_p14b     # locked falsifier
+v_p14b = ek.verdict(r_dA["lo"], r_dA["hi"], GAP, "+", r_dA["est"])
+v_p14b = "refuted" if (v_p14b == "equivalent" or r_dA["hi"] < GAP) else v_p14b     # locked falsifier
 control_ok = abs(r_dW["est"]) < abs(r_dA["est"])
 v_p14 = ek.combine_verdicts([p14a["verdict"], v_p14b])
-v_h4b_model = ("supported" if (r_h4["lo"] > 0 and r_h4["est"] >= 0.01) else
+v_h4b_model = ("supported" if (r_h4["lo"] > 0 and r_h4["est"] >= AUC_SESOI) else
                "refuted" if r_h4["hi"] < 0 else "inconclusive")
 s5_h4b = R.load_section("S5")["hypotheses"]["H4b"]["verdict"]
 v_h4b = "mixed" if (s5_h4b in ("supported", "refuted") and v_h4b_model in ("supported", "refuted") and v_h4b_model != s5_h4b) else s5_h4b
@@ -800,7 +800,7 @@ for i, q in enumerate(qs):
     for k_, (wt, col) in enumerate([("simple", C.OKABE_ITO["blue"]), ("psu", C.OKABE_ITO["vermillion"])]):
         ax.errorbar(r_["est"], -i + (k_ - 0.5) * 0.25, xerr=[[r_["est"] - r_[f"{wt}_lo"]], [r_[f"{wt}_hi"] - r_["est"]]],
                     fmt="o", color=col, capsize=3, label=("simple bootstrap" if wt == "simple" else "PSU (Rao–Wu) bootstrap") if i == 0 else None)
-ax.axvline(0, color="black", lw=0.8); ax.axvline(0.05, color="black", lw=0.8, ls=":")
+ax.axvline(0, color="black", lw=0.8); ax.axvline(GAP, color="black", lw=0.8, ls=":")
 ax.set_yticks([-i for i in range(len(qs))]); ax.set_yticklabels(qs)
 ax.set_xlabel("difference S+WHtR − S (dotted: pre-registered +0.05)"); ax.legend(fontsize=8, loc="lower right")
 ax.set_title(f"P14-b: {v_p14b}")
@@ -880,13 +880,13 @@ for attr, tgt in RW_TARGET.items():
 TO.append({"arm": "S+WHtR", "target": "NH Asian", "d_auc": wh_auc["est"], "d_auc_lo": wh_auc["lo"], "d_auc_hi": wh_auc["hi"],
            "d_abs_eod": r_eod["est"], "d_abs_eod_lo": r_eod["lo"], "d_abs_eod_hi": r_eod["hi"]})
 TO = pd.DataFrame(TO)
-TO["in_no_change_box"] = (TO["d_auc_lo"] > -0.01) & (TO["d_auc_hi"] < 0.01) & (TO["d_abs_eod_lo"] > -GAP) & (TO["d_abs_eod_hi"] < GAP)
+TO["in_no_change_box"] = (TO["d_auc_lo"] > -AUC_SESOI) & (TO["d_auc_hi"] < AUC_SESOI) & (TO["d_abs_eod_lo"] > -GAP) & (TO["d_abs_eod_hi"] < GAP)
 print(TO.round(4).to_string(index=False))
 TO.to_csv(OUT / "tradeoff.csv", index=False)
 S8["tradeoff"] = TO.round(5).to_dict("records")
 
 fig, ax = plt.subplots(figsize=(7.5, 5))
-ax.add_patch(plt.Rectangle((-0.01, -GAP), 0.02, 2 * GAP, color=C.OKABE_ITO["grey"], alpha=0.15, lw=0))
+ax.add_patch(plt.Rectangle((-AUC_SESOI, -GAP), 2 * AUC_SESOI, 2 * GAP, color=C.OKABE_ITO["grey"], alpha=0.15, lw=0))
 cols = [C.OKABE_ITO["blue"], C.OKABE_ITO["green"], C.OKABE_ITO["purple"], C.OKABE_ITO["orange"]]
 for (_, r), col in zip(TO.iterrows(), cols):
     ax.errorbar(r["d_auc"], r["d_abs_eod"], xerr=[[r["d_auc"] - r["d_auc_lo"]], [r["d_auc_hi"] - r["d_auc"]]],
@@ -984,15 +984,165 @@ plt.show()
 # excludes for the same reasons as group thresholds (section 10); it is reported as a limitation, and any use of the
 # probabilities for individual counselling should carry this caveat.
 # %% [markdown]
-# ## 14 Storage
-# **Why.** Every number of this section is stored in `results/metrics_S8.json` (via `results_io`) and the tables in
-# `results/S8/`, so that S10 and the slides read them instead of re-typing them.
+# ## 13 Verdicts
+# **Why.** Each locked hypothesis tested in S8 gets one verdict from the locked rules (`governance/hypotheses.md`):
+# `evalkit.verdict` with the SESOI of `config.SESOI` (group TPR gap 0.05, AUC 0.01), sub-claims combined with
+# `evalkit.combine_verdicts`. H3 is a genuine pre-registration (`prior_exposure = none`); P14-b and H4b were written
+# after a descriptive look (`descriptive_seen`). The group-gap flags of sections 3–4 are audit findings, not
+# hypotheses, and are listed separately.
+
+# %%
+sub_eall = ET1[ET1["substantive"] & ET1["verdict_status"].eq("reportable")]
+sub_escr = ETs[ETs["substantive"] & ETs["verdict_status"].eq("reportable")]
+SB8 = pd.DataFrame([
+    dict(hyp_id="H3", prior_exposure="none", sub="E1 L_self misses Undiagnosed most", verdict=elem_v["E1"],
+         evidence="; ".join(f"{r.contrast} {r.est:+.3f} ({r.lo:+.3f}, {r.hi:+.3f})" for r in H3E[H3E.element == "E1"].itertuples())),
+    dict(hyp_id="H3", prior_exposure="none", sub="E2 L_A1c misses D_controlled most", verdict=elem_v["E2"],
+         evidence="; ".join(f"{r.contrast} {r.est:+.3f} ({r.lo:+.3f}, {r.hi:+.3f})" for r in H3E[H3E.element == "E2"].itertuples())),
+    dict(hyp_id="H3", prior_exposure="none", sub="E3 L_comb smallest worst-cell gap", verdict=elem_v["E3"],
+         evidence="; ".join(f"{r.contrast} {r.est:+.3f} ({r.lo:+.3f}, {r.hi:+.3f})" for r in H3E[H3E.element == "E3"].itertuples())),
+    dict(hyp_id="H3", prior_exposure="none", sub="overall", verdict=h3_v, evidence="combine_verdicts(E1-E3); falsifier: any contrast reversed with CI excluding 0"),
+    dict(hyp_id="P14", prior_exposure="descriptive_seen", sub="(a) |ΔAUC| < 0.01 (from S7)", verdict=p14a["verdict"],
+         evidence=f"ΔAUC {p14a['est']:+.4f} ({p14a['lo']:+.4f}, {p14a['hi']:+.4f}), corrected t"),
+    dict(hyp_id="P14", prior_exposure="descriptive_seen", sub="(b) NH Asian ΔTPR ≥ +0.05", verdict=v_p14b,
+         evidence=f"ΔTPR {r_dA['est']:+.3f} ({r_dA['lo']:+.3f}, {r_dA['hi']:+.3f}), {r_dA['interval']} interval; White ΔTPR {r_dW['est']:+.3f}"),
+    dict(hyp_id="P14", prior_exposure="descriptive_seen", sub="overall", verdict=v_p14, evidence="combine_verdicts(a, b)"),
+    dict(hyp_id="H4b", prior_exposure="descriptive_seen", sub="single feature (S5)", verdict=s5_h4b,
+         evidence=R.load_section("S5")["hypotheses"]["H4b"]["estimate"]),
+    dict(hyp_id="H4b", prior_exposure="descriptive_seen", sub="model level (S8, secondary)", verdict=v_h4b_model,
+         evidence=f"ΔAUC_Asian − ΔAUC_White {r_h4['est']:+.4f} ({r_h4['lo']:+.4f}, {r_h4['hi']:+.4f})"),
+    dict(hyp_id="H4b", prior_exposure="descriptive_seen", sub="overall", verdict=v_h4b,
+         evidence="S5 primary; a decisive contradicting S8 model-level verdict would make it mixed"),
+])
+assert set(SB8["verdict"]) <= set(C.VERDICTS)
+print(SB8.to_string(index=False, max_colwidth=110))
+print("\naudit flags (not hypotheses): substantive reportable gaps")
+print(f"  E-ALL: {[(r.attribute, r.group, round(r.eod, 3), round(r.eod_lo, 3), round(r.eod_hi, 3)) for r in sub_eall.itertuples()]}")
+print(f"  E-SCREEN: {[(r.attribute, r.group, round(r.eod, 3), round(r.eod_lo, 3), round(r.eod_hi, 3)) for r in sub_escr.itertuples()]}")
+SB8.to_csv(OUT / "scoreboard.csv", index=False)
+S8["scoreboard"] = {h: g.set_index("sub")["verdict"].to_dict() for h, g in SB8.groupby("hyp_id")}
+S8["verdicts"] = {"H3": h3_v, "P14": v_p14, "P14b": v_p14b, "H4b": v_h4b, "H4b_model_level": v_h4b_model}
+S8["substantive_gaps"] = {"E-ALL": sub_eall[["attribute", "group", "eod", "eod_lo", "eod_hi"]].round(4).to_dict("records"),
+                          "E-SCREEN": sub_escr[["attribute", "group", "eod", "eod_lo", "eod_hi"]].round(4).to_dict("records")}
+
+# %% [markdown]
+# **So what.** None of the S8 experiments produces a decisive verdict, and each "inconclusive" means something specific:
+#
+# * **H3 – inconclusive.** All three predicted orderings point the right way, but the label shifts recall by only a few
+#   points while the CIs are about ±0.07 wide; neither the ordering nor equivalence is established. What *is* clear is
+#   that no label lets non-laboratory features find the undiagnosed as well as the diagnosed.
+# * **P14 – inconclusive.** WHtR is harmless for overall discrimination (a: supported) and moves Asian sensitivity the
+#   predicted way, but the PSU-cluster interval for 40 Asian cases does not exclude a null effect (b: inconclusive).
+# * **H4b – supported (S5), not transferred.** The single-feature WHtR advantage for Asian adults is real; inside the
+#   multivariable model, which already contains waist, height and BMI, it shrinks to a few thousandths of AUC.
+#
+# The decisive S8 results are audit findings rather than hypothesis tests: a substantive NH Asian sensitivity gap
+# beyond the permutation null (exploratory), SES-driven income gaps, an access imprint that appears only when the model
+# learns from self-report, a screening-population sex gap, and race-level miscalibration of a race-blind model.
+
+# %% [markdown]
+# ## 14 Register and storage
+# **Why.** Every decision of this section goes into the decision register with the evidence computed above (no value
+# is typed by hand), and every number into `results/metrics_S8.json` and `results/S8/`, so that S10 and the slides read
+# them instead of re-typing them.
+
+# %%
+REGISTER_COLS = ["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision",
+                 "alternatives_rejected", "hyp_id", "status", "check_verdict", "check_note", "loop_ref", "change_request", "commit"]
+TODAY = "2026-10-11"
+eodA = ET1.set_index(["attribute", "group"]).loc[("race", "NH Asian")]
+permr = PERM1.set_index("attribute")
+rw_rng = {a: f"{w.min():.2f}-{w.max():.2f}" for a, w in RW_W.items()}
+rw_auc = RWT[RWT["pop"] == "E-ALL"].set_index("arm")
+cal_race = CAL[(CAL["attribute"] == "race") & CAL["oe_ci_excludes_1"]]
+acc_d = ACCD.set_index(["feature", "contrast"])
+reg = [
+    dict(dr_id="DR-S8-01", type="audit_design",
+         finding="Group cells are small (no oversampling in 2021-23); E-SCREEN has 127 positives in the training part",
+         evidence_ref="results/S8/group_sizes.csv", evidence_value=f"suppressed groups E-ALL {n_supp['eall']}/16, E-SCREEN {n_supp['escreen']}/16; NH Asian 40 positives (E-ALL)",
+         decision="Audit race (NH Asian separate, exploratory), insurance, low access, income band, sex on training-part OOF; NCHS rule n<30 or positives<30 -> show, no gap verdict",
+         alternatives_rejected="Pooling Asian with Other/Multi (hides the BMI measurement issue); verdicts on suppressed cells",
+         status="decided", check_verdict="PASS", check_note="counts recomputed from the cohort and the stored split"),
+    dict(dr_id="DR-S8-02", type="threshold",
+         finding="One operating point is needed to compare groups; group thresholds need race at prediction time",
+         evidence_ref="notebooks/sections/07_fairness.py sections 2 and 10; results/metrics_S8.json group_threshold_counterfactual",
+         evidence_value=f"shared threshold {thr_check:.3f} (spec 0.80, E-ALL); Asian threshold for White TPR {t_a:.3f} (CI {GTHR['threshold_asian_ci'][0]:.3f}-{GTHR['threshold_asian_ci'][1]:.3f}), Asian FPR {fpr_overall_a:.3f}->{fpr_a:.3f}",
+         decision="Single threshold at overall specificity 0.80, re-estimated in each bootstrap replicate; no group-specific thresholds (R7.2)",
+         alternatives_rejected="ThresholdOptimizer / equalised-odds post-processing (uses race at prediction, levelling down, unstable with ~40 cases)",
+         status="decided", check_verdict="PASS", check_note="engine threshold equals evalkit.recall_at_specificity (asserted)"),
+    dict(dr_id="DR-S8-03", type="finding",
+         finding="Model reproduces label and measurement bias: NH Asian and income gaps exceed the permutation null on E-ALL",
+         evidence_ref="results/S8/eod_eall_t1.csv; results/S8/permutation.csv; results/S8/gap_decomposition.csv; figures/S8_group_tpr.png",
+         evidence_value=f"NH Asian EOD {eodA['eod']:+.3f} ({eodA['eod_lo']:+.3f}, {eodA['eod_hi']:+.3f}), race max|EOD| p {permr.loc['race', 'p_value']:.3f}; income p {permr.loc['income', 'p_value']:.3f}; TPR diagnosed {tpr_dx_all:.2f} vs undiagnosed {tpr_ud_all:.2f}",
+         decision="Report gaps with CIs and permutation baseline; attribute them to routes (diagnosis/care traces, BMI, SES inputs); ecological-fallacy caveat; no claim about individual risk",
+         alternatives_rejected="Reporting raw group differences without a null; interpreting group TPR as individual risk",
+         hyp_id="", status="decided", check_verdict="PASS", check_note="NH Asian exploratory (40 positives)"),
+    dict(dr_id="DR-S8-04", type="finding",
+         finding="Screening-population (E-SCREEN) fairness cannot be audited by race, insurance or access at this sample size",
+         evidence_ref="results/S8/eod_escreen_t1.csv",
+         evidence_value=f"reportable E-SCREEN contrasts {len(rep_s)}/{len(ETs)}; substantive: {sub_escr[['group', 'eod']].round(3).to_dict('records')}",
+         decision="E-SCREEN group gaps shown as numbers only; the one reportable gap (sex) reported as a finding; limitation for S10",
+         alternatives_rejected="Pooling E-ALL and E-SCREEN (mixes the use cases)", status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-05", type="hypothesis_test",
+         finding="3x3 label matrix: predicted ordering points the right way but differences are small; Undiagnosed is hardest for every label",
+         evidence_ref="results/S8/label_matrix_cells.csv; results/S8/h3_contrasts.csv; figures/S8_label_matrix.png",
+         evidence_value=f"recall Undiagnosed L_self {LM['recall'].loc['L_self', 'Undiagnosed']:.3f}, L_A1c {LM['recall'].loc['L_A1c', 'Undiagnosed']:.3f}, L_comb {LM['recall'].loc['L_comb', 'Undiagnosed']:.3f}; D_controlled L_A1c {LM['recall'].loc['L_A1c', 'D_controlled']:.3f}; elements {elem_v}",
+         decision=f"H3 verdict {h3_v}; L_comb stays the frozen target", alternatives_rejected="Switching the training label after seeing the matrix",
+         hyp_id="H3", status="decided", check_verdict="PASS", check_note="L_comb x Undiagnosed cell equals E-SCREEN recall of S (asserted)"),
+    dict(dr_id="DR-S8-06", type="audit",
+         finding="Self-report training teaches the model that poor access means lower risk",
+         evidence_ref="results/S8/access_audit_coefs.csv; results/S8/access_audit_diffs.csv",
+         evidence_value=f"uninsured L_self - L_comb {acc_d.loc[('uninsured', 'L_self - L_comb'), 'diff_per_sd']:+.3f} ({acc_d.loc[('uninsured', 'L_self - L_comb'), 'lo']:+.3f}, {acc_d.loc[('uninsured', 'L_self - L_comb'), 'hi']:+.3f}); no usual place {acc_d.loc[('no_usual_place', 'L_self - L_comb'), 'diff_per_sd']:+.3f} ({acc_d.loc[('no_usual_place', 'L_self - L_comb'), 'lo']:+.3f}, {acc_d.loc[('no_usual_place', 'L_self - L_comb'), 'hi']:+.3f})",
+         decision="Access features remain audit-only (P03); evidence supports the union label over self-report",
+         alternatives_rejected="Adding insurance/usual place as predictors (would encode access to diagnosis)", status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-07", type="mitigation",
+         finding="Race reweighing changes neither AUC nor the Asian gap and widens the NH Black gap",
+         evidence_ref="results/S8/reweighing_auc.csv; results/S8/reweighing_eod.csv",
+         evidence_value=f"w range race {rw_rng['race']}; dAUC {rw_auc.loc['S+RW(race)', 'est']:+.4f} ({rw_auc.loc['S+RW(race)', 'lo']:+.4f}, {rw_auc.loc['S+RW(race)', 'hi']:+.4f})",
+         decision="Not adopted; reported as a null mitigation", alternatives_rejected="Race as a model feature (S9 sensitivity only)",
+         status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-08", type="mitigation",
+         finding="Insurance and low-access reweighing: AUC unchanged, targeted gaps narrow slightly with CIs including 0",
+         evidence_ref="results/S8/reweighing_auc.csv; results/S8/reweighing_eod.csv; results/S8/tradeoff.csv",
+         evidence_value=f"w range insurance {rw_rng['insurance']}, low access {rw_rng['low_access']}; dAUC {rw_auc.loc['S+RW(insurance)', 'est']:+.4f} / {rw_auc.loc['S+RW(low_access)', 'est']:+.4f}",
+         decision="Not adopted (no demonstrated benefit); extension item complete", alternatives_rejected="Adopting on point estimates",
+         status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-09", type="hypothesis_test",
+         finding="WHtR raises NH Asian TPR in point estimate only; PSU-cluster interval crosses 0",
+         evidence_ref="results/S8/whtr_p14b.csv; figures/S8_whtr_asian_white.png",
+         evidence_value=f"Asian dTPR {r_dA['est']:+.3f} (simple {r_dA['simple_lo']:+.3f}, {r_dA['simple_hi']:+.3f}; PSU {r_dA['psu_lo']:+.3f}, {r_dA['psu_hi']:+.3f}); White {r_dW['est']:+.3f}; dAUC {r_auc['est']:+.4f}",
+         decision=f"P14-b {v_p14b}, P14 {v_p14}; WHtR not adopted as a new preparation step; loop L4 not triggered",
+         alternatives_rejected="Adopting WHtR on the point estimate (post hoc)", hyp_id="P14", status="decided", check_verdict="PASS",
+         loop_ref="L4"),
+    dict(dr_id="DR-S8-10", type="hypothesis_test",
+         finding="The single-feature WHtR advantage for Asian adults does not transfer to the multivariable model",
+         evidence_ref="results/S8/whtr_p14b.csv", evidence_value=f"model-level dAUC Asian - White {r_h4['est']:+.4f} ({r_h4['lo']:+.4f}, {r_h4['hi']:+.4f})",
+         decision=f"H4b stays {v_h4b} on the S5 single-feature test; S8 model-level result {v_h4b_model} reported as secondary",
+         hyp_id="H4b", status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-11", type="finding",
+         finding="Race-blind model is calibrated overall but not within race",
+         evidence_ref="results/S8/group_calibration.csv; figures/S8_group_calibration.png",
+         evidence_value=f"S-B6a O:E overall {y.sum() / pC.sum():.2f}; groups with CI excluding 1: {cal_race[['group', 'oe']].round(2).to_dict('records')}",
+         decision="Reported as a limitation; no race-specific recalibration (same reasons as DR-S8-02)",
+         alternatives_rejected="Race-specific recalibration", status="decided", check_verdict="PASS"),
+]
+REG8 = pd.DataFrame(reg)
+REG8["stage"], REG8["date"] = "S8", TODAY
+for c in REGISTER_COLS:
+    if c not in REG8:
+        REG8[c] = ""
+REG8 = REG8[REGISTER_COLS].fillna("")
+REG8.to_csv(C.GOVERNANCE_DIR / "register" / "S8.csv", index=False, lineterminator="\n")
+print(REG8[["dr_id", "type", "decision"]].to_string(index=False, max_colwidth=110))
 
 # %%
 for nm, df_ in {"group_metrics_eall_t1": GT1, "eod_eall_t1": ET1, "group_metrics_escreen_t1": GTs, "eod_escreen_t1": ETs,
                 "group_metrics_eall_t2": GT2, "eod_eall_t2": ET2,
                 "permutation": pd.concat([PERM1, PERMs, PERM2], ignore_index=True)}.items():
     df_.to_csv(OUT / f"{nm}.csv", index=False)
+S8["figures"] = [f81, f81b, f82, f83, f84, f85]
 S8["runtime_seconds"] = time.time() - T_START
 R.save_section("S8", S8)
-print(f"saved results/metrics_S8.json and {len(list(OUT.glob('*.csv')))} tables in results/S8; runtime {S8['runtime_seconds']:.0f} s ({C.NB_MODE})")
+print(f"saved results/metrics_S8.json, {len(list(OUT.glob('*.csv')))} tables in results/S8, governance/register/S8.csv "
+      f"({len(REG8)} rows); runtime {S8['runtime_seconds']:.0f} s ({C.NB_MODE})")
+print(json.dumps(S8["verdicts"]))

@@ -1,0 +1,11 @@
+hyp_id,prior_exposure,sub,verdict,evidence
+H3,none,E1 L_self misses Undiagnosed most,inconclusive,"Undiagnosed: L_self - L_A1c -0.055 (-0.119, +0.020); Undiagnosed: L_self - L_comb -0.016 (-0.083, +0.024)"
+H3,none,E2 L_A1c misses D_controlled most,inconclusive,"D_controlled: L_A1c - L_self -0.041 (-0.103, +0.005); D_controlled: L_A1c - L_comb -0.015 (-0.072, +0.021)"
+H3,none,E3 L_comb smallest worst-cell gap,inconclusive,"worst-cell gap: L_comb - L_self -0.016 (-0.082, +0.036); worst-cell gap: L_comb - L_A1c -0.002 (-0.071, +0.059)"
+H3,none,overall,inconclusive,combine_verdicts(E1-E3); falsifier: any contrast reversed with CI excluding 0
+P14,descriptive_seen,(a) |ΔAUC| < 0.01 (from S7),supported,"ΔAUC -0.0009 (-0.0028, +0.0009), corrected t"
+P14,descriptive_seen,(b) NH Asian ΔTPR ≥ +0.05,inconclusive,"ΔTPR +0.075 (-0.071, +0.103), psu interval; White ΔTPR +0.010"
+P14,descriptive_seen,overall,inconclusive,"combine_verdicts(a, b)"
+H4b,descriptive_seen,single feature (S5),supported,"WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (person +0.045, +0.138; PSU +0.038, +0.111)"
+H4b,descriptive_seen,"model level (S8, secondary)",inconclusive,"ΔAUC_Asian − ΔAUC_White +0.0037 (-0.0032, +0.0111)"
+H4b,descriptive_seen,overall,supported,S5 primary; a decisive contradicting S8 model-level verdict would make it mixed
