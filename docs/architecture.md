@@ -112,16 +112,18 @@ model_kwargs(cfg) -> dict                                 # class_weight / sampl
 
 ### `evalkit.py` (S7)
 ```python
-make_holdout(cohort, seed=C.SEED_MASTER) -> tuple[np.ndarray, np.ndarray]   # stratified label x race; persisted
+make_holdout(cohort, seed=C.SEED_MASTER, path=None) -> tuple[np.ndarray, np.ndarray]   # stratified label x race; persisted, reused
 make_folds(y, strat, *, n_splits=C.CV_SPLITS, n_repeats=C.CV_REPEATS, seed) -> list[tuple]; persisted
 cv_predict(make_pipe, X, y, folds, *, fit_params=None) -> pd.DataFrame       # repeat, fold, row, prob
 metric_suite(y, p, *, w=None) -> dict          # roc_auc, pr_auc, brier, recall_at_spec, balanced_acc, cal_slope, cal_intercept
-recall_at_specificity(y, p, spec=C.SPEC_FIXED, neg_mask=None) -> float
-fold_metrics(oof, y, eval_mask=None) -> pd.DataFrame
+recall_at_specificity(y, p, spec=C.SPEC_FIXED, neg_mask=None) -> tuple[float, float]   # (recall, threshold)
+fold_metrics(oof, y, eval_mask=None) -> pd.DataFrame      # balanced acc at Youden threshold from the other folds' OOF (same repeat)
+repeat_metrics(...), mean_oof(oof, n), paired_fold_diffs(...)   # E-SCREEN: use repeat-level / bootstrap, not fold AUC
 corrected_t(diffs, n_train, n_test, alpha=0.05) -> dict  # Nadeau–Bengio
 paired_bootstrap(y, p_a, p_b, metric, *, n_boot=C.N_BOOT, seed, eval_mask=None) -> dict
-verdict(ci_low, ci_high, sesoi, direction) -> str        # supported/refuted/equivalent/inconclusive
-coef_bootstrap(make_pipe, X, y, *, n_boot=C.N_BOOT_COEF, seed) -> pd.DataFrame
+verdict(ci_low, ci_high, sesoi, direction, estimate=None) -> str   # supported/refuted/equivalent/inconclusive
+coef_bootstrap(make_pipe, X, y, *, n_boot=C.N_BOOT_COEF, seed) -> CoefBootstrap(coefs, summary)  # summary: coef, mean, sd, q_low, q_high, sign_flip_rate, ci_excludes_0
+permutation_auc(make_pipe, X, y, folds, *, n_perm=C.N_PERM, seed, n_jobs=None) -> dict
 ```
 
 `fairness.py` (S8) and `robustness.py` (S9) are defined by their owners and documented in their module docstrings.
