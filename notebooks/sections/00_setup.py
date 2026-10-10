@@ -187,9 +187,14 @@ LAYOUT = pd.DataFrame([
     ("data/nhanes_2021_2023/", "raw XPT (read-only), codebooks, MANIFEST.sha256, data notes", "S2"),
     ("tools/", "run_section.py, check_repo.py, build_final.py", "S0, S11"),
 ], columns=["path", "content", "stage"])
+# Paths a self-contained run (single notebook plus src/, config/, governance/, data/) must have;
+# the others exist only in the full repository.
+SELF_CONTAINED = ["src/", "config/", "governance/", "data/nhanes_2021_2023/"]
 LAYOUT["exists"] = [(ROOT / p).exists() for p in LAYOUT["path"]]
+LAYOUT["availability"] = np.where(LAYOUT["exists"], "present",
+                                  np.where(LAYOUT["path"].isin(SELF_CONTAINED), "MISSING", "repository only"))
 display(LAYOUT)
-assert LAYOUT.loc[LAYOUT["path"].isin(["src/", "notebooks/sections/", "governance/", "data/nhanes_2021_2023/", "tools/"]), "exists"].all()
+assert LAYOUT.loc[LAYOUT["path"].isin(SELF_CONTAINED), "exists"].all(), LAYOUT[LAYOUT["availability"] == "MISSING"]
 
 REGISTER_COLS = ["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision",
                  "alternatives_rejected", "hyp_id", "status", "check_verdict", "check_note", "loop_ref",
