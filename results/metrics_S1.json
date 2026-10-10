@@ -3,7 +3,7 @@
     "section": "S1",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:01:32+00:00"
+    "written_utc": "2026-10-10T18:02:08+00:00"
   },
   "loader": "src.nhanes_io",
   "n_cohort": 5730,
@@ -80,7 +80,11 @@
       "none": 3
     }
   },
-  "minimisation": "report from nhanes_io",
+  "minimisation": {
+    "raw_columns": 175,
+    "kept": 78,
+    "dropped": 97
+  },
   "response_rates": {
     "interview": 0.346,
     "mec": 0.257,

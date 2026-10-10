@@ -339,10 +339,20 @@ assert preg_known["RIDAGEYR"].between(20, 44).all()
 
 # %%
 min_path = C.RESULTS_DIR / "S2" / "minimisation_report.csv"
+cols_path = C.RESULTS_DIR / "S2" / "minimisation_columns.csv"
 if min_path.exists():
     mrep = pd.read_csv(min_path)
-    display(mrep)
-    MIN_STATUS = "report from nhanes_io"
+    display(mrep[["file", "use_tier", "cols_raw", "cols_kept", "cols_dropped"]])
+    tot_raw, tot_kept, tot_drop = (int(mrep[k].sum()) for k in ["cols_raw", "cols_kept", "cols_dropped"])
+    assert tot_raw == tot_kept + tot_drop
+    assert (tot_raw, tot_kept, tot_drop) == (175, 78, 97), 'text of the so-what cell must be updated'
+    print(f"{tot_raw} raw columns in 16 files: {tot_kept} kept ({tot_kept / tot_raw:.0%}), {tot_drop} dropped ({tot_drop / tot_raw:.0%})")
+    if cols_path.exists():
+        mcols = pd.read_csv(cols_path)
+        examples = ["DMDBORN4", "DMDYRUSR", "DMQMILIZ", "DMDHHSIZ", "MCQ010"]
+        display(mcols[mcols["var"].isin(examples)][["file", "var", "decision", "reason"]])
+        assert (mcols["decision"] == "drop").sum() == tot_drop
+    MIN_STATUS = {"raw_columns": tot_raw, "kept": tot_kept, "dropped": tot_drop}
 else:
     raw_dims = []
     for stem in C.NHANES_FILES:
@@ -350,12 +360,11 @@ else:
         raw_dims.append({"file": stem, "rows": len(df), "columns in raw file": df.shape[1]})
     mrep = pd.DataFrame(raw_dims)
     display(mrep)
-    print("results/S2/minimisation_report.csv not produced yet: raw dimensions shown; kept/dropped columns follow from variable_spec.csv")
+    print("results/S2/minimisation_report.csv not produced yet: raw dimensions shown")
     MIN_STATUS = "raw dimensions only (minimisation report pending)"
-total_cols = int(mrep.select_dtypes("number").iloc[:, -1].sum()) if len(mrep) else 0
 
 # %% [markdown]
-# **So what.** The table is the raw material for the minimisation decision; the kept/dropped counts per file appear here as soon as the loader has produced `minimisation_report.csv`. Groups excluded by design (child-only items, country of birth and years of residence, military service, unrelated MCQ items) are listed with a reason in the specification, so that every dropped column has a stated purpose-based justification.
+# **So what.** Of 175 raw columns in the 16 files, 78 are kept and 97 are dropped (55 %) because the specification gives them no analytic role: quasi-identifiers such as country of birth and years of residence, military service, household-size details, measurement-comment codes and unrelated MCQ items. Every dropped column has a stated reason in `minimisation_columns.csv`, and the loader discards them immediately after reading, so downstream code cannot use them by accident.
 
 # %% [markdown]
 # ## Response rates and representativeness
