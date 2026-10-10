@@ -86,8 +86,9 @@ S7["splits"] = dict(n_train=n, n_holdout=len(te), n_pos_eall=int(y.sum()), n_esc
 
 # %% [markdown]
 # ## 2 Data-justified model choice
-# **Why.** Only basic interpretable models are allowed (HR3). Within that constraint each modelling choice
-# is tied to a diagnostic number from S4 (the DAJ table) – and the reason for *not* choosing an alternative.
+# **Why.** Only basic interpretable models are allowed (logistic regression and shallow trees). Within that constraint each
+# modelling choice is tied to a diagnostic number from §4 (the S4 model-justification table) – and the reason for *not*
+# choosing an alternative.
 
 # %%
 S4dir = C.RESULTS_DIR / "S4"
@@ -105,11 +106,20 @@ epv = {t: round(y.sum() / k, 1) for t, k in epv_den.items()}
 print(f"\nsex x BMI by spec: {sx}")
 print(f"events per parameter in S: Tier 1 {y.sum()}/{epv_den[1]} = {epv[1]}, Tier 2 {y.sum()}/{epv_den[2]} = {epv[2]}")
 print(f"imbalance: prevalence {y.mean():.3f} in the training part")
+lin_i = lin.set_index("variable")
+nl = ["RIDAGEYR", "BMXBMI", "LBDHDD", "LBXTC"]
+ia = inter[inter["spec"] == "A_primary"].set_index("term")
+vr = vif4[vif4["set"] == "raw_anthropometry"].set_index("variable")["vif"]
+vb = vif4.loc[vif4["set"] == "bp_readings", "vif"]
+ev_nonlin = ", ".join(f"{lin_i.loc[v, 'label']} {lin_i.loc[v, 'chi2']:.1f}" for v in nl) + f" (all p < {lin_i.loc[nl, 'p'].max():.3f})"
+ev_inter = (f"race x BMI p {ia.loc['race_x_bmi', 'p']:.2f}, Asian x BMI p {ia.loc['asian_x_bmi', 'p']:.2f} "
+            f"(MDE {ia.loc['asian_x_bmi', 'mde']:.2f} log-OR)")
+ev_coll = f"weight VIF {vr['BMXWT']:.1f}, BMI {vr['BMXBMI']:.1f}; 6 BP readings {vb.min():.1f}-{vb.max():.1f}"
 choice = pd.DataFrame([
-    ("non-linearity", "age chi2 57.6, BMI 11.6, HDL 18.5, TC 41.8 (p < 0.01)", "L2 logistic regression + B-spline basis (P13)", "categorised bands (arbitrary cut-points, information loss); GAM / boosting (outside HR3)"),
-    ("interactions", "race x BMI p 0.39, Asian x BMI p 0.93 (MDE 0.70 log-OR)", "no interaction terms; Asian BMI bias treated as a measurement issue (P14, S8)", "interaction terms add variance without detectable gain"),
-    ("collinearity", "weight VIF 95.7, BMI 97.6; 6 BP readings 8.8-11.7", "aggregate + in-fold VIF pruning (P04/P05), L2 as second defence", "L1 (unstable selection among collinear columns, sensitivity only)"),
-    ("sample size", f"{y.sum()} events / {epv_den[1]} parameters (EPV {epv[1]})", "unpenalised fit would be acceptable; mild L2 (C0) chosen by inner CV", "deep trees / ensembles (overfit, HR3)"),
+    ("non-linearity", ev_nonlin, "L2 logistic regression + B-spline basis (P13)", "categorised bands (arbitrary cut-points, information loss); GAM / boosting (outside the allowed model class)"),
+    ("interactions", ev_inter, "no interaction terms; Asian BMI bias treated as a measurement issue (P14, S8)", "interaction terms add variance without detectable gain"),
+    ("collinearity", ev_coll, "aggregate + in-fold VIF pruning (P04/P05), L2 as second defence", "L1 (unstable selection among collinear columns, sensitivity only)"),
+    ("sample size", f"{y.sum()} events / {epv_den[1]} parameters (EPV {epv[1]})", "unpenalised fit would be acceptable; mild L2 (C0) chosen by inner CV", "deep trees / ensembles (overfit, outside the allowed model class)"),
     ("imbalance", f"prevalence {y.mean():.1%}", "no resampling; class_weight tested as block B6a", "SMOTE (breaks calibration and the survey design)"),
     ("thresholds / leakage", "clinical cut-points and leakage need inspection", "depth-3 tree (min leaf 50) as a probe only", "tree as main model (step functions, unstable)"),
 ], columns=["diagnostic", "evidence (S4 / S7)", "decision", "why not the alternative"])
@@ -125,12 +135,12 @@ S7["model_choice"] = dict(linearity=lin.set_index("label")[["chi2", "p"]].round(
 # sex × BMI significant in its primary specification (p printed above) but not in the minimal or spline
 # specifications; because the result depends on the specification, no interaction term is added and the point is
 # listed as a limitation. With about 18 events per parameter, overfitting risk is modest; L2 mainly stabilises
-# correlated anthropometrics. Redundancy is handled as in the S4 DAJ table: in-fold iterative VIF > 10 pruning with
+# correlated anthropometrics. Redundancy is handled as in the S4 model-justification table: in-fold iterative VIF > 10 pruning with
 # BMI and waist protected (P05), which removes only weight (§6.5); height, hip and arm therefore stay in S.
 
 # %% [markdown]
 # ## 3 Regularisation strength C0
-# **Why.** HR2 requires the *same model* for minimal and systematic arms. C is therefore chosen once – by
+# **Why.** A fair minimal-versus-systematic comparison requires the *same model* in every arm. C is therefore chosen once – by
 # `LogisticRegressionCV(Cs=[0.01, 0.1, 1, 10])`, inner 5-fold ROC-AUC, on the S arm of Tier 1 with its class and
 # survey weights – and then frozen for every arm. Choosing it on S favours S slightly (the other arms do not get
 # their own tuning); M0 with its own C is an S9 sensitivity.
@@ -901,7 +911,7 @@ S7["lr_test_splines"] = lrt
 # **So what.** Reading of the verdicts (numbers in the tables above):
 #
 # * **Leakage (H2a, B2, B2t) – supported everywhere.** The availability rule costs about 0.13 AUC on E-ALL and about 0.07
-#   on E-SCREEN; the naive tree's first split is a treatment item. This is a *correct deterioration* (HR4).
+#   on E-SCREEN; the naive tree's first split is a treatment item. This is a *correct deterioration*.
 # * **Fidelity, redundancy, missingness, survey weights (B1, B3-a, B4-a, B6b) – equivalence for AUC.** Repairing the data
 #   matters for what the data *mean* (6 label flips, 939 non-exercisers, 2,003 wiped values), not for discrimination.
 #   "Equivalent" is a finding: these steps can be justified on fidelity grounds without a performance argument.
