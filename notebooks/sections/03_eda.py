@@ -1343,7 +1343,7 @@ SELF_CHECK = pd.DataFrame([
 ], columns=["quantity", "process_doc", "recomputed", "note"])
 tol = 0.05 + 0.002 * SELF_CHECK.process_doc.abs()                     # rounding of the quoted value
 tol[SELF_CHECK.quantity.str.endswith(" p")] = 0.02                   # p-values
-tol[SELF_CHECK.quantity.str.contains("P\(sign")] = 0.10           # bootstrap probability, Monte-Carlo error at B = 100
+tol[SELF_CHECK.quantity.str.contains("P(sign", regex=False)] = 0.10   # bootstrap probability, Monte-Carlo error at B = 100
 SELF_CHECK["tolerance"] = tol
 SELF_CHECK["verdict"] = np.where((SELF_CHECK.recomputed - SELF_CHECK.process_doc).abs() <= tol, "PASS", "DIFF")
 SELF_CHECK.to_csv(S4_DIR / "self_check.csv", index=False)
