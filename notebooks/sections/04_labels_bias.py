@@ -155,6 +155,122 @@ register("DR-S5-02", "label_audit",
 # `L_self` misses 152/971 = 15.7 % of `L_comb` positives and `L_A1c` misses 250/971 = 25.7 %. The disagreement
 # is structured, not random noise; steps 2–3 show why.
 
+# %% [markdown]
+# ## 2 Treatment masking
+#
+# **Why.** 250 self-reported diabetics have HbA1c < 6.5 %. If most of them are treated, a low HbA1c is the
+# *result* of diagnosis and treatment, and an HbA1c-only label would call well-controlled patients "healthy".
+# Medication (insulin DIQ050, pills DIQ070) is post-diagnosis information, so it is used here for the audit only,
+# never as a feature.
+
+# %%
+sr = d[d["L_self"] == 1]
+ctrl = sr[sr["L_A1c"] == 0]
+n_ctrl, n_ctrl_med = len(ctrl), int(ctrl["on_med"].sum())
+unmed = ctrl[ctrl["on_med"] == 0]
+n_unmed_pre = int(unmed["LBXGH"].between(5.7, 6.49).sum())
+on_med = sr[sr["on_med"] == 1]
+share_med_below = float((on_med["L_A1c"] == 0).mean())
+print(f"self-reported diabetics: {len(sr)}; HbA1c < 6.5: {n_ctrl} ({pct(n_ctrl / len(sr))})")
+print(f"  of these on insulin or pills: {n_ctrl_med} ({pct(n_ctrl_med / n_ctrl, 0)}); untreated: {len(unmed)}, "
+      f"of whom {n_unmed_pre} have HbA1c 5.7-6.4")
+print(f"treated self-reported diabetics: {len(on_med)}; HbA1c < 6.5 among them: {pct(share_med_below)}")
+print("\nHbA1c (%) of self-reported diabetics by treatment")
+print(sr.groupby(sr["on_med"].map({1: "insulin or pills", 0: "no medication"}))["LBXGH"]
+      .describe(percentiles=[.25, .5, .75]).round(2))
+assert (n_ctrl, n_ctrl_med, len(unmed), n_unmed_pre, len(on_med)) == (250, 165, 85, 50, 694)
+close(n_ctrl / len(sr), 0.305, 0.001, "masking share")
+close(share_med_below, 0.238, 0.001, "treated with HbA1c < 6.5")
+
+fig, ax = plt.subplots(figsize=(7.5, 4))
+bins = np.arange(4.0, 14.01, 0.25)
+for flag, lab, col in [(1, f"insulin or pills (n={len(on_med)})", plots.PALETTE[4]),
+                       (0, f"no medication (n={len(sr) - len(on_med)})", plots.PALETTE[0])]:
+    ax.hist(sr.loc[sr["on_med"] == flag, "LBXGH"], bins=bins, histtype="step", lw=2, color=col,
+            density=True, label=lab)
+ax.axvline(C.HBA1C_DIABETES, color="k", ls="--", lw=1)
+ax.text(C.HBA1C_DIABETES - 0.1, ax.get_ylim()[1] * 0.92, "HbA1c 6.5 %:\nlabel threshold", ha="right", fontsize=9)
+ax.set(xlabel="HbA1c (%)", ylabel="density", title="Self-reported diabetics: treatment pushes HbA1c below the label threshold")
+ax.legend(loc="upper right")
+plots.savefig(fig, "S5_a1c_by_medication",
+              caption=f"HbA1c distribution of the {len(sr)} self-reported diabetics by current insulin/pill use. "
+                      f"{n_ctrl} ({pct(n_ctrl / len(sr))}) are below 6.5 %, {n_ctrl_med} of them treated.")
+plt.show()
+
+RES["masking"] = {"self_reported": len(sr), "below_6_5": n_ctrl, "below_6_5_share": n_ctrl / len(sr),
+                  "below_6_5_on_med": n_ctrl_med, "below_6_5_untreated": len(unmed),
+                  "untreated_5_7_to_6_4": n_unmed_pre, "treated": len(on_med),
+                  "treated_below_6_5_share": share_med_below}
+register("DR-S5-03", "label_bias",
+         "Treatment masks diabetes in HbA1c: an HbA1c-only label turns controlled patients into negatives",
+         "figures/S5_a1c_by_medication.png; §5.2",
+         f"{n_ctrl}/{len(sr)} ({pct(n_ctrl / len(sr))}) self-reported diabetics have HbA1c<6.5; {n_ctrl_med} of them on medication; "
+         f"{pct(share_med_below)} of treated patients below 6.5",
+         "Reject L_A1c as the sole target; keep stratum D_controlled as a 3x3 evaluation column; medication is audit-only (post-diagnosis)",
+         "HbA1c-only target; medication as a feature (leakage by the availability rule)")
+
+# %% [markdown]
+# **So what.** 250 of 819 self-reported diabetics (30.5 %) are below the HbA1c threshold, and 165 of these
+# (66 %) take insulin or pills; among all 694 treated patients 23.8 % are "controlled". The remaining 85 are
+# untreated, 50 of them in the prediabetes range (5.7–6.4 %), consistent with lifestyle-controlled or
+# early disease. An HbA1c-only label would therefore count successful treatment as absence of disease: this is
+# the *D_controlled* column of the 3×3 label matrix in S8.
+
+# %% [markdown]
+# ## 3 What "undiagnosed" means
+#
+# **Why.** The 152 adults with HbA1c ≥ 6.5 % who do not report diabetes are the population the screening use case
+# is about (E-SCREEN). "Undiagnosed" is easily read as "never saw a doctor". DIQ010 = 3 (borderline), DIQ180
+# (blood test for high blood sugar in the past three years) and DIQ160 (told prediabetes) show whether they
+# had contact with the system. Counts are unweighted; shares among the undiagnosed are also weighted with
+# Korn–Graubard intervals.
+
+# %%
+bl = d["DIQ010"].eq(3)
+no = d["DIQ010"].eq(2)
+p_bl, p_no = d.loc[bl, "L_A1c"].mean(), d.loc[no, "L_A1c"].mean()
+print(f"DIQ010 = 3 (borderline): {int(bl.sum())}; HbA1c >= 6.5: {int(d.loc[bl, 'L_A1c'].sum())} ({pct(p_bl)}) "
+      f"vs DIQ010 = 2: {pct(p_no)}")
+und_mask = (d["stratum_3x3"] == "Undiagnosed").to_numpy()
+und = d[und_mask]
+care = {
+    "told borderline (DIQ010=3)": und["DIQ010"].eq(3),
+    "blood test past 3 years (DIQ180=1)": und["DIQ180"].eq(1),
+    "told prediabetes (DIQ160=1)": und["DIQ160"].eq(1),
+}
+rows = []
+for name, s in care.items():
+    y = np.where(und_mask, d.index.isin(s[s].index), np.nan)
+    w = S.weighted_prop(d, y.astype(float), weight=WT, domain=und_mask)
+    rows.append({"contact": name, "n": int(s.sum()), "of": len(und), "share": s.sum() / len(und),
+                 "w_est": w["est"], "kg_low": w["kg_low"], "kg_high": w["kg_high"], "df": w["df"],
+                 "flags": ";".join(w["nchs_flags"])})
+care_tab = pd.DataFrame(rows)
+print(care_tab.round(3).to_string(index=False))
+print(f"DIQ180 missing among undiagnosed: {int(und['DIQ180'].isna().sum())}; DIQ160 missing: {int(und['DIQ160'].isna().sum())} "
+      "(borderline respondents skip DIQ160)")
+assert int(bl.sum()) == 213 and int(d.loc[bl, "L_A1c"].sum()) == 36 and len(und) == 152
+assert care_tab["n"].tolist() == [36, 104, 48]
+close(p_bl, 0.169, 0.001, "borderline A1c+ share")
+close(p_no, 0.025, 0.001, "DIQ010=2 A1c+ share")
+care_tab.to_csv(OUT / "undiagnosed_care_contact.csv", index=False)
+RES["undiagnosed_meaning"] = {"borderline_n": int(bl.sum()), "borderline_a1c_pos": int(d.loc[bl, "L_A1c"].sum()),
+                              "borderline_a1c_share": p_bl, "no_a1c_share": p_no, "undiagnosed": len(und),
+                              "contact": care_tab.set_index("contact")[["n", "share", "w_est", "kg_low", "kg_high"]].to_dict("index")}
+register("DR-S5-04", "label_semantics",
+         "Most undiagnosed adults had contact with the health system: the gap is diagnosis/communication, not only access",
+         "results/S5/undiagnosed_care_contact.csv; §5.3",
+         f"of 152 undiagnosed: 36 told borderline (24%), 104 blood-tested in past 3 y (68%), 48 told prediabetes",
+         "Frame E-SCREEN positives as 'not diagnosed despite contact'; DIQ160/DIQ180 excluded as features (post-test information); borderline kept negative in L_comb and flagged",
+         "Describe undiagnosed as 'no access to care'; use DIQ180 as a screening feature")
+
+# %% [markdown]
+# **So what.** Borderline respondents are almost seven times as likely to be HbA1c-positive as those answering
+# "no" (16.9 % vs 2.5 %). Of the 152 undiagnosed, 104 (68 %) had a blood-sugar test in the past three years,
+# 36 (24 %) were told they were borderline and 48 were told they had prediabetes. "Undiagnosed" is therefore
+# mostly a diagnosis and communication gap, not a lack of any contact. This is also why DIQ160 and DIQ180 are
+# excluded as features: they record the result of a glucose test, which the screening use case comes before.
+
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"

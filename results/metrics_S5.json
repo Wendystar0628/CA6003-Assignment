@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:04:48+00:00"
+    "written_utc": "2026-10-10T18:05:09+00:00"
   },
   "labels": {
     "confusion": {
@@ -61,5 +61,45 @@
     "L_comb_unweighted": 0.1694589877835951,
     "self_missed_share": 0.15653964984552007,
     "a1c_missed_share": 0.25746652935118436
+  },
+  "masking": {
+    "self_reported": 819,
+    "below_6_5": 250,
+    "below_6_5_share": 0.3052503052503053,
+    "below_6_5_on_med": 165,
+    "below_6_5_untreated": 85,
+    "untreated_5_7_to_6_4": 50,
+    "treated": 694,
+    "treated_below_6_5_share": 0.2377521613832853
+  },
+  "undiagnosed_meaning": {
+    "borderline_n": 213,
+    "borderline_a1c_pos": 36,
+    "borderline_a1c_share": 0.16901408450704225,
+    "no_a1c_share": 0.024691358024691357,
+    "undiagnosed": 152,
+    "contact": {
+      "told borderline (DIQ010=3)": {
+        "n": 36,
+        "share": 0.23684210526315788,
+        "w_est": 0.23494834913472368,
+        "kg_low": 0.16522588276001135,
+        "kg_high": 0.31707072460200314
+      },
+      "blood test past 3 years (DIQ180=1)": {
+        "n": 104,
+        "share": 0.6842105263157895,
+        "w_est": 0.6249383141176801,
+        "kg_low": 0.5360025566379762,
+        "kg_high": 0.7080730764336733
+      },
+      "told prediabetes (DIQ160=1)": {
+        "n": 48,
+        "share": 0.3157894736842105,
+        "w_est": 0.30638537889566536,
+        "kg_low": 0.22750117126599806,
+        "kg_high": 0.39459042631070335
+      }
+    }
   }
 }
