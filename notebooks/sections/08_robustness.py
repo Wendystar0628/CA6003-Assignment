@@ -420,3 +420,272 @@ S9["sensitivity"] = dict(n_specs=len(SENS), eall_same_verdict=n_same, eall_rows=
 #   favour S or manufacture the leakage drop.
 # * **E-SCREEN**: all intervals are wide (about 25 positives per fold) and every verdict is inconclusive; point estimates
 #   range around zero, the screening value of the extra preparation is not established either way.
+
+# %% [markdown]
+# ## 5 Specification curve
+# **Why.** The sensitivity table changes one choice at a time; a specification curve (Simonsohn et al. 2020)
+# crosses the choices that the table showed to matter most, so that interactions between them cannot hide a
+# different answer. Grid: 5 training labels (L_comb, SL1–SL4) × 3 weighting schemes (as specified: S weighted and M1
+# unweighted; both unweighted; both weighted) × 4 values of C = **60 specifications**, each with ΔAUC(S − M1) and its
+# conservative CI on E-ALL and E-SCREEN. This extends, and does not replace, the core table.
+
+# %%
+import itertools
+LABELS_SC = {"L_comb": "arm", "SL1": "SL1", "SL2": "SL2", "SL3": "SL3", "SL4": "SL4"}
+WEIGHTING = ("as specified", "both unweighted", "both weighted")
+grid = []
+for (lab, lab_spec), wt, c in itertools.product(LABELS_SC.items(), WEIGHTING, RB.C_GRID):
+    cc = None if c == ctx.C0 else c
+    sa = Spec("S", label=lab_spec, C=cc, weighted=False if wt == "both unweighted" else None)
+    sb = Spec("M1", label=lab_spec, C=cc, weighted=True if wt == "both weighted" else None)
+    grid.append(dict(label=lab, weighting=wt, C=c, sa=sa, sb=sb))
+assert len(grid) == 60
+secs = prefetch({f"sc{i}{j}": (g[k], ctx.folds) for i, g in enumerate(grid) for j, k in enumerate(("sa", "sb"))})
+sc_rows = []
+for i, g in enumerate(grid):
+    for r in pair(g["sa"], g["sb"], tag=f"curve{i}", label=g["label"]):
+        sc_rows.append(dict(spec_id=i, label=g["label"], weighting=g["weighting"], C=g["C"], **{k: r[k] for k in
+                            ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "mdd", "h2b", "sesoi_class")}))
+curve = pd.DataFrame(sc_rows)
+curve.to_csv(OUT / "specification_curve.csv", index=False)
+print(f"60 specifications x 2 arms in {secs:.0f} s")
+cs = curve.groupby("pop").agg(n=("est", "size"), est_median=("est", "median"), est_min=("est", "min"), est_max=("est", "max"),
+                              share_positive=("est", lambda v: (v > 0).mean()),
+                              share_ci_above_0=("lo", lambda v: (v > 0).mean()),
+                              share_ci_below_0=("hi", lambda v: (v < 0).mean()),
+                              share_beyond_sesoi=("lo", lambda v: (v >= C.SESOI["roc_auc"]).mean()))
+print(cs.round(3).to_string())
+print(curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_string())
+print("median E-ALL estimate by factor:")
+for fac in ("label", "weighting", "C"):
+    print("  ", curve[curve["pop"] == "E-ALL"].groupby(fac)["est"].median().round(4).to_dict())
+
+# %%
+e_all = curve[curve["pop"] == "E-ALL"].sort_values("est").reset_index(drop=True)
+order_ids = e_all["spec_id"].tolist()
+e_scr = curve[curve["pop"] == "E-SCREEN"].set_index("spec_id").loc[order_ids].reset_index()
+fig, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True, gridspec_kw={"height_ratios": [2.2, 2.2, 1.6]})
+for ax, d, pop in ((axes[0], e_all, "E-ALL"), (axes[1], e_scr, "E-SCREEN")):
+    x = np.arange(len(d))
+    ax.vlines(x, d["lo"], d["hi"], color=[VCOL[v] for v in d["h2b"]], lw=1.2, alpha=0.8)
+    ax.scatter(x, d["est"], s=14, color=[OI["blue"] if (l == "L_comb" and w == "as specified" and c == ctx.C0) else "k"
+                                          for l, w, c in zip(d["label"], d["weighting"], d["C"])], zorder=3)
+    ax.axhspan(-C.SESOI["roc_auc"], C.SESOI["roc_auc"], color=OI["grey"], alpha=0.12)
+    ax.axhline(0, color="k", lw=0.7)
+    ax.set_ylabel(f"ΔAUC S − M1\n{pop}")
+axes[0].set_title("Specification curve: 60 specifications sorted by the E-ALL estimate (blue dot = reference)", fontsize=11)
+ax = axes[2]
+rows_ind = [("label", l) for l in LABELS_SC] + [("weighting", w) for w in WEIGHTING] + [("C", c) for c in RB.C_GRID]
+for j, (fac, val) in enumerate(rows_ind):
+    hit = (e_all[fac] == val).to_numpy()
+    ax.scatter(np.flatnonzero(hit), np.full(hit.sum(), j), s=8, color=OI["purple"] if fac == "label" else OI["orange"] if fac == "weighting" else OI["green"])
+ax.set_yticks(range(len(rows_ind)), [f"{fac}: {val}" for fac, val in rows_ind], fontsize=7)
+ax.invert_yaxis()
+ax.set_xlabel("specification (rank of the E-ALL estimate)")
+fig.tight_layout()
+plots.savefig(fig, "S9_specification_curve", caption="Specification curve (extension). 60 specifications = 5 training labels x 3 weighting "
+              "schemes x 4 values of C. Top: ΔROC-AUC (S − M1) on E-ALL with conservative 95 % CI, sorted; middle: E-SCREEN in the same "
+              "order; bottom: which choices define each specification. Line colour = H2b(a) verdict (grey inconclusive, green "
+              "equivalent, red refuted); grey band = ±SESOI 0.01.")
+plt.show()
+S9["specification_curve"] = dict(n=60, summary=cs.round(5).to_dict("index"),
+                                 verdicts=curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_dict("index"))
+
+# %% [markdown]
+# **So what.** All 60 combinations put S *ahead* of M1 on E-ALL, and in most of them the interval excludes 0
+# (shares printed) – the direction is robust. But no combination clears the SESOI with confidence, and none puts the
+# interval inside ±0.01, so every one of the 60 verdicts is the reference verdict, *inconclusive*. The factor medians
+# show what drives the size of the gap: the reference ("as specified": S survey-weighted, M1 not) sits at the low end,
+# because S's own survey weighting costs it some unweighted AUC (B6b); weighting both arms alike moves the median to
+# about the SESOI itself, and the HbA1c-only label (SL1) gives the largest gaps. On E-SCREEN the curve scatters around
+# small positive values with wide intervals. The H2b(a) verdict is not the product of one forking path; it is what the
+# whole garden of forking paths says – a small, consistent advantage of S whose size cannot be pinned against 0.01.
+
+# %% [markdown]
+# ## 6 Survey-cluster cross-validation
+# **Why.** NHANES samples counties (PSUs) within strata; people in the same PSU share geography, examination
+# logistics and season. Ordinary folds put neighbours on both sides of a split, which can flatter the AUC of features
+# that encode place. `StratifiedGroupKFold` with groups = stratum × PSU keeps each survey cluster inside one fold
+# (repeated with derived seeds), so the test fold always contains clusters the model has never seen.
+
+# %%
+groups = (ctx.cl[C.STRATA].astype(int) * 10 + ctx.cl[C.PSU].astype(int)).to_numpy()
+GFOLDS = RB.group_folds(ctx.strat, groups, RB.seed("group-cv"))
+gsz = pd.DataFrame([dict(fold=i, n_test=len(te), n_clusters=len(np.unique(groups[te])), pos=int(ctx.y[te].sum()),
+                         pos_escreen=int(ctx.y_esc[te][ctx.esc[te]].sum())) for i, (_, te) in enumerate(GFOLDS)])
+assert all(len(set(groups[te]) & set(groups[tr])) == 0 for tr, te in GFOLDS), "a cluster appears on both sides of a split"
+print(f"{len(np.unique(groups))} strata x PSU clusters in the training part; grouped folds: n_test {gsz['n_test'].min()}-{gsz['n_test'].max()}, "
+      f"clusters per test fold {gsz['n_clusters'].min()}-{gsz['n_clusters'].max()}, E-SCREEN positives {gsz['pos_escreen'].min()}-{gsz['pos_escreen'].max()}")
+secs = prefetch({f"g{a}": (Spec(a), GFOLDS) for a in RB.ADMISSIBLE_ARMS})
+gcv = pair(Spec("S"), Spec("M1"), GFOLDS, tag="group-cv")
+gcv_tab = pd.DataFrame([dict(folds="stored stratified", **{k: r[k] for k in ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b")}) for r in ref]
+                       + [dict(folds="strata x PSU grouped", **{k: r[k] for k in ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b")}) for r in gcv])
+gcv_tab = gcv_tab.rename(columns={"auc_a": "auc_S", "auc_b": "auc_M1"})
+gcv_tab.to_csv(OUT / "grouped_cv.csv", index=False)
+print(gcv_tab.round(4).to_string(index=False))
+dS = {p: gcv_tab.query("folds == 'strata x PSU grouped' and pop == @p")["auc_S"].iloc[0] - gcv_tab.query("folds == 'stored stratified' and pop == @p")["auc_S"].iloc[0]
+      for p in ("E-ALL", "E-SCREEN")}
+print(f"AUC of S, grouped minus stratified folds: E-ALL {dS['E-ALL']:+.4f}, E-SCREEN {dS['E-SCREEN']:+.4f}")
+S9["grouped_cv"] = dict(n_clusters=int(len(np.unique(groups))), table=gcv_tab.round(5).to_dict("records"),
+                        auc_S_grouped_minus_stratified=dS)
+
+# %% [markdown]
+# **So what.** Holding whole survey clusters out changes the AUC of S by only a few thousandths (printed): the
+# admissible features do not exploit place-specific structure, so the cross-validated numbers are not inflated by
+# cluster sharing. The S − M1 verdict is the same under grouped folds. Grouped folds are less balanced (fold sizes and
+# E-SCREEN positives vary more, printed above), which is why they are a check rather than the primary design.
+
+# %% [markdown]
+# ## 7 Missing HbA1c: inverse-probability weights and delta adjustment
+# **Why.** The cohort keeps only examined adults *with* an HbA1c value. §3 showed the missingness is not MCAR
+# (NH Black OR about 1.85; register DR-S3-04), and §5 bounded the prevalence with Manski bounds (DR-S5-08); both
+# deferred two sensitivity analyses to this stage:
+#
+# 1. **MAR given covariates – inverse-probability weighting (IPW).** The S3 missingness model is refitted on examined,
+#    non-pregnant adults (the population the cohort is drawn from); each cohort member gets a stabilised weight
+#    P(observed) / P(observed | x). Used (a) for the prevalence and (b) for ΔAUC(S − M1), weighting evaluation only or
+#    fit and evaluation.
+# 2. **MNAR – delta adjustment (pattern mixture).** People without HbA1c who report diabetes are positive anyway. For
+#    the others, the MAR probability of HbA1c ≥ 6.5 (a logit on the S3 covariates fitted on the E-SCREEN rows of the
+#    training part) is shifted by δ on the log-odds scale: δ = 0 is MAR, δ = log 3 means three-fold odds among the
+#    unmeasured. Manski-type bounds (all undetermined negative / all positive) bracket every δ.
+
+# %%
+ex = RB.examined_population()
+miss = ex["a1c_observed"].eq(0)
+obs_fit = RB.observation_model(ex)
+ci_ = obs_fit.conf_int()
+or_obs = pd.DataFrame({"OR_missing": np.exp(-obs_fit.params), "ci_low": np.exp(-ci_[1]), "ci_high": np.exp(-ci_[0])}).drop("const")
+s3_or = pd.read_csv(C.RESULTS_DIR / "S3" / "missingness_or.csv", index_col=0)
+or_cmp = or_obs.join(s3_or[["OR"]].rename(columns={"OR": "OR_missing_S3"}))
+print(f"examined non-pregnant adults {len(ex):,}; without HbA1c {int(miss.sum())} ({miss.mean():.1%}); cohort {int((~miss).sum()):,}")
+print(or_cmp.round(3).to_string())
+assert int((~miss).sum()) == io.COHORT_N
+assert abs(or_cmp.loc["NH Black", "OR_missing"] - or_cmp.loc["NH Black", "OR_missing_S3"]) < 0.1   # same model, 37 fewer rows
+p_obs = pd.Series(obs_fit.predict(), index=ex["SEQN"].to_numpy())
+ipw_all = (~miss).mean() / p_obs                          # stabilised weight
+coh = ctx.clean.copy()
+coh["ipw"] = ipw_all.reindex(coh["SEQN"]).to_numpy()
+coh["w_mec_ipw"] = coh[C.WEIGHT_MEC] * coh["ipw"]
+ctx.ipw = coh["ipw"].to_numpy()[ctx.train_idx]
+print(f"stabilised IPW in the cohort: min {coh['ipw'].min():.3f}, median {coh['ipw'].median():.3f}, max {coh['ipw'].max():.3f}; "
+      f"Kish deff {sv.kish_deff(coh['ipw']):.3f}")
+
+prev_rows = []
+for nm, wcol in (("WTPH2YR (blood non-response adjusted)", C.WEIGHT_PHLEB), ("WTMEC2YR (complete case)", C.WEIGHT_MEC),
+                 ("WTMEC2YR x IPW", "w_mec_ipw")):
+    wp = sv.weighted_prop(coh, "L_comb", weight=wcol)
+    prev_rows.append(dict(weighting=nm, est=wp["est"], ci_low=wp["ci_low"], ci_high=wp["ci_high"], df=wp["df"]))
+prev_tab = pd.DataFrame(prev_rows)
+print(prev_tab.round(4).to_string(index=False))
+assert abs(prev_tab.loc[0, "est"] - 0.140) < 0.0015, "WTPH2YR prevalence must reproduce 14.0 % (process doc §8)"
+
+ipw_cmp = pair(Spec("S"), Spec("M1"), tag="ipw-eval", w=ctx.ipw) + pair(Spec("S", ipw=True), Spec("M1", ipw=True), tag="ipw-fit", w=ctx.ipw)
+ipw_tab = pd.DataFrame([dict(variant=v, **{k: r[k] for k in ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b")})
+                        for v, r in zip(["IPW evaluation"] * 2 + ["IPW fit + evaluation"] * 2, ipw_cmp)])
+print(ipw_tab.round(4).to_string(index=False))
+
+# %%
+import statsmodels.api as sm
+Xd_ex = RB.missingness_design(ex).drop(columns=["self-reported diabetes"])
+seq_pos = pd.Series(np.arange(len(ex)), index=ex["SEQN"].to_numpy())
+tr_rows = seq_pos.reindex(ctx.cl["SEQN"]).to_numpy()
+fit_rows = tr_rows[ctx.esc]                                     # training-part E-SCREEN rows (hold-out untouched)
+mar_fit = sm.Logit(ctx.y_esc[ctx.esc], sm.add_constant(Xd_ex.iloc[fit_rows])).fit(disp=0)
+miss_idx = np.flatnonzero(miss.to_numpy())
+miss_self = ex["DIQ010"].eq(1).to_numpy()[miss_idx]
+p_mar = mar_fit.predict(sm.add_constant(Xd_ex, has_constant="add").iloc[miss_idx]).to_numpy()
+from sklearn.metrics import roc_auc_score
+print(f"MAR model for HbA1c >= 6.5 among the undiagnosed: fitted on {len(fit_rows):,} training-part E-SCREEN rows "
+      f"({int(ctx.y_esc[ctx.esc].sum())} positives), in-sample AUC {roc_auc_score(ctx.y_esc[ctx.esc], mar_fit.predict()):.3f}")
+print(f"missing rows: {len(miss_idx)}; self-reported diabetes {int(miss_self.sum())}; undetermined {int((~miss_self).sum())}, "
+      f"mean MAR probability {p_mar[~miss_self].mean():.3f}")
+
+DELTAS = np.array([-1.0, -0.5, 0.0, 0.5, 1.0, np.log(3), 1.5, 2.0, 3.0])
+w_obs = coh[C.WEIGHT_MEC].to_numpy()
+w_m = ex[C.WEIGHT_MEC].to_numpy()[miss_idx]
+dprev = RB.delta_prevalence(coh["L_comb"].to_numpy(), w_obs, miss_self, p_mar, w_m, DELTAS)
+print(dprev.round(4).to_string(index=False))
+print(f"complete case (MEC) {dprev.attrs['complete_case']:.4f}; Manski bounds [{dprev.attrs['manski_low']:.4f}, {dprev.attrs['manski_high']:.4f}] "
+      f"(S5: [{pd.read_csv(C.RESULTS_DIR / 'S5' / 'manski_bounds.csv').iloc[0]['lower']:.4f}, "
+      f"{pd.read_csv(C.RESULTS_DIR / 'S5' / 'manski_bounds.csv').iloc[0]['upper']:.4f}])")
+from scipy.optimize import brentq
+f_tip = lambda d: RB.delta_prevalence(coh["L_comb"].to_numpy(), w_obs, miss_self, p_mar, w_m, [d])["prevalence"].iloc[0] - 0.158
+tip = brentq(f_tip, 0, 20) if f_tip(20) > 0 else np.nan
+print(f"delta needed to reach the DB516 prevalence of 15.8 %: {tip:.2f} (odds ratio {np.exp(tip):.1f})" if np.isfinite(tip)
+      else "15.8 % is not reachable even with every undetermined person positive")
+
+# delta-adjusted S - M1: full-training-part models score the people without HbA1c
+raw_ex = io.load_merged(fix=False, sentinels="none")
+raw_miss = raw_ex.set_index("SEQN").loc[ex["SEQN"].to_numpy()[miss_idx]].reset_index()
+pa_m = RB.fit_full(ctx, Spec("S")).predict_proba(P.raw_feature_frame(raw_miss, 1))[:, 1]
+pb_m = RB.fit_full(ctx, Spec("M1")).predict_proba(P.raw_feature_frame(raw_miss, 1))[:, 1]
+ref_oof = RB.run_many(ctx, {"S": Spec("S"), "M1": Spec("M1")}, n_jobs=N_JOBS, cache=RUNS)
+pa_o, pb_o = ek.mean_oof(ref_oof["S"], ctx.n), ek.mean_oof(ref_oof["M1"], ctx.n)
+N_DRAW = max(50, C.N_BOOT // 5)
+dauc = []
+for pop, om, mm, yo in (("E-ALL", None, None, ctx.y), ("E-SCREEN", ctx.esc, ~miss_self, ctx.y_esc)):
+    d = RB.delta_auc(yo, pa_o, pb_o, miss_self, p_mar, pa_m, pb_m, DELTAS, n_draw=N_DRAW, seed_=RB.seed("delta-auc", pop),
+                     obs_mask=om, miss_mask=mm)
+    d.insert(0, "pop", pop)
+    dauc.append(d)
+dauc = pd.concat(dauc, ignore_index=True)
+dprev.to_csv(OUT / "mnar_delta_prevalence.csv", index=False)
+dauc.to_csv(OUT / "mnar_delta_auc.csv", index=False)
+pd.concat([prev_tab.assign(kind="prevalence"), ipw_tab.assign(kind="dAUC S-M1")]).to_csv(OUT / "ipw.csv", index=False)
+print(dauc.round(4).to_string(index=False))
+print(f"E-ALL S - M1 across all delta and Manski scenarios: {dauc.loc[dauc['pop'] == 'E-ALL', 'diff'].min():+.4f} to "
+      f"{dauc.loc[dauc['pop'] == 'E-ALL', 'diff'].max():+.4f} (complete-case pooled {S9['reference']['E-ALL']['est']:+.4f})")
+
+# %%
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.3))
+ax = axes[0]
+ax.axhspan(dprev.attrs["manski_low"] * 100, dprev.attrs["manski_high"] * 100, color=OI["grey"], alpha=0.18, label="Manski bounds")
+ax.plot(dprev["odds_ratio"], dprev["prevalence"] * 100, "o-", color=OI["blue"], label="delta-adjusted (WTMEC2YR)")
+ax.axhline(prev_tab.loc[0, "est"] * 100, color=OI["green"], ls="--", lw=1, label=f"cohort, WTPH2YR {prev_tab.loc[0, 'est']:.1%}")
+ax.axhline(prev_tab.loc[2, "est"] * 100, color=OI["orange"], ls=":", lw=1.5, label=f"IPW (MAR) {prev_tab.loc[2, 'est']:.1%}")
+ax.axhline(15.8, color=OI["vermillion"], ls="-.", lw=1, label="NCHS DB516 15.8 % (other definition)")
+ax.set_xscale("log")
+ax.set(xlabel="odds ratio of HbA1c >= 6.5, unmeasured vs measured (exp δ)", ylabel="weighted prevalence of L_comb (%)",
+       title="Prevalence under MNAR scenarios")
+ax.legend(fontsize=7)
+ax = axes[1]
+for pop, col in (("E-ALL", OI["blue"]), ("E-SCREEN", OI["vermillion"])):
+    d = dauc[(dauc["pop"] == pop) & (dauc["scenario"] == "delta")]
+    ax.errorbar(np.exp(d["delta"]), d["diff"], yerr=[d["diff"] - d["diff_lo"], d["diff_hi"] - d["diff"]],
+                fmt="o-", color=col, capsize=2, label=f"{pop} (draw 2.5-97.5 %)")
+    for _, r in dauc[(dauc["pop"] == pop) & (dauc["scenario"] != "delta")].iterrows():
+        ax.axhline(r["diff"], color=col, lw=0.8, ls=":" if "negative" in r["scenario"] else "--")
+ax.axhspan(-C.SESOI["roc_auc"], C.SESOI["roc_auc"], color=OI["grey"], alpha=0.12)
+ax.set_xscale("log")
+ax.set(xlabel="odds ratio exp δ", ylabel="ΔROC-AUC S − M1 incl. people without HbA1c", title="S − M1 under MNAR scenarios")
+ax.legend(fontsize=7)
+fig.suptitle("Missing HbA1c: plausible MNAR moves the prevalence, not the S − M1 comparison", fontsize=11)
+fig.tight_layout()
+plots.savefig(fig, "S9_mnar_delta", caption="Left: weighted prevalence of L_comb in examined non-pregnant adults when the people without HbA1c "
+              "(who did not report diabetes) have exp(δ) times the MAR odds of HbA1c >= 6.5; grey = Manski bounds; lines = WTPH2YR cohort "
+              "estimate, IPW estimate and the DB516 figure (different definition, see section 8). Right: ΔROC-AUC (S − M1) when those "
+              "people are added to E-ALL / E-SCREEN with labels drawn under δ (dotted / dashed = Manski all-negative / all-positive).")
+plt.show()
+S9["mnar"] = dict(n_examined=int(len(ex)), n_missing=int(miss.sum()), n_missing_self=int(miss_self.sum()),
+                  ipw_range=[float(coh["ipw"].min()), float(coh["ipw"].max())], prevalence=prev_tab.round(5).to_dict("records"),
+                  ipw_dauc=ipw_tab.round(5).to_dict("records"), delta_prevalence=dprev.round(5).to_dict("records"),
+                  manski=[dprev.attrs["manski_low"], dprev.attrs["manski_high"]], tipping_delta_db516=tip,
+                  delta_auc=dauc.round(5).to_dict("records"))
+
+# %% [markdown]
+# **So what.** Three results close the deferred register items DR-S3-04 and DR-S5-08:
+#
+# * **MAR (IPW).** Re-weighting the complete cases to the examined population changes the weighted prevalence by about a
+#   tenth of a percentage point (table above) – the same size as the WTPH2YR non-response adjustment that S5 found, so the
+#   official blood weight already absorbs the covariate-driven part of the missingness. IPW moves ΔAUC(S − M1) by less than
+#   0.001 and leaves the verdict unchanged.
+# * **MNAR (delta).** Even if people without HbA1c had several times the odds of an elevated value (δ up to log 20), the
+#   prevalence stays well inside the Manski band, and about 4–5 % missingness is too little to lift it to the DB516 value
+#   unless almost every unmeasured person were diabetic (tipping point printed). The 14.0 % vs 15.8 % gap is therefore a
+#   *definition* gap (section 8), not a missing-data artefact.
+# * **Model comparison.** Adding the people without HbA1c to the evaluation set with labels drawn under any δ from
+#   −1 to 3 shifts ΔAUC(S − M1) by less than 0.001 on E-ALL and E-SCREEN. Only the Manski "all positive" extreme – every
+#   one of the undetermined people diabetic, a prevalence far beyond any plausible MNAR mechanism – moves it noticeably
+#   (to about +0.004 on E-ALL and about −0.004 on E-SCREEN, printed), still inside ±0.01. MNAR remains untestable from
+#   these data; what is shown is that no plausible MNAR mechanism of this size changes the conclusions.

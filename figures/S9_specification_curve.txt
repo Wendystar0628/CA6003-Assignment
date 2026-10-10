@@ -1,0 +1,1 @@
+Specification curve (extension). 60 specifications = 5 training labels x 3 weighting schemes x 4 values of C. Top: ΔROC-AUC (S − M1) on E-ALL with conservative 95 % CI, sorted; middle: E-SCREEN in the same order; bottom: which choices define each specification. Line colour = H2b(a) verdict (grey inconclusive, green equivalent, red refuted); grey band = ±SESOI 0.01.
