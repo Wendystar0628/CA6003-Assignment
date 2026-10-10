@@ -1,0 +1,9 @@
+check,n,result,kind,population,reading,valid,SBP <= DBP,pulse pressure < 20,pulse pressure > 100
+BMI = weight / height^2: valid triples (BMX_L),8471.0,max |diff| = 0.050; > 0.1: 0,arithmetic,,,,,,
+Waist-to-height ratio > 1 (cohort),5462.0,4 flagged,arithmetic,,,,,,
+,,,blood pressure,BPXO_L file,1.0,7517.0,0.0,12.0,37.0
+,,,blood pressure,BPXO_L file,2.0,7505.0,0.0,8.0,43.0
+,,,blood pressure,BPXO_L file,3.0,7480.0,0.0,11.0,32.0
+,,,blood pressure,cohort,1.0,5550.0,0.0,5.0,34.0
+,,,blood pressure,cohort,2.0,5544.0,0.0,2.0,39.0
+,,,blood pressure,cohort,3.0,5531.0,0.0,3.0,29.0

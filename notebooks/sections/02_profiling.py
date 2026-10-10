@@ -395,3 +395,101 @@ M3["blanket_recode"] = {
     "ridreth3_7_destroyed": int(aud_blank.set_index("var").loc["RIDRETH3", "valid_destroyed"]),
 }
 
+# %% [markdown]
+# ## 5 Consistency checks
+#
+# **Why.** Internal consistency tests the data against facts that must hold: BMI is weight / height², systolic pressure exceeds diastolic, and pulse pressure and waist-to-height ratio stay within plausible bounds. Questions asked only of a sub-group (skip patterns) define who *can* have a value. That matters for leakage: a variable asked only of diagnosed people is a disguised label.
+
+# %%
+bmx = io.load_file("BMX_L")[0]
+v = bmx.dropna(subset=["BMXWT", "BMXHT", "BMXBMI"])
+bmi_diff = (v["BMXWT"] / (v["BMXHT"] / 100) ** 2 - v["BMXBMI"]).abs()
+bpx = io.load_file("BPXO_L")[0]
+chk = [["BMI = weight / height^2: valid triples (BMX_L)", len(v), "max |diff| = %.3f; > 0.1: %d" % (bmi_diff.max(), (bmi_diff > 0.1).sum())]]
+pp_rows = []
+for src_name, df in [("BPXO_L file", bpx), ("cohort", coh)]:
+    for i in (1, 2, 3):
+        s, dd = df[f"BPXOSY{i}"], df[f"BPXODI{i}"]
+        pp = s - dd
+        pp_rows.append({"population": src_name, "reading": i, "valid": int((s.notna() & dd.notna()).sum()),
+                        "SBP <= DBP": int((s <= dd).sum()), "pulse pressure < 20": int((pp < 20).sum()),
+                        "pulse pressure > 100": int((pp > 100).sum())})
+pp_tab = pd.DataFrame(pp_rows)
+whtr_gt1 = int((coh["whtr"] > 1).sum())
+chk.append(["Waist-to-height ratio > 1 (cohort)", int(coh["whtr"].notna().sum()), f"{whtr_gt1} flagged"])
+chk = pd.DataFrame(chk, columns=["check", "n", "result"])
+display(chk); display(pp_tab)
+
+diq_raw = io.read_xpt("DIQ_L")
+univ = []
+for var in ("DIQ050", "DIQ070"):
+    ans = diq_raw[var].notna()
+    g = diq_raw.loc[ans]
+    univ.append({"var": var, "answered": int(ans.sum()),
+                 "DIQ010=1": int((g["DIQ010"] == 1).sum()), "DIQ010=3": int((g["DIQ010"] == 3).sum()),
+                 "DIQ010=2 & DIQ160=1": int(((g["DIQ010"] == 2) & (g["DIQ160"] == 1)).sum()),
+                 "other": int((~((g["DIQ010"].isin([1, 3])) | ((g["DIQ010"] == 2) & (g["DIQ160"] == 1)))).sum())})
+univ = pd.DataFrame(univ)
+display(univ)
+coh_dia = coh[coh["DIQ070"] == 1]
+d070 = {"self-reported diabetes": int((coh_dia["DIQ010"] == 1).sum()), "borderline": int((coh_dia["DIQ010"] == 3).sum()),
+        "no diabetes (told prediabetes)": int((coh_dia["DIQ010"] == 2).sum())}
+print("cohort, DIQ070 = 1 (takes oral glucose-lowering medication):", d070)
+consistency = pd.concat([chk.assign(kind="arithmetic"), pp_tab.assign(kind="blood pressure")], ignore_index=True)
+consistency.to_csv(OUT / "consistency_checks.csv", index=False, lineterminator="\n")
+
+assert len(v) == 8471 and bmi_diff.max() <= 0.05 + 1e-9 and (bmi_diff > 0.1).sum() == 0
+assert pp_tab["SBP <= DBP"].sum() == 0 and whtr_gt1 == 4
+assert univ.loc[0, ["answered", "DIQ010=1", "other"]].tolist() == [1081, 1081, 0]
+assert univ.loc[1, ["DIQ010=1", "DIQ010=3", "DIQ010=2 & DIQ160=1", "other"]].tolist() == [1081, 282, 918, 0]
+
+# %% [markdown]
+# **So what.** The arithmetic holds:
+#
+# - BMI recomputed from weight and height matches the published value for all 8,471 valid triples (largest difference 0.050, which is rounding; none above 0.1).
+# - No reading has systolic ≤ diastolic pressure.
+# - Implausible pulse pressures are rare: below 20 mmHg in 5/2/3 cohort readings and 12/8/11 file readings; above 100 mmHg in 34/39/29 cohort readings. They are flagged, not changed, because a wide pulse pressure is plausible in older adults with stiff arteries.
+# - Four cohort members have a waist-to-height ratio above 1. They are flagged.
+#
+# The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people who report diabetes, so it is a pure proxy of the label. `DIQ070` (oral medication) is also asked of 282 borderline respondents and of 918 non-diabetic respondents who were told they have prediabetes. Within the cohort, 41 non-diabetic and 44 borderline adults take glucose-lowering medication (metformin for prediabetes). **Decision (DR-S3-06):** `DIQ050`/`DIQ070` are inadmissible as features (`admissible = N`). The treatment-aware sensitivity label in S5 may use them only inside this documented universe, and it must exclude prediabetes medication.
+
+# %%
+M3["consistency"] = {"bmi_triples": len(v), "bmi_max_abs_diff": float(bmi_diff.max()), "bmi_diff_gt_0_1": int((bmi_diff > 0.1).sum()),
+                     "sbp_le_dbp": int(pp_tab["SBP <= DBP"].sum()),
+                     "pp_lt20_cohort": pp_tab.query("population == 'cohort'")["pulse pressure < 20"].tolist(),
+                     "pp_gt100_cohort": pp_tab.query("population == 'cohort'")["pulse pressure > 100"].tolist(),
+                     "pp_lt20_file": pp_tab.query("population == 'BPXO_L file'")["pulse pressure < 20"].tolist(),
+                     "pp_gt100_file": pp_tab.query("population == 'BPXO_L file'")["pulse pressure > 100"].tolist(),
+                     "whtr_gt1": whtr_gt1, "diq050_universe": univ.iloc[0].drop("var").to_dict(),
+                     "diq070_universe": univ.iloc[1].drop("var").to_dict(), "cohort_diq070_yes": d070}
+
+# %% [markdown]
+# ## 6 Top-coding
+#
+# **Why.** Disclosure control caps age at 80 and the income-to-poverty ratio at 5. A capped value is a bound rather than a measurement. A model that treats "80" as exactly 80 years, or that loses the 12.8 % of people with no income ratio, misreads the data. Two questions decide the treatment: how many people sit at each cap, and whether the cap hides a change in risk.
+
+# %%
+coh["L_comb"] = l_comb.astype(int)
+age_top, pir_top, pir_miss = int(coh["age_top"].sum()), int(coh["pir_top"].sum()), int(coh["pir_miss"].sum())
+prev_80 = coh.loc[coh["RIDAGEYR"] == 80, "L_comb"].mean()
+prev_7079 = coh.loc[coh["RIDAGEYR"].between(70, 79), "L_comb"].mean()
+top = pd.DataFrame([
+    ["age_top (RIDAGEYR = 80)", age_top, age_top / len(coh)],
+    ["pir_top (INDFMPIR = 5)", pir_top, pir_top / len(coh)],
+    ["pir_miss (INDFMPIR missing)", pir_miss, pir_miss / len(coh)],
+], columns=["flag", "n", "share"])
+display(top)
+print(f"L_comb prevalence (unweighted): age 80 group {prev_80:.1%}, ages 70-79 {prev_7079:.1%}")
+assert (age_top, pir_top, pir_miss) == (321, 1282, 734)
+assert close(prev_80, 0.262, 0.001) and close(prev_7079, 0.254, 0.001)
+
+# %% [markdown]
+# **So what.** 321 adults (5.6 %) are capped at age 80, and 1,282 (22.4 %) at an income ratio of 5. Another 734 (12.8 %) have no income ratio at all. The age cap hides little: unweighted `L_comb` prevalence is 26.2 % in the capped group against 25.4 % at ages 70–79, so risk has flattened by then. Age standardisation in 60+ bands is unaffected.
+#
+# The income variable is both capped and incomplete. **Decision (DR-S3-05):** keep the values and carry the flags `age_top`, `pir_top` and `pir_miss` next to them. Whether the flags enter the model is tested as ablation block B4 (P07 top-code flags, P06 missing indicator) in Stage S6.
+
+# %%
+M3["top_coding"] = {"age_top": age_top, "pir_top": pir_top, "pir_top_share": pir_top / len(coh),
+                    "pir_miss": pir_miss, "pir_miss_share": pir_miss / len(coh),
+                    "prev_age80": float(prev_80), "prev_age70_79": float(prev_7079)}
+
