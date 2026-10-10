@@ -1,0 +1,1 @@
+Decile-binned empirical log-odds of L_comb (unweighted, 95% CI) with univariable linear and 4-knot restricted cubic spline fits; grey lines = knots.

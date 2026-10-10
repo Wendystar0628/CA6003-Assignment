@@ -1067,6 +1067,193 @@ reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; trigly
 # fitted inside the training folds, and whether it helps is decided by the S7 ablation, not here.
 
 # %% [markdown]
+# ## 4.11 Linearity
+# **Why.** A plain logistic regression assumes each continuous predictor acts linearly on the
+# log-odds. If that is wrong, the model under-fits exactly where risk changes fastest. We test it with
+# restricted cubic splines (Harrell): each variable gets a 4-knot RCS (knots at the 5/35/65/95th
+# percentiles, 2 extra df) and a likelihood-ratio test against the linear term, with the other six
+# continuous predictors linear and sex adjusted; complete cases for all seven variables, outcome
+# `L_comb`, unweighted (a model-structure question, not a population estimate).
+
+# %%
+import statsmodels.formula.api as smf
+
+LIN_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWAIST": "waist", "bp_sys_mean": "SBP (mean)",
+            "LBDHDD": "HDL", "LBXTC": "total cholesterol", "INDFMPIR": "PIR"}
+
+
+def rcs_basis(x, q=(0.05, 0.35, 0.65, 0.95)):
+    """Harrell restricted cubic spline basis (linear term + k-2 non-linear terms), knots at quantiles."""
+    x = np.asarray(x, float)
+    t = np.quantile(x, q)
+    k = len(t)
+    p3 = lambda u: np.maximum(u, 0) ** 3
+    nl = [(p3(x - t[j]) - p3(x - t[k - 2]) * (t[k - 1] - t[j]) / (t[k - 1] - t[k - 2])
+           + p3(x - t[k - 1]) * (t[k - 2] - t[j]) / (t[k - 1] - t[k - 2])) / (t[k - 1] - t[0]) ** 2 for j in range(k - 2)]
+    return np.column_stack([x] + nl), t
+
+
+lin = coh.dropna(subset=list(LIN_VARS)).reset_index(drop=True)
+lin["female"] = (lin.sex == "Female").astype(float)
+y_lin = lin.L_comb.to_numpy(float)
+fit_logit = lambda X: sm.Logit(y_lin, sm.add_constant(X)).fit(disp=0)
+lin_rows = []
+for v, lab in LIN_VARS.items():
+    others = lin[[o for o in LIN_VARS if o != v] + ["female"]].to_numpy(float)
+    basis, knots = rcs_basis(lin[v])
+    m_lin = fit_logit(np.column_stack([basis[:, :1], others]))
+    m_rcs = fit_logit(np.column_stack([basis, others]))
+    chi2 = 2 * (m_rcs.llf - m_lin.llf)
+    dfree = basis.shape[1] - 1
+    lin_rows.append({"variable": v, "label": lab, "n": len(lin), "n_events": int(y_lin.sum()), "chi2": chi2, "df": dfree,
+                     "p": stats.chi2.sf(chi2, dfree), "knots": np.round(knots, 1).tolist()})
+LIN = pd.DataFrame(lin_rows)
+LIN["nonlinear"] = LIN.p < 0.05
+LIN.to_csv(S4_DIR / "linearity_tests.csv", index=False)
+print(LIN.assign(p=LIN.p.map(lambda p: f"{p:.2g}")).round(2).to_string(index=False))
+expected = {"RIDAGEYR": 57.6, "BMXBMI": 11.6, "BMXWAIST": 7.1, "bp_sys_mean": 5.9, "LBDHDD": 18.5, "LBXTC": 41.8, "INDFMPIR": 0.8}
+assert len(lin) == 4478 and all(abs(LIN.set_index("variable").chi2[k] - e) < 0.1 for k, e in expected.items())
+OUT["linearity"] = {r.variable: {"label": r.label, "chi2": r.chi2, "df": r.df, "p": r.p} for r in LIN.itertuples()}
+OUT["linearity_n"] = {"n": len(lin), "events": int(y_lin.sum())}
+
+# %% [markdown]
+# **Binned empirical log-odds.** The test says *whether* a curve is needed; the binned plot shows
+# *what shape* it has. Points are the observed log-odds in deciles (95 % CI); lines are univariable
+# linear and RCS logistic fits.
+
+# %%
+fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+binned = {}
+for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "BMI, kg/m²"),
+                                       ("LBDHDD", "HDL cholesterol, mg/dL"), ("LBXTC", "Total cholesterol, mg/dL")]):
+    d = coh[[v, "L_comb"]].dropna()
+    d["bin"] = pd.qcut(d[v], 10, duplicates="drop")
+    g = d.groupby("bin", observed=True).agg(x=(v, "median"), n=("L_comb", "size"), k=("L_comb", "sum"))
+    pr = (g.k + 0.5) / (g.n + 1)
+    lo_ = np.log(pr / (1 - pr)); se = np.sqrt(1 / (g.k + 0.5) + 1 / (g.n - g.k + 0.5))
+    ax.errorbar(g.x, lo_, yerr=1.96 * se, fmt="o", color="k", capsize=3, label="decile log-odds (95% CI)")
+    grid = np.linspace(d[v].quantile(0.01), d[v].quantile(0.99), 200)
+    B, kn = rcs_basis(d[v])
+    m_r = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(B)).fit(disp=0)
+    p3 = lambda u: np.maximum(u, 0) ** 3
+    k_ = len(kn)
+    Bg = np.column_stack([grid] + [(p3(grid - kn[j]) - p3(grid - kn[k_ - 2]) * (kn[k_ - 1] - kn[j]) / (kn[k_ - 1] - kn[k_ - 2])
+                                    + p3(grid - kn[k_ - 1]) * (kn[k_ - 2] - kn[j]) / (kn[k_ - 1] - kn[k_ - 2])) / (kn[k_ - 1] - kn[0]) ** 2
+                                   for j in range(k_ - 2)])
+    m_l = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(d[[v]].to_numpy(float))).fit(disp=0)
+    ax.plot(grid, m_l.params[0] + m_l.params[1] * grid, color=C.OKABE_ITO["orange"], lw=2, ls="--", label="linear fit")
+    ax.plot(grid, sm.add_constant(Bg) @ m_r.params, color=C.OKABE_ITO["blue"], lw=2, label="RCS fit (4 knots)")
+    for kv in kn:
+        ax.axvline(kv, color="0.8", lw=0.8, zorder=0)
+    ax.set_xlabel(lab); ax.set_ylabel("log-odds of L_comb")
+    ax.set_title(f"{lab.split(',')[0]}: RCS χ²(2) = {LIN.set_index('variable').chi2[v]:.1f} (adjusted)")
+    binned[v] = pd.DataFrame({"median": g.x.to_numpy(), "logodds": lo_.to_numpy(), "n": g.n.to_numpy()})
+axes[0, 0].legend(fontsize=8)
+fig.suptitle("Observed log-odds bend: age flattens after 60, BMI is flat below ~25, TC is U-shaped", fontsize=11)
+fig.tight_layout()
+plots.savefig(fig, "S4_binned_logodds", caption="Decile-binned empirical log-odds of L_comb (unweighted, 95% CI) with "
+                                                "univariable linear and 4-knot restricted cubic spline fits; grey lines = knots.")
+plt.show()
+bmi_b = binned["BMXBMI"]; age_b = binned["RIDAGEYR"]
+print("BMI deciles (median, log-odds):", [(round(a, 1), round(b, 2)) for a, b in zip(bmi_b["median"], bmi_b.logodds)])
+print("age deciles (median, log-odds):", [(round(a, 0), round(b, 2)) for a, b in zip(age_b["median"], age_b.logodds)])
+OUT["binned_logodds"] = {lab: df_.to_dict("list") for lab, df_ in binned.items()}
+
+# %% [markdown]
+# **So what.** Five of the seven continuous predictors depart from linearity on the log-odds scale:
+# age (χ² ≈ 57.6), total cholesterol (≈ 41.8), HDL (≈ 18.5), BMI (≈ 11.6) and waist (≈ 7.1); SBP is
+# borderline (p ≈ 0.05) and PIR is linear (p ≈ 0.7). The shapes are monotone-but-curved for age (risk
+# rises steeply to about 60, then flattens) and BMI (log-odds about −2.6 in the two lowest deciles,
+# i.e. flat below about 24, then rising and levelling off above about 35), while
+# total cholesterol is U-shaped – the low end most plausibly reflects statin treatment *after*
+# diagnosis (reverse causation), a warning for interpreting any Tier-2 coefficient. Consequence: the
+# main model is an L2 logistic regression with cubic B-splines (`SplineTransformer`, 4 quantile knots,
+# linear extrapolation – the `C.SPLINE_KW` configuration) on continuous predictors, with a linear arm
+# kept as an ablation.
+
+# %% [markdown]
+# ## 4.12 Interactions and power
+# **Why.** If the BMI–diabetes slope differed by race (as the S5 measurement-bias finding suggests it
+# might for Asian adults), the model would need an interaction term. A non-significant test is only
+# informative together with its power, so we also report the minimum detectable effect (MDE, 80 %
+# power, two-sided α = 0.05) and repeat the tests under three model specifications (`C(...)` is avoided
+# in the formulas because `C` is the project config module here; race is an ordered categorical with
+# NH White as reference).
+
+# %%
+inter = lin.rename(columns={"RIDAGEYR": "age", "BMXBMI": "bmi", "BMXWAIST": "waist", "bp_sys_mean": "sbp",
+                            "LBDHDD": "hdl", "LBXTC": "tc", "INDFMPIR": "pir"}).copy()
+inter["race6"] = pd.Categorical(inter.race.astype(str), categories=list(io.RACE_ORDER))   # NH White = reference
+inter["asian"] = (inter.race == "NH Asian").astype(float)
+for v in ["age", "bmi"]:
+    Bv, _ = rcs_basis(inter[v]); inter[f"{v}_s1"], inter[f"{v}_s2"] = Bv[:, 1], Bv[:, 2]
+bmi_cc = coh.dropna(subset=["BMXBMI"]).rename(columns={"RIDAGEYR": "age", "BMXBMI": "bmi"}).copy()
+bmi_cc["female"] = (bmi_cc.sex == "Female").astype(float)
+bmi_cc["race6"] = pd.Categorical(bmi_cc.race.astype(str), categories=list(io.RACE_ORDER))
+bmi_cc["asian"] = (bmi_cc.race == "NH Asian").astype(float)
+SPECS = {
+    "A_primary": (inter, "age + female + race6 + bmi + waist + sbp + hdl + tc + pir"),
+    "B_minimal": (bmi_cc, "age + female + race6 + bmi"),
+    "C_splines": (inter, "age + age_s1 + age_s2 + bmi + bmi_s1 + bmi_s2 + female + race6"),
+}
+TERMS = {"race_x_bmi": "race6:bmi", "asian_x_bmi": "asian:bmi", "age_x_bmi": "age:bmi",
+         "sex_x_bmi": "female:bmi"}
+z80 = stats.norm.ppf(0.975) + stats.norm.ppf(0.80)
+int_rows = []
+for spec, (d, base) in SPECS.items():
+    m0 = smf.logit(f"L_comb ~ {base}", d).fit(disp=0)
+    for term, expr in TERMS.items():
+        m1 = smf.logit(f"L_comb ~ {base} + {expr}", d).fit(disp=0)
+        chi2 = 2 * (m1.llf - m0.llf); k = int(m1.df_model - m0.df_model)
+        mde = np.nan
+        if k == 1:
+            name = [p for p in m1.params.index if p not in m0.params.index][0]
+            mde = z80 * m1.bse[name] * 5                     # log-OR difference per 5 kg/m² BMI (per year x 5 for age)
+        int_rows.append({"term": term, "spec": spec, "n": int(m1.nobs), "chi2": chi2, "df": k,
+                         "p": stats.chi2.sf(chi2, k), "mde": mde})
+INT = pd.DataFrame(int_rows)
+INT["verdict"] = np.where(INT.p < 0.05, "detected", "not detected")
+INT.to_csv(S4_DIR / "interaction_tests.csv", index=False)
+print(INT.pivot(index="term", columns="spec", values="p").round(3).to_string())
+prim = INT[INT.spec == "A_primary"].set_index("term")
+mde_asian = prim.loc["asian_x_bmi", "mde"]
+print(f"\nprimary spec (n = {int(prim.n.iloc[0]):,}): race x BMI chi2({int(prim.loc['race_x_bmi','df'])}) = "
+      f"{prim.loc['race_x_bmi','chi2']:.2f}, p = {prim.loc['race_x_bmi','p']:.2f}; Asian x BMI p = {prim.loc['asian_x_bmi','p']:.2f}; "
+      f"age x BMI p = {prim.loc['age_x_bmi','p']:.2f}; sex x BMI p = {prim.loc['sex_x_bmi','p']:.3f}")
+print(f"MDE (80% power) for the Asian x BMI slope difference: {mde_asian:.2f} log-OR per 5 kg/m² "
+      f"(odds-ratio multiplier {np.exp(mde_asian):.2f} per 5 kg/m²)")
+race_p_range = (INT[INT.term == "race_x_bmi"].p.min(), INT[INT.term == "race_x_bmi"].p.max())
+sex_p_range = (INT[INT.term == "sex_x_bmi"].p.min(), INT[INT.term == "sex_x_bmi"].p.max())
+assert race_p_range[0] > 0.05 and INT[INT.term == "asian_x_bmi"].p.min() > 0.05
+OUT["interactions"] = {r.term: {"chi2": r.chi2, "df": r.df, "p": r.p, "mde": r.mde} for r in prim.reset_index().itertuples()}
+OUT["interactions_by_spec"] = INT.to_dict("records")
+
+reg("DR-S4-10", "model", "Non-linearity: RCS LR chi2(2) age 57.6, TC 41.8, HDL 18.5, BMI 11.6, waist 7.1 (p < 0.05); SBP 5.9 (p 0.053); PIR 0.8.",
+    "results/S4/linearity_tests.csv; figures/S4_binned_logodds.png",
+    f"n = {len(lin):,}, events {int(y_lin.sum())}",
+    "Main model: L2 logistic regression with SplineTransformer(n_knots=4, degree=3, knots='quantile', extrapolation='linear') on continuous features; linear arm as ablation.",
+    "Plain linear logit (misses curvature); fixed-cut categorisation (loses information, arbitrary cut-points); GAM/boosting (outside HR3).")
+reg("DR-S4-11", "model", "Interactions with BMI not detectable: race x BMI and Asian x BMI non-significant under all three specifications.",
+    "results/S4/interaction_tests.csv",
+    f"primary: race x BMI p = {prim.loc['race_x_bmi','p']:.2f}, Asian x BMI p = {prim.loc['asian_x_bmi','p']:.2f}; MDE Asian x BMI {mde_asian:.2f} log-OR per 5 kg/m²; "
+    f"sex x BMI p range {sex_p_range[0]:.3f}-{sex_p_range[1]:.2f} (specification-dependent)",
+    "No interaction terms in the main model ('not detectable, underpowered', not 'absent'); the Asian BMI problem is addressed as measurement (WHtR, S5/S8), not by an interaction.",
+    "Adding race x BMI terms (cost variance, power too low to estimate them); claiming no interaction exists.",
+    check_verdict="PASS-FIX", check_note="process doc p-values 0.42/0.83/0.20/0.48 not reproducible exactly (spec undocumented); conclusions for race terms hold in every spec, sex x BMI is spec-dependent")
+
+# %% [markdown]
+# **So what.** Race × BMI and Asian × BMI are not detectable in any specification (p well above 0.05
+# throughout). With only about 300 Asian adults, the MDE printed above corresponds to a large slope
+# difference, so the correct wording is "not detectable (underpowered)", not "no interaction".
+# Age × BMI is non-significant in the primary specification. Sex × BMI is specification-dependent:
+# it becomes significant only when waist circumference is in the same model, which reflects the
+# different BMI–waist relationship of women and men (collinearity between two adiposity measures)
+# rather than a robust effect modification. Decision: no interaction terms in the main model; the
+# Asian BMI problem is treated as a *measurement* problem (WHtR, S5/S8). The process document's
+# p-values (0.42 / 0.83 / 0.20 / 0.48) come from an undocumented prototype specification and could
+# not be reproduced exactly; the qualitative conclusion for race holds.
+
+# %% [markdown]
 # ## Save results and register
 
 # %%
