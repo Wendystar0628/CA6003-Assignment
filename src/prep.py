@@ -645,3 +645,70 @@ def naive_m0_reference(tier: int, X: pd.DataFrame, C_: float = 1.0) -> Pipeline:
     ])
     return Pipeline([("blanket", FunctionTransformer(blanket)), ("ct", ct),
                      ("model", LogisticRegression(C=C_, max_iter=C.LR_MAX_ITER))])
+
+
+# =============================================================================
+# experiment helpers (S7)
+# =============================================================================
+def run_arm_cv(arm: str, tier: int, X: pd.DataFrame, cohort: pd.DataFrame, folds, *, C_: float = 1.0,
+               model: str = "lr", cfg: dict | None = None) -> dict:
+    """Out-of-fold predictions of one arm (``evalkit.cv_predict``) plus fit diagnostics.
+
+    ``X`` = :func:`raw_feature_frame` of the training rows, ``cohort`` = the matching raw cohort rows
+    (training label per the arm's P02 setting, WTPH2YR for P12).  Returns
+    ``{"arm", "tier", "model", "oof", "n_convergence_warnings", "seconds", "n_pos_train_label"}``.
+    """
+    import time
+    import warnings
+    from sklearn.exceptions import ConvergenceWarning
+
+    from . import evalkit as ek
+
+    cfg = ARMS[arm] if cfg is None else cfg
+    y = training_label(cohort, cfg)
+    t0 = time.time()
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always", ConvergenceWarning)
+        oof = ek.cv_predict(lambda: build_pipeline(cfg, tier, model, C_=C_), X, y, folds,
+                            fit_params=fit_params(cfg, cohort))
+    n_conv = sum(issubclass(x.category, ConvergenceWarning) for x in w)
+    return dict(arm=arm, tier=tier, model=model, oof=oof, n_convergence_warnings=int(n_conv),
+                seconds=time.time() - t0, n_pos_train_label=int(y.sum()))
+
+
+#: ADA risk test items available in NHANES 2021-23 (family history and gestational diabetes are not asked)
+ADA_ITEMS = ("ada_age", "ada_male", "ada_htn", "ada_inactive", "ada_bmi")
+
+
+def ada_lite_items(clean: pd.DataFrame) -> pd.DataFrame:
+    """Reduced ADA risk test (Bang et al. 2009) items from the per-variable cohort.
+
+    age points 0/1/2/3 for <40 / 40-49 / 50-59 / >=60; male +1; told high blood pressure
+    (BPQ020 = 1) +1; physically inactive +1 (no leisure-time moderate or vigorous activity,
+    PAD790Q = 0 and PAD810Q = 0 - the ADA "physically active? no"); BMI points 0/1/2/3 for
+    <25 / 25-29.9 / 30-39.9 / >=40.  Missing answers score 0 (flag columns ``*_missing``).
+    The two missing items (family history, gestational diabetes) make this a reduced score.
+    """
+    d = pd.DataFrame(index=clean.index)
+    age = clean["RIDAGEYR"]
+    d["ada_age"] = np.select([age >= 60, age >= 50, age >= 40], [3, 2, 1], 0)
+    d["ada_male"] = clean["RIAGENDR"].eq(1).astype(int)
+    d["ada_htn"] = clean["BPQ020"].eq(1).astype(int)
+    mod, vig = clean["PAD790Q"], clean["PAD810Q"]
+    d["ada_inactive"] = (mod.eq(0) & vig.eq(0)).astype(int)
+    bmi = clean["BMXBMI"]
+    d["ada_bmi"] = np.select([bmi >= 40, bmi >= 30, bmi >= 25], [3, 2, 1], 0)
+    d["ada_htn_missing"] = clean["BPQ020"].isna().astype(int)
+    d["ada_inactive_missing"] = (mod.isna() | vig.isna()).astype(int)
+    d["ada_bmi_missing"] = bmi.isna().astype(int)
+    d["ada_score"] = d[list(ADA_ITEMS)].sum(axis=1)
+    return d
+
+
+def ada_lr_pipeline(C_: float = 1.0) -> Pipeline:
+    """BL-ADAlite-LR: logistic regression on the one-hot ADA-lite items (same items, fitted weights)."""
+    from sklearn.compose import ColumnTransformer
+
+    ct = ColumnTransformer([("items", OneHotEncoder(handle_unknown="ignore", sparse_output=False, drop="first"),
+                             list(ADA_ITEMS))])
+    return Pipeline([("ct", ct), ("model", LogisticRegression(C=C_, max_iter=C.LR_MAX_ITER))])
