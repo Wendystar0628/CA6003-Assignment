@@ -119,7 +119,7 @@ R1（团队角色）已取消。
 
 | 类别 | 做法 |
 |---|---|
-| 外部锚点 | 已精确复现 NCHS Data Brief 516：15.78 / 11.29 / 4.48，官方为 15.8 / 11.3 / 4.5 |
+| 外部锚点 | 已精确复现 NCHS Data Brief 516：15.79 / 11.30 / 4.49，官方为 15.8 / 11.3 / 4.5 |
 | 内部检验 | 重复分层交叉验证、配对 bootstrap、Nadeau–Bengio 校正 t、10 个随机种子、只用一次的留出集 |
 | 阴性对照 | 置换标签后 AUC ≈ 0.5 |
 | 报告标准 | NCHS 呈现标准：CI 宽度 ≥ 0.30 或 df < 8 的估计标为探索性 |
@@ -419,9 +419,9 @@ Git 历史本身就是过程证据，可以直接用于以下三点：
 | BMI 测量偏差 | 亚裔糖尿病患者 BMI < 25 占 51.1%（24/47），白人 7.2%；单指标 AUC：亚裔 BMI 0.573，WHtR 0.714（差 +0.136，0.092–0.183），白人差 +0.048 | S5 |
 | 朴素清洗代价 | 统一重编码毁掉 1,496 个有效值；A1c 标签丢失 29/721 个真阳性；`L_comb` 下只有 6/971 翻转 | S3 |
 | 冗余 | 体重 VIF 95.7、BMI 97.6；6 次血压读数 VIF 8.8–11.7；TC 与 LDL r = 0.94 | S4 |
-| 偏态 | 甘油三酯 6.23；BMI 1.22（Yeo-Johnson 后约为 0） | S4 |
+| 偏态 | 甘油三酯 6.62（有效空腹子样本 n=2,820）；BMI 1.22（Yeo-Johnson 后约为 0） | S4 |
 | 非线性 | RCS 似然比检验：年龄 χ²=57.6、BMI 11.6、HDL 18.5、TC 41.8 | S4 |
-| 外部锚点 | DB516 复现 15.78 / 11.29 / 4.48（官方 15.8 / 11.3 / 4.5） | S4 |
+| 外部锚点 | DB516 复现 15.79 / 11.30 / 4.49（官方 15.8 / 11.3 / 4.5） | S4 |
 | 周期特征 | 访谈应答率 34.6%、体检 25.7%；取消族裔与收入过采样；无家族史和妊娠糖尿病题项 | S2 |
 | 原型结果（待替换） | M0 → M1 AUC 约 0.958 → 0.860；BMI 系数 bootstrap SD 0.25 → 0.03 | 原型 |
 
@@ -551,7 +551,7 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
    - 设计变量 SDMVSTRA、SDMVPSU，方差用 delete-one-PSU 刀切，全国 df=15。子总体不删行，把域外权重置 0；域的 df 取含该域的 stratum 数。
    - 周期事实：访谈应答率 34.6%、体检 25.7%；无族裔与收入过采样；NCHS 通常不建议与其他周期合并。
 4. **展示标准（写入 `dua_checklist.md`）。** n<30 或有效样本量<30 则抑制或标记；95% CI 宽度≥0.30 则抑制或标记；域 df<8 则标记；比例的 CI 用 Korn–Graubard。Asian（315 人，阳性 50 例）一律作探索性并报 CI。
-5. **DB516 复现。** 在 S4 执行（见 S4 第 2 步）：用 WTSAF2YR 在空腹子样本复现 15.78/11.29/4.48%（年龄调整 14.31/10.13/4.18%），验证刀切与年龄标准化流程；S2 只负责准备所需的权重与设计变量。
+5. **DB516 复现。** 在 S4 执行（见 S4 第 2 步）：用 WTSAF2YR 在空腹子样本复现 15.79/11.30/4.49%（年龄调整值与 NCHS 14.3/10.1/4.2 相差 ≤ 0.044pp），验证刀切与年龄标准化流程；S2 只负责准备所需的权重与设计变量。
 6. **最小化。** 16 个文件只保留 spec 中 `include` 的列。`use_tier`：core 为 DEMO、GHB、DIQ、BMX、BPXO、TCHOL、HDL、HIQ、HUQ；recommended 为 BPQ、SMQ、PAQ；optional 为 MCQ；INQ 仅作冗余演示，GLU/TRIGLY 仅作侧分析。儿童专用、出生国和居留年限、军役、无关 MCQ 项明确排除并写明理由。加载器读入后立即丢弃排除列，输出 `minimisation_report.csv`。
 7. **溯源与 datasheet。** `MANIFEST.sha256`（文件、行数、列数、哈希）；`datasheet.md` 按 Gebru 的章节写 motivation、composition（漏斗 11,933 → 7,809 → 6,064 → 5,767 → 5,730）、collection、preprocessing、uses、distribution、maintenance。下载日期 2026-10-10。原始 XPT 未经修改纳入仓库 `data/nhanes_2021_2023/raw/`，`.gitattributes` 将其标为二进制、`MANIFEST.sha256` 固定为 LF 换行；`scripts/download_nhanes.py` 校验哈希，`--force` 可从 CDC 重新获取。每次运行先校验哈希。
 8. **spec 与加载器。** `variable_spec.csv` 列定义见第 7.2 节（共 15 列）。`sentinel_codes` 逐变量取自 codebook，禁止全局替换。`nhanes_io.py` 提供：
@@ -669,14 +669,14 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 
 ### 具体方案
 1. **权重地图与方差。** 访谈类用 WTINT2YR，MEC 类（BMX、BPXO）用 WTMEC2YR，血液分析物（GHB、TCHOL、HDL）用 WTPH2YR，空腹类（GLU、TRIGLY）用 WTSAF2YR；联合使用时取最小子样本的权重。本队列含 HbA1c，故描述与加权消融用 WTPH2YR，空腹复现用 WTSAF2YR。设计为 15 个 stratum、30 个 PSU，全队列 df=15。方差用 delete-one-PSU jackknife（`survey.py`，约 25 行）。子群（domain）的 df 取"含该 domain 的 stratum 数"，df<8 时标记不稳定（例如亚裔未诊断 domain 为 8）。
-2. **外部锚点：复现 NCHS DB516（用 WTSAF2YR，不是 WTPH2YR）。** 成人、非孕、空腹样本 n=2,940（NCHS 为 2,938）：总患病率 15.78% (13.53, 18.03)，NCHS 为 15.8 (13.6, 18.2)；已确诊 11.29%，对 11.3；未确诊 4.48%，对 4.5；年龄标准化 14.31/10.13/4.18，对 14.3/10.1/4.2。这同时验证 jackknife 与年龄标准化。NCHS 用 FPG≥126 或 A1c≥6.5 定义未确诊，本队列标签只含 HbA1c，所以我们的 WTPH2YR 加权患病率 14.0% (12.4, 15.6) 低于 15.8% 是定义与样本差异，不是错误。未加权 16.95% 偏高，主因是年龄结构（60+ 占 46.2% 对加权 31.4%），Kish 设计效应约 1.55。
-3. **年龄标准化。** 标准人口取美国 2000 标准人口（Klein & Schoenborn 2001）三段 20–39/40–59/60+，权重 0.3966/0.3718/0.2316（由 5 岁组标准百万数求和得到，上述 DB516 复现间接印证，三段权重未在 NCHS 页面直接核到原值 [待核实]）。另做 6 段和样本内部标准作敏感性。规范数字：Asian 对 White（综合标签，WTPH2YR）粗差 −0.8pp (−5.1, 3.5)，三段标准化后 +2.1pp (−2.6, 6.8)，两者 CI 都含 0，是"方向翻转、不确定性很大"的诚实示例，不作头条。README 的 18.0% 对 13.6% 用美国 2000 三段标准无法复现，予以撤回。
+2. **外部锚点：复现 NCHS DB516（用 WTSAF2YR，不是 WTPH2YR）。** 按 NCHS 定义（n=2,938，与 NCHS 相同）：总患病率 15.79%，Korn–Graubard CI (13.59, 18.19)，NCHS 为 15.8 (13.6, 18.2)；已确诊 11.30%，对 11.3；未确诊 4.49%，对 4.5；DB516 表 1–2 共 27 项估计偏差均 ≤ 0.044pp，其中 24 项 CI 与官方一致（含年龄标准化 14.3/10.1/4.2）。早期草稿的 15.79/11.30/4.49 是保留 2 名无 HbA1c 空腹者的 n=2,940 变体，notebook 两者并列。这同时验证 jackknife 与年龄标准化。NCHS 用 FPG≥126 或 A1c≥6.5 定义未确诊，本队列标签只含 HbA1c，所以我们的 WTPH2YR 加权患病率 14.0% (12.4, 15.6) 低于 15.8% 是定义与样本差异，不是错误。未加权 16.95% 偏高，主因是年龄结构（60+ 占 46.2% 对加权 31.4%），Kish 设计效应约 1.55。
+3. **年龄标准化。** 标准人口取美国 2000 标准人口（Klein & Schoenborn 2001）三段 20–39/40–59/60+，权重 0.3966/0.3718/0.2316（由 5 岁组标准百万数求和得到，上述 DB516 复现间接印证，三段权重已由 5 岁组标准百万数精确复算 [已核实]）。另做 6 段和样本内部标准作敏感性。规范数字：Asian 对 White（综合标签，WTPH2YR）粗差 −0.8pp (−5.1, 3.5)，三段标准化后 +2.1pp (−2.6, 6.8)，两者 CI 都含 0，是"方向翻转、不确定性很大"的诚实示例，不作头条。README 的 18.0% 对 13.6% 用美国 2000 三段标准无法复现，予以撤回。
 4. **保险：Simpson 型衰减，非反转。** insured 减 uninsured 的粗差 +5.3pp (1.8, 8.8)，年龄标准化后 +0.7pp (−2.6, 3.9)。这是年龄混杂（Age → Medicare → Insurance；Age → 糖尿病）造成的衰减。
-5. **Simpson 扫描（219 次比较）。** 9 个暴露 × 4 个结局 × 至多 7 个分层变量，判据为粗差与分层标准化差异号且两者绝对值均 >1pp。发现 5 个符号翻转，另有 25 个以上衰减超过 50%。扫描使用样本分层份额标准化，属探索性；补充做了 Rao–Wu 重缩放 bootstrap（1,000 次）：翻转概率不高（如 uninsured × A1c × 年龄粗差 −2.8 → +1.1，符号不同概率 0.77，标准化符号与点估计一致的概率 0.78；Asian × 综合标签 × 年龄符号不同概率 0.53），仅作补充。只有 DAG 支持的结果进入头条。按 BMI 分层得到的"翻转"不当作去混杂，因为 BMI 在 race → 体脂 → BMI 路径上是中介或测量代理。
+5. **Simpson 扫描（224 次比较）。** 9 个暴露 × 4 个结局 × 至多 7 个分层变量，判据为粗差与分层标准化差异号且两者绝对值均 >1pp。发现 6 个符号翻转（其中 4 个使用 BMI、教育等中介分层变量），另有 25 个以上衰减超过 50%。扫描使用样本分层份额标准化，属探索性；补充做了 Rao–Wu 重缩放 bootstrap（1,000 次）：翻转概率不高（如 uninsured × A1c × 年龄粗差 −2.8 → +1.1，符号不同概率 0.77，标准化符号与点估计一致的概率 0.78；Asian × 综合标签 × 年龄符号不同概率 0.53），仅作补充。只有 DAG 支持的结果进入头条。按 BMI 分层得到的"翻转"不当作去混杂，因为 BMI 在 race → 体脂 → BMI 路径上是中介或测量代理。
 6. **DAG（networkx 绘制）。** 节点：Age、Sex、Race/ancestry、SES、Insurance（含 Medicare）、UsualCare、Adiposity、BMI（测量）、Diabetes、Diagnosis、Treatment、HbA1c（测量）、ExamSelection（collider）。边：Age → Medicare → Insurance；Insurance → UsualCare → Diagnosis；Diabetes → Diagnosis → Treatment → HbA1c；Race → Adiposity → BMI；Health → ExamSelection。调整集：Insurance → undiagnosed 取 {Age, SES}；Race → diabetes 取 {Age, Sex}，不调整 BMI。声明：模型系数只是关联，避免 Table 2 谬误。
 7. **冗余与共线性。** 原始 VIF（n=5,388）：BMXWT 95.7、BMXHT 21.6、BMXBMI 97.6、waist 7.1、hip 7.7、arm 6.6。(HT, BMI) 各 1.0；(BMI, waist) 各 5.1；六个血压读数 8.8–11.7，改用均值 SBP/DBP 后各 1.6；Tier-1 候选 [age, BMI, waist, SBP, PIR] 最大 5.9，[age, BMI, SBP, TC, HDL] 最大 1.2。阈值按 O'Brien (2007) 解读：VIF 本身不是删变量的充分理由，结合系数方差与可解释性判断。log(BMI) 与 log(W)−2log(H) 相关 0.99999，属结构性冗余。输出 Spearman 聚类热图（距离 1−|ρ|，`scipy.cluster.hierarchy` 加 `seaborn.clustermap`）。
-8. **偏态。** 偏度 原始 → log → Yeo-Johnson：BMI 1.22 → 0.42 → 0.00（λ=−0.65）；SBP 0.93 → 0.38 → −0.01；HDL 1.08 → 0.21 → 0.00；waist 0.58 → 0.12 → 0.00；TC 0.54 → −0.25 → 0.01；甘油三酯 6.23 → 0.54。λ 只在训练折内拟合；是否变换由 S7 消融决定。
-9. **线性与交互。** 4 结点 RCS 对线性的 LR 检验（n=4,478，综合标签）：age χ²(2)=57.6，p<1e-4；BMI 11.6，p=0.003；waist 7.1，p=0.03；SBP 5.9，p=0.053；HDL 18.5，p=1e-4；TC 41.8，p<1e-4；PIR 0.8，p=0.66。分箱 log-odds：BMI 在 <25 近乎持平（约 −2.7 到 −2.4），之后上升；年龄 60 岁后趋平。交互 LR：race×BMI p=0.42，Asian×BMI p=0.83，age×BMI p=0.20，sex×BMI p=0.48。表述为"未检出（功效不足）"，不是"不存在交互"。
+8. **偏态。** 偏度 原始 → log → Yeo-Johnson：BMI 1.22 → 0.42 → 0.00（λ=−0.65）；SBP 0.93 → 0.38 → −0.01；HDL 1.08 → 0.21 → 0.00；waist 0.58 → 0.12 → 0.00；TC 0.54 → −0.25 → 0.01；甘油三酯 6.62 → log 0.60（有效空腹子样本 n=2,820；早期 6.23 → 0.54 未排除 WTSAF2YR=0 的不合格空腹者）。λ 只在训练折内拟合；是否变换由 S7 消融决定。
+9. **线性与交互。** 4 结点 RCS 对线性的 LR 检验（n=4,478，综合标签）：age χ²(2)=57.6，p<1e-4；BMI 11.6，p=0.003；waist 7.1，p=0.03；SBP 5.9，p=0.053；HDL 18.5，p=1e-4；TC 41.8，p<1e-4；PIR 0.8，p=0.66。分箱 log-odds：BMI 在 <25 近乎持平（约 −2.7 到 −2.4），之后上升；年龄 60 岁后趋平。交互 LR（n=4,478，全协变量设定）：race×BMI p=0.39（不同设定 0.17–0.39），Asian×BMI p=0.93（0.79–0.95；最小可检测效应约 0.70 log-OR / 5 kg/m²），age×BMI p=0.45；sex×BMI 随设定变化（0.008–0.83），不作定论。表述为"未检出（功效不足）"，不是"不存在交互"。
 10. **DAJ 对照表。** 年龄、BMI 单调但弯曲 → 主模型 L2 逻辑回归加 `SplineTransformer(n_knots=4, degree=3, knots='quantile', extrapolation='linear')`，线性版作消融对照；交互未检出 → 不放 race×BMI 项，浅树只做阈值与泄漏探测；VIF 与结构冗余 → 去掉 weight、height、hip、arm，血压取均值；TC 非单调 → Tier 2 解读注明他汀的反向因果可能。
 
 ### 理论依据
@@ -689,24 +689,24 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 - Yeo & Johnson 2000 Biometrika；Harrell《Regression Modeling Strategies》（RCS）[待核实：未联网核对]。
 
 ### 产出物
-- `weights_map.md`、`std_prev_table.csv`、`simpson_scan.csv`（219 行）、`vif_table.csv`、`skew_table.csv`、`linearity_tests.csv`；DAG 与聚类热图。
+- `weights_map.md`、`std_prev_table.csv`、`simpson_scan.csv`（224 行）、`vif_table.csv`、`skew_table.csv`、`linearity_tests.csv`；DAG 与聚类热图。
 - Decision Register：DR-S4-01 到 DR-S4-07（权重、标准人口、撤回 18.0/13.6、保险衰减叙事、BMI 非混杂、冗余剔除、样条与无交互）。
 
 ### 验收标准
 - DB516 复现各项偏差 ≤0.1pp，且 CI 与 NCHS 重叠。
-- Simpson 扫描公布比较总数 219 与翻转概率，头条结果均带 CI。
+- Simpson 扫描公布比较总数 224 与翻转概率，头条结果均带 CI。
 - DAJ 每一行对应具体诊断数字。
 - 所有加权估计注明 df，df<8 的标为不稳定。
-- 自查：从头重跑权重、DB516 复现、Simpson 扫描、DAG 与 VIF/偏态/线性各节，重算关键数字（15.78/11.29/4.48、+5.3pp 与 +0.7pp、219 次比较、VIF 与偏度值）并与上文逐项核对，结果写入 Register 的 `check_verdict`。
+- 自查：从头重跑权重、DB516 复现、Simpson 扫描、DAG 与 VIF/偏态/线性各节，重算关键数字（15.79/11.30/4.49、+5.3pp 与 +0.7pp、224 次比较、VIF 与偏度值）并与上文逐项核对，结果写入 Register 的 `check_verdict`。
 
 ### 反馈回路
 无强制回路。若 DB516 复现偏差 >0.5pp，先查权重和定义再进入 S5。
 
 ### Git 提交点
 1. `feat(S4): add delete-one-PSU jackknife survey module` — `survey.py`（约 25 行）、权重地图 `weights_map.md`、domain df<8 标记
-2. `analysis(S4): replicate NCHS DB516 prevalence with PSU jackknife` — WTSAF2YR 复现 15.78/11.29/4.48 与年龄标准化 14.31/10.13/4.18，对照 WTPH2YR 的 14.0% 与 Kish 设计效应约 1.55
+2. `analysis(S4): replicate NCHS DB516 prevalence with PSU jackknife` — WTSAF2YR 复现 15.79/11.30/4.49 与年龄标准化（偏差 ≤ 0.044pp），对照 WTPH2YR 的 14.0% 与 Kish 设计效应约 1.55
 3. `analysis(S4): add age standardisation and insurance attenuation` — 三段标准人口 0.3966/0.3718/0.2316、`std_prev_table.csv`、保险 +5.3pp → +0.7pp、撤回 18.0%/13.6%
-4. `analysis(S4): run Simpson scan over 219 comparisons` — `simpson_scan.csv`（5 个符号翻转，Rao–Wu bootstrap 1,000 次补充）
+4. `analysis(S4): run Simpson scan over 224 comparisons` — `simpson_scan.csv`（6 个符号翻转，Rao–Wu bootstrap 1,000 次补充）
 5. `analysis(S4): add DAG, collinearity, skewness and linearity checks` — networkx DAG 与调整集、`vif_table.csv`、`skew_table.csv`、`linearity_tests.csv`、Spearman 聚类热图
 6. `docs(S4): add DAJ table and register entries DR-S4-01 to 07` — "数据→算法"对照表、DR-S4-01 到 DR-S4-07，自查结论
 
@@ -870,7 +870,7 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 由 S4 诊断决定模型，按固定协议跑配对、带不确定度的 ablation，并同时在 E-ALL 与 E-SCREEN 两个评估人群上报告。
 
 ### 输入
-- S4：age、BMI 的 binned log-odds 与 LR 检验；race×BMI 交互 p=0.42（"未检出，功效不足"，不是"无交互"）；VIF 簇；约 16.9% 的类别不平衡。
+- S4：age、BMI 的 binned log-odds 与 LR 检验；race×BMI 交互 p=0.39（"未检出，功效不足"，不是"无交互"）；VIF 簇；约 16.9% 的类别不平衡。
 - S5：L_comb；S6：`build_pipeline`、`hypotheses.md`。
 
 ### 具体方案
@@ -1022,7 +1022,7 @@ S7 的 OOF 与指标、S8 的组指标、S4 的 DB516 复现（forest plot）、
    - Tier 2；C 取 0.1 与 10；tree depth 4；加种族特征；M0 自己调 C。合计 14 个。
    - 扩展项（同样实施）：60 设定的 specification curve、IPW、`StratifiedGroupKFold`、positive control。
 4. **外部验证**。
-   - V1：直接引用 S4 对 DB516 的复现（15.78/11.29/4.48%；年龄调整 14.31/10.13/4.18%），不重跑。DB516 原文数字（已核实）：总计 15.8% (13.6–18.2)、已诊断 11.3%、未诊断 4.5%；https://www.cdc.gov/nchs/products/databriefs/db516.htm。
+   - V1：直接引用 S4 对 DB516 的复现（15.79/11.30/4.49%；年龄调整值偏差 ≤ 0.044pp），不重跑。DB516 原文数字（已核实）：总计 15.8% (13.6–18.2)、已诊断 11.3%、未诊断 4.5%；https://www.cdc.gov/nchs/products/databriefs/db516.htm。
    - V2：我们加权后的 L_comb 患病率为 14.0%（WTPH2YR），低于 DB516 的 15.8%。预注册的解释：我们的标签没有 FPG 标准，且样本是 HbA1c 样本而非空腹子样本。这是"标签定义差距"的解释，不是复现失败。
    - ADA-lite 在 E-SCREEN 上的表现与 Bang 数字对照：只在核对原文后引用 [待核实]。
 5. **泄漏狩猎（L3）**。
@@ -1093,7 +1093,7 @@ L3：触发见上。退出条件：泄漏狩猎通过且置换检验通过；失
    - 配对比较用 5×5 CV 的 Nadeau–Bengio 修正 t（`var·(1/25 + 1/4)`）与 OOF 配对 bootstrap，报较保守者；hold-out AUC SE≈0.017，故 0.005 低于分辨率。
    - 加权描述用 WTPH2YR + delete-one-PSU jackknife（df=15，域内 df<8 标记）；加权拟合不报系数 p 值；加权指标不含 design effect（除非 jackknife），须写明。
    - n 或 effective n <30 抑制。uninsured 未诊断 43.0%（24.9, 61.2）CI 宽 0.36，不满足 NCHS 标准，标"exploratory"，头条用风险差（Korn–Graubard / logit CI）。NH Asian（315 人，50 阳性）只作探索性并附 CI。
-   - 符号翻转扫描共 219 次比较，只作探索性并报 bootstrap flip 概率。交互 p=0.42 写"not detectable (underpowered)"。缺失只写"无证据反对 MAR，MNAR 不可检验"。
+   - 符号翻转扫描共 224 次比较，只作探索性并报 bootstrap flip 概率。交互 p≈0.39 写"not detectable (underpowered)"。缺失只写"无证据反对 MAR，MNAR 不可检验"。
 4. **改善与恶化解释模板**：机制 → 检验 → 判定；终稿数字替换原型值。
    - M0→M1（泄漏闸门）：AUC ≈0.96→≈0.86，诚实的恶化；检验用单特征 AUC、depth-1 tree、缺失指示 AUC。
    - M1 vs S：预期 AUC equivalent，稳定性（BMI 系数 SD 0.25→0.03）和分组误差 supported；判 mixed 并解释。
@@ -1175,7 +1175,7 @@ S10 的 claims、`numbers_on_slides.csv`；`notebooks/` 中各阶段 notebook、
    | 3 分 30 秒–4 分 30 秒 | 三页各 20 s：VIF≈96–98；BMI 系数 SD 0.25→0.03；甘油三酯偏度 6.2（偏度不得砍） |
    | 4 分 30 秒–6 分 00 秒 | 保险 +5.3→+0.7 年龄混杂减弱；Asian 标准化后翻转但 CI 含 0（诚实不确定）；DAG：BMI 是 mediator 而非 confounder |
    | 6 分 00 秒–8 分 30 秒 | 治疗掩盖 30.5%；未诊断风险差（标"exploratory"）与 68% 做过血糖检查；3×3 标签矩阵；Asian BMI 0.573 vs WHtR 0.714 |
-   | 8 分 30 秒–10 分 15 秒 | 算法选择页（spline-LR + 浅树，据 S4 诊断，15 s）；M1 vs S 配对森林图（30 s）；E-ALL vs E-SCREEN（25 s）；DB516 15.78 vs 15.8、permutation≈0.5、ADA-lite（30 s） |
+   | 8 分 30 秒–10 分 15 秒 | 算法选择页（spline-LR + 浅树，据 S4 诊断，15 s）；M1 vs S 配对森林图（30 s）；E-ALL vs E-SCREEN（25 s）；DB516 15.79 vs 15.8、permutation≈0.5、ADA-lite（30 s） |
    | 10 分 15 秒–11 分 20 秒 | ML 告诉了数据什么；贡献页；limitation 与 ethics；GenAI 一句 |
 9. **幻灯片规则**：一页一图；标题为简短概括（≤6 词，不用句子），结论写在图下一行；字号 ≥18 pt；直接标注、CI 可见；Okabe–Ito 色盘；页脚写 n、是否加权、来源节号；图由 notebook 同一代码导出；每页数字均在 `numbers_on_slides.csv`。
 10. **录制**：尽早向讲师确认拼接多段录制是否算"single continuous video"。获准则可分段录制后硬切拼接；否则改用一次连续录制（Zoom 小组录制，共享屏幕，全员在画面），录制开始前定案。YouTube：Public；标题与描述含组号；处理完成、时长 ≤12 分钟；隐身窗口及另一设备验证；无版权音乐。
@@ -1314,7 +1314,7 @@ L5（后期）：提交前 clean-room 或链接检查失败，只修 P0 并重�
 |---|---|---|
 | 工程 | GitHub 仓库（含原始数据）；按第 6 节逐步提交；`src/` helpers 内联进 notebook；单一 spec CSV；notebook 内 `assert`；FAST/FINAL 两种模式 | `exp/*` 分支实验；jupytext、nbstripout、pytest、papermill；构建脚本 |
 | 数据质量 | 按变量处理哨兵值并出审计表；XPT 修复；一致性检查；缺失机制 logit；异常值三层规则（不删数据） | 敏感性分析中加 IPW |
-| EDA | DB516 复现；年龄标准化；辛普森扫描（只报头条结论）；DAG；VIF；偏态；线性检验；DAJ 表 | 完整的 219 组合附录；6 段年龄标准化 |
+| EDA | DB516 复现；年龄标准化；辛普森扫描（只报头条结论）；DAG；VIF；偏态；线性检验；DAJ 表 | 完整的 224 组合附录；6 段年龄标准化 |
 | 实验 | M0/M1/S；B1–B6 累加与逐块去除；T1-minus-care；线性 LR 对照；BL0/ADA-lite；E-ALL 与 E-SCREEN | Shapley 顺序平均；Holm 校正；cluster bootstrap |
 | 公平性 | 分组 TPR 及 CI（含置换基准）；3×3 标签矩阵；WHtR 臂（含白人对照） | 无医保 reweighing；公平与性能权衡图 |
 | 可信度 | 置换检验 100 次；10 个种子；≤ 16 个设定的敏感性表；泄漏排查；留出集只用一次 | 60 个设定的规格曲线；StratifiedGroupKFold；阳性对照 |
