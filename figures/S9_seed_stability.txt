@@ -1,0 +1,1 @@
+F9-3. ΔROC-AUC (S − M1, Tier 1) with its conservative 95 % CI under ten robustness seeds (new repeated stratified folds and bootstrap streams; data, hold-out and C0 fixed). Colour = verdict under the locked equivalence rule (grey = inconclusive); dashed = stored folds of the run mode.

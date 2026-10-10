@@ -21,7 +21,8 @@ Folds
     subset_folds(folds, mask) -> Folds                               (restrict to rows, keep pairing)
 
 Running and comparing
-    run_many(ctx, specs, folds, n_jobs, cache) -> {name: OOF frame}
+    run_jobs(ctx, {name: (spec, folds)}, n_jobs, cache) -> {name: OOF frame}  (parallel over spec x repeat)
+    run_many(ctx, specs, folds, n_jobs, cache) -> {name: OOF frame}            (one fold set)
     compare(oof_a, oof_b, y, folds, mask=None, w=None, use_t=True, seed, n_boot) -> dict
         S7 comparison engine: fold-level Nadeau-Bengio corrected t and paired, label-stratified
         bootstrap on the repeat-averaged OOF vector; the wider interval is used (E-ALL);
@@ -81,7 +82,7 @@ from . import prep as P
 
 __all__ = [
     "Context", "load_context", "Spec", "make_pipe", "spec_inputs", "seed_folds", "group_folds",
-    "subset_folds", "run_many", "compare", "equivalence_verdict", "auc_ci", "permutation_null",
+    "subset_folds", "run_jobs", "run_many", "compare", "equivalence_verdict", "auc_ci", "permutation_null",
     "signal_feature", "tree_features_used", "single_feature_scan", "missing_indicator_scan",
     "contribution_importance", "base_variable", "availability_proof", "examined_population",
     "missingness_design", "observation_model", "delta_prevalence", "delta_auc", "tag_exists",
@@ -212,7 +213,11 @@ class IterativeImpute(P.Impute):
         self.random_state = random_state
 
     def fit(self, X, y=None):
-        super().fit(X)
+        self.cat_ = [c for c in X.columns if P._is_cat(X, c)]
+        self.fill_ = {}
+        for c in self.cat_:
+            m = X[c].mode(dropna=True)
+            self.fill_[c] = m.iloc[0] if len(m) else "missing"
         self.num_ = [c for c in X.columns if c not in self.cat_ and pd.api.types.is_numeric_dtype(X[c])]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -323,45 +328,55 @@ def subset_folds(folds, mask) -> ek.Folds:
 # =============================================================================
 # running
 # =============================================================================
-def _oof_one(spec: Spec, C0: float, X: pd.DataFrame, y: np.ndarray, sw, folds_list, n_splits: int) -> pd.DataFrame:
+def _oof_chunk(spec: Spec, C0: float, X: pd.DataFrame, y: np.ndarray, sw, chunk, repeat: int) -> pd.DataFrame:
+    """OOF probabilities of one repeat (its n_splits folds), fitted sequentially."""
     parts = []
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        for i, (tr, te) in enumerate(folds_list):
+        for f, (tr, te) in enumerate(chunk):
             pipe = make_pipe(spec, C0)
             kw = {} if sw is None else {"model__sample_weight": sw[tr]}
             pipe.fit(X.iloc[tr], y[tr].astype(int), **kw)
-            parts.append(pd.DataFrame({"repeat": i // n_splits, "fold": i % n_splits, "row": te,
-                                       "prob": ek._positive_proba(pipe, X.iloc[te])}))
+            parts.append(pd.DataFrame({"repeat": repeat, "fold": f, "row": te, "prob": ek._positive_proba(pipe, X.iloc[te])}))
     return pd.concat(parts, ignore_index=True)
 
 
-def run_many(ctx: Context, specs: dict, folds=None, *, n_jobs: int = 1, cache: dict | None = None) -> dict:
-    """Out-of-fold predictions for every named spec (parallel over specs).
+def run_jobs(ctx: Context, items: dict, *, n_jobs: int = 1, cache: dict | None = None) -> dict:
+    """Out-of-fold predictions for ``{name: (Spec, folds)}`` - parallel over (spec, repeat) chunks.
 
-    Rows of each OOF frame are positions inside the spec's row mask (``Spec.rows``), on the
-    folds restricted to that mask.  ``cache`` (dict) re-uses runs keyed by (spec, folds hash).
-    """
-    folds = ctx.folds if folds is None else folds
+    Rows of each OOF frame are positions inside the spec's row mask (``Spec.rows``), on the folds
+    restricted to that mask.  ``cache`` (dict) re-uses runs keyed by (spec, folds hash)."""
     cache = {} if cache is None else cache
-    todo, out = {}, {}
-    for name, sp in specs.items():
+    out, tasks, seen = {}, [], {}
+    for name, (sp, folds) in items.items():
         key = (sp, folds.hash)
         if key in cache:
             out[name] = cache[key]
-        else:
-            todo[name] = sp
-    jobs = []
-    for name, sp in todo.items():
+            continue
+        if key in seen:                                   # same run requested twice in this batch
+            continue
+        seen[key] = name
         X, y, sw, mask = spec_inputs(ctx, sp)
         f = folds if mask.all() else subset_folds(folds, mask)
-        jobs.append((name, sp, X[mask].reset_index(drop=True) if not mask.all() else X, y[mask],
-                     None if sw is None else sw[mask], list(f), f.n_splits))
-    res = Parallel(n_jobs=n_jobs)(delayed(_oof_one)(sp, ctx.C0, X, y, sw, fl, ns) for _, sp, X, y, sw, fl, ns in jobs)
-    for (name, sp, *_), oof in zip(jobs, res):
-        cache[(sp, folds.hash)] = oof
-        out[name] = oof
+        Xs = X if mask.all() else X[mask].reset_index(drop=True)
+        fl = list(f)
+        for r in range(f.n_repeats):
+            tasks.append((key, r, sp, Xs, y[mask], None if sw is None else sw[mask], fl[r * f.n_splits:(r + 1) * f.n_splits]))
+    res = Parallel(n_jobs=n_jobs)(delayed(_oof_chunk)(sp, ctx.C0, X, y, sw, ch, r) for _, r, sp, X, y, sw, ch in tasks)
+    parts: dict = {}
+    for (key, *_), oof in zip(tasks, res):
+        parts.setdefault(key, []).append(oof)
+    for key, ps in parts.items():
+        cache[key] = pd.concat(ps, ignore_index=True)
+    for name, (sp, folds) in items.items():
+        out[name] = cache[(sp, folds.hash)]
     return out
+
+
+def run_many(ctx: Context, specs: dict, folds=None, *, n_jobs: int = 1, cache: dict | None = None) -> dict:
+    """``run_jobs`` for several specs on one fold set (default: the stored folds of the run mode)."""
+    folds = ctx.folds if folds is None else folds
+    return run_jobs(ctx, {name: (sp, folds) for name, sp in specs.items()}, n_jobs=n_jobs, cache=cache)
 
 
 def spec_folds(ctx: Context, spec: Spec, folds=None):
