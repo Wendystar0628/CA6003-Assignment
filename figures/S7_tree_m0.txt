@@ -1,1 +1,1 @@
-Decision tree (depth 3, min leaf 50) fitted on the naive M0 feature frame (Tier 1, training part). The root split uses a variable that the availability rule removes.
+Decision tree (depth 3, min leaf 50) fitted on the naive M0 feature frame (Tier 1, training part). The root split uses a treatment item that the availability rule removes; the splits at 49.5 / 50.5 on age at diagnosis isolate the median imputation of an item that is only asked of diagnosed people.

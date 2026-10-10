@@ -1,7 +1,7 @@
 diagnostic,evidence (S4 / S7),decision,why not the alternative
-non-linearity,"age chi2 57.6, BMI 11.6, HDL 18.5, TC 41.8 (p < 0.01)",L2 logistic regression + B-spline basis (P13),"categorised bands (arbitrary cut-points, information loss); GAM / boosting (outside HR3)"
+non-linearity,"age 57.6, BMI 11.6, HDL 18.5, total cholesterol 41.8 (all p < 0.003)",L2 logistic regression + B-spline basis (P13),"categorised bands (arbitrary cut-points, information loss); GAM / boosting (outside the allowed model class)"
 interactions,"race x BMI p 0.39, Asian x BMI p 0.93 (MDE 0.70 log-OR)","no interaction terms; Asian BMI bias treated as a measurement issue (P14, S8)",interaction terms add variance without detectable gain
 collinearity,"weight VIF 95.7, BMI 97.6; 6 BP readings 8.8-11.7","aggregate + in-fold VIF pruning (P04/P05), L2 as second defence","L1 (unstable selection among collinear columns, sensitivity only)"
-sample size,777 events / 42 parameters (EPV 18.5),unpenalised fit would be acceptable; mild L2 (C0) chosen by inner CV,"deep trees / ensembles (overfit, HR3)"
+sample size,777 events / 42 parameters (EPV 18.5),unpenalised fit would be acceptable; mild L2 (C0) chosen by inner CV,"deep trees / ensembles (overfit, outside the allowed model class)"
 imbalance,prevalence 17.0%,no resampling; class_weight tested as block B6a,SMOTE (breaks calibration and the survey design)
 thresholds / leakage,clinical cut-points and leakage need inspection,depth-3 tree (min leaf 50) as a probe only,"tree as main model (step functions, unstable)"

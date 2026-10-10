@@ -491,8 +491,8 @@ S7["ada_missing_answers"] = miss
 # optimism. The five-item reduced ADA score reaches an E-SCREEN AUC of about 0.73 with integer points and no fitting; the
 # systematic model is better by about 0.05 with an interval that excludes 0 (H2c-iii). Two details matter for the
 # interpretation. First, refitting the ADA items by logistic regression on `L_comb` (BL-ADAlite-LR) moves them in opposite
-# directions on the two populations: slightly better on E-ALL, lower on E-SCREEN (paired differences printed above; on
-# E-SCREEN the interval includes 0, so "no better than the hand-made points" is the safe reading). Weights learned from a
+# directions on the two populations: indistinguishable from the points on E-ALL (interval includes 0) but lower on
+# E-SCREEN by about 0.02 with an interval that just excludes 0 (paired differences printed above). Weights learned from a
 # label dominated by known diabetics do not transfer well to screening. Second, ADA-lite is missing two items, so the
 # margin over it likely overstates what a complete ADA test would concede.
 
