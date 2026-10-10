@@ -464,6 +464,55 @@ def test_parallel_matches_serial():
     assert np.allclose(a["null"], b["null"])
 
 
+# ----------------------------------------------------------------------------- end to end
+def test_end_to_end_protocol():
+    """Hold-out -> shared folds -> two arms -> fold table -> corrected t + paired bootstrap -> verdict."""
+    X, y = synth(2400, seed=21)
+    coh = pd.DataFrame({"SEQN": np.arange(len(y)) + 1, "L_comb": y,
+                        "race": np.random.default_rng(3).choice(list("ABCD"), len(y))})
+    d = Path(tempfile.mkdtemp())
+    tr, te = ek.make_holdout(coh, path=d / "holdout.json")
+    Xtr, ytr = X.iloc[tr].reset_index(drop=True), y[tr]
+    strat = (coh.L_comb.astype(str) + coh.race).iloc[tr].to_numpy()
+    folds = ek.make_folds(ytr, strat, n_splits=5, n_repeats=2, mode="FAST", path=d / "folds_FAST.npz")
+    arm_s = lambda: lr_pipe()                                       # all four columns
+    arm_m = lambda: make_pipeline(StandardScaler(), LogisticRegression(max_iter=C.LR_MAX_ITER))
+    full = ek.cv_predict(arm_s, Xtr, ytr, folds)
+    weak = ek.cv_predict(arm_m, Xtr[["x0"]], ytr, folds)            # drops the second signal column
+    fm_s, fm_w = ek.fold_metrics(full, ytr), ek.fold_metrics(weak, ytr)
+    n_tr = np.mean([len(a) for a, _ in folds])
+    n_te = np.mean([len(b) for _, b in folds])
+    ct = ek.corrected_t(ek.paired_fold_diffs(fm_s, fm_w), n_tr, n_te)
+    assert ct["J"] == 10 and abs(ct["ratio"] - 0.25) < 0.01 and ct["ci_low"] > 0
+    pb = ek.paired_bootstrap(ytr, ek.mean_oof(full, len(ytr)), ek.mean_oof(weak, len(ytr)), "roc_auc", n_boot=200, seed=1)
+    lo, hi = min(ct["ci_low"], pb["ci_low"]), max(ct["ci_high"], pb["ci_high"])   # conservative: widest interval
+    assert ek.verdict(lo, hi, C.SESOI["roc_auc"], "+") == "supported"
+    # E-SCREEN-style sub-population: positives are rare, intervals widen
+    mask = np.random.default_rng(5).random(len(ytr)) < 0.25
+    sub = ek.paired_bootstrap(ytr, ek.mean_oof(full, len(ytr)), ek.mean_oof(weak, len(ytr)), "roc_auc",
+                              n_boot=200, seed=1, eval_mask=mask)
+    assert (sub["ci_high"] - sub["ci_low"]) > (pb["ci_high"] - pb["ci_low"])
+
+
+def test_contract_signatures():
+    import inspect
+    sig = lambda f: list(inspect.signature(getattr(ek, f)).parameters)
+    assert sig("make_holdout")[:2] == ["cohort", "seed"]
+    assert sig("make_folds")[:2] == ["y", "strat"] and {"n_splits", "n_repeats", "seed"} <= set(sig("make_folds"))
+    assert sig("cv_predict")[:4] == ["make_pipe", "X", "y", "folds"] and "fit_params" in sig("cv_predict")
+    assert sig("metric_suite")[:4] == ["y", "p", "w", "threshold"]
+    assert sig("recall_at_specificity")[:4] == ["y", "p", "spec", "neg_mask"]
+    assert sig("fold_metrics")[:3] == ["oof", "y", "eval_mask"]
+    assert sig("corrected_t")[:3] == ["diffs", "n_train", "n_test"]
+    assert sig("paired_bootstrap")[:4] == ["y", "p_a", "p_b", "metric"]
+    assert {"n_boot", "seed", "eval_mask", "stratify"} <= set(sig("paired_bootstrap"))
+    assert sig("verdict")[:4] == ["ci_low", "ci_high", "sesoi", "direction"]
+    assert sig("coef_bootstrap")[:3] == ["make_pipe", "X", "y"] and {"n_boot", "seed"} <= set(sig("coef_bootstrap"))
+    assert sig("permutation_auc")[:4] == ["make_pipe", "X", "y", "folds"] and {"n_perm", "seed"} <= set(sig("permutation_auc"))
+    for f in ek.__all__:
+        assert getattr(ek, f).__doc__, f"{f} lacks a docstring"
+
+
 # ----------------------------------------------------------------------------- runner
 def main():
     tests = [(k, v) for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
