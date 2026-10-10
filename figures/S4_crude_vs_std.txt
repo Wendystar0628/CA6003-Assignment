@@ -1,0 +1,1 @@
+Crude and age-standardised prevalence differences (WTPH2YR, jackknife 95% CI, df = 15).

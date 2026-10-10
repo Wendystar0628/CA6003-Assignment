@@ -1,0 +1,1 @@
+Left: age distribution of the cohort vs the weighted population. Right: L_comb prevalence by age band (weighted with Korn-Graubard CI, and unweighted).

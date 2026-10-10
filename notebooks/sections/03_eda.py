@@ -336,6 +336,233 @@ reg("DR-S4-02", "validation", "Survey toolkit reproduces NCHS Data Brief 516 on 
 # This is the external anchor for every weighted number later in the project.
 
 # %% [markdown]
+# ## 4.4 Weighted vs unweighted prevalence
+# **Why.** The cohort's raw share of `L_comb` positives describes the *sample*, which over-represents
+# older adults. Because NCHS used a different definition (fasting glucose as well), our cohort number
+# is also not expected to equal DB516's 15.8 %. Both gaps need to be explained, not ignored.
+
+# %%
+w_ph = coh[C.WEIGHT_PHLEB].to_numpy(float)
+unw = coh.L_comb.mean()
+wp = S.weighted_prop(coh, "L_comb", weight=C.WEIGHT_PHLEB)
+kish = S.kish_deff(w_ph)
+coh["age3"] = S.age_band(coh.RIDAGEYR).to_numpy()
+bands = list(S.US2000_3BAND)
+share_s = coh.age3.value_counts(normalize=True).reindex(bands)
+share_w = pd.Series({b: w_ph[coh.age3 == b].sum() / w_ph.sum() for b in bands})
+rate_unw = coh.groupby("age3").L_comb.mean().reindex(bands)
+rate_w = {b: S.weighted_prop(coh, "L_comb", weight=C.WEIGHT_PHLEB, domain=coh.age3 == b) for b in bands}
+unw_age_reweighted = float((rate_unw * share_w).sum())     # sample rates, population age mix
+explained = (unw - unw_age_reweighted) / (unw - wp["est"])
+AGE_TAB = pd.DataFrame({"sample share": share_s, "weighted share": share_w, "unweighted rate": rate_unw,
+                        "weighted rate": [rate_w[b]["est"] for b in bands],
+                        "kg_low": [rate_w[b]["kg_low"] for b in bands], "kg_high": [rate_w[b]["kg_high"] for b in bands]})
+print((AGE_TAB * 100).round(1))
+print(f"\nL_comb unweighted {pct(unw, 2)}% vs WTPH2YR-weighted {pct(wp['est'], 2)}% "
+      f"(JK {pct(wp['ci_low'])}-{pct(wp['ci_high'])}, KG {pct(wp['kg_low'])}-{pct(wp['kg_high'])}, df {wp['df']})")
+print(f"sample rates re-weighted to the population age mix: {pct(unw_age_reweighted, 2)}% -> age structure explains "
+      f"{100 * explained:.0f}% of the {100 * (unw - wp['est']):.2f} pp gap")
+print(f"Kish deff (unequal weights) = {kish:.3f}; Kish n_eff = {S.kish_neff(w_ph):,.0f}; "
+      f"full design effect for L_comb = {wp['deff']:.2f}")
+assert abs(unw - 0.1695) < 5e-4 and abs(wp["est"] - 0.140) < 5e-4 and abs(kish - 1.55) < 0.01
+OUT["prevalence"] = {"unweighted": unw, "weighted": wp["est"], "weighted_jk_ci": [wp["ci_low"], wp["ci_high"]],
+                     "weighted_kg_ci": [wp["kg_low"], wp["kg_high"]], "kish_deff": kish, "design_deff": wp["deff"],
+                     "share_60plus_sample": share_s["60+"], "share_60plus_weighted": share_w["60+"],
+                     "share_20_39_sample": share_s["20-39"], "share_20_39_weighted": share_w["20-39"],
+                     "unweighted_age_reweighted": unw_age_reweighted, "gap_explained_by_age": explained}
+
+# %%
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4))
+x = np.arange(3)
+a1.bar(x - 0.2, share_s * 100, 0.4, label="sample (unweighted)", color=C.OKABE_ITO["orange"])
+a1.bar(x + 0.2, share_w * 100, 0.4, label="population (WTPH2YR)", color=C.OKABE_ITO["blue"])
+a1.set_xticks(x, bands); a1.set_ylabel("Share of adults, %"); a1.set_xlabel("Age band")
+a1.set_title("The sample is older than the population"); a1.legend()
+yr = AGE_TAB["weighted rate"] * 100
+a2.errorbar(x, yr, yerr=[yr - AGE_TAB.kg_low * 100, AGE_TAB.kg_high * 100 - yr], fmt="o", capsize=4,
+            color=C.OKABE_ITO["blue"], label="weighted rate (KG 95% CI)")
+a2.plot(x, AGE_TAB["unweighted rate"] * 100, "s", color=C.OKABE_ITO["orange"], label="unweighted rate")
+a2.set_xticks(x, bands); a2.set_ylabel("L_comb prevalence, %"); a2.set_xlabel("Age band")
+a2.set_title("…and prevalence rises steeply with age"); a2.legend()
+fig.suptitle(f"Unweighted {pct(unw)}% vs weighted {pct(wp['est'])}%: age structure explains "
+             f"{100 * explained:.0f}% of the gap", fontsize=11)
+fig.tight_layout()
+plots.savefig(fig, "S4_age_structure",
+              caption="Left: age distribution of the cohort vs the weighted population. Right: L_comb prevalence "
+                      "by age band (weighted with Korn-Graubard CI, and unweighted).")
+plt.show()
+
+# %% [markdown]
+# **So what.** 46 % of the cohort is 60+ against 31 % of the population, and prevalence in that band
+# is about seven times that of 20–39-year-olds, so the unweighted 16.95 % overstates the population
+# prevalence of 14.0 % (12.4–15.6). Re-weighting the sample's own age-specific rates to the population
+# age mix closes most of the gap, i.e. the bias is mainly an age-structure effect. The remaining
+# difference to DB516's 15.8 % is definitional (our cohort label has no fasting-glucose criterion,
+# and uses the phlebotomy not the fasting sample) – not an error. The Kish design effect of 1.55 means
+# 5,730 unequally weighted adults carry the information of about 3,700 equally weighted ones; the full
+# design effect including clustering is larger still, which is why all CIs use the jackknife. For
+# modelling, this motivates the weighted ablation arm (block B6) rather than silently ignoring weights.
+
+# %% [markdown]
+# ## 4.5 Age standardisation
+# **Why.** Groups with different age structures cannot be compared on crude prevalence, because age
+# is the strongest determinant of diabetes. Direct standardisation applies each group's age-specific
+# rates to one common age distribution. We use the US 2000 standard population in the three NCHS
+# bands; the band weights are derived here from the 5-year "standard million" (Klein & Schoenborn
+# 2001) rather than taken on trust, and a 6-band standard and an internal (cohort) standard are
+# sensitivity analyses.
+
+# %%
+# US 2000 standard population per million, 5-year groups from age 20 (Klein & Schoenborn 2001, Table 2)
+US2000_5Y = {"20-24": 66478, "25-29": 64529, "30-34": 71044, "35-39": 80762, "40-44": 81851, "45-49": 72118,
+             "50-54": 62716, "55-59": 48454, "60-64": 38793, "65-69": 34264, "70-74": 31773, "75-79": 26999,
+             "80-84": 17842, "85+": 15508}
+lo_of = {k: int(k.rstrip("+").split("-")[0]) for k in US2000_5Y}
+def collapse(cuts):
+    out = {}
+    for lab, (lo, hi) in cuts.items():
+        out[lab] = sum(v for k, v in US2000_5Y.items() if lo <= lo_of[k] <= hi)
+    tot = sum(out.values())
+    return {k: v / tot for k, v in out.items()}
+STD3 = collapse({"20-39": (20, 39), "40-59": (40, 59), "60+": (60, 200)})
+STD6 = collapse({"20-29": (20, 29), "30-39": (30, 39), "40-49": (40, 49), "50-59": (50, 59), "60-69": (60, 69), "70+": (70, 200)})
+print("3-band weights derived:", {k: round(v, 4) for k, v in STD3.items()}, "| survey.US2000_3BAND:", S.US2000_3BAND)
+assert all(abs(STD3[k] - S.US2000_3BAND[k]) < 1e-4 for k in STD3)
+STD_INT = {b: float(share_w[b]) for b in bands}            # internal standard: the weighted cohort itself
+print("6-band weights:", {k: round(v, 4) for k, v in STD6.items()})
+
+coh["insurance"] = coh.HIQ011.map({1: "insured", 2: "uninsured"})
+coh["usual_care"] = coh.HUQ030.map({1: "has usual place", 3: "has usual place", 2: "no usual place"})
+std_tabs = []
+for gcol in ["race", "sex", "insurance", "usual_care"]:
+    t = S.age_standardise(coh, "L_comb", gcol, weight=C.WEIGHT_PHLEB)
+    t.insert(0, "grouping", gcol)
+    std_tabs.append(t)
+STD_TAB = pd.concat(std_tabs, ignore_index=True)
+STD_TAB["kg_width"] = STD_TAB.crude_kg_high - STD_TAB.crude_kg_low
+STD_TAB["nchs_flags"] = [",".join(S.nchs_flags(r.n, S._design_neff(r.crude, r.crude_se, r.n), r.kg_width, r.df)) or ""
+                         for r in STD_TAB.itertuples()]
+STD_TAB.to_csv(S4_DIR / "std_prev_table.csv", index=False)
+show = STD_TAB[["grouping", "group", "n", "df", "crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high", "nchs_flags"]].copy()
+show[["crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high"]] *= 100
+print(show.round(1).to_string(index=False))
+
+# %%
+CONTRASTS = [("race", "NH Asian", "NH White"), ("race", "NH Black", "NH White"),
+             ("race", "Mexican American", "NH White"), ("insurance", "insured", "uninsured"),
+             ("usual_care", "has usual place", "no usual place")]
+diffs = []
+for gcol, a, b in CONTRASTS:
+    for sname, std in [("US2000 3-band", STD3), ("US2000 6-band", STD6), ("internal 3-band", STD_INT)]:
+        d = S.std_difference(coh, "L_comb", gcol, a, b, weight=C.WEIGHT_PHLEB, std=std)
+        diffs.append({"contrast": f"{a} − {b}", "standard": sname, "n_a": d["n_a"], "n_b": d["n_b"], "df": d["df"],
+                      "crude": 100 * d["crude_diff"], "crude_low": 100 * d["crude_low"], "crude_high": 100 * d["crude_high"],
+                      "std": 100 * d["std_diff"], "std_low": 100 * d["std_low"], "std_high": 100 * d["std_high"]})
+DIFFS = pd.DataFrame(diffs)
+DIFFS.to_csv(S4_DIR / "std_differences.csv", index=False)
+print(DIFFS.round(1).to_string(index=False))
+
+aw = DIFFS.query("contrast == 'NH Asian − NH White' and standard == 'US2000 3-band'").iloc[0]
+iu = DIFFS.query("contrast == 'insured − uninsured' and standard == 'US2000 3-band'").iloc[0]
+assert abs(aw.crude - (-0.8)) < 0.1 and abs(aw["std"] - 2.1) < 0.1 and abs(aw.crude_low + 5.1) < 0.1 and abs(aw.std_high - 6.8) < 0.1
+assert abs(iu.crude - 5.3) < 0.1 and abs(iu["std"] - 0.7) < 0.1 and abs(iu.crude_low - 1.8) < 0.1 and abs(iu.std_high - 3.9) < 0.1
+asian_std = STD_TAB.query("group == 'NH Asian'").iloc[0]; white_std = STD_TAB.query("group == 'NH White'").iloc[0]
+print(f"\nNH Asian vs NH White: crude {aw.crude:+.1f} ({aw.crude_low:.1f}, {aw.crude_high:.1f}) -> "
+      f"standardised {aw['std']:+.1f} ({aw.std_low:.1f}, {aw.std_high:.1f}) pp; standardised rates "
+      f"{pct(asian_std['std'])}% vs {pct(white_std['std'])}% (README claim 18.0% vs 13.6% not reproducible)")
+OUT["standardisation"] = {
+    "std3": STD3, "std6": STD6,
+    "asian_white": {"crude": aw.crude, "crude_ci": [aw.crude_low, aw.crude_high], "std": aw["std"], "std_ci": [aw.std_low, aw.std_high],
+                    "std_rate_asian": 100 * asian_std["std"], "std_rate_white": 100 * white_std["std"],
+                    "std6": DIFFS.query("contrast == 'NH Asian − NH White' and standard == 'US2000 6-band'")["std"].item(),
+                    "internal": DIFFS.query("contrast == 'NH Asian − NH White' and standard == 'internal 3-band'")["std"].item()},
+    "insured_uninsured": {"crude": iu.crude, "crude_ci": [iu.crude_low, iu.crude_high], "std": iu["std"], "std_ci": [iu.std_low, iu.std_high]}}
+
+# %% [markdown]
+# **So what.** The derived band weights match 0.3966 / 0.3718 / 0.2316 exactly, which settles the
+# open verification item of the process document. NH Asian adults have a slightly *lower* crude
+# prevalence than NH White adults (−0.8 pp, −5.1 to 3.5) but, being much younger, a *higher*
+# age-standardised one (+2.1 pp, −2.6 to 6.8). Both intervals include zero and the 6-band and
+# internal standards tell the same story, so the honest statement is "direction flips after age
+# standardisation, magnitude unknown" – a demonstration of honest uncertainty, not a headline. The
+# README's 18.0 % vs 13.6 % cannot be reproduced with any of the three standards and is withdrawn.
+
+# %% [markdown]
+# ## 4.6 Insurance: attenuation, not reversal
+# **Why.** Insured adults show a clearly higher crude prevalence than uninsured adults. Before
+# reading this as a health-care effect we need to know how much of it is age: almost everyone
+# aged 65+ has Medicare, so insurance is a strong marker of age (Age → Medicare → Insurance), and
+# age drives diabetes.
+
+# %%
+ins_age = (pd.crosstab(coh.insurance, coh.age3, values=w_ph, aggfunc="sum", normalize="index") * 100).reindex(columns=bands)
+print("weighted age mix by insurance status (%):\n", ins_age.round(1))
+band_diff = []
+for b in bands:
+    d = S.std_difference(coh, "L_comb", "insurance", "insured", "uninsured", weight=C.WEIGHT_PHLEB,
+                         domain=coh.age3 == b)
+    band_diff.append({"age band": b, "n_insured": d["n_a"], "n_uninsured": d["n_b"],
+                      "diff_pp": 100 * d["crude_diff"], "low": 100 * d["crude_low"], "high": 100 * d["crude_high"]})
+band_diff = pd.DataFrame(band_diff)
+print("\nage-specific insured − uninsured differences (pp):\n", band_diff.round(1).to_string(index=False))
+print(f"\ninsured − uninsured: crude {iu.crude:+.1f} ({iu.crude_low:.1f}, {iu.crude_high:.1f}) -> "
+      f"age-standardised {iu['std']:+.1f} ({iu.std_low:.1f}, {iu.std_high:.1f}) pp; "
+      f"{100 * (1 - iu['std'] / iu.crude):.0f}% attenuation, same sign")
+OUT["standardisation"]["insured_uninsured"].update({
+    "attenuation_share": 1 - iu["std"] / iu.crude,
+    "uninsured_share_60plus": ins_age.loc["uninsured", "60+"], "insured_share_60plus": ins_age.loc["insured", "60+"],
+    "band_diffs": band_diff.to_dict("records")})
+
+# %%
+d3 = DIFFS[DIFFS.standard == "US2000 3-band"].reset_index(drop=True)
+fig, ax = plt.subplots(figsize=(8.5, 4.2))
+yy = np.arange(len(d3))[::-1]
+ax.errorbar(d3.crude, yy + 0.13, xerr=[d3.crude - d3.crude_low, d3.crude_high - d3.crude], fmt="o", capsize=3,
+            color=C.OKABE_ITO["orange"], label="crude")
+ax.errorbar(d3["std"], yy - 0.13, xerr=[d3["std"] - d3.std_low, d3.std_high - d3["std"]], fmt="s", capsize=3,
+            color=C.OKABE_ITO["blue"], label="age-standardised (US 2000, 3 bands)")
+ax.axvline(0, color="k", lw=0.8)
+ax.set_yticks(yy, d3.contrast)
+ax.set_xlabel("Difference in L_comb prevalence, percentage points (JK 95% CI)")
+ax.set_title("Age standardisation: insurance gap attenuates, Asian–White gap changes sign within noise")
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2)
+fig.tight_layout()
+plots.savefig(fig, "S4_crude_vs_std",
+              caption="Crude and age-standardised prevalence differences (WTPH2YR, jackknife 95% CI, df = 15).")
+plt.show()
+
+reg("DR-S4-03", "method", "US 2000 standard collapsed to 20-39/40-59/60+ = 0.3966/0.3718/0.2316, re-derived from the 5-year standard million.",
+    "results/S4/std_prev_table.csv; §4.5", "derived weights equal survey.US2000_3BAND to 1e-4",
+    "Direct age standardisation (3-band US 2000) for every between-group prevalence comparison; 6-band and internal standards as sensitivity.",
+    "Crude comparisons (confounded by age); internal-only standard (not comparable with NCHS).",
+    check_note="re-derived in-notebook; also validated indirectly by the DB516 age-adjusted replication")
+reg("DR-S4-04", "claim_change", "NH Asian vs NH White L_comb: crude -0.8 pp (-5.1, 3.5) -> standardised +2.1 pp (-2.6, 6.8); README 18.0% vs 13.6% not reproducible.",
+    "results/S4/std_differences.csv; figures/S4_crude_vs_std.png",
+    f"crude {aw.crude:+.1f} ({aw.crude_low:.1f}, {aw.crude_high:.1f}); std {aw['std']:+.1f} ({aw.std_low:.1f}, {aw.std_high:.1f}); std rates {pct(asian_std['std'])} vs {pct(white_std['std'])}%",
+    "Withdraw the README 18.0/13.6 claim; report the Asian-White contrast only as an example of honest uncertainty (both CIs include 0).",
+    "Headline 'Asians have higher diabetes prevalence' (not supported by the CI).",
+    check_verdict="PASS-FIX", check_note="README figure corrected; numbers re-computed with three standards")
+reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.8, 8.8) -> age-standardised +0.7 pp (-2.6, 3.9).",
+    "results/S4/std_differences.csv; §4.6",
+    f"crude {iu.crude:+.1f} ({iu.crude_low:.1f}, {iu.crude_high:.1f}); std {iu['std']:+.1f} ({iu.std_low:.1f}, {iu.std_high:.1f}); uninsured 60+ share {ins_age.loc['uninsured','60+']:.1f}% vs insured {ins_age.loc['insured','60+']:.1f}%",
+    "Describe as age confounding (Age -> Medicare -> Insurance; Age -> diabetes) causing attenuation; never call it a reversal or Simpson's paradox.",
+    "'Insurance reversal' wording of the first draft (sign does not flip).",
+    check_verdict="PASS-FIX", check_note="wording corrected from 'reversal' to 'attenuation'")
+
+# %% [markdown]
+# **So what.** Only 10 % of uninsured adults are 60+, against a third of insured adults, because
+# Medicare covers almost everyone over 65. Standardising to the US 2000 age mix shrinks the gap from
+# +5.3 pp (1.8–8.8) to +0.7 pp (−2.6–3.9), an attenuation of almost 90 % with the **same sign**: this
+# is age confounding, not a Simpson reversal. The age-specific differences are heterogeneous
+# (about −1, +6 and −5 pp in the three bands, only the 40–59 one excluding zero), so no single
+# "insurance effect" summarises them; the 6-band standard gives a very wide interval because few
+# uninsured adults are 70+. By contrast, the *usual place of care* gap survives standardisation
+# (+9.4 → +5.3 pp, CI excluding zero) – consistent with a detection pathway (care → diagnosis →
+# self-reported diabetes) that S5 examines through the undiagnosed share. For modelling, access
+# features must be read conditional on age, and fairness comparisons across insurance groups (S8)
+# must control for age before attributing differences to access to care.
+
+# %% [markdown]
 # ## Save results and register
 
 # %%
