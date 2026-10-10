@@ -1,0 +1,1 @@
+F8-3. WHtR measurement fix (arm S+WHtR vs S, E-ALL, Tier 1): TPR at specificity 0.80 for NH Asian and NH White adults (left) and the paired changes with simple stratified and PSU-cluster (Rao-Wu) bootstrap 95 % CIs (right); dotted line = pre-registered minimum gain of 0.05.

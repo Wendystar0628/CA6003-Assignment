@@ -609,6 +609,255 @@ S8["access_audit"] = dict(coefs=ACC.round(5).to_dict("records"), diffs=ACCD.roun
 # access out of the model.
 
 # %% [markdown]
+# ## 8 Reweighing
+# **Why.** Reweighing (Kamiran & Calders 2012) is the standard pre-processing mitigation: each training row gets the
+# weight w(g, y) = P(g)·P(y) / P(g, y), which makes group and label independent in the weighted training data without
+# touching features or predictions. It is applied **inside every training fold** (weights computed from that fold's rows)
+# on top of the survey weights of arm S, so the comparison with S is paired on the same folds. Three versions are run:
+# race (pre-specified, expected to do almost nothing because the race groups differ little in prevalence in this cycle),
+# and – as extension items – insurance and low access, the attributes linked to the diagnosis gap. ΔAUC uses the locked
+# S7 engine (E-ALL: the wider of the corrected-t and paired-bootstrap intervals; E-SCREEN: paired bootstrap); the gap
+# changes are paired bootstrap differences of EOD with the threshold re-estimated for each arm.
+
+# %%
+from joblib import parallel_config
+from sklearn.metrics import roc_auc_score
+from scipy import stats as sstats
+
+def fold_auc(oof, pop="E-ALL"):
+    yy, m = pop_of(pop)
+    out = {}
+    for (r, f), g in oof.groupby(["repeat", "fold"]):
+        rows = g["row"].to_numpy()
+        k = m[rows]
+        out[(r, f)] = roc_auc_score(yy[rows][k], g["prob"].to_numpy()[k])
+    return pd.Series(out)
+
+def compare_auc(oof_a, oof_b, pop="E-ALL", tag=""):
+    """Paired ΔAUC A - B: E-ALL wider of corrected t and paired bootstrap; E-SCREEN bootstrap only (locked S7 rules)."""
+    yy, m = pop_of(pop)
+    pa, pb = ek.mean_oof(oof_a, n), ek.mean_oof(oof_b, n)
+    bs = ek.paired_bootstrap(yy, pa, pb, "roc_auc", n_boot=C.N_BOOT, eval_mask=m,
+                             seed=ek.derive_seed(C.SEED_MASTER, "S8", "dauc", tag, pop))
+    row = dict(pop=pop, diff_pooled=bs["diff"], boot_lo=bs["ci_low"], boot_hi=bs["ci_high"])
+    est, lo, hi, se, interval = bs["diff"], bs["ci_low"], bs["ci_high"], bs["se"], "bootstrap"
+    if pop == "E-ALL":
+        ct = ek.corrected_t((fold_auc(oof_a) - fold_auc(oof_b)).to_numpy(), n_train_fold, n_test_fold)
+        row.update(t_lo=ct["ci_low"], t_hi=ct["ci_high"])
+        if ct["ci_high"] - ct["ci_low"] >= hi - lo:
+            est, lo, hi, se, interval = ct["mean"], ct["ci_low"], ct["ci_high"], ct["se_corr"], "corrected_t"
+    row.update(est=est, lo=lo, hi=hi, se=se, interval=interval, mdd=(sstats.norm.ppf(0.975) + sstats.norm.ppf(0.8)) * se)
+    return row
+
+RW_TARGET = {"race": "NH Asian", "insurance": "uninsured", "low_access": "low access"}
+OOF_RW, RW_W, RW_ROWS, RW_EOD = {}, {}, [], []
+t0 = time.time()
+with parallel_config(max_nbytes=None):
+    for attr in RW_TARGET:
+        gvals = grp[attr].to_numpy(dtype=object)
+        w_rw = F.reweighing_weights(gvals, y)
+        RW_W[attr] = w_rw
+        OOF_RW[attr] = F.cv_predict_reweighed(mk_S, X1, y, folds, gvals, base_weight=w_svy, n_jobs=N_JOBS)
+print(f"reweighing arms: {len(RW_TARGET)} x {len(folds)} fits, {time.time() - t0:.0f} s")
+for attr, w_rw in RW_W.items():
+    lv = grp[attr].fillna("(unknown)")
+    tab = pd.DataFrame({"g": lv, "y": y, "w": w_rw}).groupby(["g", "y"])["w"].first().unstack()
+    print(f"\n{attr}: reweighing weights w(g, y) on the training part (range {w_rw.min():.3f}-{w_rw.max():.3f})")
+    print(tab.round(3).rename(columns={0: "w(y=0)", 1: "w(y=1)"}).to_string())
+    PMx = ek.mean_oof(OOF_RW[attr], n)
+    for pop in ("E-ALL", "E-SCREEN"):
+        r = compare_auc(OOF_RW[attr], OOF[("S", 1, "lr")], pop, tag=f"rw_{attr}")
+        r.update(arm=f"S+RW({attr})", w_min=w_rw.min(), w_max=w_rw.max(),
+                 verdict_auc=("equivalent" if (r["lo"] > -0.01 and r["hi"] < 0.01) else
+                              ek.verdict(r["lo"], r["hi"], 0.01, "+", r["est"])))
+        RW_ROWS.append(r)
+    point, boot, codes, mm = audit(attr, "E-ALL", 1, ("S", "RW"), preds={"RW": PMx})
+    lvls = F.LEVELS[attr]
+    ref = lvls.index(F.REFERENCE[attr])
+    for g_i, g_nm in enumerate(lvls):
+        if g_i == ref:
+            continue
+        eod_pt = point["tpr"][0, :, g_i] - point["tpr"][0, :, ref]
+        eod_bt = boot["tpr"][:, :, g_i] - boot["tpr"][:, :, ref]
+        e, lo, hi, _ = F.summarise(eod_pt[1] - eod_pt[0], eod_bt[:, 1] - eod_bt[:, 0])
+        ea, alo, ahi, _ = F.summarise(abs(eod_pt[1]) - abs(eod_pt[0]), np.abs(eod_bt[:, 1]) - np.abs(eod_bt[:, 0]))
+        RW_EOD.append({"arm": f"S+RW({attr})", "attribute": attr, "group": g_nm, "eod_S": eod_pt[0], "eod_RW": eod_pt[1],
+                       "d_eod": e, "d_eod_lo": lo, "d_eod_hi": hi, "d_abs_eod": ea, "d_abs_lo": alo, "d_abs_hi": ahi,
+                       "target": g_nm == RW_TARGET[attr]})
+RWT = pd.DataFrame(RW_ROWS)
+RWE = pd.DataFrame(RW_EOD)
+print("\nΔAUC reweighed arm − S:")
+print(RWT[["arm", "pop", "est", "lo", "hi", "interval", "mdd", "w_min", "w_max", "verdict_auc"]].round(4).to_string(index=False))
+print("\nchange of equal-opportunity differences (reweighed − S), E-ALL:")
+print(RWE.round(3).to_string(index=False))
+RWT.to_csv(OUT / "reweighing_auc.csv", index=False)
+RWE.to_csv(OUT / "reweighing_eod.csv", index=False)
+S8["reweighing"] = dict(auc=RWT.round(5).to_dict("records"), eod=RWE.round(5).to_dict("records"),
+                        weight_range={a: [float(w.min()), float(w.max())] for a, w in RW_W.items()})
+
+# %% [markdown]
+# **So what.** Reweighing is a null mitigation here, and an instructive one. The weights are not close to 1 for race
+# (NH Black cases are down-weighted to about 0.7 because their prevalence is highest), yet discrimination does not move:
+# every ΔAUC interval lies inside ±0.01 (equivalent) on both populations. The gaps do not close either: the NH Asian gap
+# changes by a few points with a CI spanning zero, and race reweighing *widens* the NH Black gap, because making race
+# and label independent removes exactly the prevalence difference that made Black cases easier to find. Insurance and
+# low-access reweighing narrow their gaps a little, with CIs that include 0. Reweighing acts on the label–group
+# association; the gaps found in section 3 come from features (care traces, BMI) and from the label's diagnosis
+# component, which reweighing does not touch.
+
+# %% [markdown]
+# ## 9 WHtR measurement fix (P14-b)
+# **Why.** §5 found that BMI under-reads adiposity in Asian adults (single-feature AUC gain of WHtR over BMI +0.137 for
+# Asian against +0.049 for White adults), and section 3 found Asian cases missed most at the shared threshold, mainly
+# because they are leaner. Arm S+WHtR replaces waist circumference by waist-to-height ratio (P14, pre-registered in S6;
+# `prior_exposure = descriptive_seen`). Locked prediction **P14-b**: Asian TPR at specificity 0.80 rises by at least
+# 0.05 (falsifier: upper CI bound of ΔTPR below 0.05), overall |ΔAUC| < 0.01 (P14-a, tested in §7), and the White
+# change is smaller (control group). With only 40 Asian positives in the training part, two intervals are computed: the
+# simple stratified bootstrap and a **PSU-cluster bootstrap** (Rao–Wu, `survey.rao_wu_weights`), because Asian adults
+# cluster in few PSUs; the wider interval decides. The model-level counterpart of H4b (does the WHtR advantage
+# transfer into the multivariable model, Asian more than White?) is read from the same replicates as the within-group
+# ΔAUC.
+
+# %%
+pW = PM[("S+WHtR", 1, "lr")]
+res = {}
+for wt in ("simple", "psu"):
+    point, boot, codes, mm = audit("race", "E-ALL", 1, ("S", "S+WHtR"), weights=wt)
+    res[wt] = (point, boot)
+lv = F.LEVELS["race"]
+iA, iW = lv.index("NH Asian"), lv.index("NH White")
+whtr_rows = []
+def add_whtr(name, pt_fn):
+    row = {"quantity": name}
+    for wt in ("simple", "psu"):
+        point, boot = res[wt]
+        e, lo, hi, se = F.summarise(pt_fn(point)[0], pt_fn(boot))
+        row.update({"est": e, f"{wt}_lo": lo, f"{wt}_hi": hi, f"{wt}_se": se})
+    wide = "psu" if (row["psu_hi"] - row["psu_lo"]) >= (row["simple_hi"] - row["simple_lo"]) else "simple"
+    row.update(lo=row[f"{wide}_lo"], hi=row[f"{wide}_hi"], interval=wide)
+    whtr_rows.append(row)
+    return row
+r_tA = add_whtr("TPR NH Asian, S", lambda d: d["tpr"][:, 0, iA])
+r_tA2 = add_whtr("TPR NH Asian, S+WHtR", lambda d: d["tpr"][:, 1, iA])
+r_tW = add_whtr("TPR NH White, S", lambda d: d["tpr"][:, 0, iW])
+r_tW2 = add_whtr("TPR NH White, S+WHtR", lambda d: d["tpr"][:, 1, iW])
+r_dA = add_whtr("ΔTPR NH Asian", lambda d: d["tpr"][:, 1, iA] - d["tpr"][:, 0, iA])
+r_dW = add_whtr("ΔTPR NH White", lambda d: d["tpr"][:, 1, iW] - d["tpr"][:, 0, iW])
+r_dd = add_whtr("ΔTPR Asian − ΔTPR White", lambda d: (d["tpr"][:, 1, iA] - d["tpr"][:, 0, iA]) - (d["tpr"][:, 1, iW] - d["tpr"][:, 0, iW]))
+r_eod = add_whtr("Δ|EOD| Asian vs White", lambda d: np.abs(d["tpr"][:, 1, iA] - d["tpr"][:, 1, iW]) - np.abs(d["tpr"][:, 0, iA] - d["tpr"][:, 0, iW]))
+r_auc = add_whtr("ΔAUC overall", lambda d: d["auc_all"][:, 1] - d["auc_all"][:, 0])
+r_aA = add_whtr("ΔAUC within NH Asian", lambda d: d["auc"][:, 1, iA] - d["auc"][:, 0, iA])
+r_aW = add_whtr("ΔAUC within NH White", lambda d: d["auc"][:, 1, iW] - d["auc"][:, 0, iW])
+r_h4 = add_whtr("ΔAUC Asian − ΔAUC White (H4b, model level)", lambda d: (d["auc"][:, 1, iA] - d["auc"][:, 0, iA]) - (d["auc"][:, 1, iW] - d["auc"][:, 0, iW]))
+WH = pd.DataFrame(whtr_rows)
+print(WH[["quantity", "est", "simple_lo", "simple_hi", "psu_lo", "psu_hi", "interval"]].round(3).to_string(index=False))
+# E-SCREEN (secondary; NH Asian has 11 positives -> suppressed, numbers only)
+pt_s, bt_s, _, _ = audit("race", "E-SCREEN", 1, ("S", "S+WHtR"))
+dA_s = F.summarise(pt_s["tpr"][0, 1, iA] - pt_s["tpr"][0, 0, iA], bt_s["tpr"][:, 1, iA] - bt_s["tpr"][:, 0, iA])
+print(f"\nE-SCREEN (suppressed, {int(pt_s['n_pos'][0, 0, iA])} Asian positives): ΔTPR NH Asian {dA_s[0]:+.3f} ({dA_s[1]:+.3f}, {dA_s[2]:+.3f})")
+p14a = next(r for r in S7m["scoreboard_detail"] if r["hyp_id"] == "P14" and r["sub"] == "(a) AUC" and r["pop"] == "E-ALL" and r["tier"] == 1)
+print(f"P14-a from §7 (E-ALL, corrected t): ΔAUC {p14a['est']:+.4f} ({p14a['lo']:+.4f}, {p14a['hi']:+.4f}) -> {p14a['verdict']}")
+
+# %%
+v_p14b = ek.verdict(r_dA["lo"], r_dA["hi"], 0.05, "+", r_dA["est"])
+v_p14b = "refuted" if (v_p14b == "equivalent" or r_dA["hi"] < 0.05) else v_p14b     # locked falsifier
+control_ok = abs(r_dW["est"]) < abs(r_dA["est"])
+v_p14 = ek.combine_verdicts([p14a["verdict"], v_p14b])
+v_h4b_model = ("supported" if (r_h4["lo"] > 0 and r_h4["est"] >= 0.01) else
+               "refuted" if r_h4["hi"] < 0 else "inconclusive")
+s5_h4b = R.load_section("S5")["hypotheses"]["H4b"]["verdict"]
+v_h4b = "mixed" if (s5_h4b in ("supported", "refuted") and v_h4b_model in ("supported", "refuted") and v_h4b_model != s5_h4b) else s5_h4b
+print(f"P14-b: ΔTPR NH Asian {r_dA['est']:+.3f} ({r_dA['lo']:+.3f}, {r_dA['hi']:+.3f}; {r_dA['interval']} interval) -> {v_p14b}; "
+      f"White control |Δ| smaller: {control_ok}")
+print(f"P14 overall (a: {p14a['verdict']}, b: {v_p14b}) -> {v_p14}")
+print(f"H4b model level: {r_h4['est']:+.3f} ({r_h4['lo']:+.3f}, {r_h4['hi']:+.3f}) -> {v_h4b_model}; S5 single-feature verdict "
+      f"{s5_h4b} -> H4b {v_h4b}")
+WH.to_csv(OUT / "whtr_p14b.csv", index=False)
+S8["whtr"] = dict(table=WH.round(5).to_dict("records"), p14b_verdict=v_p14b, p14_verdict=v_p14, white_control_smaller=control_ok,
+                  p14a_from_S7={k: p14a[k] for k in ("est", "lo", "hi", "verdict")}, h4b_model_verdict=v_h4b_model,
+                  h4b_s5_verdict=s5_h4b, h4b_verdict=v_h4b, escreen_dtpr_asian=list(dA_s[:3]))
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.2), gridspec_kw={"width_ratios": [1, 1.2]})
+ax = axes[0]
+for j, (nm, a, b) in enumerate([("NH Asian", r_tA, r_tA2), ("NH White", r_tW, r_tW2)]):
+    for k_, (r_, col, lab) in enumerate([(a, C.OKABE_ITO["grey"], "S (waist)"), (b, C.OKABE_ITO["orange"], "S+WHtR")]):
+        x = j + (k_ - 0.5) * 0.25
+        ax.errorbar(x, r_["est"], yerr=[[r_["est"] - r_["simple_lo"]], [r_["simple_hi"] - r_["est"]]], fmt="o", color=col,
+                    capsize=3, label=lab if j == 0 else None)
+ax.set_xticks([0, 1]); ax.set_xticklabels([f"NH Asian\n({int(res['simple'][0]['n_pos'][0, 0, iA])} cases)",
+                                            f"NH White\n({int(res['simple'][0]['n_pos'][0, 0, iW])} cases)"])
+ax.set_ylabel("TPR at specificity 0.80"); ax.set_ylim(0, 1); ax.legend(loc="lower right")
+ax.set_title("Sensitivity by arm (simple bootstrap CI)")
+ax = axes[1]
+qs = ["ΔTPR NH Asian", "ΔTPR NH White", "ΔTPR Asian − ΔTPR White", "ΔAUC overall"]
+for i, q in enumerate(qs):
+    r_ = WH.set_index("quantity").loc[q]
+    for k_, (wt, col) in enumerate([("simple", C.OKABE_ITO["blue"]), ("psu", C.OKABE_ITO["vermillion"])]):
+        ax.errorbar(r_["est"], -i + (k_ - 0.5) * 0.25, xerr=[[r_["est"] - r_[f"{wt}_lo"]], [r_[f"{wt}_hi"] - r_["est"]]],
+                    fmt="o", color=col, capsize=3, label=("simple bootstrap" if wt == "simple" else "PSU (Rao–Wu) bootstrap") if i == 0 else None)
+ax.axvline(0, color="black", lw=0.8); ax.axvline(0.05, color="black", lw=0.8, ls=":")
+ax.set_yticks([-i for i in range(len(qs))]); ax.set_yticklabels(qs)
+ax.set_xlabel("difference S+WHtR − S (dotted: pre-registered +0.05)"); ax.legend(fontsize=8, loc="lower right")
+ax.set_title(f"P14-b: {v_p14b}")
+fig.tight_layout()
+f83 = plots.savefig(fig, "S8_whtr_asian_white", caption="F8-3. WHtR measurement fix (arm S+WHtR vs S, E-ALL, Tier 1): TPR at "
+                    "specificity 0.80 for NH Asian and NH White adults (left) and the paired changes with simple stratified and "
+                    "PSU-cluster (Rao-Wu) bootstrap 95 % CIs (right); dotted line = pre-registered minimum gain of 0.05.")
+plt.show()
+
+# %% [markdown]
+# **So what.** The measurement fix moves the right group in the right direction: NH Asian sensitivity rises by about 0.07
+# while White sensitivity barely changes, overall discrimination is unchanged (P14-a equivalent in §7, ΔAUC about
+# −0.001 here), and the Asian–White gap narrows. But with 40 Asian cases the interval is wide – the PSU-cluster bootstrap,
+# which respects that Asian adults are concentrated in few PSUs, is wider than the simple one and reaches well below
+# 0.05 – so the pre-registered P14-b is **inconclusive**, not supported. At model level the WHtR advantage that §5 saw
+# for a single feature (H4b) largely disappears: the model already contains waist, height and BMI, so replacing waist by
+# their ratio adds little ranking information (within-group ΔAUC near 0). WHtR is therefore *not* adopted as a new
+# preparation step and loop L4 is not triggered; the result is reported as a promising but underpowered direction.
+
+# %% [markdown]
+# ## 10 Group-specific thresholds
+# **Why.** The obvious "fix" for a TPR gap is a lower threshold for the disadvantaged group (Hardt et al. 2016 post-
+# processing). It is **not** implemented, for three reasons recorded in R7.2: (i) it requires race at prediction time,
+# i.e. explicit differential treatment by a protected attribute, which the availability rule and the governance scope
+# exclude; (ii) it can equalise TPR only by raising the group's false positives or by lowering other groups' TPR
+# ("levelling down", Fairlearn ThresholdOptimizer documentation); (iii) with about 40 Asian cases the group threshold
+# would be unstable. Point (iii) is quantified here: the Asian-specific threshold that would give NH Asian adults the
+# White TPR, and the false-positive rate it implies, with bootstrap CIs.
+
+# %%
+def asian_threshold(w=None):
+    w = np.ones(n) if w is None else w
+    a_pos, a_neg = (grp["race"].eq("NH Asian").to_numpy() & (y == 1)), (grp["race"].eq("NH Asian").to_numpy() & (y == 0))
+    w_pos = (grp["race"].eq("NH White").to_numpy() & (y == 1))
+    hit = pS >= thr_check
+    tpr_w = np.average(hit[w_pos], weights=w[w_pos])
+    s_ = np.sort(pS[a_pos]); ww = w[a_pos][np.argsort(pS[a_pos])]
+    cum = np.cumsum(ww[::-1])[::-1] / ww.sum()          # share of Asian cases at or above each score
+    k = np.flatnonzero(cum >= tpr_w - 1e-12).max()
+    t_a = s_[k]
+    fpr_a = np.average(pS[a_neg] >= t_a, weights=w[a_neg])
+    return t_a, fpr_a, tpr_w
+t_a, fpr_a, tpr_w = asian_threshold()
+Wst = F.stratified_counts((grp["race"].astype(str) + "|" + pd.Series(y).astype(str)).to_numpy(), C.N_BOOT, ek.derive_seed(C.SEED_MASTER, "S8", "gthr"))
+bt = np.array([asian_threshold(Wst[b])[:2] for b in range(len(Wst))])
+fpr_overall_a = float(GT1.set_index(["attribute", "group"]).loc[("race", "NH Asian"), "fpr"])
+GTHR = dict(threshold_overall=thr_check, threshold_asian=t_a, threshold_asian_ci=list(np.percentile(bt[:, 0], [2.5, 97.5])),
+            fpr_asian_at_own=fpr_a, fpr_asian_at_own_ci=list(np.percentile(bt[:, 1], [2.5, 97.5])), fpr_asian_at_shared=fpr_overall_a,
+            tpr_white=tpr_w)
+print(f"shared threshold {thr_check:.3f}; Asian threshold matching the White TPR ({tpr_w:.3f}): {t_a:.3f} "
+      f"(95 % CI {GTHR['threshold_asian_ci'][0]:.3f}-{GTHR['threshold_asian_ci'][1]:.3f})")
+print(f"Asian FPR: {fpr_overall_a:.3f} at the shared threshold -> {fpr_a:.3f} at the group threshold "
+      f"(95 % CI {GTHR['fpr_asian_at_own_ci'][0]:.3f}-{GTHR['fpr_asian_at_own_ci'][1]:.3f})")
+S8["group_threshold_counterfactual"] = GTHR
+
+# %% [markdown]
+# **So what.** Matching the White TPR would need a markedly lower threshold for Asian adults, would raise their
+# false-positive rate by about half, and the threshold itself has a wide interval because it rests on about 40 cases
+# (numbers above).
+# The project therefore keeps one threshold for everybody and treats the Asian gap as a **measurement** problem (section
+# 9) and a **data** problem (too few Asian cases in this cycle), not as something to be patched at the decision step.
+# %% [markdown]
 # ## 14 Storage
 # **Why.** Every number of this section is stored in `results/metrics_S8.json` (via `results_io`) and the tables in
 # `results/S8/`, so that S10 and the slides read them instead of re-typing them.

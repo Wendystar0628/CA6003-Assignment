@@ -3,7 +3,7 @@
     "section": "S8",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T19:05:33+00:00"
+    "written_utc": "2026-10-10T19:08:54+00:00"
   },
   "mode": "FAST",
   "cv": "5x2",
@@ -2513,5 +2513,423 @@
       "no_usual_place": 0.3152569174740513
     }
   },
-  "runtime_seconds": 15.091854810714722
+  "reweighing": {
+    "auc": [
+      {
+        "pop": "E-ALL",
+        "diff_pooled": -0.00028,
+        "boot_lo": -0.00191,
+        "boot_hi": 0.00095,
+        "t_lo": -0.00257,
+        "t_hi": 0.00173,
+        "est": -0.00042,
+        "lo": -0.00257,
+        "hi": 0.00173,
+        "se": 0.00095,
+        "interval": "corrected_t",
+        "mdd": 0.00266,
+        "arm": "S+RW(race)",
+        "w_min": 0.69871,
+        "w_max": 1.16139,
+        "verdict_auc": "equivalent"
+      },
+      {
+        "pop": "E-SCREEN",
+        "diff_pooled": -0.00098,
+        "boot_lo": -0.00461,
+        "boot_hi": 0.00214,
+        "t_lo": null,
+        "t_hi": null,
+        "est": -0.00098,
+        "lo": -0.00461,
+        "hi": 0.00214,
+        "se": 0.00176,
+        "interval": "bootstrap",
+        "mdd": 0.00494,
+        "arm": "S+RW(race)",
+        "w_min": 0.69871,
+        "w_max": 1.16139,
+        "verdict_auc": "equivalent"
+      },
+      {
+        "pop": "E-ALL",
+        "diff_pooled": 0.0002,
+        "boot_lo": -0.00032,
+        "boot_hi": 0.00072,
+        "t_lo": -0.00069,
+        "t_hi": 0.00105,
+        "est": 0.00018,
+        "lo": -0.00069,
+        "hi": 0.00105,
+        "se": 0.00038,
+        "interval": "corrected_t",
+        "mdd": 0.00108,
+        "arm": "S+RW(insurance)",
+        "w_min": 0.94914,
+        "w_max": 1.35602,
+        "verdict_auc": "equivalent"
+      },
+      {
+        "pop": "E-SCREEN",
+        "diff_pooled": 0.00201,
+        "boot_lo": 0.00085,
+        "boot_hi": 0.00298,
+        "t_lo": null,
+        "t_hi": null,
+        "est": 0.00201,
+        "lo": 0.00085,
+        "hi": 0.00298,
+        "se": 0.00063,
+        "interval": "bootstrap",
+        "mdd": 0.00175,
+        "arm": "S+RW(insurance)",
+        "w_min": 0.94914,
+        "w_max": 1.35602,
+        "verdict_auc": "equivalent"
+      },
+      {
+        "pop": "E-ALL",
+        "diff_pooled": 7e-05,
+        "boot_lo": -0.00136,
+        "boot_hi": 0.0011,
+        "t_lo": -0.00229,
+        "t_hi": 0.00204,
+        "est": -0.00012,
+        "lo": -0.00229,
+        "hi": 0.00204,
+        "se": 0.00096,
+        "interval": "corrected_t",
+        "mdd": 0.00268,
+        "arm": "S+RW(low_access)",
+        "w_min": 0.67801,
+        "w_max": 1.67695,
+        "verdict_auc": "equivalent"
+      },
+      {
+        "pop": "E-SCREEN",
+        "diff_pooled": 0.00438,
+        "boot_lo": 0.00107,
+        "boot_hi": 0.00747,
+        "t_lo": null,
+        "t_hi": null,
+        "est": 0.00438,
+        "lo": 0.00107,
+        "hi": 0.00747,
+        "se": 0.00159,
+        "interval": "bootstrap",
+        "mdd": 0.00446,
+        "arm": "S+RW(low_access)",
+        "w_min": 0.67801,
+        "w_max": 1.67695,
+        "verdict_auc": "equivalent"
+      }
+    ],
+    "eod": [
+      {
+        "arm": "S+RW(race)",
+        "attribute": "race",
+        "group": "NH Black",
+        "eod_S": -0.07515,
+        "eod_RW": -0.12569,
+        "d_eod": -0.05054,
+        "d_eod_lo": -0.10012,
+        "d_eod_hi": -0.00754,
+        "d_abs_eod": 0.05054,
+        "d_abs_lo": 0.00754,
+        "d_abs_hi": 0.09667,
+        "target": false
+      },
+      {
+        "arm": "S+RW(race)",
+        "attribute": "race",
+        "group": "NH Asian",
+        "eod_S": -0.21847,
+        "eod_RW": -0.19611,
+        "d_eod": 0.02236,
+        "d_eod_lo": -0.05144,
+        "d_eod_hi": 0.10282,
+        "d_abs_eod": -0.02236,
+        "d_abs_lo": -0.10282,
+        "d_abs_hi": 0.05144,
+        "target": true
+      },
+      {
+        "arm": "S+RW(race)",
+        "attribute": "race",
+        "group": "Mexican American",
+        "eod_S": -0.08477,
+        "eod_RW": -0.09792,
+        "d_eod": -0.01315,
+        "d_eod_lo": -0.08755,
+        "d_eod_hi": 0.01876,
+        "d_abs_eod": 0.01315,
+        "d_abs_lo": -0.02347,
+        "d_abs_hi": 0.08755,
+        "target": false
+      },
+      {
+        "arm": "S+RW(race)",
+        "attribute": "race",
+        "group": "Other Hispanic",
+        "eod_S": 0.05044,
+        "eod_RW": 0.0106,
+        "d_eod": -0.03983,
+        "d_eod_lo": -0.07904,
+        "d_eod_hi": 0.00303,
+        "d_abs_eod": -0.03983,
+        "d_abs_lo": -0.05874,
+        "d_abs_hi": 0.04615,
+        "target": false
+      },
+      {
+        "arm": "S+RW(race)",
+        "attribute": "race",
+        "group": "Other/Multi",
+        "eod_S": -0.06189,
+        "eod_RW": -0.08953,
+        "d_eod": -0.02764,
+        "d_eod_lo": -0.0791,
+        "d_eod_hi": 0.02263,
+        "d_abs_eod": 0.02764,
+        "d_abs_lo": -0.04411,
+        "d_abs_hi": 0.0791,
+        "target": false
+      },
+      {
+        "arm": "S+RW(insurance)",
+        "attribute": "insurance",
+        "group": "uninsured",
+        "eod_S": -0.05836,
+        "eod_RW": -0.04289,
+        "d_eod": 0.01547,
+        "d_eod_lo": -0.00486,
+        "d_eod_hi": 0.08402,
+        "d_abs_eod": -0.01547,
+        "d_abs_lo": -0.08053,
+        "d_abs_hi": 0.03442,
+        "target": true
+      },
+      {
+        "arm": "S+RW(low_access)",
+        "attribute": "low_access",
+        "group": "low access",
+        "eod_S": -0.0838,
+        "eod_RW": -0.0319,
+        "d_eod": 0.05191,
+        "d_eod_lo": -0.01958,
+        "d_eod_hi": 0.07977,
+        "d_abs_eod": -0.05191,
+        "d_abs_lo": -0.0756,
+        "d_abs_hi": 0.04852,
+        "target": true
+      }
+    ],
+    "weight_range": {
+      "race": [
+        0.69871308101195,
+        1.1613910521192348
+      ],
+      "insurance": [
+        0.949139865370232,
+        1.356020942408377
+      ],
+      "low_access": [
+        0.6780104712041884,
+        1.6769458987783596
+      ]
+    }
+  },
+  "whtr": {
+    "table": [
+      {
+        "quantity": "TPR NH Asian, S",
+        "est": 0.475,
+        "simple_lo": 0.36188,
+        "simple_hi": 0.65,
+        "simple_se": 0.08125,
+        "psu_lo": 0.28554,
+        "psu_hi": 0.69635,
+        "psu_se": 0.10977,
+        "lo": 0.28554,
+        "hi": 0.69635,
+        "interval": "psu"
+      },
+      {
+        "quantity": "TPR NH Asian, S+WHtR",
+        "est": 0.55,
+        "simple_lo": 0.375,
+        "simple_hi": 0.675,
+        "simple_se": 0.08417,
+        "psu_lo": 0.31987,
+        "psu_hi": 0.69002,
+        "psu_se": 0.10825,
+        "lo": 0.31987,
+        "hi": 0.69002,
+        "interval": "psu"
+      },
+      {
+        "quantity": "TPR NH White, S",
+        "est": 0.69347,
+        "simple_lo": 0.64441,
+        "simple_hi": 0.74384,
+        "simple_se": 0.02604,
+        "psu_lo": 0.65047,
+        "psu_hi": 0.76285,
+        "psu_se": 0.0269,
+        "lo": 0.65047,
+        "hi": 0.76285,
+        "interval": "psu"
+      },
+      {
+        "quantity": "TPR NH White, S+WHtR",
+        "est": 0.70352,
+        "simple_lo": 0.6468,
+        "simple_hi": 0.74504,
+        "simple_se": 0.02668,
+        "psu_lo": 0.65957,
+        "psu_hi": 0.75823,
+        "psu_se": 0.02704,
+        "lo": 0.65957,
+        "hi": 0.75823,
+        "interval": "psu"
+      },
+      {
+        "quantity": "ΔTPR NH Asian",
+        "est": 0.075,
+        "simple_lo": 0.0,
+        "simple_hi": 0.16312,
+        "simple_se": 0.05432,
+        "psu_lo": -0.07056,
+        "psu_hi": 0.10276,
+        "psu_se": 0.04556,
+        "lo": -0.07056,
+        "hi": 0.10276,
+        "interval": "psu"
+      },
+      {
+        "quantity": "ΔTPR NH White",
+        "est": 0.01005,
+        "simple_lo": -0.01639,
+        "simple_hi": 0.02764,
+        "simple_se": 0.01203,
+        "psu_lo": -0.02137,
+        "psu_hi": 0.02689,
+        "psu_se": 0.01286,
+        "lo": -0.02137,
+        "hi": 0.02689,
+        "interval": "psu"
+      },
+      {
+        "quantity": "ΔTPR Asian − ΔTPR White",
+        "est": 0.06495,
+        "simple_lo": -0.01771,
+        "simple_hi": 0.14743,
+        "simple_se": 0.05378,
+        "psu_lo": -0.06075,
+        "psu_hi": 0.10471,
+        "psu_se": 0.04403,
+        "lo": -0.06075,
+        "hi": 0.10471,
+        "interval": "psu"
+      },
+      {
+        "quantity": "Δ|EOD| Asian vs White",
+        "est": -0.06495,
+        "simple_lo": -0.14743,
+        "simple_hi": 0.01771,
+        "simple_se": 0.05378,
+        "psu_lo": -0.10471,
+        "psu_hi": 0.04659,
+        "psu_se": 0.04261,
+        "lo": -0.14743,
+        "hi": 0.01771,
+        "interval": "simple"
+      },
+      {
+        "quantity": "ΔAUC overall",
+        "est": -0.00077,
+        "simple_lo": -0.00232,
+        "simple_hi": 0.00089,
+        "simple_se": 0.0009,
+        "psu_lo": -0.00219,
+        "psu_hi": 0.0006,
+        "psu_se": 0.00073,
+        "lo": -0.00232,
+        "hi": 0.00089,
+        "interval": "simple"
+      },
+      {
+        "quantity": "ΔAUC within NH Asian",
+        "est": 0.00212,
+        "simple_lo": -0.00426,
+        "simple_hi": 0.00917,
+        "simple_se": 0.0035,
+        "psu_lo": -0.0019,
+        "psu_hi": 0.00751,
+        "psu_se": 0.00253,
+        "lo": -0.00426,
+        "hi": 0.00917,
+        "interval": "simple"
+      },
+      {
+        "quantity": "ΔAUC within NH White",
+        "est": -0.00156,
+        "simple_lo": -0.00422,
+        "simple_hi": 0.00052,
+        "simple_se": 0.00127,
+        "psu_lo": -0.00383,
+        "psu_hi": 0.00033,
+        "psu_se": 0.0012,
+        "lo": -0.00422,
+        "hi": 0.00052,
+        "interval": "simple"
+      },
+      {
+        "quantity": "ΔAUC Asian − ΔAUC White (H4b, model level)",
+        "est": 0.00369,
+        "simple_lo": -0.00319,
+        "simple_hi": 0.01114,
+        "simple_se": 0.00375,
+        "psu_lo": 6e-05,
+        "psu_hi": 0.00914,
+        "psu_se": 0.00253,
+        "lo": -0.00319,
+        "hi": 0.01114,
+        "interval": "simple"
+      }
+    ],
+    "p14b_verdict": "inconclusive",
+    "p14_verdict": "inconclusive",
+    "white_control_smaller": true,
+    "p14a_from_S7": {
+      "est": -0.00094,
+      "lo": -0.0028,
+      "hi": 0.00092,
+      "verdict": "supported"
+    },
+    "h4b_model_verdict": "inconclusive",
+    "h4b_s5_verdict": "supported",
+    "h4b_verdict": "supported",
+    "escreen_dtpr_asian": [
+      0.09090909090909094,
+      0.0,
+      0.22954545454545378
+    ]
+  },
+  "group_threshold_counterfactual": {
+    "threshold_overall": 0.6392068862915039,
+    "threshold_asian": 0.5412904322147369,
+    "threshold_asian_ci": [
+      0.41608258672058585,
+      0.6303277611732483
+    ],
+    "fpr_asian_at_own": 0.17452830188679244,
+    "fpr_asian_at_own_ci": [
+      0.11320754716981132,
+      0.2785377358490565
+    ],
+    "fpr_asian_at_shared": 0.12264150943396226,
+    "tpr_white": 0.6934673366834171
+  },
+  "runtime_seconds": 23.684467792510986
 }
