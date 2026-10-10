@@ -3,7 +3,7 @@
     "section": "S8",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T19:04:58+00:00"
+    "written_utc": "2026-10-10T19:05:33+00:00"
   },
   "mode": "FAST",
   "cv": "5x2",
@@ -2388,5 +2388,130 @@
       "Undiagnosed": 127
     }
   },
-  "runtime_seconds": 5.9717772006988525
+  "access_audit": {
+    "coefs": [
+      {
+        "feature": "uninsured",
+        "label": "L_self",
+        "coef_per_sd": -0.11202,
+        "lo": -0.2708,
+        "hi": 0.01968,
+        "boot_sd": 0.07942,
+        "OR_yes_vs_no": 0.66932,
+        "OR_lo": 0.37885,
+        "OR_hi": 1.07308
+      },
+      {
+        "feature": "uninsured",
+        "label": "L_A1c",
+        "coef_per_sd": 0.01556,
+        "lo": -0.14755,
+        "hi": 0.14801,
+        "boot_sd": 0.07558,
+        "OR_yes_vs_no": 1.05736,
+        "OR_lo": 0.58927,
+        "OR_hi": 1.69981
+      },
+      {
+        "feature": "uninsured",
+        "label": "L_comb",
+        "coef_per_sd": -0.01205,
+        "lo": -0.16493,
+        "hi": 0.12729,
+        "boot_sd": 0.07477,
+        "OR_yes_vs_no": 0.95773,
+        "OR_lo": 0.55368,
+        "OR_hi": 1.57814
+      },
+      {
+        "feature": "no_usual_place",
+        "label": "L_self",
+        "coef_per_sd": -0.20255,
+        "lo": -0.39144,
+        "hi": -0.0847,
+        "boot_sd": 0.08558,
+        "OR_yes_vs_no": 0.52598,
+        "OR_lo": 0.2889,
+        "OR_hi": 0.76439
+      },
+      {
+        "feature": "no_usual_place",
+        "label": "L_A1c",
+        "coef_per_sd": -0.09468,
+        "lo": -0.24895,
+        "hi": 0.03243,
+        "boot_sd": 0.07406,
+        "OR_yes_vs_no": 0.74059,
+        "OR_lo": 0.454,
+        "OR_hi": 1.10836
+      },
+      {
+        "feature": "no_usual_place",
+        "label": "L_comb",
+        "coef_per_sd": -0.0987,
+        "lo": -0.23112,
+        "hi": 0.02015,
+        "boot_sd": 0.0665,
+        "OR_yes_vs_no": 0.73119,
+        "OR_lo": 0.48041,
+        "OR_hi": 1.06601
+      }
+    ],
+    "diffs": [
+      {
+        "feature": "uninsured",
+        "contrast": "L_self - L_comb",
+        "diff_per_sd": -0.09997,
+        "lo": -0.19897,
+        "hi": -0.01228,
+        "ci_excludes_0": true
+      },
+      {
+        "feature": "uninsured",
+        "contrast": "L_self - L_A1c",
+        "diff_per_sd": -0.12758,
+        "lo": -0.26744,
+        "hi": 0.00611,
+        "ci_excludes_0": false
+      },
+      {
+        "feature": "uninsured",
+        "contrast": "L_comb - L_A1c",
+        "diff_per_sd": -0.02761,
+        "lo": -0.0905,
+        "hi": 0.02662,
+        "ci_excludes_0": false
+      },
+      {
+        "feature": "no_usual_place",
+        "contrast": "L_self - L_comb",
+        "diff_per_sd": -0.10385,
+        "lo": -0.23333,
+        "hi": 0.00175,
+        "ci_excludes_0": false
+      },
+      {
+        "feature": "no_usual_place",
+        "contrast": "L_self - L_A1c",
+        "diff_per_sd": -0.10787,
+        "lo": -0.27109,
+        "hi": 0.05484,
+        "ci_excludes_0": false
+      },
+      {
+        "feature": "no_usual_place",
+        "contrast": "L_comb - L_A1c",
+        "diff_per_sd": -0.00403,
+        "lo": -0.07807,
+        "hi": 0.06134,
+        "ci_excludes_0": false
+      }
+    ],
+    "n_boot": 100,
+    "sd_binary": {
+      "uninsured": 0.2789985252263517,
+      "no_usual_place": 0.3152569174740513
+    }
+  },
+  "runtime_seconds": 15.091854810714722
 }

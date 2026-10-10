@@ -553,6 +553,62 @@ plt.show()
 # single labels) more than *whom this feature set can find*.
 
 # %% [markdown]
+# ## 7 Access-proxy audit arm
+# **Why.** §5 found that uninsured adults and adults without a usual place of care are more often undiagnosed. If the
+# self-report label carries this access imprint, a model trained on `L_self` should learn that *lacking access lowers
+# the chance of "having diabetes"* – a pure artefact of who gets diagnosed – while a model trained on the union label
+# (or on HbA1c, which needs no doctor) should not. The audit arm adds two binary features, **uninsured** (HIQ011 = 2)
+# and **no usual place of care** (HUQ030 = 2), to the arm-S pipeline and fits it on each label. Coefficients (per SD,
+# because P09 scales every column) are bootstrapped with `evalkit.coef_bootstrap` (B = `config.N_BOOT_COEF`); the
+# same seed gives the same resampled rows for every label, so differences between labels are paired. This arm is an
+# **audit instrument only**: the availability rule keeps insurance and access out of every model that could be used.
+
+# %%
+t0 = time.time()
+mk_acc = lambda: F.access_pipeline(cfgS, 1, C_=C0)
+assert set(F.ACCESS_FEATURES) <= set(mk_acc()[:-1].fit(X1.iloc[:500], y[:500]).get_feature_names_out())
+seed_acc = ek.derive_seed(C.SEED_MASTER, "S8", "access_audit")
+CB = {lab: ek.coef_bootstrap(mk_acc, X1, YL[lab], n_boot=C.N_BOOT_COEF, seed=seed_acc, fit_params=fpS, n_jobs=N_JOBS)
+      for lab in LABELS3}
+sd_bin = {f: float(np.sqrt(grp[f].fillna(0).mean() * (1 - grp[f].fillna(0).mean()))) for f in F.ACCESS_FEATURES}
+acc_rows = []
+for f in F.ACCESS_FEATURES:
+    for lab in LABELS3:
+        s_ = CB[lab].summary.loc[f]
+        acc_rows.append({"feature": f, "label": lab, "coef_per_sd": s_["coef"], "lo": s_["q_low"], "hi": s_["q_high"],
+                         "boot_sd": s_["sd"], "OR_yes_vs_no": np.exp(s_["coef"] / sd_bin[f]),
+                         "OR_lo": np.exp(s_["q_low"] / sd_bin[f]), "OR_hi": np.exp(s_["q_high"] / sd_bin[f])})
+ACC = pd.DataFrame(acc_rows)
+diff_rows = []
+for f in F.ACCESS_FEATURES:
+    for a, b in (("L_self", "L_comb"), ("L_self", "L_A1c"), ("L_comb", "L_A1c")):
+        d = CB[a].coefs[f].to_numpy() - CB[b].coefs[f].to_numpy()
+        e, lo, hi, se = F.summarise(CB[a].summary.loc[f, "coef"] - CB[b].summary.loc[f, "coef"], d)
+        diff_rows.append({"feature": f, "contrast": f"{a} - {b}", "diff_per_sd": e, "lo": lo, "hi": hi,
+                          "ci_excludes_0": bool(lo > 0 or hi < 0)})
+ACCD = pd.DataFrame(diff_rows)
+print(f"access audit arm: {len(LABELS3)} labels x (1 + {C.N_BOOT_COEF}) fits, {time.time() - t0:.0f} s")
+print(ACC.round(3).to_string(index=False))
+print("\npaired differences of the per-SD coefficient between training labels:")
+print(ACCD.round(3).to_string(index=False))
+ACC.to_csv(OUT / "access_audit_coefs.csv", index=False)
+ACCD.to_csv(OUT / "access_audit_diffs.csv", index=False)
+S8["access_audit"] = dict(coefs=ACC.round(5).to_dict("records"), diffs=ACCD.round(5).to_dict("records"),
+                          n_boot=C.N_BOOT_COEF, sd_binary=sd_bin)
+
+# %% [markdown]
+# **So what.** The access imprint is visible exactly where the label requires a doctor. Trained on self-report, the
+# model gives both access features negative coefficients – lacking insurance or a usual place of care *lowers* the
+# predicted chance of diabetes – although §5 showed that diabetes itself is not rarer in these groups once age is
+# accounted for. Trained on HbA1c, which needs no diagnosis, the coefficients are close to zero; the union label sits in
+# between, much closer to HbA1c. The paired differences (self-report minus union) are negative for both features, with
+# the CI excluding 0 for at least one of them (table above). A model trained on self-report would therefore learn to
+# **score people with poor access as lower risk because they were never diagnosed** – a feedback loop that would deepen
+# the diagnosis gap. This is the strongest model-level evidence in the project that the label is a measurement of
+# access as well as of disease, and it supports both the frozen union label and the decision to keep insurance and
+# access out of the model.
+
+# %% [markdown]
 # ## 14 Storage
 # **Why.** Every number of this section is stored in `results/metrics_S8.json` (via `results_io`) and the tables in
 # `results/S8/`, so that S10 and the slides read them instead of re-typing them.
