@@ -1,0 +1,1 @@
+Left: valid measurements removed by a blanket recode of 7/9/77/99/777/999/7777/9999 in the cohort, by variable (1,496 in total; HbA1c in red). Right: the shortcut destroys 1,496 valid values to clean 57 genuine refusal/don't-know answers in the questionnaire items; it removes 29/721 HbA1c-defined positives, of which 6 of 971 L_comb positives flip.

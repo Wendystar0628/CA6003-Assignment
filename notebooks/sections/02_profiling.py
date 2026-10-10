@@ -281,3 +281,117 @@ M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sen
                         "cells_recoded_cohort": n_sent_coh, "all_traceable": bool(sent["traceable"].all()),
                         "legit_codes_cohort": dict(zip(legit["code"], legit["cohort"].astype(int)))}
 
+# %% [markdown]
+# ## 4 Cost of a blanket recode
+#
+# **Why.** A common shortcut is `df.replace([7, 9, 77, 99, 777, 999, 7777, 9999], np.nan)` across the whole table. It is also the "minimal" arm M0 of the experiments in Stage S6. The cost has to be measured rather than assumed. Every value the shortcut removes from a continuous measure is a valid measurement, because those variables have no refusal codes. Examples are a diastolic pressure of 77 mmHg, a weight of 99 kg and an HbA1c of 7.0 %. The damage is counted on the fixed cohort of 5,730 adults in three arms:
+#
+# - **per-variable**: codebook codes only;
+# - **blanket**: the shortcut;
+# - **questionnaire-only**: the shortcut restricted to the six questionnaire items where it is harmless.
+#
+# The effect on the labels is counted as well.
+
+# %%
+coh_none = io.build_cohort(sentinels="none")
+DERIVED = ["bp_sys_mean", "bp_dia_mean", "whtr", "age_top", "pir_top", "pir_miss", "preg_unknown", "race", "sex"]
+coh_blank = io.build_cohort(sentinels="blanket")
+codes = list(io.BLANKET_CODES)
+dmg = pd.DataFrame({"var": io.CONTINUOUS_CANDIDATES})
+dmg["valid_cells_destroyed"] = [int(coh_none[v].isin(codes).sum()) for v in dmg["var"]]
+dmg["lost_in_blanket_cohort"] = [int(coh_none[v].notna().sum() - coh_blank[v].notna().sum()) for v in dmg["var"]]
+dmg["values_hit"] = [", ".join(f"{io._num(k)}:{n}" for k, n in coh_none.loc[coh_none[v].isin(codes), v].value_counts().sort_index().items()) for v in dmg["var"]]
+assert (dmg["valid_cells_destroyed"] == dmg["lost_in_blanket_cohort"]).all()
+assert (spec.set_index("var").loc[list(io.CONTINUOUS_CANDIDATES), "sentinel_codes"].groupby(level=0).first() == "").all()
+dmg = dmg.sort_values("valid_cells_destroyed", ascending=False).reset_index(drop=True)
+display(dmg)
+dmg.to_csv(OUT / "blanket_damage.csv", index=False, lineterminator="\n")
+n_destroyed = int(dmg["valid_cells_destroyed"].sum())
+
+# same 20 variables in the full merged file (secondary scope)
+full_none = io.load_merged(sentinels="none")
+n_destroyed_full = int(sum(full_none[v].isin(codes).sum() for v in io.CONTINUOUS_CANDIDATES))
+
+# labels
+a1c_pos = coh_none["LBXGH"] >= C.HBA1C_DIABETES
+a1c_pos_blank = coh_blank["LBXGH"] >= C.HBA1C_DIABETES
+lost_pos = int((a1c_pos & ~a1c_pos_blank).sum())
+lost_values = coh_none.loc[a1c_pos & ~a1c_pos_blank, "LBXGH"].value_counts().to_dict()
+self_dm = coh["DIQ010"] == 1
+l_comb = self_dm | a1c_pos
+l_comb_blank = self_dm | a1c_pos_blank
+flips = int((l_comb & ~l_comb_blank).sum())
+
+# questionnaire-only arm: genuine codes in the six questionnaire items
+q_arm = pd.Series({v: int(coh_none[v].isin(io.sentinel_map(spec)[v]).sum()) for v in io.QUESTIONNAIRE_ITEMS})
+n_q = int(q_arm.sum())
+
+# blanket on every numeric column: genuine codes vs valid values
+_, aud_blank = io.apply_sentinels(coh_none.drop(columns=DERIVED), spec, mode="blanket")
+smap = io.sentinel_map(spec)
+aud_blank["genuine"] = [int(coh_none[v].isin(smap.get(v, [])).sum()) for v in aud_blank["var"]]
+aud_blank["valid_destroyed"] = aud_blank["n_recoded"] - aud_blank["genuine"]
+n_blank_all, n_blank_genuine = int(aud_blank["n_recoded"].sum()), int(aud_blank["genuine"].sum())
+other_valid = aud_blank[(aud_blank["valid_destroyed"] > 0) & ~aud_blank["var"].isin(io.CONTINUOUS_CANDIDATES)].sort_values("valid_destroyed", ascending=False)
+
+print(f"valid cells destroyed in the cohort (20 continuous candidates): {n_destroyed:,}; same 20 variables in the full file: {n_destroyed_full:,}")
+print(f"HbA1c positives lost: {lost_pos}/{int(a1c_pos.sum())} ({lost_pos / a1c_pos.sum():.1%}); values {lost_values}")
+print(f"L_comb positives flipped to negative: {flips}/{int(l_comb.sum())}")
+print(f"questionnaire-only arm: {n_q} genuine codes {q_arm.to_dict()}")
+print(f"blanket over all numeric columns of the cohort: {n_blank_all:,} cells recoded, of which genuine refusal/don't-know {n_blank_genuine:,}")
+display(other_valid[["var", "n_recoded", "genuine", "valid_destroyed", "by_code"]].head(12))
+
+assert n_destroyed == 1496 and n_destroyed_full == 2472
+assert lost_pos == 29 and int(a1c_pos.sum()) == 721 and lost_values == {7.0: 28, 9.0: 1}
+assert flips == 6 and int(l_comb.sum()) == 971
+assert n_q == 57 and q_arm.to_dict() == {"HIQ011": 9, "HUQ030": 1, "BPQ020": 4, "BPQ080": 34, "SMQ020": 7, "DMDEDUC2": 2}
+
+# %%
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8), gridspec_kw={"width_ratios": [1.5, 1]})
+d = dmg[dmg["valid_cells_destroyed"] > 0].iloc[::-1]
+col = [OI["vermillion"] if v == "LBXGH" else OI["orange"] for v in d["var"]]
+a1.barh(d["var"], d["valid_cells_destroyed"], color=col)
+for y, n in enumerate(d["valid_cells_destroyed"]):
+    a1.text(n + 3, y, str(n), va="center", fontsize=8)
+a1.set_xlabel("valid measurements set to missing (cohort, N = 5,730)")
+a1.set_title(f"Blanket recode wipes {n_destroyed:,} valid values", loc="left")
+bars = [("valid values destroyed\n(20 continuous measures)", n_destroyed, OI["orange"]),
+        ("genuine refusal / don't know\n(6 questionnaire items)", n_q, OI["blue"])]
+a2.bar([b[0] for b in bars], [b[1] for b in bars], color=[b[2] for b in bars], width=0.6)
+for x, b in enumerate(bars):
+    a2.text(x, b[1] + 25, f"{b[1]:,}", ha="center", fontsize=10)
+a2.set_ylabel("cells"); a2.set_ylim(0, n_destroyed * 1.25); a2.tick_params(axis="x", labelsize=9)
+a2.set_title("Harm versus benefit", loc="left")
+a2.text(0.98, 0.95, f"HbA1c 7.0 / 9.0 lost: {lost_pos} of {int(a1c_pos.sum())} A1c positives ({lost_pos / a1c_pos.sum():.1%})\n"
+        f"L_comb flips: {flips} of {int(l_comb.sum())}", transform=a2.transAxes, ha="right", va="top", fontsize=9,
+        bbox=dict(boxstyle="round", fc="white", ec=OI["grey"]))
+fig.tight_layout()
+f_blank = plots.savefig(fig, "S3_blanket_recode_damage",
+                        caption=f"Left: valid measurements removed by a blanket recode of 7/9/77/99/777/999/7777/9999 in the cohort, by variable "
+                                f"({n_destroyed:,} in total; HbA1c in red). Right: the shortcut destroys {n_destroyed:,} valid values to clean {n_q} genuine "
+                                f"refusal/don't-know answers in the questionnaire items; it removes {lost_pos}/{int(a1c_pos.sum())} HbA1c-defined positives, "
+                                f"of which {flips} of {int(l_comb.sum())} L_comb positives flip.")
+plt.show(); print("saved", f_blank)
+
+# %% [markdown]
+# **So what.** On the same 5,730 adults, the blanket recode destroys **1,496 valid measurements** across the 20 continuous candidates. Most fall on diastolic pressure and pulse, where 77 and 99 are ordinary readings. Over the whole release the same 20 variables lose 2,472 values, a secondary count. The harm reaches the label:
+#
+# - All 29 HbA1c values it removes are 7.0 % (28) or 9.0 % (1), so every one is a true diabetic value. That is **29 of the 721 HbA1c-defined positives (4.0 %)** lost.
+# - Under the frozen `L_comb` only **6 of 971** positives flip, because the other 23 also report a diagnosis. Self-report hides the error, which makes it easy to miss.
+#
+# Applied to every numeric column, the shortcut also wipes categorical codes that are real categories. Examples are `RIDRETH3 = 7` (the 363 multiracial adults disappear as a group), 380 moderate-activity frequencies of 7 sessions (`PAD790Q`) and age 77.
+#
+# The benefit side is small. Restricting the shortcut to the six questionnaire items cleans just **57** genuine codes, so the shortcut's harm exceeds its gain by a factor of about 26. **Decision (DR-S3-02, evidence):** the per-variable map is the systematic arm. The blanket recode is kept only as the deliberately naive M0 arm in Stage S6, where its cost becomes measurable in model terms.
+
+# %%
+M3["blanket_recode"] = {
+    "valid_cells_destroyed_cohort": n_destroyed, "valid_cells_destroyed_full_file_same_20_vars": n_destroyed_full,
+    "candidates": list(io.CONTINUOUS_CANDIDATES),
+    "per_variable": dict(zip(dmg["var"], dmg["valid_cells_destroyed"].astype(int))),
+    "a1c_positives_lost": lost_pos, "a1c_positives": int(a1c_pos.sum()), "a1c_lost_share": lost_pos / int(a1c_pos.sum()),
+    "l_comb_flips": flips, "l_comb_positives": int(l_comb.sum()),
+    "questionnaire_only_cells": n_q, "questionnaire_only_per_item": q_arm.to_dict(),
+    "all_numeric_recoded": n_blank_all, "all_numeric_genuine": n_blank_genuine,
+    "ridreth3_7_destroyed": int(aud_blank.set_index("var").loc["RIDRETH3", "valid_destroyed"]),
+}
+
