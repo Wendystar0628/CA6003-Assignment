@@ -234,3 +234,279 @@ def make_folds(y, strat=None, *, n_splits: int = C.CV_SPLITS, n_repeats: int = C
     folds.n_splits, folds.n_repeats, folds.n, folds.seed = n_splits, n_repeats, n, int(seed)
     folds.hash, folds.path = _folds_hash(fold_id, n_splits, n_repeats, int(seed)), path
     return folds
+
+
+# =============================================================================
+# 2. Cross-validated predictions
+# =============================================================================
+def _take(a, idx):
+    return a.iloc[idx] if hasattr(a, "iloc") else np.asarray(a)[idx]
+
+
+def _slice_fit_params(fit_params: dict | None, idx: np.ndarray, n: int) -> dict:
+    """Slice every length-n array-like in ``fit_params`` to ``idx``; pass other values through."""
+    out = {}
+    for k, v in (fit_params or {}).items():
+        if hasattr(v, "__len__") and not isinstance(v, str) and len(v) == n:
+            out[k] = np.asarray(v)[idx]
+        else:
+            out[k] = v
+    return out
+
+
+def _fold_repeats(folds: Sequence, n: int) -> list[tuple[int, int]]:
+    """(repeat, fold) label per entry; infers repeats from test-row coverage if no metadata."""
+    if hasattr(folds, "n_splits"):
+        return [(i // folds.n_splits, i % folds.n_splits) for i in range(len(folds))]
+    labels, r, f, seen = [], 0, 0, 0
+    for _, te in folds:
+        labels.append((r, f))
+        f, seen = f + 1, seen + len(te)
+        if seen >= n:
+            r, f, seen = r + 1, 0, 0
+    return labels
+
+
+def _positive_proba(model, X) -> np.ndarray:
+    proba = model.predict_proba(X)
+    classes = list(getattr(model, "classes_", [0, 1]))
+    return proba[:, classes.index(1)]
+
+
+def cv_predict(make_pipe: Callable, X, y, folds: Sequence, *, fit_params: dict | None = None) -> pd.DataFrame:
+    """Out-of-fold predicted probabilities for every (repeat, fold).
+
+    ``make_pipe`` is a zero-argument factory; a fresh, unfitted estimator is built (and
+    ``sklearn.base.clone``d) for each fold, so nothing leaks between folds (preprocessing
+    is fitted on the training part only).  ``fit_params`` such as
+    ``{"logisticregression__sample_weight": w}`` are passed to ``fit``; every array-like of
+    length ``len(y)`` is sliced to the fold's training rows.
+
+    Returns a long DataFrame with columns ``repeat, fold, row, prob`` (``row`` = positional
+    row of ``X``); each row appears once per repeat.
+    """
+    n = len(y)
+    y = np.asarray(y)
+    parts = []
+    for (r, f), (tr, te) in zip(_fold_repeats(folds, n), folds):
+        model = clone(make_pipe())
+        model.fit(_take(X, tr), y[tr], **_slice_fit_params(fit_params, tr, n))
+        parts.append(pd.DataFrame({"repeat": r, "fold": f, "row": te, "prob": _positive_proba(model, _take(X, te))}))
+    return pd.concat(parts, ignore_index=True).astype({"repeat": "int16", "fold": "int16", "row": "int64"})
+
+
+def mean_oof(oof: pd.DataFrame, n: int | None = None) -> np.ndarray:
+    """Row-wise mean of the OOF probability over repeats (vector indexed by row position)."""
+    s = oof.groupby("row")["prob"].mean()
+    if n is not None:
+        s = s.reindex(range(n))
+    return s.to_numpy()
+
+
+# =============================================================================
+# 3. Metrics
+# =============================================================================
+def _clean_inputs(y, p, w=None):
+    y = np.asarray(y).astype(int).ravel()
+    p = np.asarray(p, dtype=float).ravel()
+    w = None if w is None else np.asarray(w, dtype=float).ravel()
+    if len(y) != len(p) or (w is not None and len(w) != len(y)):
+        raise ValueError("y, p, w must have equal length")
+    return y, p, w
+
+
+def recall_at_specificity(y, p, spec: float = C.SPEC_FIXED, neg_mask=None, w=None) -> tuple[float, float]:
+    """Recall (sensitivity) at a threshold giving specificity >= ``spec``; returns ``(recall, threshold)``.
+
+    Definition: let N be the negatives (``y == 0``, optionally restricted to ``neg_mask``, e.g.
+    the E-SCREEN negatives) and k = ceil(spec * |N|).  With v_k the k-th smallest negative
+    score, the threshold is the smallest observed score strictly greater than v_k, and a
+    case is called positive when ``p >= threshold``.  Then at least ``spec`` of N has
+    ``p < threshold`` (ties are resolved conservatively, so specificity >= spec holds).
+    Recall is TP / P over *all* positives.  With weights ``w`` the k-th smallest is the weighted
+    quantile (smallest v whose weighted cumulative share of N is at least ``spec``).
+    If no score exceeds v_k the threshold is +inf and recall 0.
+
+    Returns ``(nan, nan)`` if there are no negatives or no positives.
+    """
+    y, p, w = _clean_inputs(y, p, w)
+    negsel = y == 0
+    if neg_mask is not None:
+        negsel &= np.asarray(neg_mask, dtype=bool)
+    pos = y == 1
+    if negsel.sum() == 0 or pos.sum() == 0:
+        return float("nan"), float("nan")
+    neg_p = p[negsel]
+    if w is None:
+        v = np.sort(neg_p)[int(np.ceil(spec * len(neg_p) - 1e-12)) - 1]
+    else:
+        order = np.argsort(neg_p, kind="mergesort")
+        cw = np.cumsum(w[negsel][order]) / w[negsel].sum()
+        v = neg_p[order][min(np.searchsorted(cw, spec - 1e-12), len(cw) - 1)]
+    above = p[p > v]
+    thr = float(above.min()) if len(above) else float("inf")
+    hit = p[pos] >= thr
+    recall = float(np.average(hit, weights=None if w is None else w[pos]))
+    return recall, thr
+
+
+def _logit(p, eps=1e-6):
+    p = np.clip(p, eps, 1 - eps)
+    return np.log(p / (1 - p))
+
+
+def _calibration(y, p, w=None):
+    """Logistic recalibration ``logit P(y=1) = a + b * logit(p)``; returns (slope b, intercept a, CITL).
+
+    CITL (calibration-in-the-large) is the intercept of the model with the slope fixed at 1
+    (offset ``logit(p)``).  NaN if p is (nearly) constant or the fit does not converge /
+    separates perfectly.
+    """
+    import statsmodels.api as sm
+    lp = _logit(p)
+    if np.ptp(lp) < 1e-9 or len(np.unique(y)) < 2:
+        return float("nan"), float("nan"), float("nan")
+    kw = {} if w is None else {"freq_weights": w}
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fit = sm.GLM(y, sm.add_constant(lp), family=sm.families.Binomial(), **kw).fit()
+            citl = sm.GLM(y, np.ones((len(y), 1)), family=sm.families.Binomial(), offset=lp, **kw).fit()
+        a, b = float(fit.params[0]), float(fit.params[1])
+        if not (np.isfinite(a) and np.isfinite(b)) or abs(b) > 1e3:
+            return float("nan"), float("nan"), float("nan")
+        return b, a, float(citl.params[0])
+    except Exception:  # noqa: BLE001 - perfect separation etc.
+        return float("nan"), float("nan"), float("nan")
+
+
+def _youden_threshold(y, p, w=None) -> float:
+    fpr, tpr, thr = roc_curve(y, p, sample_weight=w)
+    return float(thr[np.argmax(tpr - fpr)])
+
+
+def metric_suite(y, p, w=None, threshold: float | None = None) -> dict:
+    """Standard metric set for one prediction vector.
+
+    * ``roc_auc``: area under the ROC curve = P(score_pos > score_neg) + 0.5 P(tie)
+      (Hanley & McNeil 1982), ``sklearn.metrics.roc_auc_score``.
+    * ``pr_auc``: average precision, sum_n (R_n - R_{n-1}) P_n (Saito & Rehmsmeier 2015);
+      the no-skill level equals the prevalence.
+    * ``brier``: mean (p - y)^2 (Brier 1950); lower is better.
+    * ``recall_at_spec``: sensitivity at specificity >= ``config.SPEC_FIXED`` (0.80) and the
+      corresponding ``thr_at_spec`` (see :func:`recall_at_specificity`).
+    * ``balanced_accuracy``: (sensitivity + specificity) / 2 at ``threshold``.
+      **WARNING**: if ``threshold`` is None the Youden-J maximiser (Youden 1950) is computed on
+      the SAME data that is being scored, which is optimistically biased.  For honest numbers
+      pass a threshold derived from training data / other folds (see :func:`fold_metrics`).
+    * ``cal_slope`` / ``cal_intercept``: coefficients (b, a) of the logistic recalibration
+      ``logit P(y=1) = a + b * logit(p)`` fitted with statsmodels (Cox 1958); ideal b=1, a=0.
+      ``cal_citl`` is the intercept with the slope fixed at 1 (calibration-in-the-large).
+    * ``prevalence``: (weighted) share of positives; ``n``, ``n_pos``.
+
+    ``w`` are optional sample weights (design weights); this gives point estimates only, no
+    design-based variance.  Metrics that are undefined (one class only, constant scores)
+    are returned as NaN rather than raising.
+    """
+    y, p, w = _clean_inputs(y, p, w)
+    nan = float("nan")
+    out = dict(n=int(len(y)), n_pos=int(y.sum()), prevalence=float(np.average(y, weights=w)))
+    two = len(np.unique(y)) == 2
+    out["roc_auc"] = float(roc_auc_score(y, p, sample_weight=w)) if two else nan
+    out["pr_auc"] = float(average_precision_score(y, p, sample_weight=w)) if two else nan
+    out["brier"] = float(np.average((p - y) ** 2, weights=w))
+    out["recall_at_spec"], out["thr_at_spec"] = recall_at_specificity(y, p, C.SPEC_FIXED, w=w)
+    if two:
+        thr = _youden_threshold(y, p, w) if threshold is None else float(threshold)
+        pred = p >= thr
+        sens = np.average(pred[y == 1], weights=None if w is None else w[y == 1])
+        spec = np.average(~pred[y == 0], weights=None if w is None else w[y == 0])
+        out["balanced_accuracy"], out["threshold"] = float(0.5 * (sens + spec)), thr
+    else:
+        out["balanced_accuracy"], out["threshold"] = nan, nan
+    out["cal_slope"], out["cal_intercept"], out["cal_citl"] = _calibration(y, p, w)
+    return out
+
+
+def _mask(eval_mask, n) -> np.ndarray:
+    return np.ones(n, bool) if eval_mask is None else np.asarray(eval_mask, dtype=bool)
+
+
+def fold_metrics(oof: pd.DataFrame, y, eval_mask=None, w=None, threshold="other_folds") -> pd.DataFrame:
+    """Metric table with one row per ``(repeat, fold)`` of an OOF prediction frame.
+
+    ``oof`` has columns ``repeat, fold, row, prob`` (:func:`cv_predict`); ``y`` is indexed by
+    ``row``.  ``eval_mask`` (bool, length ``len(y)``) restricts evaluation to a sub-population
+    such as E-SCREEN (rows outside the mask are dropped before every metric).
+
+    ``threshold`` controls the balanced-accuracy cut-off:
+
+    * ``"other_folds"`` (default): Youden threshold computed from the OOF predictions of the
+      *other* folds of the same repeat (inside ``eval_mask``).  Those predictions never see
+      this fold's labels, so the cut-off is not fitted on the labels being scored.
+    * ``"same"``: Youden on the fold itself (optimistic; diagnostics only).
+    * a float: fixed threshold.
+
+    Output columns: repeat, fold, then the keys of :func:`metric_suite`.
+    """
+    y = np.asarray(y).astype(int)
+    keep = _mask(eval_mask, len(y))
+    oof = oof[keep[oof["row"].to_numpy()]]
+    wv = None if w is None else np.asarray(w, dtype=float)
+    rows = []
+    for (r, f), g in oof.groupby(["repeat", "fold"], sort=True):
+        idx = g["row"].to_numpy()
+        thr = None
+        if threshold == "other_folds":
+            rest = oof[(oof["repeat"] == r) & (oof["fold"] != f)]
+            ri = rest["row"].to_numpy()
+            if len(np.unique(y[ri])) == 2:
+                thr = _youden_threshold(y[ri], rest["prob"].to_numpy(), None if wv is None else wv[ri])
+        elif threshold != "same":
+            thr = float(threshold)
+        m = metric_suite(y[idx], g["prob"].to_numpy(), None if wv is None else wv[idx], threshold=thr)
+        rows.append({"repeat": int(r), "fold": int(f), **m})
+    return pd.DataFrame(rows)
+
+
+def repeat_metrics(oof: pd.DataFrame, y, eval_mask=None, w=None, threshold="other_repeats") -> pd.DataFrame:
+    """Metric table per repeat on the pooled OOF vector (every row predicted once per repeat).
+
+    Preferred for small sub-populations (E-SCREEN has only ~24 positives per fold): AUC etc. are
+    computed on all positives of the repeat at once instead of on noisy single folds.
+    ``threshold`` for balanced accuracy: ``"other_repeats"`` (default) = Youden threshold of the
+    row-wise mean OOF probability of the *other* repeats (``"same"`` when only one repeat
+    exists), ``"same"`` = Youden on the evaluated vector (optimistic), or a float.
+
+    Note: pooling folds mixes models trained on slightly different data, so a no-information
+    model (``DummyClassifier('prior')``) scores marginally below 0.5 here (its fold-wise prior
+    is anti-correlated with the held-out prevalence) while per-fold AUC is exactly 0.5.
+    """
+    y = np.asarray(y).astype(int)
+    keep = _mask(eval_mask, len(y))
+    oof = oof[keep[oof["row"].to_numpy()]]
+    wv = None if w is None else np.asarray(w, dtype=float)
+    repeats = sorted(oof["repeat"].unique())
+    rows = []
+    for r in repeats:
+        g = oof[oof["repeat"] == r]
+        idx = g["row"].to_numpy()
+        thr = None
+        if threshold == "other_repeats" and len(repeats) > 1:
+            rest = oof[oof["repeat"] != r].groupby("row")["prob"].mean()
+            ri = rest.index.to_numpy()
+            thr = _youden_threshold(y[ri], rest.to_numpy(), None if wv is None else wv[ri])
+        elif threshold not in ("other_repeats", "same"):
+            thr = float(threshold)
+        m = metric_suite(y[idx], g["prob"].to_numpy(), None if wv is None else wv[idx], threshold=thr)
+        rows.append({"repeat": int(r), **m})
+    return pd.DataFrame(rows)
+
+
+def paired_fold_diffs(fm_a: pd.DataFrame, fm_b: pd.DataFrame, metric: str = "roc_auc") -> np.ndarray:
+    """Fold-level differences ``metric_A - metric_B`` aligned on (repeat, fold); input of :func:`corrected_t`."""
+    a = fm_a.set_index(["repeat", "fold"])[metric]
+    b = fm_b.set_index(["repeat", "fold"])[metric]
+    if not a.index.equals(b.index):
+        raise ValueError("fold tables are not aligned (different folds were used)")
+    return (a - b).to_numpy()
