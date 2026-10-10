@@ -136,14 +136,23 @@ def sensitivity_labels(cohort: pd.DataFrame) -> pd.DataFrame:
 # --------------------------------------------------------------------------------------
 # agreement statistics
 # --------------------------------------------------------------------------------------
-def confusion(cohort: pd.DataFrame, *, weight: str | None = None,
+def _weights(df: pd.DataFrame, weight) -> np.ndarray:
+    """None -> ones; column name -> that column; array-like -> as is (NaN -> 0)."""
+    if weight is None:
+        return np.ones(len(df))
+    w = df[weight].to_numpy(float) if isinstance(weight, str) else np.asarray(weight, dtype=float)
+    return np.nan_to_num(w)
+
+
+def confusion(cohort: pd.DataFrame, *, weight=None,
               rows: str = "L_self", cols: str = "L_A1c") -> pd.DataFrame:
     """2x2 table rows x cols (default self-report x HbA1c); counts or weighted sums.
 
-    Index/columns are 0/1 named after the label columns.
+    `weight` is None (counts), a column name or a weight vector (e.g. a jackknife
+    replicate). Index/columns are 0/1 named after the label columns.
     """
     df = cohort if rows in cohort else add_labels(cohort)
-    w = np.ones(len(df)) if weight is None else df[weight].to_numpy(float)
+    w = _weights(df, weight)
     r = df[rows].astype(int).to_numpy()
     c = df[cols].astype(int).to_numpy()
     tab = np.zeros((2, 2))
@@ -177,22 +186,19 @@ def agreement_from_table(tab) -> dict:
     }
 
 
-def agreement(df: pd.DataFrame, weight: str | None = None, *,
+def agreement(df: pd.DataFrame, weight=None, *,
               rows: str = "L_self", cols: str = "L_A1c") -> dict:
     """`agreement_from_table(confusion(...))` – convenient as a jackknife statistic."""
     return agreement_from_table(confusion(df, weight=weight, rows=rows, cols=cols).to_numpy())
 
 
-def kappa_stat(df: pd.DataFrame, weight: str | None = None) -> float:
-    return agreement(df, weight)["kappa"]
+AGREEMENT_KEYS = ("kappa", "pa", "na", "sens", "ppv")
 
 
-def pa_stat(df: pd.DataFrame, weight: str | None = None) -> float:
-    return agreement(df, weight)["pa"]
-
-
-def na_stat(df: pd.DataFrame, weight: str | None = None) -> float:
-    return agreement(df, weight)["na"]
+def agreement_vector(df: pd.DataFrame, w) -> np.ndarray:
+    """[kappa, PA, NA, sens, PPV] – signature `stat_fn(df, w)` for `survey.jackknife`."""
+    a = agreement(df, w)
+    return np.array([a[k] for k in AGREEMENT_KEYS])
 
 
 def strata_counts(df: pd.DataFrame) -> dict:
