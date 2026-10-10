@@ -609,10 +609,10 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 - README 与 `profiling\*.txt` 的既有发现，本阶段复核。
 
 ### 具体方案
-1. **XPT 读入伪影。** 5.397605e-79 等于 16^-65，是 pandas 读 XPT 时产生的伪影，不是 SAS 的编码。修复必须保护 NaN：`x.mask((x.abs()<1e-10) & x.notna(), 0.0)`，禁止使用 `where(...)`（会把 NaN 变成 0）。实测共 13,676 格，涉及 DEMO、GHB、GLU、TCHOL、HDL、TRIGLY、SMQ、PAQ、INQ 等 11 个文件，BMX、BPXO、DIQ、HIQ、HUQ、BPQ 无此问题。修复后断言不存在 0<|x|<1e-10 的值。权重为 0 有语义：`WTMEC2YR=0` 为未体检（3,073 人），`WTPH2YR=0` 为无血样（449 人），加权分析前转为 NaN 并排除。
+1. **XPT 读入伪影。** 5.397605e-79 等于 16^-65，是 pandas 读 XPT 时产生的伪影，不是 SAS 的编码。修复必须保护 NaN：`x.mask((x.abs()<1e-10) & x.notna(), 0.0)`，禁止使用 `where(...)`（会把 NaN 变成 0）。实测共 13,676 格，涉及 DEMO 3,383、GHB 449、GLU 635、TCHOL 752、HDL 752、TRIGLY 635、INQ 218、SMQ 735、PAQ 6,117 共 9 个文件；BMX、BPXO、DIQ、BPQ、MCQ、HIQ、HUQ 无此问题。修复后断言不存在 0<|x|<1e-10 的值。权重为 0 有语义：`WTMEC2YR=0` 为未体检（3,073 人），`WTPH2YR=0` 为无血样（449 人），加权分析前转为 NaN 并排除。
 2. **完整性与唯一性。** 15 个文件 SEQN 全部唯一且都是 DEMO 子集（已验证）。漏斗用断言固定：11,933 → 7,809（≥20 岁）→ 6,064（RIDSTATR=2）→ 5,767（有 LBXGH）→ 5,730（剔除 RIDEXPRG==1 的 37 人；RIDEXPRG=3 的 21 人保留并标记）。
 3. **变量级 sentinel 映射。** 连续测量变量（BMX*、BPXO*、LBXGH、LBXTC、LBDHDD）在 codebook 中只有 Range of Values 与 Missing，无拒答编码，不做替换。分类变量才映射：DIQ010、HIQ011、HUQ030、BPQ020、BPQ080、SMQ020、DMDEDUC2 的 7、9；DMDMARTZ 的 77、99；PAQ 的 7777、9999。DIQ010=3（borderline，队列 213 人，全文件为 284）与 HUQ030=3 保留为合法类别。
-4. **blanket recode 的损害。** 在队列 5,730 人的 20 个连续候选变量里，blanket recode 误毁 1,496 个有效格。主要变量：BPXODI1 237、BPXODI2 224、BPXODI3 200、BPXOPLS1 157、BPXOPLS2 148、BPXOPLS3 155、RIDAGEYR 65、BPXOSY1 57、BPXOSY2 54、BPXOSY3 56、BMXWAIST 35、LBDHDD 32、BMXHIP 29、LBXGH 29、BMXWT 13、LBXTC 5。全文件核心测量变量为 2,245 格，仅作次要口径。对标签的影响：29 个 HbA1c 取值（28 个 7.0 与 1 个 9.0）全部 ≥6.5，占 721 个 A1c 阳性的 4.0%。但对冻结的 L_comb（971 阳性）只有 6 例翻转，其余 23 例有自报糖尿病兜底。可选中间臂"仅对问卷列做 recode"：队列里问卷真编码仅 57 格（HIQ011 9、HUQ030 1、BPQ020 4、BPQ080 34、SMQ020 7、DMDEDUC2 2），用来说明"清洗收益远小于误伤"。
+4. **blanket recode 的损害。** 在队列 5,730 人的 20 个连续候选变量里，blanket recode 误毁 1,496 个有效格。主要变量：BPXODI1 237、BPXODI2 224、BPXODI3 200、BPXOPLS1 157、BPXOPLS2 148、BPXOPLS3 155、RIDAGEYR 65、BPXOSY1 57、BPXOSY2 54、BPXOSY3 56、BMXWAIST 35、LBDHDD 32、BMXHIP 29、LBXGH 29、BMXWT 13、LBXTC 5。同一 20 个变量在全文件（不限队列）中为 2,472 格，仅作次要口径（core-data 复算；早期草稿的 2,245 口径不明，已弃用）。对标签的影响：29 个 HbA1c 取值（28 个 7.0 与 1 个 9.0）全部 ≥6.5，占 721 个 A1c 阳性的 4.0%。但对冻结的 L_comb（971 阳性）只有 6 例翻转，其余 23 例有自报糖尿病兜底。可选中间臂"仅对问卷列做 recode"：队列里问卷真编码仅 57 格（HIQ011 9、HUQ030 1、BPQ020 4、BPQ080 34、SMQ020 7、DMDEDUC2 2），用来说明"清洗收益远小于误伤"。
 5. **一致性检查。** 用 BMXWT/(BMXHT/100)² 重算 BMI：8,471 个有效值最大绝对差 0.050，无超过 0.1 的。三次读数中 SBP≤DBP 违规为 0；脉压 <20 有 5/8/11 例，>100 有 34 例，只做 flag。WHtR>1 有 4 例。DIQ050 只由 DIQ010=1 的 1,081 人回答；DIQ070 的作答范围是 DIQ010=1（1,081）、DIQ010=3（282）、DIQ010=2 且 DIQ160=1（918），即对未确诊者也提问，必须在 `admiss_reason` 与 note 列标明。
 6. **top-coding。** `age_top`（RIDAGEYR==80，队列 321 例）与 `pir_top`（INDFMPIR==5，1,282 例，22.4%）；INDFMPIR 缺失 734 例（12.8%）另设 `pir_miss`。80 岁组患病率 26.2%，70–79 岁组 25.4%，截断影响小；60+ 年龄标准化不受影响。
 7. **缺失机制。** 已体检成人缺 HbA1c：297/6,064（4.9%）。对缺失指示变量做 `statsmodels` logit（协变量：age10、female、race、pir、pir_miss、bmi、bmi_miss、uninsured、noplace、selfdm、htn）：LLR p=2.8e-11，AUC 0.65；NH Black OR 1.85 (1.35, 2.54)，PIR 每升 1 的 OR 0.82，每 10 岁的 OR 0.89，bmi_miss OR 2.6；自报糖尿病 OR 1.15 (0.82, 1.63)。结论措辞：缺失明显依赖已观测协变量（不是 MCAR）；在这些协变量条件下，没有证据反对 MAR；MNAR 无法由数据检验，交 S9 做 delta 或 IPW 敏感性。不使用 Little 检验。
@@ -643,7 +643,7 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 **L1。** 触发：某变量在队列内缺失 >40%、无变异或属检查后变量。退出标准：通过 change_request 修改 `variable_spec.csv`，合并后记入 decision_register；最多 1 轮，变量范围在冻结 1 时冻结。已知触发：无家族史与妊娠糖尿病条目，ADA 风险分只能简化复现。
 
 ### Git 提交点
-1. `fix(S3): repair XPT float artefacts while preserving NaN` — `fix_xpt` 实测 13,676 格（11 个文件）、零权重转 NaN、漏斗断言 11,933 → 5,730
+1. `fix(S3): repair XPT float artefacts while preserving NaN` — `fix_xpt` 实测 13,676 格（9 个文件）、零权重转 NaN、漏斗断言 11,933 → 5,730
 2. `feat(S3): add per-variable sentinel recoding from codebooks` — 分类变量 7/9、77/99、7777/9999 映射，DIQ010=3 与 HUQ030=3 保留，输出 `sentinel_audit.csv`
 3. `analysis(S3): quantify blanket recode damage on the cohort` — 1,496 格误毁、29/721、6/971 与"仅问卷列"中间臂（57 格）
 4. `analysis(S3): add consistency, missingness, outlier and quality audits` — BMI 重算、top-coding、缺失 logit（OR 表）、三层异常值规则与 IQR 围栏危害图、`quality_matrix.csv`，DR-S3-01 到 DR-S3-06
