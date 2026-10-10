@@ -3,7 +3,7 @@
     "section": "S8",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T19:24:45+00:00"
+    "written_utc": "2026-10-10T19:27:21+00:00"
   },
   "mode": "FINAL",
   "cv": "5x5",
@@ -2548,7 +2548,7 @@
         "hi": 0.00137,
         "se": 0.00076,
         "interval": "corrected_t",
-        "mdd": 0.00213,
+        "mdd": 0.00223,
         "arm": "S+RW(race)",
         "w_min": 0.69871,
         "w_max": 1.16139,
@@ -2584,7 +2584,7 @@
         "hi": 0.0007,
         "se": 0.00029,
         "interval": "corrected_t",
-        "mdd": 0.00082,
+        "mdd": 0.00085,
         "arm": "S+RW(insurance)",
         "w_min": 0.94914,
         "w_max": 1.35602,
@@ -2620,7 +2620,7 @@
         "hi": 0.00128,
         "se": 0.00072,
         "interval": "corrected_t",
-        "mdd": 0.002,
+        "mdd": 0.00209,
         "arm": "S+RW(low_access)",
         "w_min": 0.67801,
         "w_max": 1.67695,
@@ -3345,5 +3345,5 @@
     "figures/S8_group_calibration.png",
     "figures/S8_tradeoff.png"
   ],
-  "runtime_seconds": 86.02349996566772
+  "runtime_seconds": 56.0161235332489
 }

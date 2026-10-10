@@ -622,7 +622,8 @@ S8["access_audit"] = dict(coefs=ACC.round(5).to_dict("records"), diffs=ACCD.roun
 # on top of the survey weights of arm S, so the comparison with S is paired on the same folds. Three versions are run:
 # race (pre-specified; the plan expected weights close to 1 and a one-line null result), and – as extension items –
 # insurance and low access, the attributes linked to the diagnosis gap. ΔAUC uses the locked
-# S7 engine (E-ALL: the wider of the corrected-t and paired-bootstrap intervals; E-SCREEN: paired bootstrap); the gap
+# S7 engine (E-ALL: fold-mean paired difference with the wider of the corrected-t and paired-bootstrap intervals;
+# E-SCREEN: pooled-OOF difference with its paired bootstrap); the gap
 # changes are paired bootstrap differences of EOD with the threshold re-estimated for each arm.
 
 # %%
@@ -640,19 +641,23 @@ def fold_auc(oof, pop="E-ALL"):
     return pd.Series(out)
 
 def compare_auc(oof_a, oof_b, pop="E-ALL", tag=""):
-    """Paired ΔAUC A - B: E-ALL wider of corrected t and paired bootstrap; E-SCREEN bootstrap only (locked S7 rules)."""
+    """Paired ΔAUC A - B with the S7 engine: on E-ALL the estimate is the fold-mean paired difference and the interval the
+    wider of corrected t and paired bootstrap; on E-SCREEN the pooled-OOF difference with its paired bootstrap interval."""
     yy, m = pop_of(pop)
     pa, pb = ek.mean_oof(oof_a, n), ek.mean_oof(oof_b, n)
     bs = ek.paired_bootstrap(yy, pa, pb, "roc_auc", n_boot=C.N_BOOT, eval_mask=m,
                              seed=ek.derive_seed(C.SEED_MASTER, "S8", "dauc", tag, pop))
     row = dict(pop=pop, diff_pooled=bs["diff"], boot_lo=bs["ci_low"], boot_hi=bs["ci_high"])
     est, lo, hi, se, interval = bs["diff"], bs["ci_low"], bs["ci_high"], bs["se"], "bootstrap"
+    mdd = (sstats.norm.ppf(0.975) + sstats.norm.ppf(0.8)) * se
     if pop == "E-ALL":
         ct = ek.corrected_t((fold_auc(oof_a) - fold_auc(oof_b)).to_numpy(), n_train_fold, n_test_fold)
         row.update(t_lo=ct["ci_low"], t_hi=ct["ci_high"])
+        est = ct["mean"]
         if ct["ci_high"] - ct["ci_low"] >= hi - lo:
-            est, lo, hi, se, interval = ct["mean"], ct["ci_low"], ct["ci_high"], ct["se_corr"], "corrected_t"
-    row.update(est=est, lo=lo, hi=hi, se=se, interval=interval, mdd=(sstats.norm.ppf(0.975) + sstats.norm.ppf(0.8)) * se)
+            lo, hi, se, interval = ct["ci_low"], ct["ci_high"], ct["se_corr"], "corrected_t"
+        mdd = (sstats.t.ppf(0.975, ct["df"]) + sstats.t.ppf(0.80, ct["df"])) * se
+    row.update(est=est, lo=lo, hi=hi, se=se, interval=interval, mdd=mdd)
     return row
 
 RW_TARGET = {"race": "NH Asian", "insurance": "uninsured", "low_access": "low access"}
