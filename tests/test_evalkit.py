@@ -389,6 +389,81 @@ def test_combine_verdicts():
         pass
 
 
+# ----------------------------------------------------------------------------- resampling diagnostics
+def test_coef_bootstrap():
+    rng = np.random.default_rng(2)
+    n = 800
+    x0 = rng.normal(size=n)
+    X = pd.DataFrame({"strong": x0, "twin": x0 + rng.normal(scale=0.05, size=n), "noise": rng.normal(size=n)})
+    y = (rng.random(n) < 1 / (1 + np.exp(-(-1.0 + 1.0 * x0)))).astype(int)
+    t0 = time.time()
+    res = ek.coef_bootstrap(lr_pipe, X, y, n_boot=60, seed=1)
+    assert time.time() - t0 < 10
+    coefs, summ = res                                  # unpackable
+    assert list(coefs.columns) == ["strong", "twin", "noise"] and coefs.shape == (60, 3)
+    assert list(summ.index) == ["strong", "twin", "noise"]
+    assert set(summ.columns) >= {"coef", "mean", "sd", "q_low", "q_high", "sign_flip_rate", "ci_excludes_0"}
+    full = lr_pipe().fit(X, y)[-1].coef_.ravel()
+    assert np.allclose(summ["coef"], full)
+    assert (summ["sd"] > 0).all()
+    # a near-duplicate column inflates the bootstrap SD of the shared signal (collinearity);
+    # a pure-noise column flips sign often and its interval covers 0
+    alone = ek.coef_bootstrap(lr_pipe, X[["strong", "noise"]], y, n_boot=60, seed=1).summary
+    assert summ.loc["strong", "sd"] > 1.3 * alone.loc["strong", "sd"]
+    assert summ.loc["noise", "sign_flip_rate"] > 0.15 and not summ.loc["noise", "ci_excludes_0"]
+    assert alone.loc["strong", "sign_flip_rate"] == 0.0 and alone.loc["strong", "ci_excludes_0"]
+    # reproducible
+    res2 = ek.coef_bootstrap(lr_pipe, X, y, n_boot=60, seed=1)
+    assert np.array_equal(res2.coefs.to_numpy(), coefs.to_numpy())
+    # with a one-hot encoder names come from get_feature_names_out
+    from sklearn.compose import make_column_transformer
+    from sklearn.preprocessing import OneHotEncoder
+    X2 = X.assign(grp=rng.choice(["a", "b", "c"], n))
+    mk = lambda: make_pipeline(make_column_transformer((StandardScaler(), ["strong", "noise"]),
+                                                       (OneHotEncoder(drop="first"), ["grp"])), LogisticRegression())
+    r2 = ek.coef_bootstrap(mk, X2, y, n_boot=10, seed=3)
+    assert len(r2.summary) == 4 and any("grp_b" in s for s in r2.summary.index)
+    # a non-linear model is rejected
+    from sklearn.tree import DecisionTreeClassifier
+    try:
+        ek.coef_bootstrap(lambda: DecisionTreeClassifier(max_depth=2), X, y, n_boot=2, seed=1)
+        raise AssertionError("tree accepted")
+    except TypeError:
+        pass
+
+
+def test_permutation_auc():
+    from sklearn.model_selection import permutation_test_score
+    X, y = synth(700, seed=11)
+    folds = ek.make_folds(y, y, n_splits=5, n_repeats=1, seed=4, path=Path(tempfile.mkdtemp()) / "f.npz")
+    res = ek.permutation_auc(lr_pipe, X, y, folds, n_perm=20, seed=1)
+    # observed statistic equals sklearn's (mean per-fold AUC on the same folds)
+    sk_score, _, _ = permutation_test_score(lr_pipe(), X, y, cv=list(folds), scoring="roc_auc", n_permutations=2, random_state=0)
+    assert abs(res["observed"] - sk_score) < 1e-10
+    assert res["observed"] > 0.75 and len(res["null"]) == 20
+    assert abs(res["null_mean"] - 0.5) < 0.03 and res["null_sd"] > 0
+    assert res["n_ge"] == 0 and res["p_value"] == 1 / 21          # (C+1)/(n+1)
+    # no signal -> p not small and observed close to 0.5
+    Xn, yn = synth(700, seed=12, signal=0.0)
+    folds_n = ek.make_folds(yn, yn, n_splits=5, n_repeats=1, seed=4, path=Path(tempfile.mkdtemp()) / "f.npz")
+    rn = ek.permutation_auc(lr_pipe, Xn, yn, folds_n, n_perm=20, seed=1)
+    assert rn["p_value"] > 0.05 and abs(rn["observed"] - 0.5) < 0.06
+    # reproducible; weights stay attached to rows and are accepted
+    again = ek.permutation_auc(lr_pipe, X, y, folds, n_perm=20, seed=1)
+    assert np.array_equal(again["null"], res["null"])
+    w = ek.permutation_auc(lr_pipe, X, y, folds, n_perm=3, seed=1,
+                           fit_params={"logisticregression__sample_weight": np.ones(len(y))})
+    assert abs(w["observed"] - res["observed"]) < 1e-8
+
+
+def test_parallel_matches_serial():
+    X, y = synth(400, seed=13)
+    folds = ek.make_folds(y, y, n_splits=3, n_repeats=1, seed=4, path=Path(tempfile.mkdtemp()) / "f.npz")
+    a = ek.permutation_auc(lr_pipe, X, y, folds, n_perm=4, seed=2)
+    b = ek.permutation_auc(lr_pipe, X, y, folds, n_perm=4, seed=2, n_jobs=2)
+    assert np.allclose(a["null"], b["null"])
+
+
 # ----------------------------------------------------------------------------- runner
 def main():
     tests = [(k, v) for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

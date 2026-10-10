@@ -56,7 +56,7 @@ __all__ = [
     "derive_seed", "make_holdout", "make_folds", "Folds", "cv_predict", "mean_oof",
     "metric_suite", "recall_at_specificity", "fold_metrics", "repeat_metrics",
     "paired_fold_diffs", "corrected_t", "paired_bootstrap", "verdict",
-    "combine_verdicts", "coef_bootstrap", "permutation_auc",
+    "combine_verdicts", "coef_bootstrap", "CoefBootstrap", "permutation_auc",
 ]
 
 
@@ -698,3 +698,127 @@ def combine_verdicts(verdicts: Sequence[str]) -> str:
     if len(decisive) >= 2:
         return "mixed"
     return "inconclusive"
+
+
+# =============================================================================
+# 5. Resampling diagnostics: coefficient bootstrap and permutation null
+# =============================================================================
+CoefBootstrap = namedtuple("CoefBootstrap", ["coefs", "summary"])
+
+
+def _feature_names(model, X) -> list[str]:
+    try:
+        return [str(s) for s in model[:-1].get_feature_names_out()]
+    except Exception:  # noqa: BLE001 - single-step pipeline or estimator without names
+        pass
+    if hasattr(X, "columns"):
+        return [str(c) for c in X.columns]
+    return [f"x{i}" for i in range(np.asarray(X).shape[1])]
+
+
+def _final_coef(model) -> np.ndarray:
+    est = model[-1] if hasattr(model, "steps") else model
+    if not hasattr(est, "coef_"):
+        raise TypeError(f"{type(est).__name__} has no coef_ (coef_bootstrap needs a linear model)")
+    return np.asarray(est.coef_, dtype=float).ravel()
+
+
+def _fit_coef(make_pipe, X, y, idx, fit_params, n) -> tuple[list[str], np.ndarray]:
+    model = clone(make_pipe())
+    model.fit(_take(X, idx), np.asarray(y)[idx], **_slice_fit_params(fit_params, idx, n))
+    return _feature_names(model, X), _final_coef(model)
+
+
+def coef_bootstrap(make_pipe: Callable, X, y, *, n_boot: int = C.N_BOOT_COEF, seed: int = C.SEED_MASTER,
+                   fit_params: dict | None = None, n_jobs: int = 1, alpha: float = 0.05) -> CoefBootstrap:
+    """Nonparametric bootstrap of the coefficients of a linear pipeline (stability diagnostic).
+
+    Each of ``n_boot`` replicates draws n rows with replacement (``np.random.default_rng(seed)``),
+    refits the WHOLE pipeline (imputation, scaling, encoding, model) on the resample and records
+    the coefficients of the final estimator under the feature names given by
+    ``pipeline[:-1].get_feature_names_out()``.  Columns absent in a resample (rare dummy levels)
+    are NaN and ignored in the summaries.  ``fit_params`` (e.g. sample weights) are sliced to the
+    resampled rows.  Efron & Tibshirani (1993), ch. 6.
+
+    Returns ``CoefBootstrap(coefs, summary)``:
+
+    * ``coefs``   - DataFrame (n_boot x n_features) of coefficients;
+    * ``summary`` - DataFrame indexed by feature with ``coef`` (full-data fit), ``mean``, ``sd``
+      (bootstrap standard error), ``q_low``/``q_high`` (percentile CI), ``sign_flip_rate`` (share
+      of replicates whose sign differs from the full-data coefficient; 0 if that is exactly 0),
+      ``ci_excludes_0`` and ``n_valid``.
+
+    A large ``sd`` ratio between arms (``config.SESOI['coef_sd_ratio']`` = 2) or a high
+    ``sign_flip_rate`` indicates collinearity-driven instability.  Not a hypothesis test.
+    """
+    from joblib import Parallel, delayed
+
+    n = len(y)
+    names, full = _fit_coef(make_pipe, X, y, np.arange(n), fit_params, n)
+    idx = np.random.default_rng(seed).integers(0, n, (n_boot, n))
+    y_arr = np.asarray(y)
+
+    def one(b):
+        if len(np.unique(y_arr[idx[b]])) < 2:
+            return None
+        nm, co = _fit_coef(make_pipe, X, y, idx[b], fit_params, n)
+        return pd.Series(co, index=nm).reindex(names).to_numpy()
+
+    rows = Parallel(n_jobs=n_jobs)(delayed(one)(b) for b in range(n_boot)) if n_jobs != 1 else [one(b) for b in range(n_boot)]
+    mat = np.vstack([r for r in rows if r is not None])
+    coefs = pd.DataFrame(mat, columns=names)
+    sign = np.sign(full)
+    flips = ((np.sign(mat) != sign) & (sign != 0)).sum(axis=0) / np.maximum((~np.isnan(mat)).sum(axis=0), 1)
+    lo, hi = np.nanpercentile(mat, [100 * alpha / 2, 100 * (1 - alpha / 2)], axis=0)
+    summary = pd.DataFrame({
+        "coef": full, "mean": np.nanmean(mat, axis=0), "sd": np.nanstd(mat, axis=0, ddof=1),
+        "q_low": lo, "q_high": hi, "sign_flip_rate": flips,
+        "ci_excludes_0": (lo > 0) | (hi < 0), "n_valid": (~np.isnan(mat)).sum(axis=0),
+    }, index=pd.Index(names, name="feature"))
+    return CoefBootstrap(coefs, summary)
+
+
+def _mean_cv_auc(make_pipe, X, y, folds, fit_params, y_score=None) -> float:
+    """Mean over folds of the per-fold ROC-AUC (labels ``y_score`` used for scoring, default ``y``)."""
+    n = len(y)
+    y = np.asarray(y)
+    ys = y if y_score is None else np.asarray(y_score)
+    aucs = []
+    for tr, te in folds:
+        model = clone(make_pipe())
+        model.fit(_take(X, tr), y[tr], **_slice_fit_params(fit_params, tr, n))
+        aucs.append(roc_auc_score(ys[te], _positive_proba(model, _take(X, te))))
+    return float(np.mean(aucs))
+
+
+def permutation_auc(make_pipe: Callable, X, y, folds: Sequence, *, n_perm: int = C.N_PERM,
+                    seed: int = C.SEED_MASTER, fit_params: dict | None = None, n_jobs: int = 1) -> dict:
+    """Label-permutation null distribution of the mean cross-validated ROC-AUC (negative control).
+
+    Semantics follow ``sklearn.model_selection.permutation_test_score`` (Ojala & Garriga 2010):
+    the *observed* statistic is the mean over all folds of the per-fold AUC; each of ``n_perm``
+    replicates permutes ``y`` completely (training AND scoring labels, features and sample
+    weights stay with their rows), refits on the SAME folds and records the mean per-fold AUC.
+    Under H0 (no feature-label association, no procedural leakage) the null is centred on 0.5;
+    a null mean outside [0.495, 0.505] signals a procedural problem (S9 acceptance criterion).
+
+    p-value = (C + 1) / (n_perm + 1) with C = #{null >= observed} (Phipson & Smyth 2010: never 0).
+
+    Returns: ``observed``, ``null`` (array), ``null_mean``, ``null_sd``, ``p_value``, ``n_perm``,
+    ``n_ge`` (= C).  Cost: ``n_perm`` x ``len(folds)`` model fits.
+    """
+    from joblib import Parallel, delayed
+
+    y = np.asarray(y)
+    rng = np.random.default_rng(seed)
+    perms = [rng.permutation(len(y)) for _ in range(n_perm)]
+    observed = _mean_cv_auc(make_pipe, X, y, folds, fit_params)
+
+    def one(perm):
+        yp = y[perm]
+        return _mean_cv_auc(make_pipe, X, yp, folds, fit_params, y_score=yp)
+
+    null = np.array(Parallel(n_jobs=n_jobs)(delayed(one)(p) for p in perms) if n_jobs != 1 else [one(p) for p in perms])
+    n_ge = int((null >= observed).sum())
+    return dict(observed=observed, null=null, null_mean=float(null.mean()), null_sd=float(null.std(ddof=1)) if n_perm > 1 else float("nan"),
+                p_value=(n_ge + 1) / (n_perm + 1), n_perm=int(n_perm), n_ge=n_ge)
