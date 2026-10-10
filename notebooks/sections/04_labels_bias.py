@@ -732,13 +732,15 @@ print(f"documented response rates: interview {pct(RESPONSE['interview_unweighted
 
 merged = NIO.load_merged()
 merged.attrs = {}
-adults = merged[merged["RIDAGEYR"] >= C.ADULT_MIN_AGE].copy()
-adults["self_dm"] = adults["DIQ010"].eq(1).astype(float).where(adults["DIQ010"].notna())
-io_mask = adults["RIDSTATR"].eq(1).to_numpy()
-a1c_mask = (adults["RIDSTATR"].eq(2) & adults["LBXGH"].notna()).to_numpy()
-p_io = S.weighted_prop(adults, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=io_mask)
-p_a1c = S.weighted_prop(adults, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=a1c_mask)
-rd_sel = risk_difference(adults, "self_dm", a1c_mask, io_mask, weight=C.WEIGHT_INTERVIEW)
+# Domains are masks on the full 11,933-row design (weights zeroed outside), never row subsets, so every
+# jackknife replicate keeps all strata and PSUs.
+merged["self_dm"] = merged["DIQ010"].eq(1).astype(float).where(merged["DIQ010"].notna())
+adult = (merged["RIDAGEYR"] >= C.ADULT_MIN_AGE).to_numpy()
+io_mask = adult & merged["RIDSTATR"].eq(1).to_numpy()
+a1c_mask = adult & (merged["RIDSTATR"].eq(2) & merged["LBXGH"].notna()).to_numpy()
+p_io = S.weighted_prop(merged, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=io_mask)
+p_a1c = S.weighted_prop(merged, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=a1c_mask)
+rd_sel = risk_difference(merged, "self_dm", a1c_mask, io_mask, weight=C.WEIGHT_INTERVIEW)
 print(f"self-reported diabetes (WTINT2YR): interview-only adults {kg_text(p_io)}")
 print(f"                                   adults with HbA1c   {kg_text(p_a1c)}")
 print(f"difference with HbA1c - interview-only: {100 * rd_sel['est']:+.1f} pp ({100 * rd_sel['ci_low']:.1f}, {100 * rd_sel['ci_high']:.1f})")
@@ -798,14 +800,23 @@ register("DR-S5-07", "representation",
 # %%
 # Missingness by race on all examined adults (the S3 definition); Manski bounds below on the cohort universe
 # (examined, non-pregnant adults).
-exa = adults[adults["RIDSTATR"].eq(2)].copy()
-exa["a1c_missing"] = exa["LBXGH"].isna().astype(float)
-exa["race3"] = exa["RIDRETH3"].map(RACE)
-miss = (exa.groupby("race3")["a1c_missing"].agg(["mean", "size", "sum"])
-        .rename(columns={"mean": "missing_share", "size": "examined", "sum": "missing"}))
-miss["w_missing_share"] = [np.average(g["a1c_missing"], weights=g[C.WEIGHT_MEC]) for _, g in exa.groupby("race3")]
-ex = exa[~exa["RIDEXPRG"].eq(1)].copy()
+merged["a1c_missing"] = merged["LBXGH"].isna().astype(float)
+merged["race3"] = merged["RIDRETH3"].map(RACE)
+exam = adult & merged["RIDSTATR"].eq(2).to_numpy()                      # all examined adults (S3 definition)
+coh_univ = exam & ~merged["RIDEXPRG"].eq(1).to_numpy()                   # cohort universe: examined, not pregnant
+miss_rows = []
+for g in sorted(merged.loc[exam, "race3"].unique()):
+    m = exam & merged["race3"].eq(g).to_numpy()
+    w = S.weighted_prop(merged, "a1c_missing", weight=C.WEIGHT_MEC, domain=m)
+    miss_rows.append({"race3": g, "examined": int(m.sum()), "missing": int(merged.loc[m, "a1c_missing"].sum()),
+                      "missing_share": merged.loc[m, "a1c_missing"].mean(), "w_missing_share": w["est"],
+                      "kg_low": w["kg_low"], "kg_high": w["kg_high"], "df": w["df"]})
+miss = pd.DataFrame(miss_rows).set_index("race3")
 print(miss.round(3))
+rd_miss = risk_difference(merged, "a1c_missing", exam & merged["race3"].eq("NH Black").to_numpy(),
+                          exam & merged["race3"].eq("NH White").to_numpy(), weight=C.WEIGHT_MEC)
+print(f"missing HbA1c, NH Black - NH White (WTMEC2YR, JK): {100 * rd_miss['est']:+.1f} pp "
+      f"({100 * rd_miss['ci_low']:.1f}, {100 * rd_miss['ci_high']:.1f})")
 close(miss.loc["NH Black", "missing_share"], 0.093, 0.0015, "Black missing"); close(miss.loc["NH White", "missing_share"], 0.040, 0.0015, "White missing")
 
 prev_mec = np.average(d["L_comb"], weights=d[C.WEIGHT_MEC])
@@ -814,22 +825,25 @@ close(prev_mec, 0.139, 0.0015, "MEC-weighted prevalence")
 
 # Manski bounds on L_comb prevalence among examined adults (WTMEC2YR): missing HbA1c rows with self-reported
 # diabetes are known positives; the rest could be anything.
-ex["known_pos"] = (ex["LBXGH"].ge(C.HBA1C_DIABETES) | ex["DIQ010"].eq(1)).astype(float)
-ex["unknown"] = (ex["LBXGH"].isna() & ~ex["DIQ010"].eq(1)).astype(float)
+known_pos = (merged["LBXGH"].ge(C.HBA1C_DIABETES) | merged["DIQ010"].eq(1)).astype(float).to_numpy()
+unknown = (merged["LBXGH"].isna() & ~merged["DIQ010"].eq(1)).astype(float).to_numpy()
+observed = merged["LBXGH"].notna().to_numpy()
+w_mec = merged[C.WEIGHT_MEC].fillna(0).to_numpy()
 man = []
-for g, gg in [("all", ex), *ex.groupby("race3")]:
-    w = gg[C.WEIGHT_MEC].to_numpy()
-    lo = np.average(gg["known_pos"], weights=w)
-    unk = np.average(gg["unknown"], weights=w)
-    obs = gg["LBXGH"].notna().to_numpy()
-    man.append({"group": g, "observed_prev": np.average(gg.loc[obs, "known_pos"], weights=w[obs]),
-                "lower": lo, "upper": lo + unk, "width": unk, "naive_width_m": np.average(gg["a1c_missing"], weights=w)})
+for g in ["all", *sorted(merged.loc[coh_univ, "race3"].unique())]:
+    m = coh_univ if g == "all" else coh_univ & merged["race3"].eq(g).to_numpy()
+    lo = np.average(known_pos[m], weights=w_mec[m])
+    unk = np.average(unknown[m], weights=w_mec[m])
+    man.append({"group": g, "observed_prev": np.average(known_pos[m & observed], weights=w_mec[m & observed]),
+                "lower": lo, "upper": lo + unk, "width": unk,
+                "naive_width_m": np.average(merged["a1c_missing"].to_numpy()[m], weights=w_mec[m])})
 manski = pd.DataFrame(man).set_index("group")
 print("\nManski bounds for L_comb prevalence (WTMEC2YR, examined non-pregnant adults)")
 print(manski.round(3))
 miss.to_csv(OUT / "a1c_missingness.csv")
 manski.to_csv(OUT / "manski_bounds.csv")
-RES["missingness"] = {"by_race": miss.to_dict("index"), "prev_mec": prev_mec, "prev_ph": w_prev["est"],
+RES["missingness"] = {"by_race": miss.to_dict("index"),
+                      "black_minus_white_rd": {k: rd_miss[k] for k in ("est", "ci_low", "ci_high", "df")}, "prev_mec": prev_mec, "prev_ph": w_prev["est"],
                       "manski": manski.to_dict("index")}
 register("DR-S5-08", "missingness",
          "HbA1c is missing more often for NH Black adults; WTPH2YR adjustment changes prevalence by 0.1 pp",
@@ -840,8 +854,8 @@ register("DR-S5-08", "missingness",
          "Impute HbA1c (would impute the label); ignore missingness")
 
 # %% [markdown]
-# **So what.** HbA1c is missing for 9.3 % of examined NH Black adults versus 4.0 % of NH White adults, so the
-# label is less often observed in one group. The phlebotomy weights already adjust for blood-draw non-response:
+# **So what.** HbA1c is missing for 9.3 % of examined NH Black adults versus 4.0 % of NH White adults (weighted
+# difference +4.9 pp, jackknife CI 2.9–6.9), so the label is less often observed in one group. The phlebotomy weights already adjust for blood-draw non-response:
 # prevalence moves from 13.9 % (MEC weight) to 14.0 % (WTPH2YR). Without any assumption on the missing values the
 # overall `L_comb` prevalence among examined non-pregnant adults lies between 13.9 % and 18.1 % (width 0.042,
 # narrower than the naive 0.049 because missing-HbA1c adults who self-report diabetes are known positives); for
