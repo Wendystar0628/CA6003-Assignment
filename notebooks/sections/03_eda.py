@@ -111,8 +111,8 @@ rule = ("Rule: when variables from several components are combined, use the weig
         "subsample involved (fasting < phlebotomy < MEC < interview).")
 md = ["# Weights map (S4)", "", md_table(WEIGHTS_MAP), "", rule, "",
       f"Design: {n_strata} strata x 2 PSUs = {n_psu} PSUs; design df = {DF_DESIGN}. "
-      "Variance: delete-one-PSU jackknife (JKn); domains by zeroing weights; domain df = number of "
-      "strata containing domain observations; df < 8 flagged as unstable (NCHS)."]
+      "Variance: delete-one-PSU jackknife (JKn); domains by zeroing weights; domain df = (PSUs containing "
+      "the domain) - (strata containing the domain) (NCHS rule); df < 8 flagged for review (NCHS)."]
 (S4_DIR / "weights_map.md").write_text("\n".join(md) + "\n", encoding="utf-8")
 WEIGHTS_MAP.to_csv(S4_DIR / "weights_map.csv", index=False)
 OUT["design"] = {"n_strata": n_strata, "n_psu": n_psu, "df": DF_DESIGN,
@@ -132,7 +132,8 @@ OUT["design"] = {"n_strata": n_strata, "n_psu": n_psu, "df": DF_DESIGN,
 # **Why.** The jackknife is the backbone of every interval in the project, so it is checked twice
 # before use: (a) against an independent variance method – Taylor linearisation of the ratio
 # estimator – and (b) on domains, where the correct approach is to zero the weights outside the
-# domain rather than drop rows, and where the degrees of freedom shrink to the number of strata
+# domain rather than drop rows, and where the degrees of freedom shrink to the number of PSUs minus
+# the number of strata
 # that contain the domain.
 
 # %%
@@ -171,18 +172,21 @@ assert np.allclose(checks.ratio, 1, atol=0.02), "jackknife and Taylor SEs disagr
 # zero-weighting vs dropping rows: identical point estimate, but dropping hides which strata are empty
 drop = coh[undx_dom & asian]
 print(f"\nAsian undiagnosed domain: {len(drop)} rows in {drop[C.STRATA].nunique()} strata / "
-      f"{drop[[C.STRATA, C.PSU]].drop_duplicates().shape[0]} PSUs -> domain df = "
-      f"{S.domain_df(coh, undx_dom & asian)} (flag df<8: {S.domain_df(coh, undx_dom & asian) < C.NCHS_MIN_DF})")
+      f"{drop[[C.STRATA, C.PSU]].drop_duplicates().shape[0]} PSUs -> domain df = PSUs - strata = "
+      f"{S.domain_df(coh, undx_dom & asian)} (flag df<8: {S.domain_df(coh, undx_dom & asian) < C.NCHS_MIN_DF}); "
+      f"a strata-count approximation would give {S.domain_df(coh, undx_dom & asian, method='strata')}")
 OUT["variance_check"] = checks.drop(columns="flags").to_dict("records")
 OUT["asian_undx_domain_df"] = S.domain_df(coh, undx_dom & asian)
 
 # %% [markdown]
 # **So what.** The jackknife and Taylor standard errors agree to within 2 % on the full sample and on
 # small domains (the ratio column), so the jackknife can be trusted for non-linear statistics where no
-# Taylor formula is at hand (standardised differences, κ, AUC). The Asian-undiagnosed domain lives in
-# only 8 strata: its df is 8, right at the NCHS instability threshold, which is why S5 reports it as
-# exploratory. Dropping the rows would have given the same point estimate but silently treated the
-# empty strata as if they did not exist in the design.
+# Taylor formula is at hand (standardised differences, κ, AUC). The Asian-undiagnosed domain (40
+# adults) touches 8 strata but only 12 PSUs, so in four strata it occupies a single PSU, which carries
+# no variance information. Its degrees of freedom are 12 − 8 = 4, below the NCHS threshold of 8:
+# the estimate is flagged for review, and its t-based and Korn–Graubard intervals widen accordingly.
+# Dropping the rows would have given the same point estimate but hidden which parts of the design
+# the domain actually occupies.
 
 # %% [markdown]
 # ## 4.3 External anchor: NCHS Data Brief 516
@@ -314,7 +318,7 @@ reg("DR-S4-01", "method", "NHANES 2021-23 has 15 strata x 2 PSUs (df = 15); ever
     "jackknife SE agrees with Taylor linearisation (ratio within 2%).",
     "results/S4/weights_map.md; §4.2", f"df = {DF_DESIGN}; JK/Taylor SE ratio {checks.ratio.min():.3f}-{checks.ratio.max():.3f}",
     "WTPH2YR for all cohort analyses and the weighted ablation; WTSAF2YR for fasting analytes and DB516; "
-    "delete-one-PSU jackknife with domain df = strata containing the domain; NCHS flags (n, n_eff < 30, "
+    "delete-one-PSU jackknife with NCHS domain df (PSUs - strata containing the domain); NCHS flags (n, n_eff < 30, "
     "KG width >= 0.30, df < 8).",
     "Unweighted analysis (describes the sample, not the population); WTMEC2YR for HbA1c (ignores blood-draw "
     "non-response); Taylor-only variance (no formula for kappa/AUC/standardised differences).",

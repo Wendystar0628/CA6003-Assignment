@@ -18,9 +18,9 @@ empty-in-a-PSU domains are handled correctly.
 Presentation follows the NCHS data presentation standards for proportions
 (Parker et al. 2017): Korn-Graubard intervals with a degrees-of-freedom
 adjusted effective sample size, and an estimate is flagged when n < 30, the
-effective n < 30, the absolute CI width >= 0.30 or the df < 8. Domain df follow
-the project rule (process doc §7.1): the number of strata that contain domain
-observations.
+effective n < 30, the absolute CI width >= 0.30 or the df < 8. Domain degrees of
+freedom follow the NCHS rule: (number of PSUs containing domain observations) -
+(number of strata containing domain observations).
 
 Age standardisation uses the US 2000 standard population collapsed to three
 bands (20-39, 40-59, 60+), the NCHS convention for adult diabetes estimates.
@@ -91,14 +91,25 @@ def design_df(df: pd.DataFrame, strata: str = C.STRATA, psu: str = C.PSU) -> int
     return int(n_psu - df[strata].nunique())
 
 
-def domain_df(df: pd.DataFrame, mask, strata: str = C.STRATA, psu: str = C.PSU) -> int:
-    """Domain degrees of freedom = number of strata containing domain observations (doc §7.1).
+def domain_df(df: pd.DataFrame, mask, strata: str = C.STRATA, psu: str = C.PSU, *,
+              method: str = "nchs") -> int:
+    """Degrees of freedom for a domain (subpopulation).
 
-    With two PSUs per stratum this equals the NCHS rule (#PSU - #strata containing
-    the domain) whenever the domain occurs in both PSUs of each stratum it touches.
+    method="nchs" (default): #PSUs containing domain observations minus #strata
+    containing domain observations (NCHS / NHANES reliability guidance). A stratum in
+    which the domain occupies only one of its two PSUs therefore adds no df.
+    method="strata": number of strata containing domain observations (a simpler
+    approximation that equals the NCHS rule only when the domain occupies both PSUs
+    of every stratum it touches; kept for comparison).
     """
     m = _as_mask(df, mask)
-    return int(df.loc[m, strata].nunique())
+    sub = df.loc[m, [strata, psu]]
+    n_strata = sub[strata].nunique()
+    if method == "strata":
+        return int(n_strata)
+    if method != "nchs":
+        raise ValueError(f"unknown method {method!r}")
+    return int(sub.drop_duplicates().shape[0] - n_strata)
 
 
 def replicate_weights(df: pd.DataFrame, weight: str | np.ndarray, *, strata: str = C.STRATA,

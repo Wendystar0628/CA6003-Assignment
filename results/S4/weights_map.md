@@ -9,4 +9,4 @@
 
 Rule: when variables from several components are combined, use the weight of the smallest subsample involved (fasting < phlebotomy < MEC < interview).
 
-Design: 15 strata x 2 PSUs = 30 PSUs; design df = 15. Variance: delete-one-PSU jackknife (JKn); domains by zeroing weights; domain df = number of strata containing domain observations; df < 8 flagged as unstable (NCHS).
+Design: 15 strata x 2 PSUs = 30 PSUs; design df = 15. Variance: delete-one-PSU jackknife (JKn); domains by zeroing weights; domain df = (PSUs containing the domain) - (strata containing the domain) (NCHS rule); df < 8 flagged for review (NCHS).
