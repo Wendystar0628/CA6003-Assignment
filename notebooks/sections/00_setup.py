@@ -117,7 +117,7 @@ print(f"SEED_MASTER = {C.SEED_MASTER}; {len(STREAMS)} named streams; {len(robust
 # %% [markdown]
 # ## Data integrity
 #
-# **Why.** The 16 NHANES files in `data/nhanes_2021_2023/raw/` are the unmodified CDC downloads (2026-10-10). `MANIFEST.sha256` stores one SHA-256 per file. Re-hashing at the start of the notebook proves that the analysis starts from the published data: a changed byte (a text editor re-saving a file, a line-ending conversion, a truncated download) would change the hash. `.gitattributes` marks `*.xpt` as binary for the same reason. The check is done twice, independently: here with `hashlib`, and (when available) through the project loader.
+# **Why.** The 16 NHANES files in `data/nhanes_2021_2023/raw/` are the unmodified CDC downloads (2026-10-10). `MANIFEST.sha256` stores one SHA-256 per file. Re-hashing at the start of the notebook proves that the analysis starts from the published data: a changed byte (a text editor re-saving a file, a line-ending conversion, a truncated download) would change the hash. `.gitattributes` marks `*.xpt` as binary for the same reason. The check is done twice, independently: here with `hashlib`, and through the project loader.
 
 # %%
 def read_manifest(path):
@@ -160,13 +160,10 @@ print(f"{int(integrity['match'].sum())}/{len(integrity)} files match MANIFEST.sh
       f"total {integrity['size_kb'].sum() / 1024:.1f} MB; every file has a CDC codebook")
 
 # %%
-# Second, independent route through the project loader (skipped until nhanes_io exists).
-try:
-    from src import nhanes_io
-    status = nhanes_io.ensure_raw_data(download=False)
-    print("nhanes_io.ensure_raw_data(download=False) ->", status if len(str(status)) < 300 else "ok")
-except (ImportError, AttributeError) as exc:
-    print("project loader not available yet, hashlib check above is the authority:", type(exc).__name__)
+# Second, independent route through the project loader.
+from src import nhanes_io
+status = nhanes_io.ensure_raw_data(download=False)
+print("nhanes_io.ensure_raw_data(download=False) ->", status if len(str(status)) < 300 else "ok")
 
 # %% [markdown]
 # **So what.** All 16 raw files are byte-identical to the manifest and each has a matching codebook, so provenance is intact: every later number can be traced to the CDC release of 2021-08 to 2023-08. If this cell fails, nothing downstream should be trusted.
@@ -174,7 +171,7 @@ except (ImportError, AttributeError) as exc:
 # %% [markdown]
 # ## Repository layout and governance files
 #
-# **Why.** The marking criteria reward a traceable process. The table maps each stage to its code, results and governance artefacts, and checks that the S0 artefacts exist and have the documented columns (process document section 7.2).
+# **Why.** A traceable process needs a fixed place for every artefact. The table maps each stage to its code, results and governance files, and checks that the S0 artefacts exist and have the documented columns (process document section 7.2).
 
 # %%
 LAYOUT = pd.DataFrame([
