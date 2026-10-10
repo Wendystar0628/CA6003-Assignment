@@ -747,11 +747,12 @@ S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ra
 
 # %% [markdown]
 # **So what.** Where weight, height and BMI enter together the BMI coefficient is shared with its formula partners. In the
-# naive, unscaled arms (M1, cum+B1) this is severe: wide intervals that cross zero and sign flips. Removing weight (B3)
-# in the same unscaled setting shrinks the BMI SD by a factor of about 3 (cum+B1 / cum+B3), and the systematic model is
-# about twice as stable as M1 (H2b-c). *Inside* the systematic pipeline, however, scaling and the L2 penalty already do
-# much of the stabilising, so the B3-specific ratio (S-linear−B3 / S-linear) is smaller and its interval does not
-# establish the factor 2 (B3-b). The pre-registered sign-flip criterion (B3-c) turned out to be a poor metric: after
+# naive, unscaled arms (M1, cum+B1) this is severe: intervals that cross zero and sign flips in about one resample in
+# eight. Removing weight (B3) in the same unscaled setting shrinks the BMI SD by a factor of about 3 (cum+B1 / cum+B3),
+# and the systematic model is about twice as stable as M1 – but the interval of that ratio straddles the pre-registered
+# factor 2, so H2b-c is inconclusive rather than supported. *Inside* the systematic pipeline, scaling and the L2 penalty
+# already do much of the stabilising: the B3-specific ratio (S-linear−B3 / S-linear) is only about 1.4 and its interval
+# excludes 2, so B3-b is **refuted**. The pre-registered sign-flip criterion (B3-c) turned out to be a poor metric: after
 # pruning, the *height* coefficient is close to zero (it carries no signal once BMI is present), and a near-zero
 # coefficient flips sign in about half of the resamples by construction – the BMI coefficient itself no longer flips.
 # This is reported as a refutation of B3-c, with the mechanism, not explained away. The discrimination of all these
@@ -908,18 +909,33 @@ S7["lr_test_splines"] = lrt
 # * **B4-b (calibration for missing income) – inconclusive**, with an MDD several times the SESOI: about 120 people per
 #   fold have missing income, too few to detect a 0.005 Brier change; §6 had already shown that income missingness is
 #   almost unrelated to the label.
-# * **B5 (representation)** – the spline terms are strongly supported by the likelihood-ratio test and AUC changes stay
-#   small; the calibration-slope improvement is not established (inconclusive). Splines are kept because of the
-#   likelihood-ratio evidence and the S4 linearity tests, not because of the AUC.
+# * **B3 (redundancy) – mixed.** Same AUC (supported), but the stability claims fail inside the scaled L2 pipeline (SD
+#   ratio about 1.4, refuted) and the flip criterion is dominated by a near-zero height coefficient (refuted, see
+#   section 11). The stabilising value of pruning is real for naive unscaled fits (ratio about 3) – L2 + scaling make it
+#   largely redundant. A refutation that teaches where the protection actually comes from.
+# * **B5 (representation) – inconclusive overall.** Its primary sub-claim holds on E-ALL Tier 1 (|calibration slope − 1|
+#   smaller by about 0.04, CI excluding 0) and the spline terms are strongly supported by the likelihood-ratio test,
+#   but the block's AUC gain (about +0.007) has a CI that crosses the SESOI, and the calibration gain is not confirmed on
+#   E-SCREEN or Tier 2. Splines are kept because of the likelihood-ratio evidence and the S4 linearity tests, not because
+#   of the AUC.
 # * **B6a (class weights) – supported on all three sub-claims**: same AUC, Brier worse by about 0.07, balanced accuracy at
-#   0.5 better by about 0.14. This is also why **H2b is mixed**: S (which includes class weights) is not equivalent to M1 on
-#   Brier; S−B6a is. Class weighting is a threshold choice in disguise and should be replaced by an explicit threshold.
+#   0.5 better by about 0.14. Class weighting is a threshold choice in disguise and should be replaced by an explicit
+#   threshold.
+# * **H2b (M1 vs S, the headline "minimal vs systematic") – inconclusive.** S discriminates slightly better than M1
+#   (about +0.008, CI from 0 to about +0.016, so neither "equivalent" nor "better by the SESOI" is established); its
+#   Brier score is clearly worse (refuted), entirely because of the class weights of B6a (S−B6a has the Brier score of M1);
+#   and the coefficient-SD ratio is about 2 but its CI straddles 2. Systematic preparation does not buy discrimination;
+#   it buys fidelity and – partly – stability, and one of its steps (class weights) costs calibration.
 # * **H2c** – E-ALL overstates screening discrimination (gap about 0.06, supported); removing care-contact items lowers
 #   E-ALL (supported) but *raises* E-SCREEN by about 0.02 with a CI that excludes 0 yet reaches below the SESOI, so the
 #   pre-registered "unchanged" sub-claim is inconclusive and the hypothesis as a whole is inconclusive; S beats the
 #   reduced ADA score on E-SCREEN (supported).
 # * Verdicts that depend on E-SCREEN are limited by about 25 positives per fold: wherever the MDD exceeds the SESOI an
 #   inconclusive verdict means "underpowered", not "no effect".
+#
+# The wording above refers to the FINAL run stored in this notebook (5 × 5 CV, B = 1000, coefficient B = 500). A FAST
+# re-run (5 × 2, B = 100) reproduces every leakage, equivalence and class-weight verdict, but borderline ones (B3-b, B5-a,
+# H2b) can move between "inconclusive" and a decisive verdict.
 
 # %% [markdown]
 # ## 13 Storage
