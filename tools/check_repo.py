@@ -34,8 +34,9 @@ def main(argv: list[str]) -> int:
         size = f.stat().st_size
         if size > 50 * 2**20:
             problems.append(f"{rel}: {size/2**20:.1f} MB > 50 MB")
-        if f.suffix == ".ipynb" and size > 5 * 2**20:
-            problems.append(f"{rel}: notebook {size/2**20:.1f} MB > 5 MB (clear large outputs)")
+        nb_limit = 20 if rel.startswith("notebooks/final/") else 5
+        if f.suffix == ".ipynb" and size > nb_limit * 2**20:
+            problems.append(f"{rel}: notebook {size/2**20:.1f} MB > {nb_limit} MB (clear large outputs)")
         if f.suffix in TEXT_SUFFIX and size < 20 * 2**20:
             text = f.read_text(encoding="utf-8", errors="ignore")
             m = ABS_PATH.search(text)

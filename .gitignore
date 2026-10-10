@@ -19,3 +19,6 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Workspace created when the final notebook is run
+ca6003_workspace/
