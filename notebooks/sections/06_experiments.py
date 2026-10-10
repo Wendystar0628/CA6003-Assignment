@@ -168,6 +168,8 @@ S7["C0"] = dict(C0=C0, inner_cv_auc=cv_auc.to_dict())
 # %% [markdown]
 # **So what.** The inner-CV AUC is almost flat across C (differences in the third decimal), so the choice of C is not a
 # lever for the results below; C0 is used for every arm. The flatness also limits the optimistic bias of tuning on S.
+# Disclosure: C0 is selected once on the whole training part, i.e. not nested inside the outer CV folds; with an inner
+# AUC range of only about 0.003 across C the resulting optimism is negligible.
 
 # %% [markdown]
 # ## 4 Running the arms
@@ -455,6 +457,11 @@ care_vs_ada = cmp_("T1-minus-care", "BL-ADAlite", 1, "roc_auc", "E-SCREEN", pb=a
 print(f"E-SCREEN AUC S - ADA-lite points = {fmt(h2c3)}")
 print(f"E-SCREEN AUC S - ADA-lite-LR     = {fmt(s_vs_adalr)}")
 print(f"E-SCREEN AUC T1-minus-care - ADA-lite points = {fmt(care_vs_ada)}")
+adalr_vs_pts = {pop: cmp_("BL-ADAlite-LR", "BL-ADAlite", 1, "roc_auc", pop, pa=PM[("BL-ADAlite-LR", 1, "lr")], pb=ada_score,
+                          label="ADA-LR vs ADA points") for pop in ("E-ALL", "E-SCREEN")}
+for pop, r in adalr_vs_pts.items():
+    print(f"{pop:8s} AUC ADA-lite-LR - ADA-lite points = {fmt(r)}")
+S7["ada_lr_minus_points"] = {pop: {k: r[k] for k in ("est", "lo", "hi")} for pop, r in adalr_vs_pts.items()}
 S7["baselines"] = baselines.set_index("model").to_dict("index")
 S7["ada_missing_answers"] = miss
 
@@ -463,10 +470,11 @@ S7["ada_missing_answers"] = miss
 # the known artefact of pooling fold-wise priors) and at the prevalence for PR-AUC, so the evaluation code has no built-in
 # optimism. The five-item reduced ADA score reaches an E-SCREEN AUC of about 0.73 with integer points and no fitting; the
 # systematic model is better by about 0.05 with an interval that excludes 0 (H2c-iii). Two details matter for the
-# interpretation. First, refitting the ADA items by logistic regression on `L_comb` (BL-ADAlite-LR) makes them *worse* on
-# E-SCREEN than the hand-made points, although better on E-ALL: weights learned from a label dominated by known
-# diabetics do not transfer to screening. Second, ADA-lite is missing two items, so the margin is an upper bound on what a
-# complete ADA test would concede.
+# interpretation. First, refitting the ADA items by logistic regression on `L_comb` (BL-ADAlite-LR) moves them in opposite
+# directions on the two populations: slightly better on E-ALL, lower on E-SCREEN (paired differences printed above; on
+# E-SCREEN the interval includes 0, so "no better than the hand-made points" is the safe reading). Weights learned from a
+# label dominated by known diabetics do not transfer well to screening. Second, ADA-lite is missing two items, so the
+# margin over it likely overstates what a complete ADA test would concede.
 
 # %% [markdown]
 # ## 7 Cumulative path M0 → S
@@ -597,6 +605,10 @@ h2c1 = dict(a="S", b="S", tier=1, metric="roc_auc", pop="E-ALL minus E-SCREEN", 
             label="H2c(i)")
 COMP.append(h2c1)
 print(f"S (Tier 1): AUC E-ALL {roc_auc_score(y, pS):.3f} - E-SCREEN {roc_auc_score(y_esc[esc], pS[esc]):.3f} = {fmt(h2c1)}")
+neg_eall, neg_escr = set(np.flatnonzero(y == 0)), set(np.flatnonzero(esc & (y_esc == 0)))
+assert neg_eall == neg_escr, "E-ALL and E-SCREEN must share the same negatives"
+print(f"same {len(neg_eall):,} negatives in both populations; positives: E-ALL {int(y.sum())} (all L_comb), "
+      f"E-SCREEN {int(y_esc[esc].sum())} (undiagnosed only); gap lower bound {h2c1['lo']:.3f} vs pre-registered magnitude 0.03")
 
 pairs = [("M0", 1, "lr"), ("M1", 1, "lr"), ("S", 1, "lr"), ("S-linear", 1, "lr"), ("T1-minus-care", 1, "lr"),
          ("S+WHtR", 1, "lr"), ("S", 2, "lr"), ("BL-ADAlite-LR", 1, "lr"), ("BL-ADAlite", 1, "points")]
@@ -629,11 +641,13 @@ plots.savefig(fig, "S7_eall_vs_escreen", caption="ROC-AUC on E-ALL (blue, L_comb
 plt.show()
 
 # %% [markdown]
-# **So what.** Every model loses discrimination when it is asked the screening question instead of "who has diabetes
-# (mostly known)". For the systematic model the gap is printed above with its bootstrap interval; the smaller gap for
-# T1-minus-care and the ADA-lite score is the mirror image: the less a model relies on care-contact traces, the less it
-# loses. A whole-sample AUC therefore overstates screening value – the label composition, not the model, sets the
-# headline number.
+# **So what.** The two populations share exactly the same negatives (asserted); only the positives differ. The gap is
+# therefore a pure **spectrum (case-mix) effect**: known diabetics, with treatment, care contacts and higher HbA1c, are
+# easier to rank above the negatives than the undiagnosed. For the systematic model the gap is about 0.055; its lower
+# bound (printed, about 0.028) lies just below the pre-registered magnitude of 0.03, so a gap of exactly that size is not
+# excluded although the rule's point-estimate criterion is met. The smaller gaps of T1-minus-care and the ADA-lite score
+# are the mirror image: the less a model relies on care-contact traces, the less it loses. A whole-sample AUC therefore
+# overstates screening value – the label composition, not the model, sets the headline number.
 
 # %% [markdown]
 # ## 10 Precision–recall and calibration
@@ -969,6 +983,17 @@ final.to_csv(OUT / "scoreboard.csv", index=False)
 print(sb[["hyp_id", "sub", "role", "pop", "tier", "est", "lo", "hi", "mdd", "sesoi", "verdict"]].round(4).to_string(index=False))
 print()
 print(final.to_string(index=False))
+pure = []
+for pop in ("E-ALL", "E-SCREEN"):
+    for metric in ("roc_auc", "brier"):
+        r = cmp_("S-B6a", "M1", 1, metric, pop, label="exploratory pure preparation")
+        pure.append(dict(pop=pop, metric=metric, S_B6a=METRIC_FN[metric](*[v[pop_of(pop)[1]] for v in (pop_of(pop)[0], PM[("S-B6a", 1, "lr")])]),
+                         M1=METRIC_FN[metric](*[v[pop_of(pop)[1]] for v in (pop_of(pop)[0], PM[("M1", 1, "lr")])]),
+                         diff=r["est"], lo=r["lo"], hi=r["hi"]))
+pure = pd.DataFrame(pure)
+print("\nexploratory 'pure preparation' contrast S-B6a (S without class weights) vs M1, Tier 1 (not a locked hypothesis):")
+print(pure.round(4).to_string(index=False))
+S7["pure_preparation_S_B6a_vs_M1"] = pure.to_dict("records")
 S7["scoreboard"] = final.set_index("hyp_id").to_dict("index")
 S7["scoreboard_detail"] = sb.round(5).to_dict("records")
 S7["lr_test_splines"] = lrt
