@@ -958,12 +958,21 @@ RES["hypotheses"] = hyp.set_index("hyp_id").to_dict("index")
 for r in REG:   # link register rows to the hypotheses they inform
     r["hyp_id"] = {"DR-S5-05": "H1a", "DR-S5-06": "H4a; H4b", "DR-S5-09": "H2c; H3"}.get(r["dr_id"], r["hyp_id"])
 
+# prior_exposure of every hypothesis, read from the locked governance/hypotheses.md
+_rows = [ln.split("|") for ln in (C.GOVERNANCE_DIR / "hypotheses.md").read_text(encoding="utf-8").splitlines()
+         if ln.startswith("| H") and not ln.startswith("| hyp_id")]
+prior = {r[1].strip(): r[9].strip() for r in _rows if len(r) > 10}
+print("prior_exposure:", prior)
+genuine = sorted(h for h, p in prior.items() if p == "none")
+print("genuinely pre-registered (prior_exposure = none):", genuine)
+assert {"H2b", "H2c", "H3"} <= set(genuine) and prior.get("H2a") == "analysis_seen"
+
 # %% [markdown]
 # **So what.** H1a (uninsured adults more often undiagnosed), H4a (BMI < 25 far more common among Asian
 # diabetics) and H4b (larger WHtR gain in Asian adults) are reproduced with intervals that satisfy their
 # pre-stated rules, with the caveats printed above. Because the hypotheses were written after seeing these data,
-# they are recorded as *supported (analysis_seen)*; the genuinely pre-registered tests are H2a–H3 and the WHtR
-# arm in S7/S8.
+# they are recorded as *supported (analysis_seen)*. The genuinely pre-registered tests (`prior_exposure = none`)
+# are H2b, H2c and H3 in S7/S8; H2a (leakage gate) is `analysis_seen` and the WHtR arm P14 is `descriptive_seen`.
 
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
