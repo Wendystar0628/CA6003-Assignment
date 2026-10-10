@@ -652,3 +652,80 @@ M3["outliers"] = {"layer_table": outl.set_index("var")[["layer1_outside_limits",
                   "joint_fence_vars": JOINT, "joint_fence_deleted": int(joint.sum()), "joint_fence_share": float(joint.mean()),
                   "joint_fence_prev_deleted": float(prev_del), "joint_fence_prev_kept": float(prev_keep)}
 
+# %% [markdown]
+# ## 9 Data-quality dimension matrix
+#
+# **Why.** The checks above are only useful if they add up to a judgement per quality dimension. The matrix uses the six DAMA UK dimensions (completeness, uniqueness, timeliness, validity, accuracy, consistency; DAMA UK 2013, cited from a third-party copy). It adds **credibility** from ISO/IEC 25012:2008 for what the files cannot show internally: low response rates and a self-reported label. Each dimension gets a metric, a threshold, the computed result and a verdict.
+
+# %%
+feat = inc[(inc["admissible"].isin(["T1", "T2"]))]["var"].tolist()
+miss_by_var = coh[feat].isna().mean().sort_values(ascending=False)
+structural = {"PAD800": "skip: only if moderate activity > 0", "PAD820": "skip: only if vigorous activity > 0",
+              "PAD790U": "skip: unit only if frequency > 0", "PAD810U": "skip: unit only if frequency > 0"}
+mv = miss_by_var.rename("missing_share").to_frame()
+mv["structural_skip"] = mv.index.map(structural).fillna("")
+mv.to_csv(OUT / "missingness_by_var.csv", lineterminator="\n")
+item_miss = mv[mv["structural_skip"] == ""]["missing_share"]
+print("highest feature missingness (cohort):"); display(mv.head(8).round(3))
+
+# validity: values outside the codebook range after per-variable recoding (top codes and special codes allowed)
+cbs = io.spec_from_codebooks().set_index(["file", "var"])
+viol = 0; checked = 0
+for _, r in inc[(inc["dtype"] == "continuous")].iterrows():
+    s = mrg[r["var"]].dropna()
+    ref = cbs.loc[(r["file"], r["var"])]
+    allowed = set(io._codes(ref["top_code"])) | {io._num(p.split("=")[0]) for p in ref["special_codes"].split("; ") if "=" in p}
+    bad = ~(s.between(r["valid_min"], r["valid_max"]) | s.isin(allowed))
+    viol += int(bad.sum()); checked += len(s)
+print(f"validity: {checked:,} continuous values checked against codebook ranges; outside range: {viol}")
+assert viol == 0
+
+resp_int, resp_mec = 0.346, 0.257   # NCHS cycle overview (not computable from the files)
+dq = pd.DataFrame([
+    ["Completeness", "max item missingness among T1/T2 features in cohort (excl. structural skips)", "<= 40 % (L1 trigger)",
+     f"{item_miss.max():.1%} ({item_miss.idxmax()}); HbA1c missing in 4.9 % of examined adults, not MCAR", "pass with flags"],
+    ["Uniqueness", "duplicate SEQN per file; files subset of DEMO_L", "0 duplicates",
+     f"{int((~uniq['seqn_unique']).sum())} duplicates in 16 files; all subsets", "pass"],
+    ["Timeliness", "collection window; drift test", "single documented cycle",
+     "Aug 2021 - Aug 2023, one cycle; no drift test possible (no pooling)", "not assessable"],
+    ["Validity", "values outside codebook range after per-variable recode; sentinel codes traceable", "0 out of range; 100 % traceable",
+     f"{viol} of {checked:,} values out of range; {int(sent['traceable'].sum())}/{len(sent)} sentinel variables traceable; XPT artefact repaired ({n_art:,} cells)", "pass"],
+    ["Accuracy", "BMI recomputation; external anchor; label agreement", "|diff| <= 0.1; DB516 within 0.1 pp (S4)",
+     f"max BMI diff {bmi_diff.max():.3f}; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)", "pass for measures, limited for label"],
+    ["Consistency", "SBP > DBP; skip-pattern universes; duplicate weight columns identical", "0 violations",
+     f"SBP <= DBP: {int(pp_tab['SBP <= DBP'].sum())}; WHtR > 1: {whtr_gt1} flagged; DIQ050/DIQ070 universes as documented", "pass"],
+    ["Credibility (ISO/IEC 25012)", "response rates; label source", "documented, not correctable",
+     f"interview response {resp_int:.1%}, examination {resp_mec:.1%}; self-reported diagnosis part of the label", "limited"],
+], columns=["dimension", "metric", "threshold", "result", "verdict"])
+display(dq)
+dq.to_csv(OUT / "quality_matrix.csv", index=False, lineterminator="\n")
+
+# %%
+order = {"pass": 0, "pass with flags": 1, "pass for measures, limited for label": 2, "limited": 3, "not assessable": 4}
+cmap = {0: OI["green"], 1: OI["sky"], 2: OI["yellow"], 3: OI["orange"], 4: OI["grey"]}
+fig, ax = plt.subplots(figsize=(8.5, 3.4))
+for i, (dim, ver) in enumerate(zip(dq["dimension"], dq["verdict"])):
+    ax.barh(i, 1, color=cmap[order[ver]], edgecolor="white")
+    ax.text(0.02, i, ver, va="center", fontsize=9)
+ax.set_yticks(range(len(dq)), dq["dimension"]); ax.invert_yaxis(); ax.set_xticks([]); ax.grid(False)
+ax.set_xlim(0, 1); ax.set_title("Data-quality verdict per dimension (DAMA UK six + ISO/IEC 25012 credibility)", loc="left")
+for s_ in ax.spines.values():
+    s_.set_visible(False)
+f_dq = plots.savefig(fig, "S3_quality_matrix", caption="Verdict per data-quality dimension; metrics, thresholds and results in results/S3/quality_matrix.csv.")
+plt.show(); print("saved", f_dq)
+
+# %% [markdown]
+# **So what.** The measurements are trustworthy once the two read-time problems are fixed (the XPT artefact and the per-variable sentinels):
+#
+# - every key is unique;
+# - every continuous value lies inside its codebook range;
+# - BMI recomputes;
+# - blood-pressure pairs are coherent.
+#
+# The weak points lie elsewhere. **Credibility** is limited: response rates are 34.6 % for the interview and 25.7 % for the examination, and the label partly rests on self-report. **Timeliness** cannot be assessed, because there is only one cycle. **Completeness** passes with flags. The highest item missingness among model features is in the income ratio and the activity minutes; the activity minutes are skip-pattern structural and not truly missing. HbA1c missingness is covariate-dependent (item 7). No variable triggers the L1 loop (more than 40 % item missingness, no variation, or a post-diagnosis variable among the admissible features), so the variable scope can be frozen. **Decision (DR-S3-07):** freeze the variable scope (`scope-freeze`). Carry credibility and label accuracy as stated limitations to S5 and S10.
+
+# %%
+M3["quality_matrix"] = dq.set_index("dimension")[["result", "verdict"]].to_dict("index")
+M3["validity"] = {"continuous_values_checked": checked, "out_of_range": viol}
+M3["max_item_missing_feature"] = {"var": item_miss.idxmax(), "share": float(item_miss.max())}
+

@@ -1,0 +1,8 @@
+dimension,metric,threshold,result,verdict
+Completeness,max item missingness among T1/T2 features in cohort (excl. structural skips),<= 40 % (L1 trigger),"12.8% (INDFMPIR); HbA1c missing in 4.9 % of examined adults, not MCAR",pass with flags
+Uniqueness,duplicate SEQN per file; files subset of DEMO_L,0 duplicates,0 duplicates in 16 files; all subsets,pass
+Timeliness,collection window; drift test,single documented cycle,"Aug 2021 - Aug 2023, one cycle; no drift test possible (no pooling)",not assessable
+Validity,values outside codebook range after per-variable recode; sentinel codes traceable,0 out of range; 100 % traceable,"0 of 214,422 values out of range; 25/25 sentinel variables traceable; XPT artefact repaired (13,676 cells)",pass
+Accuracy,BMI recomputation; external anchor; label agreement,|diff| <= 0.1; DB516 within 0.1 pp (S4),max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (S5 kappa),"pass for measures, limited for label"
+Consistency,SBP > DBP; skip-pattern universes; duplicate weight columns identical,0 violations,SBP <= DBP: 0; WHtR > 1: 4 flagged; DIQ050/DIQ070 universes as documented,pass
+Credibility (ISO/IEC 25012),response rates; label source,"documented, not correctable","interview response 34.6%, examination 25.7%; self-reported diagnosis part of the label",limited
