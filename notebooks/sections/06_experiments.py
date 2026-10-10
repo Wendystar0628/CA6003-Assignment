@@ -719,7 +719,11 @@ coef_tab.to_csv(OUT / "coef_stability.csv", index=False)
 print(coef_tab.round(3).to_string(index=False))
 
 def sd_ratio(arm_a, arm_b, n_rs=2000):
-    """SD(BMI per SD) of arm_a over arm_b with a CI from resampling the bootstrap replicates."""
+    """SD(BMI per SD) of arm_a over arm_b with a Monte Carlo interval from resampling the B bootstrap replicates.
+
+    The interval reflects the Monte Carlo error of the two SD estimates for the given number of replicates B (it narrows
+    as B grows); it is not a sampling interval of the population ratio.
+    """
     (ca, fa), (cb_, fb) = CB[arm_a], CB[arm_b]
     xa = ca.coefs["BMXBMI"].dropna().to_numpy() * fa
     xb = cb_.coefs["BMXBMI"].dropna().to_numpy() * fb
@@ -735,7 +739,8 @@ ratio_b3 = sd_ratio("S-linear-B3", "S-linear")
 ratio_h2b = sd_ratio("M1", "S-linear")
 ratio_cum = sd_ratio("cum+B1", "cum+B3")
 for d in (ratio_b3, ratio_h2b, ratio_cum):
-    print(f"SD ratio BMI {d['a']} / {d['b']}: {d['ratio']:.2f} [{d['lo']:.2f}, {d['hi']:.2f}] -> {v_ratio(d)}")
+    print(f"SD ratio BMI {d['a']} / {d['b']}: {d['ratio']:.2f}, Monte Carlo interval [{d['lo']:.2f}, {d['hi']:.2f}] "
+          f"(B = {C.N_BOOT_COEF}) -> {v_ratio(d)}")
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5.2), gridspec_kw={"width_ratios": [1, 1.4]})
 ax = axes[0]
@@ -784,6 +789,49 @@ S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ra
 # coefficient flips sign in about half of the resamples by construction – the BMI coefficient itself no longer flips.
 # This is reported as a refutation of B3-c, with the mechanism, not explained away. The discrimination of all these
 # arms is the same (section 8); only the stability of the explanation differs – the measurement-instrument use of ML.
+# The intervals of the SD ratios are *Monte Carlo* intervals: they resample the B bootstrap replicates and therefore
+# shrink as B grows (FINAL B = 500); they quantify simulation error, not sampling uncertainty of the ratio itself.
+
+# %% [markdown]
+# ### Post-hoc exploratory: how much of the stability comes from the penalty?
+# **Why.** *Not pre-registered; added after an independent audit, does not change any verdict.* Two readings above depend
+# on the fitting regime: the B3 ratio is computed under the frozen penalty C0, and the unscaled ratios (cum+B1/cum+B3,
+# M1/S-linear) come from fits that stop at the iteration limit. Re-running the B3 contrast at weaker penalties shows how
+# much of the stabilisation the L2 penalty already provides.
+
+# %%
+C_grid = [C0, 1.0, 100.0, 1e4]
+B_s = 200 if C.IS_FINAL else 50   # replicates per arm and C (exploratory)
+cs_rows = []
+for c_ in C_grid:
+    sd_ = {}
+    for arm in ("S-linear-B3", "S-linear"):
+        cfg = P.ARMS[arm]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cb_ = ek.coef_bootstrap(lambda cfg=cfg, c_=c_: P.build_pipeline(cfg, 1, C_=c_), X[1], P.training_label(raw_tr, cfg),
+                                    n_boot=B_s, seed=ek.derive_seed(C.SEED_MASTER, "S7", "Csens", arm, str(c_)),
+                                    fit_params=P.fit_params(cfg, raw_tr), n_jobs=N_JOBS)
+        sd_[arm] = float(cb_.coefs["BMXBMI"].std(ddof=1))
+    cs_rows.append(dict(C=c_, sd_bmi_without_B3=sd_["S-linear-B3"], sd_bmi_with_B3=sd_["S-linear"],
+                        ratio=sd_["S-linear-B3"] / sd_["S-linear"]))
+c_sens = pd.DataFrame(cs_rows)
+c_sens.to_csv(OUT / "posthoc_c_sensitivity.csv", index=False)
+conv = diag[(diag["tier"] == 1) & (diag["model"] == "lr") & diag["arm"].isin(["M1", "cum+B1", "cum+B3"])]
+print(f"post-hoc, scaled arms, B = {B_s} per C (per-SD BMI coefficient):")
+print(c_sens.round(3).to_string(index=False))
+print("unscaled arms behind the larger ratios - CV folds ending at the iteration limit: "
+      + ", ".join(f"{a} {k}/{len(folds)}" for a, k in zip(conv["arm"], conv["n_convergence_warnings"])))
+S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_nonconvergence=dict(zip(conv["arm"], conv["n_convergence_warnings"].astype(int))),
+                                   n_folds=len(folds), note="post hoc, exploratory, no verdict change")
+
+# %% [markdown]
+# **So what (exploratory).** With the frozen penalty the pruning step adds little stability; as the penalty is relaxed
+# towards an unpenalised fit the ratio grows several-fold (table above). The L2 penalty and pruning are therefore partly
+# *substitutes*: either one tames the weight–height–BMI collinearity. The large unscaled ratios (cum+B1/cum+B3, and the
+# M1/S-linear ratio behind H2b-c) must be read with care: those pipelines hit the iteration limit in every CV fold, so
+# part of their coefficient spread is optimiser noise rather than collinearity – they are confounded by
+# non-convergence and are not used to argue for B3.
 
 # %% [markdown]
 # ## 12 Verdicts
