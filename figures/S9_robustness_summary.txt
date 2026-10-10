@@ -1,0 +1,1 @@
+Range of ΔROC-AUC (S − M1) point estimates (blue) and envelope of the 95 % CIs (grey) for each family of robustness checks: stored folds, 10 CV seeds, 16 one-at-a-time specifications, 60-specification curve, strata x PSU grouped CV, inverse-probability weighting and MNAR delta adjustment; E-ALL left, E-SCREEN right.

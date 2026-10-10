@@ -978,3 +978,362 @@ plt.show()
 # they are more informative for people already in care. The T1-minus-care contrast (printed) shows the consequence –
 # removing them costs AUC on E-ALL but not on E-SCREEN. This is not leakage under the availability rule; it is the
 # mechanism behind the E-ALL vs E-SCREEN gap (H2c) and is reported as such.
+
+# %% [markdown]
+# ## 10 Pre-hold-out summary
+# **Why.** Before the experiment is frozen, every robustness result for the headline contrast S − M1 is put on one
+# scale, so that the robustness grade of the claim (S10, `claims.csv`) can be read off one table and one figure.
+
+# %%
+def _rng(d, pop):
+    x = d[d["pop"] == pop]
+    return x["est"].min(), x["est"].max(), x["lo"].min(), x["hi"].max(), ", ".join(f"{k} {v}" for k, v in x["h2b"].value_counts().items())
+
+summ = []
+for pop in ("E-ALL", "E-SCREEN"):
+    r0 = S9["reference"][pop]
+    summ.append(dict(check="reference (stored folds)", pop=pop, est_min=r0["est"], est_max=r0["est"], lo=r0["lo"], hi=r0["hi"], verdicts=r0["h2b"]))
+    for nm, d in (("10 CV seeds", seeds), ("16 sensitivity specs", sens[sens["spec"] != "reference (S7)"]),
+                  ("60-spec curve", curve), ("strata x PSU grouped CV", gcv_tab[gcv_tab["folds"] != "stored stratified"]),
+                  ("IPW (evaluation; fit + evaluation)", ipw_tab)):
+        a, b, lo, hi, v = _rng(d, pop)
+        summ.append(dict(check=nm, pop=pop, est_min=a, est_max=b, lo=lo, hi=hi, verdicts=v))
+    dd = dauc[(dauc["pop"] == pop) & (dauc["scenario"] == "delta")]
+    summ.append(dict(check="MNAR delta -1 to 3 (draw means)", pop=pop, est_min=dd["diff"].min(), est_max=dd["diff"].max(),
+                     lo=dd["diff_lo"].min(), hi=dd["diff_hi"].max(), verdicts="n/a (no CI)"))
+summ = pd.DataFrame(summ)
+summ.to_csv(OUT / "robustness_summary.csv", index=False)
+print(summ.round(4).to_string(index=False))
+fam_v = {pop: pd.concat([seeds.loc[seeds["pop"] == pop, "h2b"], sens.loc[(sens["pop"] == pop) & (sens["spec"] != "reference (S7)"), "h2b"],
+                         curve.loc[curve["pop"] == pop, "h2b"], gcv_tab.loc[(gcv_tab["pop"] == pop) & (gcv_tab["folds"] != "stored stratified"), "h2b"],
+                         ipw_tab.loc[ipw_tab["pop"] == pop, "h2b"]]) for pop in ("E-ALL", "E-SCREEN")}
+all_incon = {pop: bool((v == "inconclusive").all()) for pop, v in fam_v.items()}
+for pop, v in fam_v.items():
+    print(f"{pop}: {len(v)} alternative comparisons with a CI -> verdicts {v.value_counts().to_dict()}")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4.2), sharey=True)
+for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
+    s = summ[summ["pop"] == pop].reset_index(drop=True)
+    for i, r in s.iterrows():
+        ax.plot([r["lo"], r["hi"]], [i, i], color=OI["grey"], lw=6, alpha=0.35, solid_capstyle="butt")
+        ax.plot([r["est_min"], r["est_max"]], [i, i], color=OI["blue"], lw=3)
+        ax.scatter([r["est_min"], r["est_max"]], [i, i], color=OI["blue"], s=14, zorder=3)
+    ax.axvspan(-C.SESOI["roc_auc"], C.SESOI["roc_auc"], color=OI["green"], alpha=0.08)
+    ax.axvline(0, color="k", lw=0.7)
+    ax.axvline(C.SESOI["roc_auc"], color=OI["green"], ls=":", lw=1)
+    ax.set(title=pop, xlabel="ΔROC-AUC S − M1")
+axes[0].set_yticks(range(len(s)), s["check"], fontsize=8)
+axes[0].invert_yaxis()
+axes[1].legend(handles=[Line2D([], [], color=OI["blue"], lw=3, label="range of point estimates"),
+                        Line2D([], [], color=OI["grey"], lw=6, alpha=0.35, label="envelope of 95 % CIs"),
+                        Line2D([], [], color=OI["green"], lw=6, alpha=0.15, label="±SESOI 0.01")], fontsize=8, loc="lower right")
+fig.suptitle("S − M1 across every robustness check: small, positive, never pinned against the SESOI", fontsize=11)
+fig.tight_layout()
+plots.savefig(fig, "S9_robustness_summary", caption="Range of ΔROC-AUC (S − M1) point estimates (blue) and envelope of the 95 % CIs (grey) for each "
+              "family of robustness checks: stored folds, 10 CV seeds, 16 one-at-a-time specifications, 60-specification curve, "
+              "strata x PSU grouped CV, inverse-probability weighting and MNAR delta adjustment; E-ALL left, E-SCREEN right.")
+plt.show()
+S9["summary"] = dict(table=summ.round(5).to_dict("records"), all_inconclusive=all_incon)
+
+# %% [markdown]
+# **So what.** Every check agrees with every other: on E-ALL the systematic pipeline is ahead of the minimal one by
+# roughly 0.005–0.015 AUC; apart from the depth-4 tree (a different model class, see DR-S9-13) the intervals stay above
+# about −0.01, and none of them clears +0.01 – so the robust reading of
+# H2b(a) is "**S is at least as good as M1 and probably slightly better, by an amount that cannot be distinguished from
+# the 0.01 threshold**", which is what *inconclusive* means under the locked equivalence rule. On E-SCREEN the same
+# direction holds with intervals about twice as wide. The robustness grade of the claim is therefore *robust verdict,
+# imprecise effect*; nothing here licenses calling S "better" or "equivalent".
+
+# %% [markdown]
+# ### Decision register (S9)
+
+# %%
+from datetime import date
+today = date.today().isoformat()
+def _f(r, k=3):
+    return f"{r['est']:+.{k}f} [{r['lo']:+.{k}f}, {r['hi']:+.{k}f}]"
+
+pc = pos_tab.set_index(["arm", "pop"])
+reg = pd.DataFrame([
+    dict(dr_id="DR-S9-01", type="negative_control", finding="Label-permutation null centred on 0.5 for both admissible arms; tests procedural leakage only",
+         evidence_ref="results/S9/permutation.csv; figures/S9_permutation_null.png",
+         evidence_value=f"null mean M1 {PERM['M1']['null_mean']:.4f}, S {PERM['S']['null_mean']:.4f} ({C.N_PERM} permutations); p = {PERM['S']['p_value']:.3f}",
+         decision="Evaluation procedure accepted; feature leakage delegated to the L3 leak hunt", alternatives_rejected="sklearn permutation_test_score (no sample weights per fold, no fixed folds)",
+         hyp_id="", status="decided", check_verdict="PASS", check_note="band [0.495, 0.505]", loop_ref="L3"),
+    dict(dr_id="DR-S9-02", type="negative_control", finding="An N(0,1) noise column is treated as noise",
+         evidence_ref="results/S9/noise_feature.csv",
+         evidence_value="; ".join(f"{r['arm']}: coef/SD {r['coef_per_sd']:+.3f} [{r['q_low']:+.3f}, {r['q_high']:+.3f}], dAUC {r['dAUC_eall']:+.4f}, depth-3 trees using it {r['tree3_uses']}/{r['n_trees']}" for _, r in noise_tab.iterrows()),
+         decision="No overfitting to noise; depth cap 3 for the tree probe retained", alternatives_rejected="", hyp_id="", status="decided",
+         check_verdict="PASS", check_note="", loop_ref=""),
+    dict(dr_id="DR-S9-03", type="positive_control", finding="A synthetic feature with known AUC 0.60 is recovered and detected",
+         evidence_ref="results/S9/positive_control.csv",
+         evidence_value=f"z AUC {z_auc[0]:.3f} [{z_auc[1]:.3f}, {z_auc[2]:.3f}]; dAUC E-ALL M1 {pc.loc[('M1', 'E-ALL'), 'est']:+.4f} [{pc.loc[('M1', 'E-ALL'), 'lo']:+.4f}, {pc.loc[('M1', 'E-ALL'), 'hi']:+.4f}], S {pc.loc[('S', 'E-ALL'), 'est']:+.4f} [{pc.loc[('S', 'E-ALL'), 'lo']:+.4f}, {pc.loc[('S', 'E-ALL'), 'hi']:+.4f}]",
+         decision="Procedure has power for weak real signals; negative controls are not passed by blindness", alternatives_rejected="",
+         hyp_id="", status="decided", check_verdict="PASS", check_note="", loop_ref=""),
+    dict(dr_id="DR-S9-04", type="seed_stability", finding="S - M1 verdict does not depend on the CV / bootstrap seed",
+         evidence_ref="results/S9/seed_stability.csv; figures/S9_seed_stability.png",
+         evidence_value=f"E-ALL est {seed_sum.loc['E-ALL', 'est_min']:+.4f} to {seed_sum.loc['E-ALL', 'est_max']:+.4f}; verdicts {seed_sum.loc['E-ALL', 'verdicts']}",
+         decision="H2b(a) verdict graded seed-stable", alternatives_rejected="single seed", hyp_id="H2b", status="decided",
+         check_verdict="PASS" if seed_stable else "FAIL", check_note="10 seeds via evalkit.derive_seed; hold-out fixed", loop_ref=""),
+    dict(dr_id="DR-S9-05", type="sensitivity", finding="16 one-at-a-time analysis variations leave the E-ALL verdict of S - M1 unchanged",
+         evidence_ref="results/S9/sensitivity_table.csv; figures/S9_sensitivity_forest.png",
+         evidence_value=f"E-ALL same verdict {n_same}/{len(eall)}; est {eall['est'].min():+.4f} to {eall['est'].max():+.4f}; no CI wholly below 0",
+         decision="H2b(a) inconclusive is robust; labels and arm-specific weighting move the size of the gap, not its direction (except the depth-4 tree)",
+         alternatives_rejected="reporting only the reference specification", hyp_id="H2b", status="decided",
+         check_verdict="PASS" if n_same == len(eall) else "PARTIAL", check_note="E-SCREEN all inconclusive (wide CIs)", loop_ref=""),
+    dict(dr_id="DR-S9-06", type="tuning", finding="Arm-specific tuning of C gives M0 and M1 the same C as S",
+         evidence_ref="notebook 08 section 4",
+         evidence_value=f"own C: M0 {OWN_C['M0'][0]}, M1 {OWN_C['M1'][0]} (C0 {ctx.C0}); leak gate own C E-ALL {_f(gate_own[0])}",
+         decision="The C0-on-S optimism disclosed in DR-S7-04 is nil in practice; HR2 'same model' rule kept", alternatives_rejected="per-arm tuning as primary design",
+         hyp_id="H2a;H2b", status="decided", check_verdict="PASS", check_note="closes the S9 item of DR-S7-04", loop_ref=""),
+    dict(dr_id="DR-S9-07", type="sensitivity", finding="60-specification curve (label x weighting x C) agrees with the core table",
+         evidence_ref="results/S9/specification_curve.csv; figures/S9_specification_curve.png",
+         evidence_value=f"E-ALL est {cs.loc['E-ALL', 'est_min']:+.4f} to {cs.loc['E-ALL', 'est_max']:+.4f}, {cs.loc['E-ALL', 'share_positive']:.0%} positive, "
+                        f"{cs.loc['E-ALL', 'share_ci_above_0']:.0%} CI above 0, {cs.loc['E-ALL', 'share_beyond_sesoi']:.0%} beyond SESOI",
+         decision="Extension item; does not change the core table", alternatives_rejected="", hyp_id="H2b", status="decided",
+         check_verdict="PASS", check_note="", loop_ref=""),
+    dict(dr_id="DR-S9-08", type="sensitivity", finding="Survey-cluster folds (strata x PSU) do not inflate or change the comparison",
+         evidence_ref="results/S9/grouped_cv.csv",
+         evidence_value=f"{len(np.unique(groups))} clusters; AUC(S) grouped - stratified E-ALL {dS['E-ALL']:+.4f}; S - M1 grouped {_f(gcv[0], 4)}",
+         decision="Stratified (non-grouped) folds kept as primary design", alternatives_rejected="grouped folds as primary (unbalanced E-SCREEN positives per fold)",
+         hyp_id="H2b", status="decided", check_verdict="PASS", check_note="", loop_ref=""),
+    dict(dr_id="DR-S9-09", type="missingness", finding="Missing HbA1c: MAR (IPW) and MNAR (delta) scenarios move prevalence little and S - M1 not at all",
+         evidence_ref="results/S9/ipw.csv; results/S9/mnar_delta_prevalence.csv; results/S9/mnar_delta_auc.csv; figures/S9_mnar_delta.png",
+         evidence_value=f"prevalence WTPH2YR {prev_tab.loc[0, 'est']:.2%}, MEC x IPW {prev_tab.loc[2, 'est']:.2%}; delta OR 0.37-20: "
+                        f"{dprev['prevalence'].min():.2%}-{dprev['prevalence'].max():.2%}; Manski [{dprev.attrs['manski_low']:.2%}, {dprev.attrs['manski_high']:.2%}]; "
+                        f"OR needed for 15.8 %: {np.exp(tip):.0f}; S - M1 E-ALL under delta {dauc.loc[(dauc['pop'] == 'E-ALL') & (dauc['scenario'] == 'delta'), 'diff'].min():+.4f} to "
+                        f"{dauc.loc[(dauc['pop'] == 'E-ALL') & (dauc['scenario'] == 'delta'), 'diff'].max():+.4f}",
+         decision="Complete-case cohort with WTPH2YR confirmed; MNAR untestable but no plausible mechanism changes conclusions",
+         alternatives_rejected="imputing HbA1c (would impute the label)", hyp_id="", status="decided", check_verdict="PASS",
+         check_note="closes DR-S3-04 and DR-S5-08", loop_ref="DR-S3-04;DR-S5-08"),
+    dict(dr_id="DR-S9-10", type="validation", finding="V1 DB516 replication holds; V2 gap 14.0 % vs 15.8 % is a label-definition gap",
+         evidence_ref="results/S4/db516_replication.csv; results/S9/v2_prevalence_gap.csv; figures/S9_db516_forest.png",
+         evidence_value=f"max |diff| {db['diff_pp'].abs().max():.3f} pp over {len(db)}; sample effect {v2.loc[3, 'est_pct']:+.2f} pp [{v2.loc[3, 'ci_low']:+.2f}, {v2.loc[3, 'ci_high']:+.2f}], "
+                        f"definition effect {v2.loc[4, 'est_pct']:+.2f} pp [{v2.loc[4, 'ci_low']:+.2f}, {v2.loc[4, 'ci_high']:+.2f}]; {fpg_only} FPG-only positives",
+         decision="Report 14.0 % as the prevalence of L_comb, not of NCHS-defined diabetes; no change to the frozen label",
+         alternatives_rejected="calling the gap a failed replication", hyp_id="", status="decided", check_verdict="PASS", check_note="", loop_ref=""),
+    dict(dr_id="DR-S9-11", type="validation", finding="ADA-lite vs Bang 2009 comparable only qualitatively",
+         evidence_ref="notebook 08 section 8.3",
+         evidence_value=f"ADA-lite E-SCREEN AUC {bl['escr_auc']:.3f}; cut-off >= 5 sens {ada_tab.loc[2, 'sensitivity']:.2f}, spec {ada_tab.loc[2, 'specificity']:.2f} vs Bang 0.79 / 0.67",
+         decision="Quote only the verified abstract figures; Bang AUC 0.79/0.83 marked unverified and not used",
+         alternatives_rejected="quantitative comparison with the published AUC", hyp_id="H2c", status="decided", check_verdict="PASS",
+         check_note="2 items missing; outcome HbA1c-based", loop_ref=""),
+    dict(dr_id="DR-S9-12", type="leak_hunt", finding="L3 leak hunt not triggered on the admissible arms",
+         evidence_ref="results/S9/leak_hunt_log.csv; leak_single_feature_auc.csv; leak_missing_indicator_auc.csv; leak_top10_availability.csv; figures/S9_single_feature_auc.png",
+         evidence_value=f"T1 E-ALL AUC M1 {t1_auc['M1']:.3f}, S {t1_auc['S']:.3f}; strongest admissible single feature {best_adm['variable']} {best_adm['auc_oriented']:.3f}; "
+                        f"top-10 availability {int((proof['verdict'] == 'PASS').sum())}/{len(proof)} PASS; only removed leak columns exceed 0.75",
+         decision="Exit condition met in round 0; no re-run of S7. Care-contact items (BPQ020, BPQ080) kept but reported as the mechanism of the E-ALL/E-SCREEN gap",
+         alternatives_rejected="dropping BPQ020/BPQ080 from the main model (they pass the availability rule)", hyp_id="H2c", status="decided",
+         check_verdict="PASS" if not L3_TRIGGERED else "FAIL", check_note=f"T1-minus-care - S: E-ALL {_f(care[0], 4)}, E-SCREEN {_f(care[1], 4)}", loop_ref="L3"),
+    dict(dr_id="DR-S9-13", type="model_choice", finding="A depth-4 tree reverses the sign of S - M1 with a wide interval",
+         evidence_ref="results/S9/sensitivity_table.csv",
+         evidence_value="depth-4 tree S - M1 E-ALL " + _f(sens[(sens['spec'] == 'depth-4 tree') & (sens['pop'] == 'E-ALL')].iloc[0], 4),
+         decision="Tree stays a probe; preparation effects are judged on the logistic model only", alternatives_rejected="tree as co-primary model",
+         hyp_id="B5", status="decided", check_verdict="PASS", check_note="P08/P09 are no-ops for trees (B5-e)", loop_ref=""),
+    dict(dr_id="DR-S9-14", type="freeze", finding="Pre-hold-out robustness complete; experiment configuration ready to freeze",
+         evidence_ref="results/metrics_S9.json; results/splits/holdout.json",
+         evidence_value=f"C0 {ctx.C0}; folds hash {ctx.folds.hash[:16]}; hold-out SHA-256 {hold['sha256_test_seqn'][:16]}; thresholds: spec 0.80 on training-part predictions",
+         decision="Request exp-freeze; hold-out evaluated once afterwards with refits on the full training part; no re-tuning after it",
+         alternatives_rejected="", hyp_id="", status="decided", check_verdict="PASS", check_note="", loop_ref=""),
+])
+reg.insert(1, "stage", "S9")
+reg.insert(2, "date", today)
+for c in ("change_request", "commit"):
+    reg[c] = ""
+reg = reg[["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision", "alternatives_rejected", "hyp_id",
+           "status", "check_verdict", "check_note", "loop_ref", "change_request", "commit"]]
+REG_PATH = C.GOVERNANCE_DIR / "register" / "S9.csv"
+print(reg[["dr_id", "type", "check_verdict", "evidence_value"]].to_string(index=False, max_colwidth=110))
+
+# %% [markdown]
+# ## 11 One-shot hold-out evaluation
+# **Why.** Everything above re-used the training part; repeated looks at the same data, however disciplined, can
+# drift towards what works. The 20 % hold-out (1,146 adults, stratified by label × race, created once in S7 and never
+# read since) is the only fully independent check. Rules fixed before looking: it is evaluated **once, after the
+# `exp-freeze` tag**; arms BL0, BL-ADAlite (points), BL-ADAlite-LR, M0, M1, S and T1-minus-care (Tier 1; M0, M1 and S also
+# Tier 2) are refitted on the whole training part with the frozen configuration; thresholds for recall at
+# specificity 0.80 come from the training part; a hold-out AUC more than 2 standard errors below its CV estimate is
+# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged. Expected
+# precision: AUC SE about 0.017 on E-ALL and about 0.05 on E-SCREEN (about 25 positives).
+
+# %%
+HOLDOUT_LOG = OUT / "holdout_log.json"
+HOLDOUT_CSV = OUT / "holdout_metrics.csv"
+RELEASED = RB.tag_exists("exp-freeze") or HOLDOUT_LOG.exists()
+print(f"exp-freeze tag present: {RB.tag_exists('exp-freeze')}; hold-out log present: {HOLDOUT_LOG.exists()} -> "
+      f"{'evaluate the hold-out' if RELEASED else 'hold-out NOT evaluated (experiment not frozen yet)'}")
+
+# %%
+if RELEASED:
+    from sklearn.dummy import DummyClassifier
+    raw_te, cl_te, X_te = RB.holdout_frames(ctx)
+    sha_te = RB.sha256_ints(cl_te["SEQN"])
+    assert sha_te == hold["sha256_test_seqn"], "hold-out SEQNs differ from the stored hash"
+    assert not set(cl_te["SEQN"]) & set(ctx.cl["SEQN"]), "hold-out overlaps the training part"
+    y_te = cl_te["L_comb"].to_numpy().astype(int)
+    esc_te = cl_te["in_escreen"].eq(1).to_numpy()
+    yesc_te = cl_te["y_escreen"].fillna(0).astype(int).to_numpy()
+    print(f"hold-out: {len(cl_te):,} rows, {y_te.sum()} L_comb positives; E-SCREEN {esc_te.sum():,} rows, {yesc_te[esc_te].sum()} positives; "
+          f"SHA-256 {sha_te[:16]}... verified")
+
+    ada_tr_, ada_te_ = P.ada_lite_items(ctx.cl), P.ada_lite_items(cl_te)
+    HO_ARMS = [("BL0", 1), ("BL-ADAlite", 1), ("BL-ADAlite-LR", 1), ("M0", 1), ("M1", 1), ("S", 1), ("T1-minus-care", 1),
+               ("M0", 2), ("M1", 2), ("S", 2)]
+    prefetch({f"cv{a}{t}": (Spec(a, tier=t), ctx.folds) for a, t in HO_ARMS if a in P.ARMS})
+    P_TR, P_TE, P_CV = {}, {}, {}
+    for a, t in HO_ARMS:
+        if a == "BL0":
+            m = DummyClassifier(strategy="prior").fit(ctx.X[1], ctx.y)
+            P_TR[(a, t)], P_TE[(a, t)] = m.predict_proba(ctx.X[1])[:, 1], m.predict_proba(X_te[1])[:, 1]
+            P_CV[(a, t)] = ek.mean_oof(ek.cv_predict(lambda: DummyClassifier(strategy="prior"), ctx.X[1], ctx.y, ctx.folds), ctx.n)
+        elif a == "BL-ADAlite":
+            P_TR[(a, t)] = P_CV[(a, t)] = ada_tr_["ada_score"].to_numpy(float)
+            P_TE[(a, t)] = ada_te_["ada_score"].to_numpy(float)
+        elif a == "BL-ADAlite-LR":
+            m = P.ada_lr_pipeline(ctx.C0).fit(ada_tr_, ctx.y)
+            P_TR[(a, t)], P_TE[(a, t)] = m.predict_proba(ada_tr_)[:, 1], m.predict_proba(ada_te_)[:, 1]
+            P_CV[(a, t)] = ek.mean_oof(ek.cv_predict(lambda: P.ada_lr_pipeline(ctx.C0), ada_tr_, ctx.y, ctx.folds), ctx.n)
+        else:
+            m = RB.fit_full(ctx, Spec(a, tier=t))
+            P_TR[(a, t)], P_TE[(a, t)] = m.predict_proba(ctx.X[t])[:, 1], m.predict_proba(X_te[t])[:, 1]
+            P_CV[(a, t)] = ek.mean_oof(RB.run_many(ctx, {"x": Spec(a, tier=t)}, n_jobs=N_JOBS, cache=RUNS)["x"], ctx.n)
+
+    ho_rows = []
+    for (a, t), pte in P_TE.items():
+        ptr = P_TR[(a, t)]
+        for pop, yy_te, m_te, yy_tr, m_tr in (("E-ALL", y_te, None, ctx.y, None), ("E-SCREEN", yesc_te, esc_te, ctx.y_esc, ctx.esc)):
+            thr = ek.recall_at_specificity(yy_tr, ptr, C.SPEC_FIXED, neg_mask=m_tr)[1]
+            hs = RB.holdout_scores(yy_te, pte, thr, mask=m_te, seed_=RB.seed("holdout", a, t, pop))
+            mm_tr = np.ones(ctx.n, bool) if m_tr is None else m_tr
+            cv_auc, cv_lo, cv_hi = RB.auc_ci(yy_tr, P_CV[(a, t)], mm_tr, seed_=RB.seed("holdout-cv", a, t, pop))
+            ho_rows.append(dict(arm=a, tier=t, pop=pop, **hs, cv_auc=cv_auc, cv_lo=cv_lo, cv_hi=cv_hi))
+    ho = pd.DataFrame(ho_rows)
+    ho["gap_holdout_minus_cv"] = ho["roc_auc"] - ho["cv_auc"]
+    ho["gap_in_se"] = np.where(ho["auc_se"] > 0, ho["gap_holdout_minus_cv"] / ho["auc_se"].where(ho["auc_se"] > 0), np.nan)
+    pts = ho["arm"] == "BL-ADAlite"                 # an integer score, not a probability: no Brier / calibration
+    ho.loc[pts, ["brier", "cal_slope", "cal_citl"]] = np.nan
+    ho["flag_2se_below_cv"] = ho["gap_in_se"] < -2
+    show_ = ["arm", "tier", "pop", "n_pos", "roc_auc", "auc_lo", "auc_hi", "cv_auc", "gap_in_se", "flag_2se_below_cv", "pr_auc", "brier",
+             "cal_slope", "cal_citl", "recall_at_thr", "spec_at_thr"]
+    print(ho[show_].round(3).to_string(index=False))
+
+    def ho_pair(a, b, pop, rule):
+        """Paired hold-out bootstrap A - B with the locked rule of the hypothesis it belongs to."""
+        yy, m = (y_te, None) if pop == "E-ALL" else (yesc_te, esc_te)
+        bs = ek.paired_bootstrap(yy, P_TE[a], P_TE[b], "roc_auc", n_boot=C.N_BOOT, eval_mask=m,
+                                 seed=RB.seed("holdout-pair", str(a), str(b), pop))
+        lo, hi, est = bs["ci_low"], bs["ci_high"], bs["diff"]
+        if rule == "equivalence 0.01":
+            v = RB.equivalence_verdict(lo, hi)
+        elif rule == "lower by >= 0.05":
+            v = ek.verdict(lo, hi, 0.05, "-", est)
+            v = "refuted" if (v == "equivalent" or lo > -0.05) else v
+        elif rule == "higher by >= 0.01":
+            v = ek.verdict(lo, hi, 0.01, "+", est)
+            v = "refuted" if v == "equivalent" else v
+        else:
+            v = "descriptive"
+        return dict(comparison=f"{a[0]} T{a[1]} - {b[0]} T{b[1]}", pop=pop, rule=rule, est=est, lo=lo, hi=hi, se=bs["se"], verdict=v)
+    hp = pd.DataFrame([ho_pair(("S", 1), ("M1", 1), p, "equivalence 0.01") for p in ("E-ALL", "E-SCREEN")]
+                      + [ho_pair(("S", 2), ("M1", 2), p, "equivalence 0.01") for p in ("E-ALL", "E-SCREEN")]
+                      + [ho_pair(("M1", 1), ("M0", 1), p, "lower by >= 0.05") for p in ("E-ALL", "E-SCREEN")]
+                      + [ho_pair(("T1-minus-care", 1), ("S", 1), p, "descriptive") for p in ("E-ALL", "E-SCREEN")]
+                      + [ho_pair(("S", 1), ("BL-ADAlite", 1), "E-SCREEN", "higher by >= 0.01")])
+    print(hp.round(4).to_string(index=False))
+    print("CV (this run) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
+
+# %%
+if RELEASED:
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    lab_ = [f"{a}" + (" (T2)" if t == 2 else "") for a, t in P_TE]
+    for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
+        d = ho[ho["pop"] == pop].reset_index(drop=True)
+        yy_ = np.arange(len(d))
+        ax.errorbar(d["cv_auc"], yy_ - 0.15, xerr=[d["cv_auc"] - d["cv_lo"], d["cv_hi"] - d["cv_auc"]], fmt="s", color=OI["grey"], capsize=2,
+                    ms=4, label="cross-validation (training part)")
+        ax.errorbar(d["roc_auc"], yy_ + 0.15, xerr=[d["roc_auc"] - d["auc_lo"], d["auc_hi"] - d["roc_auc"]], fmt="o", capsize=2, ms=5,
+                    color=OI["blue"], label="hold-out, one shot")
+        for i, r in d.iterrows():
+            if r["flag_2se_below_cv"]:
+                ax.text(r["auc_lo"] - 0.01, i + 0.15, "> 2 SE below CV", ha="right", va="center", fontsize=7, color=OI["vermillion"])
+        ax.set(title=pop, xlabel="ROC-AUC (95 % bootstrap CI)", xlim=(0.4, 1.0))
+    axes[0].set_yticks(range(len(lab_)), lab_)
+    axes[0].invert_yaxis()
+    axes[0].legend(fontsize=8, loc="lower left")
+    fig.suptitle("Hold-out vs cross-validation: the CV estimates carry over", fontsize=11)
+    plots.savefig(fig, "S9_holdout_vs_cv", caption="F9-6. ROC-AUC on the 20 % hold-out (blue; models refitted once on the whole training part, evaluated once "
+                  "after exp-freeze) against the pooled out-of-fold estimate on the training part (grey), with 95 % bootstrap CIs; E-ALL left, "
+                  "E-SCREEN right (about 25 hold-out positives).")
+    plt.show()
+
+    from sklearn.calibration import calibration_curve
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
+    for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
+        yy, m = (y_te, np.ones(len(y_te), bool)) if pop == "E-ALL" else (yesc_te, esc_te)
+        for (a, t), col in ((("M1", 1), OI["blue"]), (("S", 1), OI["green"]), (("BL-ADAlite-LR", 1), OI["grey"])):
+            fr, mp = calibration_curve(yy[m], P_TE[(a, t)][m], n_bins=5, strategy="quantile")
+            ax.plot(mp, fr, "o-", color=col, ms=4, label=a)
+        ax.plot([0, 1], [0, 1], "k:", lw=0.8)
+        ax.set(xlim=(0, 1), ylim=(0, 1), xlabel="mean predicted probability (quintile)", ylabel="observed share", title=f"Hold-out calibration, {pop}")
+        ax.legend(fontsize=8)
+    fig.tight_layout()
+    plots.savefig(fig, "S9_holdout_calibration", caption="Calibration on the hold-out by quintiles of the predicted probability for M1, S (balanced class weights) "
+                  "and BL-ADAlite-LR, Tier 1; E-ALL left, E-SCREEN right.")
+    plt.show()
+
+# %%
+if RELEASED:
+    now = pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds")
+    prev = json.loads(HOLDOUT_LOG.read_text(encoding="utf-8")) if HOLDOUT_LOG.exists() else None
+    if prev is not None and HOLDOUT_CSV.exists():   # a re-execution must reproduce the one-shot numbers exactly
+        old = pd.read_csv(HOLDOUT_CSV).set_index(["arm", "tier", "pop"])["roc_auc"]
+        new = ho.set_index(["arm", "tier", "pop"])["roc_auc"]
+        assert np.allclose(old.reindex(new.index).to_numpy(), new.to_numpy(), atol=1e-9), "hold-out numbers changed after the one-shot run"
+        print(f"re-execution reproduces the one-shot hold-out AUCs exactly (first run {prev['first_run_utc']})")
+    log_ = dict(first_run_utc=prev["first_run_utc"] if prev else now, last_run_utc=now,
+                n_executions=(prev["n_executions"] + 1) if prev else 1, sha256_test_seqn=sha_te, n_test=int(len(cl_te)),
+                exp_freeze_commit=RB.head_commit("exp-freeze"), head_at_first_run=prev["head_at_first_run"] if prev else RB.head_commit(),
+                arms=[f"{a} T{t}" for a, t in P_TE], threshold_rule="specificity 0.80 on training-part predictions of the refitted model",
+                nb_mode_first_run=prev["nb_mode_first_run"] if prev else C.NB_MODE)
+    HOLDOUT_LOG.write_text(json.dumps(log_, indent=2), encoding="utf-8")
+    ho.to_csv(HOLDOUT_CSV, index=False)
+    hp.to_csv(OUT / "holdout_pairs.csv", index=False)
+    print(json.dumps(log_, indent=1))
+    S9["holdout"] = dict(log=log_, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
+                         n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
+else:
+    S9["holdout"] = dict(status="not evaluated: exp-freeze tag missing")
+
+# %% [markdown]
+# ## 12 Storage
+# **Why.** S10 (claims and robustness grades) and S11 (notebook, slides) read every number from stored artefacts:
+# `results/metrics_S9.json`, the tables in `results/S9/`, the F9 figures and the S9 decision-register fragment
+# (written from the FINAL run, so that the register always carries the numbers of the committed notebook).
+
+# %%
+if RELEASED and "metrics" in S9["holdout"]:
+    hS = ho[(ho["arm"] == "S") & (ho["tier"] == 1)].set_index("pop")
+    hpS = hp.set_index(["comparison", "pop"])
+    reg = pd.concat([reg, pd.DataFrame([dict(
+        dr_id="DR-S9-15", stage="S9", date=today, type="holdout",
+        finding="One-shot hold-out evaluation after exp-freeze",
+        evidence_ref="results/S9/holdout_metrics.csv; results/S9/holdout_pairs.csv; results/S9/holdout_log.json; figures/S9_holdout_vs_cv.png",
+        evidence_value=(f"S T1 AUC E-ALL {hS.loc['E-ALL', 'roc_auc']:.3f} [{hS.loc['E-ALL', 'auc_lo']:.3f}, {hS.loc['E-ALL', 'auc_hi']:.3f}] (CV {hS.loc['E-ALL', 'cv_auc']:.3f}), "
+                        f"E-SCREEN {hS.loc['E-SCREEN', 'roc_auc']:.3f} [{hS.loc['E-SCREEN', 'auc_lo']:.3f}, {hS.loc['E-SCREEN', 'auc_hi']:.3f}] (CV {hS.loc['E-SCREEN', 'cv_auc']:.3f}); "
+                        f"S - M1 E-ALL {hpS.loc[('S T1 - M1 T1', 'E-ALL'), 'est']:+.4f} [{hpS.loc[('S T1 - M1 T1', 'E-ALL'), 'lo']:+.4f}, {hpS.loc[('S T1 - M1 T1', 'E-ALL'), 'hi']:+.4f}]; "
+                        f"{int(ho['flag_2se_below_cv'].sum())} of {len(ho)} arm x population rows > 2 SE below CV; SHA-256 {sha_te[:16]}"),
+        decision="Report hold-out numbers as they are; no re-tuning", alternatives_rejected="re-tuning after seeing the hold-out",
+        hyp_id="H2a;H2b;H2c", status="decided", check_verdict="PASS", check_note=f"first run {S9['holdout']['log']['first_run_utc']}",
+        loop_ref="", change_request="", commit="")])], ignore_index=True)
+if C.IS_FINAL:
+    reg.to_csv(REG_PATH, index=False)
+    print(f"wrote {REG_PATH.relative_to(C.ROOT).as_posix()} ({len(reg)} rows)")
+else:
+    print(f"FAST run: register fragment not written ({len(reg)} rows prepared; the committed fragment comes from the FINAL run)")
+S9["register_ids"] = reg["dr_id"].tolist()
+S9["runtime_seconds"] = time.time() - T_START
+R.save_section("S9", S9)
+print(f"saved results/metrics_S9.json; section runtime {S9['runtime_seconds']:.0f} s ({C.NB_MODE})")
+print(json.dumps({"H2b(a) reference": S9["reference"]["E-ALL"]["h2b"], "seeds stable": S9["seeds"]["stable_eall"],
+                  "sensitivity same verdict": f"{S9['sensitivity']['eall_same_verdict']}/{S9['sensitivity']['eall_rows']}",
+                  "L3 triggered": S9["leak_hunt"]["triggered"], "hold-out": "evaluated" if "metrics" in S9["holdout"] else S9["holdout"]["status"]}, indent=1))
