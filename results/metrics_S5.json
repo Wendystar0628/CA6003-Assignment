@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:06:00+00:00"
+    "written_utc": "2026-10-10T18:06:20+00:00"
   },
   "labels": {
     "confusion": {
@@ -99,6 +99,133 @@
         "w_est": 0.30638537889566536,
         "kg_low": 0.22750117126599806,
         "kg_high": 0.39459042631070335
+      }
+    }
+  },
+  "undiagnosed_inequality": {
+    "proportions": {
+      "uninsured": {
+        "n": 49,
+        "n_events": 18,
+        "est": 0.43020408295723267,
+        "kg_low": 0.24833374468877953,
+        "kg_high": 0.6269977617060822,
+        "ci_width": 0.3786640170173027,
+        "n_eff": 33.77618038123634,
+        "df": 12,
+        "nchs": "exploratory, does not meet NCHS standard",
+        "flags": "ci_width>=0.30"
+      },
+      "insured": {
+        "n": 670,
+        "n_events": 133,
+        "est": 0.19862572387801336,
+        "kg_low": 0.1571050365506292,
+        "kg_high": 0.24560420795413276,
+        "ci_width": 0.08849917140350355,
+        "n_eff": 392.0837998312753,
+        "df": 15,
+        "nchs": "meets NCHS standard",
+        "flags": ""
+      },
+      "no usual place": {
+        "n": 41,
+        "n_events": 17,
+        "est": 0.40274427334647717,
+        "kg_low": 0.20963365732744207,
+        "kg_high": 0.6208344986447895,
+        "ci_width": 0.41120084131734735,
+        "n_eff": 26.951452439643376,
+        "df": 14,
+        "nchs": "exploratory, does not meet NCHS standard",
+        "flags": "n_eff<30;ci_width>=0.30"
+      },
+      "usual place": {
+        "n": 680,
+        "n_events": 135,
+        "est": 0.20338718398294114,
+        "kg_low": 0.15767813863395452,
+        "kg_high": 0.25553740671905023,
+        "ci_width": 0.09785926808509571,
+        "n_eff": 327.87224386640315,
+        "df": 15,
+        "nchs": "meets NCHS standard",
+        "flags": ""
+      },
+      "NH Asian": {
+        "n": 40,
+        "n_events": 12,
+        "est": 0.3620513344236509,
+        "kg_low": 0.1645852483918817,
+        "kg_high": 0.6009725644520756,
+        "ci_width": 0.4363873160601939,
+        "n_eff": 26.57506604671842,
+        "df": 8,
+        "nchs": "exploratory, does not meet NCHS standard",
+        "flags": "n_eff<30;ci_width>=0.30"
+      },
+      "NH White": {
+        "n": 362,
+        "n_events": 74,
+        "est": 0.20583033599929365,
+        "kg_low": 0.14093965949245285,
+        "kg_high": 0.2841443501130437,
+        "ci_width": 0.14320469062059082,
+        "n_eff": 157.67687934893917,
+        "df": 15,
+        "nchs": "meets NCHS standard",
+        "flags": ""
+      }
+    },
+    "risk_differences_pp": {
+      "uninsured - insured": {
+        "rd_pp": 23.157835907921932,
+        "ci_low_pp": 6.235010286422246,
+        "ci_high_pp": 40.08066152942161,
+        "df": 15
+      },
+      "no usual place - usual place": {
+        "rd_pp": 19.935708936353603,
+        "ci_low_pp": -1.6054904701312185,
+        "ci_high_pp": 41.47690834283843,
+        "df": 15
+      },
+      "NH Asian - NH White": {
+        "rd_pp": 15.622099842435725,
+        "ci_low_pp": -5.678259847488332,
+        "ci_high_pp": 36.92245953235978,
+        "df": 15
+      }
+    },
+    "logit": {
+      "n": 704,
+      "events": 149,
+      "formula": "undx ~ no_usual_place + uninsured + race_cat + age10 + male + BMXBMI",
+      "or": {
+        "no usual place": {
+          "OR": 2.5898247874039813,
+          "ci_low": 1.2466469928259742,
+          "ci_high": 5.380185784788853,
+          "OR_w": 2.152184221303058,
+          "w_ci_low": 0.9064006070122714,
+          "w_ci_high": 5.110209422402937
+        },
+        "uninsured": {
+          "OR": 1.8355462914133067,
+          "ci_low": 0.9249478624846781,
+          "ci_high": 3.6426163296063145,
+          "OR_w": 2.2365609238370396,
+          "w_ci_low": 1.0844182641487485,
+          "w_ci_high": 4.612800181820476
+        },
+        "NH Asian": {
+          "OR": 1.677180195313596,
+          "ci_low": 0.7616686716470713,
+          "ci_high": 3.6931194786695394,
+          "OR_w": 2.228708258870657,
+          "w_ci_low": 0.8363994903579339,
+          "w_ci_high": 5.938717754398208
+        }
       }
     }
   }

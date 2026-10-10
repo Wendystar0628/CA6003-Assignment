@@ -273,6 +273,175 @@ register("DR-S5-04", "label_semantics",
 # mostly a diagnosis and communication gap, not a lack of any contact. This is also why DIQ160 and DIQ180 are
 # excluded as features: they record the result of a glucose test, which the screening use case comes before.
 
+# %% [markdown]
+# ## 4 Who is undiagnosed
+#
+# **Why.** If the undiagnosed share differs by insurance, access or race, then `L_self` is a biased label
+# and a model trained on it inherits the bias. The domain is all adults with HbA1c ≥ 6.5 % (n = 721) and the
+# outcome is "not self-reported". Following NCHS presentation standards, proportions get Korn–Graubard intervals
+# with the design-based effective sample size and domain df (strata containing the domain), and every estimate
+# whose CI width is ≥ 0.30 (or n/n_eff < 30, df < 8) is labelled *exploratory, does not meet NCHS standard*.
+# The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife, df = domain df) rather than a
+# small-cell proportion.
+
+# %%
+d["undx"] = 1.0 - d["L_self"]
+d["uninsured"] = np.select([d["HIQ011"].eq(2), d["HIQ011"].eq(1)], [1.0, 0.0], np.nan)
+d["no_usual_place"] = np.select([d["HUQ030"].eq(2), d["HUQ030"].isin([1, 3])], [1.0, 0.0], np.nan)
+a1c_dom = d["L_A1c"].eq(1).to_numpy()
+
+
+def risk_difference(df, y, ga, gb, weight=WT):
+    """Weighted risk difference p(a) - p(b) with JK CI (df = strata containing a or b)."""
+    yv = df[y].to_numpy(float)
+    ok = ~np.isnan(yv)
+    a, b = np.asarray(ga) & ok, np.asarray(gb) & ok
+    y0 = np.nan_to_num(yv)
+
+    def f(_d, w):
+        return np.dot(w * a, y0) / np.sum(w * a) - np.dot(w * b, y0) / np.sum(w * b)
+    return S.jackknife(df, f, weight=weight, df_override=S.domain_df(df, a | b))
+
+
+contrasts = [  # (name, column, level a, level b, label a, label b)
+    ("uninsured - insured", "uninsured", 1.0, 0.0, "uninsured", "insured"),
+    ("no usual place - usual place", "no_usual_place", 1.0, 0.0, "no usual place", "usual place"),
+    ("NH Asian - NH White", "RIDRETH3", 6, 3, "NH Asian", "NH White"),
+]
+prop_rows, rd_rows = [], []
+for name, col, a, b, la, lb in contrasts:
+    for lev, lab in [(a, la), (b, lb)]:
+        r = S.weighted_prop(d, "undx", weight=WT, domain=a1c_dom & d[col].eq(lev).to_numpy())
+        prop_rows.append({"group": lab, "contrast": name, **{k: r[k] for k in
+                          ("n", "n_events", "est", "kg_low", "kg_high", "ci_width", "n_eff", "df")},
+                          "nchs": "exploratory, does not meet NCHS standard" if r["nchs_flags"] else "meets NCHS standard",
+                          "flags": ";".join(r["nchs_flags"])})
+    rd = risk_difference(d, "undx", a1c_dom & d[col].eq(a).to_numpy(), a1c_dom & d[col].eq(b).to_numpy())
+    rd_rows.append({"contrast": name, "rd_pp": 100 * rd["est"], "ci_low_pp": 100 * rd["ci_low"],
+                    "ci_high_pp": 100 * rd["ci_high"], "df": rd["df"]})
+props = pd.DataFrame(prop_rows).drop_duplicates("group")
+rds = pd.DataFrame(rd_rows)
+print("Undiagnosed share among HbA1c >= 6.5 (WTPH2YR, Korn-Graubard)")
+print(props.drop(columns="flags").round(3).to_string(index=False))
+print("\nRisk differences (percentage points, JK CI)")
+print(rds.round(1).to_string(index=False))
+
+P = props.set_index("group")
+close(P.loc["uninsured", "est"], 0.430, 0.0015, "uninsured share"); assert P.loc["uninsured", "n"] == 49
+close(P.loc["uninsured", "kg_low"], 0.248, 0.002, "uninsured KG low"); close(P.loc["uninsured", "kg_high"], 0.627, 0.002, "uninsured KG high")
+close(P.loc["insured", "est"], 0.199, 0.0015, "insured share")
+close(P.loc["no usual place", "est"], 0.403, 0.0015, "no usual place share"); assert P.loc["no usual place", "n"] == 41
+close(P.loc["NH Asian", "est"], 0.362, 0.0015, "Asian share"); assert P.loc["NH Asian", "n"] == 40 and P.loc["NH Asian", "df"] == 8
+close(P.loc["NH Asian", "kg_low"], 0.165, 0.002, "Asian KG low"); close(P.loc["NH Asian", "kg_high"], 0.601, 0.002, "Asian KG high")
+for g in ("uninsured", "no usual place", "NH Asian"):
+    assert P.loc[g, "ci_width"] >= C.NCHS_CI_WIDTH_MAX and P.loc[g, "nchs"].startswith("exploratory")
+assert P.loc["insured", "nchs"] == "meets NCHS standard"
+RD = rds.set_index("contrast")
+for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual place - usual place": (20.0, -1.6, 41.6),
+                          "NH Asian - NH White": (15.6, -5.7, 36.9)}.items():
+    close(RD.loc[name, "rd_pp"], e, 0.15, name); close(RD.loc[name, "ci_low_pp"], lo, 0.15, name + " low")
+    close(RD.loc[name, "ci_high_pp"], hi, 0.15, name + " high")
+
+# %% [markdown]
+# **Adjusted model.** Insurance, a usual place of care and race are correlated (and all correlate with age), so
+# each contrast is also estimated in a logistic model of "undiagnosed" among the HbA1c-positive adults,
+# adjusted for age, sex and BMI. The primary fit is unweighted (model-based CI), matching the S5 plan; a
+# WTPH2YR-weighted fit with jackknife CIs is shown as a design-based sensitivity check.
+
+# %%
+FORM = "undx ~ no_usual_place + uninsured + race_cat + age10 + male + BMXBMI"   # reference race: NH White
+RACE_LEVELS = ["NH White", *[r for r in RACE.values() if r != "NH White"]]
+lg = d[a1c_dom].assign(age10=lambda x: x["RIDAGEYR"] / 10, male=lambda x: x["RIAGENDR"].eq(1).astype(float),
+                       race_cat=lambda x: pd.Categorical(x["race3"], categories=RACE_LEVELS))
+lg = lg.dropna(subset=["undx", "no_usual_place", "uninsured", "race3", "age10", "BMXBMI"])
+fit = smf.logit(FORM, data=lg).fit(disp=0)
+KEYS = {"no_usual_place": "no usual place", "uninsured": "uninsured", "race_cat[T.NH Asian]": "NH Asian"}
+ci = fit.conf_int()
+logit_tab = pd.DataFrame({"term": list(KEYS.values()), "OR": np.exp(fit.params[list(KEYS)]).values,
+                          "ci_low": np.exp(ci.loc[list(KEYS), 0]).values, "ci_high": np.exp(ci.loc[list(KEYS), 1]).values})
+
+
+def wlogit_logor(df, w):
+    m = w > 0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        f = smf.glm(FORM, data=df[m], family=sm.families.Binomial(), freq_weights=w[m] / w[m].mean()).fit()
+    return f.params[list(KEYS)].to_numpy()
+
+
+jk_lg = S.jackknife(lg, wlogit_logor, weight=WT)
+logit_tab["OR_w"] = np.exp(jk_lg["est"])
+logit_tab["w_ci_low"] = np.exp(jk_lg["ci_low"])
+logit_tab["w_ci_high"] = np.exp(jk_lg["ci_high"])
+n_dom = int(a1c_dom.sum())
+print(f"complete cases n = {len(lg)} of {n_dom} (dropped: {int(d.loc[a1c_dom, 'BMXBMI'].isna().sum())} without BMI, "
+      f"{int(d.loc[a1c_dom, 'uninsured'].isna().sum())} with unknown insurance); undiagnosed events = {int(lg['undx'].sum())}")
+print(logit_tab.round(2).to_string(index=False))
+LT = logit_tab.set_index("term")
+# S5 plan: n=706, OR 2.84 / 1.80 / 1.69. Our complete-case model (unknown insurance excluded, not coded insured)
+# has n=704; the ORs agree within sampling noise and the inferential pattern is identical (asserted).
+assert len(lg) == 704
+close(LT.loc["no usual place", "OR"], 2.84, 0.30, "OR no usual place")
+close(LT.loc["uninsured", "OR"], 1.80, 0.10, "OR uninsured")
+close(LT.loc["NH Asian", "OR"], 1.69, 0.10, "OR Asian")
+assert LT.loc["no usual place", "ci_low"] > 1 and LT.loc["uninsured", "ci_low"] < 1 < LT.loc["uninsured", "ci_high"]
+assert LT.loc["NH Asian", "ci_low"] < 1 < LT.loc["NH Asian", "ci_high"]
+
+# %%
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4), gridspec_kw={"width_ratios": [1.25, 1]})
+order = ["insured", "uninsured", "usual place", "no usual place", "NH White", "NH Asian"]
+pp = P.loc[order]
+yy = np.arange(len(order))[::-1]
+for yi, (g, r) in zip(yy, pp.iterrows()):
+    expl = r["nchs"].startswith("exploratory")
+    col = plots.PALETTE[5] if expl else plots.PALETTE[4]
+    ax1.plot([r["kg_low"] * 100, r["kg_high"] * 100], [yi, yi], color=col, lw=2)
+    ax1.plot(r["est"] * 100, yi, "o", color=col, mfc="white" if expl else col, ms=8)
+    ax1.text(101, yi, f"n={int(r['n'])}", va="center", fontsize=8)
+ax1.set_yticks(yy, order)
+ax1.set(xlim=(0, 100), xlabel="undiagnosed share among HbA1c ≥ 6.5 (%, KG 95% CI)",
+        title="Undiagnosed share (hollow = exploratory, NCHS standard not met)")
+yr = np.arange(len(rds))[::-1]
+ax2.errorbar(rds["rd_pp"], yr, xerr=[rds["rd_pp"] - rds["ci_low_pp"], rds["ci_high_pp"] - rds["rd_pp"]],
+             fmt="o", color=plots.PALETTE[4], capsize=4)
+ax2.axvline(0, color="k", lw=1)
+ax2.set_yticks(yr, [c.replace(" - ", " −\n") for c in rds["contrast"]])
+ax2.set(xlabel="risk difference (pp, jackknife 95% CI)", title="Risk differences")
+fig.tight_layout()
+plots.savefig(fig, "S5_undiagnosed_inequality",
+              caption="Share of HbA1c-positive adults who do not report diabetes (WTPH2YR, Korn-Graubard CI) and risk "
+                      "differences with delete-one-PSU jackknife CI. Hollow markers: CI width >= 0.30, exploratory.")
+plt.show()
+
+props.to_csv(OUT / "undiagnosed_by_group.csv", index=False)
+rds.to_csv(OUT / "undiagnosed_risk_differences.csv", index=False)
+logit_tab.to_csv(OUT / "undiagnosed_logit.csv", index=False)
+RES["undiagnosed_inequality"] = {
+    "proportions": props.set_index("group").drop(columns=["contrast"]).to_dict("index"),
+    "risk_differences_pp": rds.set_index("contrast").to_dict("index"),
+    "logit": {"n": len(lg), "events": int(lg["undx"].sum()), "formula": FORM,
+              "or": logit_tab.set_index("term").to_dict("index")},
+}
+register("DR-S5-05", "label_bias",
+         "Undiagnosed share is higher without insurance or a usual place of care; small cells do not meet NCHS standards",
+         "results/S5/undiagnosed_by_group.csv; results/S5/undiagnosed_risk_differences.csv; figures/S5_undiagnosed_inequality.png",
+         f"RD uninsured-insured {RD.loc['uninsured - insured', 'rd_pp']:.1f}pp ({RD.loc['uninsured - insured', 'ci_low_pp']:.1f}, "
+         f"{RD.loc['uninsured - insured', 'ci_high_pp']:.1f}); uninsured share 43.0% KG width {P.loc['uninsured', 'ci_width']:.2f}; "
+         f"adjusted OR no usual place {LT.loc['no usual place', 'OR']:.2f}",
+         "Headline = risk difference with JK CI; proportions with KG CI and NCHS flag; insurance and access are audit/stratification variables only; S8 audits L_self vs L_comb by low_access",
+         "Report small-cell proportions as headline; drop small groups; put insurance into the model")
+
+# %% [markdown]
+# **So what.** Among HbA1c-positive adults, 43.0 % of the uninsured but 19.9 % of the insured do not know their
+# diagnosis: a risk difference of +23.2 pp (6.2, 40.1) whose interval excludes zero. Without a usual place of care
+# the difference is +19.9 pp (−1.6, 41.5) and for NH Asian versus NH White adults +15.6 pp (−5.7, 36.9); both
+# intervals include zero. All three group proportions have KG intervals wider than 0.30 (Asian: n = 40,
+# df = 8), so they are *exploratory and do not meet the NCHS standard*; they are not headlines. Adjusted for age,
+# sex, BMI and each other (complete cases, n = 704), lacking a usual place of care remains associated with being
+# undiagnosed (OR 2.6, CI excludes 1), the insurance and Asian ORs are imprecise (CIs include 1), and the design-based weighted fit
+# gives wider intervals. Consequence for the label: `L_self` systematically under-counts disease in groups with
+# poorer access, which is why the target is the union `L_comb` and why S8 compares training labels.
+
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"
