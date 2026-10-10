@@ -1,0 +1,5 @@
+component,weight,subsample,used here for,positive in cohort
+"Interview (questionnaires: DIQ, BPQ, HIQ, HUQ, SMQ, PAQ, INQ)",WTINT2YR,all interviewed,interview-only descriptives,5730
+"MEC examination (BMX, BPXO)",WTMEC2YR,examined,exam-only descriptives,5730
+"Phlebotomy analytes (GHB = HbA1c, TCHOL, HDL)",WTPH2YR,examined + blood drawn,**cohort analyses (contain HbA1c)**,5730
+"Fasting analytes (GLU, TRIGLY/LDL)",WTSAF2YR,"morning fasting subsample, 8–24 h fast","**DB516 replication, triglycerides, LDL**",2938

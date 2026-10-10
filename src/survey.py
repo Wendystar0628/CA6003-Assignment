@@ -226,7 +226,7 @@ def weighted_prop(df: pd.DataFrame, y, *, weight: str, domain=None, strata: str 
     n = int(ok.sum())
     n_events = int(np.nansum(yv[ok] > 0)) if n else 0
     var_srs = p * (1 - p) / n if n else np.nan
-    n_eff_design = min(p * (1 - p) / se ** 2, n) if se > 0 else float(n)
+    n_eff_design = _design_neff(p, se, n)
     kg = korn_graubard_ci(p, n_eff_design, ddf, alpha, n=n)
     width = kg[1] - kg[0]
     return {
@@ -274,9 +274,21 @@ def _std_stat(yv: np.ndarray, gmask: list[np.ndarray], band: np.ndarray, std: di
     return f
 
 
-def _prep_std(df, y, group, age):
+def bands_from_std(std: dict) -> list[tuple[int, int, str]]:
+    """Parse standard-population keys such as "20-39" or "60+" into (lo, hi, label) bands."""
+    out = []
+    for k in std:
+        if k.endswith("+"):
+            out.append((int(k[:-1]), 200, k))
+        else:
+            lo, hi = k.split("-")
+            out.append((int(lo), int(hi), k))
+    return out
+
+
+def _prep_std(df, y, group, age, std=US2000_3BAND):
     yv = _as_values(df, y)
-    band = age_band(df[age]).fillna("").to_numpy(dtype=object)
+    band = age_band(df[age], bands_from_std(std)).fillna("").to_numpy(dtype=object)
     yv = np.where(band == "", np.nan, yv)
     g = df[group] if isinstance(group, str) else pd.Series(np.asarray(group), index=df.index)
     return yv, band, g
@@ -291,7 +303,7 @@ def age_standardise(df: pd.DataFrame, y, group, *, weight: str, std: dict = US20
     `domain` optionally restricts all groups further (weights zeroed outside).
     CIs use t with the domain df of each group.
     """
-    yv, band, g = _prep_std(df, y, group, age)
+    yv, band, g = _prep_std(df, y, group, age, std)
     dm = _as_mask(df, domain)
     levels = [lv for lv in pd.unique(g.dropna())]
     try:
@@ -308,10 +320,22 @@ def age_standardise(df: pd.DataFrame, y, group, *, weight: str, std: dict = US20
         t = stats.t.ppf(1 - alpha / 2, max(ddf, 1))
         c, cs = jk["est"][i], jk["se"][i]
         s, ss = jk["est"][k + i], jk["se"][k + i]
-        rows.append({"group": lv, "n": int(m.sum()), "n_events": int(np.nansum(yv[m] > 0)), "df": ddf,
+        n = int(m.sum())
+        kc = korn_graubard_ci(c, _design_neff(c, cs, n), ddf, alpha, n=n)
+        ks = korn_graubard_ci(s, _design_neff(s, ss, n), ddf, alpha, n=n)
+        rows.append({"group": lv, "n": n, "n_events": int(np.nansum(yv[m] > 0)), "df": ddf,
                      "crude": c, "crude_se": cs, "crude_low": c - t * cs, "crude_high": c + t * cs,
-                     "std": s, "std_se": ss, "std_low": s - t * ss, "std_high": s + t * ss})
+                     "crude_kg_low": kc[0], "crude_kg_high": kc[1],
+                     "std": s, "std_se": ss, "std_low": s - t * ss, "std_high": s + t * ss,
+                     "std_kg_low": ks[0], "std_kg_high": ks[1]})
     return pd.DataFrame(rows)
+
+
+def _design_neff(p: float, se: float, n: int) -> float:
+    """Design-based effective sample size p(1-p)/se^2, capped at n (NCHS)."""
+    if not np.isfinite(p) or not np.isfinite(se) or se <= 0:
+        return float(n)
+    return float(min(p * (1 - p) / se ** 2, n))
 
 
 def std_difference(df: pd.DataFrame, y, group, a, b, *, weight: str, std: dict = US2000_3BAND,
@@ -322,7 +346,7 @@ def std_difference(df: pd.DataFrame, y, group, a, b, *, weight: str, std: dict =
     The difference is computed inside every replicate, so the SE accounts for the
     covariance of the two group estimates. df = domain df of (a or b).
     """
-    yv, band, g = _prep_std(df, y, group, age)
+    yv, band, g = _prep_std(df, y, group, age, std)
     dm = _as_mask(df, domain)
     ga = (g.to_numpy() == a) & dm
     gb = (g.to_numpy() == b) & dm
