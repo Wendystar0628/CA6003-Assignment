@@ -125,9 +125,8 @@ S7["model_choice"] = dict(linearity=lin.set_index("label")[["chi2", "p"]].round(
 # sex × BMI significant in its primary specification (p printed above) but not in the minimal or spline
 # specifications; because the result depends on the specification, no interaction term is added and the point is
 # listed as a limitation. With about 18 events per parameter, overfitting risk is modest; L2 mainly stabilises
-# correlated anthropometrics. Note also a documented difference from the S4 DAJ wording: S4 suggested dropping
-# weight, height, hip and arm a priori, while the locked S6 design applies an in-fold VIF > 10 rule, which removes
-# only weight (§6.5); hip and arm therefore stay in S.
+# correlated anthropometrics. Redundancy is handled as in the S4 DAJ table: in-fold iterative VIF > 10 pruning with
+# BMI and waist protected (P05), which removes only weight (§6.5); height, hip and arm therefore stay in S.
 
 # %% [markdown]
 # ## 3 Regularisation strength C0
