@@ -244,9 +244,12 @@ def arm_row(key):
 
 arm_metrics = pd.DataFrame([arm_row(k) for k in OOF]).merge(diag, on=["arm", "tier", "model"])
 arm_metrics.to_csv(OUT / "arm_metrics.csv", index=False)
-show = ["arm", "tier", "model", "eall_auc", "eall_auc_lo", "eall_auc_hi", "escr_auc", "escr_auc_lo", "escr_auc_hi",
+show = ["arm", "model", "eall_auc", "eall_auc_lo", "eall_auc_hi", "escr_auc", "escr_auc_lo", "escr_auc_hi",
         "eall_brier", "escr_recall_spec80", "eall_cal_slope", "n_convergence_warnings"]
-print(arm_metrics[show].round(3).to_string(index=False))
+main_arms = ["M0", "M1", "S", "T1-minus-care", "S-linear", "S+WHtR"]
+tab = arm_metrics[(arm_metrics["tier"] == 1) & arm_metrics["arm"].isin(main_arms)]
+print("Tier 1, main arms (all arms and Tier 2: results/S7/arm_metrics.csv):")
+print(tab[show].round(3).to_string(index=False))
 
 # %% [markdown]
 # **So what.** The table is the raw material for everything below; the paired comparisons that follow are what
@@ -867,7 +870,11 @@ S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_non
 # %% [markdown]
 # ## 12 Verdicts
 # **Why.** Each locked hypothesis gets exactly one verdict from the locked rules: the primary evaluation is E-ALL,
-# Tier 1; E-SCREEN and Tier 2 can only turn a decisive verdict into "mixed" if they contradict it.
+# Tier 1; E-SCREEN and Tier 2 can only turn a decisive verdict into "mixed" if they contradict it. The verdict lines
+# printed below are generated from the results. The interpretation that follows refers to the FINAL run stored in this
+# notebook (5 × 5 CV, B = 1000, coefficient B = 500); a FAST re-run (5 × 2, B = 100) reproduces every leakage,
+# equivalence and class-weight verdict, but borderline ones (B3-b, B5-a, H2b) can move between "inconclusive" and a
+# decisive verdict.
 
 # %%
 def lrtest_splines(tier=1):
@@ -997,9 +1004,21 @@ for h, g in sb.groupby("hyp_id", sort=False):
 final = pd.DataFrame(final)
 sb.to_csv(OUT / "scoreboard_detail.csv", index=False)
 final.to_csv(OUT / "scoreboard.csv", index=False)
-print(sb[["hyp_id", "sub", "role", "pop", "tier", "est", "lo", "hi", "mdd", "sesoi", "verdict"]].round(4).to_string(index=False))
+prim = sb[(sb["role"] == "primary") & ~sb["verdict"].str.startswith("tested")]
+print("primary sub-verdicts (E-ALL Tier 1 unless stated; secondary rows in results/S7/scoreboard_detail.csv):")
+print(prim[["hyp_id", "sub", "pop", "est", "lo", "hi", "mdd", "sesoi", "verdict"]].round(4).to_string(index=False))
 print()
 print(final.to_string(index=False))
+print()
+def _fmt_sub(r):
+    if pd.isna(r.get("est")):
+        return f"{r['sub']}: {r['verdict']}"
+    rng_ = "" if pd.isna(r.get("hi")) else f" [{r['lo']:+.3f}, {r['hi']:+.3f}]"
+    return f"{r['sub']} {r['est']:+.3f}{rng_} -> {r['verdict']}"
+for _, f in final.iterrows():
+    subs = prim[prim["hyp_id"] == f["hyp_id"]]
+    if len(subs):
+        print(f"{f['hyp_id']}: {f['verdict'].upper()} | " + "; ".join(_fmt_sub(r) for _, r in subs.iterrows()))
 pure = []
 for pop in ("E-ALL", "E-SCREEN"):
     for metric in ("roc_auc", "brier"):
@@ -1033,26 +1052,30 @@ S7["lr_test_splines"] = lrt
 # * **B5 (representation) – inconclusive overall.** Its primary sub-claim holds on E-ALL Tier 1 (|calibration slope − 1|
 #   smaller by about 0.04, CI excluding 0) and the spline terms are strongly supported by the likelihood-ratio test,
 #   but the block's AUC gain (about +0.007) has a CI that crosses the SESOI, and the calibration gain is not confirmed on
-#   E-SCREEN or Tier 2. Splines are kept because of the likelihood-ratio evidence and the S4 linearity tests, not because
-#   of the AUC.
+#   E-SCREEN or Tier 2. The calibration gain is measured with class weights switched on in both arms and mostly reflects
+#   the solver converging once the features are scaled (S−B5 is unscaled and stops at the iteration limit in every fold),
+#   not a better functional form. Splines are kept because of the likelihood-ratio evidence and the S4 linearity tests,
+#   not because of the AUC.
 # * **B6a (class weights) – supported on all three sub-claims**: same AUC, Brier worse by about 0.07, balanced accuracy at
 #   0.5 better by about 0.14. Class weighting is a threshold choice in disguise and should be replaced by an explicit
 #   threshold.
-# * **H2b (M1 vs S, the headline "minimal vs systematic") – inconclusive.** S discriminates slightly better than M1
-#   (about +0.008, CI from 0 to about +0.016, so neither "equivalent" nor "better by the SESOI" is established); its
-#   Brier score is clearly worse (refuted), entirely because of the class weights of B6a (S−B6a has the Brier score of M1);
-#   and the coefficient-SD ratio is about 2 but its CI straddles 2. Systematic preparation does not buy discrimination;
-#   it buys fidelity and – partly – stability, and one of its steps (class weights) costs calibration.
+# * **H2b (M1 vs S, the headline "minimal vs systematic") – inconclusive, best read as three sub-verdicts:**
+#   (a) AUC +0.008 [0.000, 0.016] – underpowered rather than null: the MDD (about 0.011) exceeds the SESOI of 0.01, so
+#   neither "equivalent" nor "better" can be established; (b) Brier **refuted** – S is worse by about 0.07, entirely
+#   because of the class weights of B6a; (c) BMI coefficient-SD ratio about 2.0 with a Monte Carlo interval straddling 2
+#   (and confounded by non-convergence of the unscaled M1). A strict conjunctive reading (every sub-claim must hold) would
+#   fail H2b on the Brier sub-claim; the locked combination rule yields "inconclusive", and no verdict is changed after the
+#   lock. The cleaner, exploratory "pure preparation" contrast S−B6a vs M1 (printed above) shows what systematic
+#   preparation does without class weights: a small AUC gain on E-ALL (below the SESOI; on E-SCREEN the interval includes
+#   0) and no Brier cost – the calibration loss of S comes from the class weights alone. Systematic
+#   preparation does not buy discrimination; it buys fidelity and – partly – stability, and one optional step (class
+#   weights) costs calibration.
 # * **H2c** – E-ALL overstates screening discrimination (gap about 0.06, supported); removing care-contact items lowers
 #   E-ALL (supported) but *raises* E-SCREEN by about 0.02 with a CI that excludes 0 yet reaches below the SESOI, so the
 #   pre-registered "unchanged" sub-claim is inconclusive and the hypothesis as a whole is inconclusive; S beats the
 #   reduced ADA score on E-SCREEN (supported).
 # * Verdicts that depend on E-SCREEN are limited by about 25 positives per fold: wherever the MDD exceeds the SESOI an
 #   inconclusive verdict means "underpowered", not "no effect".
-#
-# The wording above refers to the FINAL run stored in this notebook (5 × 5 CV, B = 1000, coefficient B = 500). A FAST
-# re-run (5 × 2, B = 100) reproduces every leakage, equivalence and class-weight verdict, but borderline ones (B3-b, B5-a,
-# H2b) can move between "inconclusive" and a decisive verdict.
 
 # %% [markdown]
 # ## 13 Storage
