@@ -598,6 +598,49 @@ close(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "ci_high"], 0.181, tol_ci, "
 close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_low"], 0.039, tol_ci, "White gain CI low")
 close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_high"], 0.058, tol_ci, "White gain CI high")
 
+# %% [markdown]
+# **Design-aware interval for the gain difference.** The bootstrap above resamples *people*, but NHANES adults are
+# clustered in 30 PSUs; people in the same PSU share neighbourhood, field team and exam period, so person-level
+# resampling can understate the uncertainty. As a check, the Asian − White difference in WHtR gain is also
+# bootstrapped at the PSU level (Rao–Wu rescaled bootstrap within the 15 strata, `survey.rao_wu_weights`; the
+# replicate multiplicities enter the unweighted AUCs as frequency weights).
+
+# %%
+diff_est = float(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"] - RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"])
+MULT = S.rao_wu_weights(d, np.ones(len(d)), B, seed=E.derive_seed(C.SEED_MASTER, "S5", "psu_bootstrap"))
+both_ok = (d["BMXBMI"].notna() & d["whtr"].notna()).to_numpy()
+
+
+def _gain_w(mask, w):
+    m = mask & both_ok & (w > 0)
+    y = d["L_comb"].to_numpy()[m]
+    return (roc_auc_score(y, d["whtr"].to_numpy()[m], sample_weight=w[m])
+            - roc_auc_score(y, d["BMXBMI"].to_numpy()[m], sample_weight=w[m]))
+
+
+is_as, is_wh = d["RIDRETH3"].eq(6).to_numpy(), d["RIDRETH3"].eq(3).to_numpy()
+psu_diff = np.array([_gain_w(is_as, MULT[:, b]) - _gain_w(is_wh, MULT[:, b]) for b in range(B)])
+gain_ci = pd.DataFrame([
+    {"method": "person-level stratified bootstrap", "est": diff_est,
+     "ci_low": gain_diff.quantile(.025), "ci_high": gain_diff.quantile(.975), "se": gain_diff.std()},
+    {"method": "PSU cluster bootstrap (Rao-Wu)", "est": diff_est,
+     "ci_low": np.quantile(psu_diff, .025), "ci_high": np.quantile(psu_diff, .975), "se": psu_diff.std()},
+])
+print(f"Asian − White difference in paired WHtR − BMI gain (B = {B})")
+print(gain_ci.round(3).to_string(index=False))
+close(diff_est, 0.088, 0.0006, "gain difference")
+assert np.quantile(psu_diff, .025) > 0, "PSU bootstrap CI of the gain difference includes 0"
+if C.IS_FINAL:   # reviewer's independent PSU bootstrap: 0.039-0.116
+    close(np.quantile(psu_diff, .025), 0.039, 0.01, "PSU CI low"); close(np.quantile(psu_diff, .975), 0.116, 0.01, "PSU CI high")
+gain_ci.to_csv(OUT / "whtr_gain_difference_ci.csv", index=False)
+
+# %% [markdown]
+# **So what.** Clustering does not inflate the uncertainty here (FINAL run, B = 1,000: SE 0.021 at PSU level vs
+# 0.023 at person level), but the PSU-level interval is shifted towards zero (0.035–0.116 vs 0.044–0.135). It
+# still excludes zero, so the larger WHtR gain in Asian adults is not an artefact of ignoring the survey's
+# clustering. The design-aware (PSU) interval is the one quoted from here on; with 30 PSUs and only 15 strata it
+# is itself approximate.
+
 # %%
 cut_rows = []
 for g, code in grp.items():
@@ -660,7 +703,9 @@ RES["asian_bmi"] = {
     "band_prevalence": {f"{g}|{b}": v for (g, b), v in B_[["n", "cases", "prev", "w_prev", "kg_low", "kg_high"]].to_dict("index").items()},
     "auc": {f"{g}|{m}": v for (g, m), v in RO[["n", "auc", "ci_low", "ci_high"]].to_dict("index").items()},
     "gain_difference_asian_minus_white": {"est": float(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"] - RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"]),
-                                          "ci_low": gain_diff.quantile(.025), "ci_high": gain_diff.quantile(.975)},
+                                          "ci_low": gain_diff.quantile(.025), "ci_high": gain_diff.quantile(.975),
+                                          "psu_ci_low": np.quantile(psu_diff, .025), "psu_ci_high": np.quantile(psu_diff, .975),
+                                          "psu_se": psu_diff.std(), "person_se": gain_diff.std()},
     "cutoffs": {f"{g}|{r}": v for (g, r), v in CU.to_dict("index").items()},
     "n_boot": B,
 }
@@ -686,7 +731,8 @@ register("DR-S5-06", "measurement_bias",
 # robust part of the evidence is the case-based BMI share above and the discrimination analysis below: BMI barely discriminates in Asian adults
 # (AUC 0.573), while waist (0.697) and WHtR (0.714) do. The paired WHtR − BMI gain is +0.137 in Asian adults
 # (bootstrap CI roughly 0.09–0.18) against +0.049 in White adults (CI roughly 0.04–0.06); the Asian-minus-White
-# difference in gain, +0.088, has a bootstrap CI that excludes zero. (Exact bounds are printed above; they move
+# difference in gain, +0.088, has a CI that excludes zero both with person-level and with PSU-level (design-aware)
+# resampling, the latter 0.035–0.116 (FINAL). (Exact bounds are printed above; they move
 # slightly between FAST, B = 100, and FINAL, B = 1,000.) A BMI ≥ 25 rule finds only 48.9 % of Asian cases
 # (White 92.8 %); lowering the cut-off to 23 (the ADA recommendation for Asian Americans) raises sensitivity to
 # 72.3 % at a specificity of only 35.7 %. The direction agrees with Araneta et al. (2015). With 40–50 Asian cases
@@ -1035,9 +1081,10 @@ hyp = pd.DataFrame([
      "note": "47 Asian diabetics with BMI: exploratory"},
     {"hyp_id": "H4b", "estimate": f"WHtR - BMI gain Asian {g_as['auc']:+.3f} ({g_as['ci_low']:.3f}, {g_as['ci_high']:.3f}) vs "
                                   f"White {g_wh['auc']:+.3f} ({g_wh['ci_low']:.3f}, {g_wh['ci_high']:.3f}); difference CI "
-                                  f"({gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f})",
+                                  f"(person {gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f}; "
+                                  f"PSU {np.quantile(psu_diff, .025):+.3f}, {np.quantile(psu_diff, .975):+.3f})",
      "rule": "Asian gain larger and CIs not fully overlapping",
-     "verdict": "supported" if (g_as["auc"] > g_wh["auc"] and g_as["ci_low"] > g_wh["ci_low"] and gain_diff.quantile(.025) > 0) else "inconclusive",
+     "verdict": "supported" if (g_as["auc"] > g_wh["auc"] and g_as["ci_low"] > g_wh["ci_low"] and np.quantile(psu_diff, .025) > 0) else "inconclusive",
      "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"},
 ])
 print(hyp.to_string(index=False))

@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:41:24+00:00"
+    "written_utc": "2026-10-10T18:43:15+00:00"
   },
   "labels": {
     "confusion": {
@@ -385,7 +385,11 @@
     "gain_difference_asian_minus_white": {
       "est": 0.08818692240898107,
       "ci_low": 0.044864547242255935,
-      "ci_high": 0.13801776382194078
+      "ci_high": 0.13801776382194078,
+      "psu_ci_low": 0.03801204715617937,
+      "psu_ci_high": 0.11120483681639687,
+      "psu_se": 0.02076547446391938,
+      "person_se": 0.02498786208241669
     },
     "cutoffs": {
       "NH Asian|BMI ≥ 25": {
@@ -682,7 +686,7 @@
       "note": "47 Asian diabetics with BMI: exploratory"
     },
     "H4b": {
-      "estimate": "WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (+0.045, +0.138)",
+      "estimate": "WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (person +0.045, +0.138; PSU +0.038, +0.111)",
       "rule": "Asian gain larger and CIs not fully overlapping",
       "verdict": "supported",
       "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"
