@@ -1,0 +1,1 @@
+HbA1c distribution in the cohort (N = 5,730). A 1.5xIQR fence (upper bound 6.8 %) flags 542 values; 519 of them are at or above the diagnostic threshold of 6.5 %, i.e. 72% of the 721 HbA1c-defined cases.

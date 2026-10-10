@@ -493,3 +493,162 @@ M3["top_coding"] = {"age_top": age_top, "pir_top": pir_top, "pir_top_share": pir
                     "pir_miss": pir_miss, "pir_miss_share": pir_miss / len(coh),
                     "prev_age80": float(prev_80), "prev_age70_79": float(prev_7079)}
 
+# %% [markdown]
+# ## 7 Missing-data mechanism for HbA1c
+#
+# **Why.** The cohort keeps only examined adults *with* an HbA1c value. If missingness depended on diabetes itself, the label would be biased in a way no weighting could repair. Rubin's taxonomy cannot be settled from the data:
+#
+# - MCAR can be rejected by showing that missingness depends on observed covariates.
+# - MAR versus MNAR depends on the unobserved values and cannot be tested.
+#
+# A logistic model for the missingness indicator among the 6,064 examined adults shows who is missing. It is unweighted because it describes the sample rather than the population. Little's MCAR test is not used: it assumes multivariate normality, and it can only reject MCAR, which the logit already does more informatively.
+
+# %%
+mrg = io.load_merged(sentinels="per_variable")
+ex = mrg[(mrg["RIDAGEYR"] >= C.ADULT_MIN_AGE) & (mrg["RIDSTATR"] == 2)].copy()
+y_miss = ex["LBXGH"].isna().astype(int)
+race_ex = ex["RIDRETH3"].map(io.RACE_LABELS)
+Xm = pd.DataFrame({"age (per 10 y)": ex["RIDAGEYR"] / 10, "female": (ex["RIAGENDR"] == 2).astype(int)}, index=ex.index)
+for r in ["NH Black", "NH Asian", "Mexican American", "Other Hispanic", "Other/Multi"]:
+    Xm[r] = (race_ex == r).astype(int)
+Xm["PIR (per unit)"] = ex["INDFMPIR"].fillna(ex["INDFMPIR"].mean())
+Xm["PIR missing"] = ex["INDFMPIR"].isna().astype(int)
+Xm["BMI (per unit)"] = ex["BMXBMI"].fillna(ex["BMXBMI"].mean())
+Xm["BMI missing"] = ex["BMXBMI"].isna().astype(int)
+Xm["uninsured"] = (ex["HIQ011"] == 2).astype(int)
+Xm["no usual place of care"] = (ex["HUQ030"] == 2).astype(int)
+Xm["self-reported diabetes"] = (ex["DIQ010"] == 1).astype(int)
+Xm["told hypertension"] = (ex["BPQ020"] == 1).astype(int)
+fit = sm.Logit(y_miss, sm.add_constant(Xm)).fit(disp=0)
+ci = fit.conf_int()
+or_tab = pd.DataFrame({"OR": np.exp(fit.params), "ci_low": np.exp(ci[0]), "ci_high": np.exp(ci[1]), "p": fit.pvalues}).drop("const")
+auc_miss = roc_auc_score(y_miss, fit.predict())
+miss_rate = ex.assign(m=y_miss, race=race_ex).groupby("race")["m"].agg(["size", "mean"]).rename(columns={"size": "n", "mean": "missing_share"})
+print(f"examined adults {len(ex):,}; HbA1c missing {int(y_miss.sum())} ({y_miss.mean():.1%}); LLR p = {fit.llr_pvalue:.1e}; AUC = {auc_miss:.3f}")
+display(or_tab.round(3)); display(miss_rate.round(3))
+or_tab.to_csv(OUT / "missingness_or.csv", lineterminator="\n")
+
+assert len(ex) == 6064 and int(y_miss.sum()) == 297
+assert fit.llr_pvalue < 1e-10 and close(auc_miss, 0.65, 0.005)
+assert close(or_tab.loc["NH Black", "OR"], 1.85, 0.01) and close(or_tab.loc["NH Black", "ci_low"], 1.35, 0.01) and close(or_tab.loc["NH Black", "ci_high"], 2.54, 0.01)
+assert close(or_tab.loc["PIR (per unit)", "OR"], 0.82, 0.01) and close(or_tab.loc["age (per 10 y)", "OR"], 0.89, 0.01)
+assert close(or_tab.loc["BMI missing", "OR"], 2.6, 0.06) and close(or_tab.loc["self-reported diabetes", "OR"], 1.15, 0.01)
+
+# %%
+ot = or_tab.iloc[::-1]
+fig, ax = plt.subplots(figsize=(7, 5.2))
+sig = (ot["ci_low"] > 1) | (ot["ci_high"] < 1)
+ax.errorbar(ot["OR"], range(len(ot)), xerr=[ot["OR"] - ot["ci_low"], ot["ci_high"] - ot["OR"]], fmt="none", ecolor=OI["grey"], capsize=3)
+ax.scatter(ot["OR"], range(len(ot)), color=[OI["vermillion"] if s else OI["blue"] for s in sig], zorder=3)
+ax.axvline(1, color="black", lw=0.8)
+ax.set_xscale("log"); ax.set_yticks(range(len(ot)), ot.index)
+ax.set_xlabel("odds ratio of missing HbA1c (95 % CI, log scale)")
+ax.set_title("Who lacks an HbA1c value among examined adults", loc="left")
+f_miss = plots.savefig(fig, "S3_missing_hba1c_or",
+                       caption=f"Unweighted logistic model for missing HbA1c among {len(ex):,} examined adults ({int(y_miss.sum())} missing). "
+                               f"Odds ratios with 95 % Wald CIs; red = CI excludes 1. LLR p = {fit.llr_pvalue:.1e}, AUC = {auc_miss:.2f}. Reference: NH White.")
+plt.show(); print("saved", f_miss)
+
+# %% [markdown]
+# **So what.** 297 of 6,064 examined adults (4.9 %) lack HbA1c, and missingness clearly depends on observed covariates (likelihood-ratio p = 2.8 × 10⁻¹¹, AUC 0.65). Data are **not MCAR**. Associations with missing HbA1c:
+#
+# | Covariate | OR (95 % CI) |
+# |---|---|
+# | Non-Hispanic Black | 1.85 (1.35, 2.54) |
+# | Income ratio, per unit | 0.82 |
+# | Age, per 10 years | 0.89 |
+# | Missing BMI | 2.6 (typically an incomplete examination) |
+# | Self-reported diabetes | 1.15 (0.82, 1.63) |
+#
+# Self-reported diabetes, the closest observable stand-in for the outcome, shows no association.
+#
+# The correct wording is narrow. **Given these covariates there is no evidence against MAR, and MNAR cannot be tested with these data.** **Decision (DR-S3-04):** this wording is used everywhere. WTPH2YR already contains NCHS's blood-sample non-response adjustment. A delta-adjustment / inverse-probability-weighting sensitivity analysis for MNAR is assigned to Stage S9. The model is descriptive and is not used for population inference.
+
+# %%
+M3["missingness"] = {"examined_adults": len(ex), "a1c_missing": int(y_miss.sum()), "a1c_missing_share": float(y_miss.mean()),
+                     "llr_p": float(fit.llr_pvalue), "auc": float(auc_miss),
+                     "odds_ratios": {k: {kk: float(vv) for kk, vv in r.items()} for k, r in or_tab.iterrows()},
+                     "missing_share_by_race": miss_rate["missing_share"].to_dict(),
+                     "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in S9)"}
+
+# %% [markdown]
+# ## 8 Outliers: a three-layer rule
+#
+# **Why.** Extreme values in clinical data are often the signal itself: a very high HbA1c *is* diabetes. A rule that deletes values outside 1.5 × IQR therefore removes cases, not errors. The project uses three layers:
+#
+# 1. hard physiological limits, which only flag;
+# 2. a robust z-score (median and MAD, |z| > 3.5), which only flags;
+# 3. human review of whatever both layers flag.
+#
+# The harm of the blind alternative is measured directly on HbA1c and on a joint fence over five predictors.
+
+# %%
+LIMITS = {"BMXBMI": (12, 70), "bp_sys_mean": (70, 260), "bp_dia_mean": (30, 150), "LBXTC": (60, 500), "LBDHDD": (10, 200), "LBXGH": (3, 18)}
+def robust_z(s):
+    med = s.median(); mad = (s - med).abs().median()
+    return 0.6745 * (s - med) / mad
+out_rows = []
+for var, (lo, hi) in LIMITS.items():
+    s = coh[var]
+    hard = (s < lo) | (s > hi)
+    rz = robust_z(s).abs() > 3.5
+    out_rows.append({"var": var, "valid": int(s.notna().sum()), "min": s.min(), "max": s.max(), "limits": f"{lo}-{hi}",
+                     "layer1_outside_limits": int(hard.sum()), "layer2_robust_z_gt_3.5": int(rz.sum()),
+                     "both_layers": int((hard & rz).sum())})
+outl = pd.DataFrame(out_rows)
+display(outl)
+outl.to_csv(OUT / "outlier_flags.csv", index=False, lineterminator="\n")
+review = int(outl["both_layers"].sum())
+print(f"layer 3 (manual review queue): {review} values flagged by both layers")
+
+def iqr_fence(s):
+    q1, q3 = s.quantile([0.25, 0.75]); i = q3 - q1
+    return (s < q1 - 1.5 * i) | (s > q3 + 1.5 * i), q1 - 1.5 * i, q3 + 1.5 * i
+
+a1c = coh["LBXGH"]
+fl, lo_f, hi_f = iqr_fence(a1c)
+n_fl, n_fl_pos = int(fl.sum()), int((fl & (a1c >= C.HBA1C_DIABETES)).sum())
+JOINT = ["BMXBMI", "BMXWAIST", "BPXOSY1", "LBXTC", "LBDHDD"]
+joint = np.zeros(len(coh), bool)
+for c_ in JOINT:
+    joint |= iqr_fence(coh[c_])[0].to_numpy()
+la1c = (a1c >= C.HBA1C_DIABETES)
+prev_del, prev_keep = la1c[joint].mean(), la1c[~joint].mean()
+print(f"HbA1c 1.5xIQR fence: [{lo_f:.2f}, {hi_f:.2f}] flags {n_fl} rows, {n_fl_pos} of them A1c >= 6.5 ({n_fl_pos / la1c.sum():.0%} of {int(la1c.sum())} positives)")
+print(f"joint fence on {JOINT}: deletes {int(joint.sum())} rows ({joint.mean():.1%}); A1c-positive share deleted {prev_del:.1%} vs kept {prev_keep:.1%}")
+assert close(hi_f, 6.8, 1e-9) and n_fl == 542 and n_fl_pos == 519
+assert outl.set_index("var").loc["BMXBMI", "layer1_outside_limits"] == 2 and outl.set_index("var").loc["LBXGH", "layer2_robust_z_gt_3.5"] == 462 and review == 1
+assert int(joint.sum()) == 512 and close(prev_del, 0.172, 0.001) and close(prev_keep, 0.121, 0.001)
+
+# %%
+fig, ax = plt.subplots(figsize=(8, 4))
+bins = np.arange(3.0, 17.6, 0.1)
+ax.hist(a1c[~fl], bins=bins, color=OI["blue"], label=f"kept by the fence ({len(coh) - n_fl:,})")
+ax.hist(a1c[fl], bins=bins, color=OI["vermillion"], label=f"flagged as 'outlier' ({n_fl}; {n_fl_pos} have HbA1c >= 6.5)")
+ytop = ax.get_ylim()[1]
+ax.axvline(hi_f, color="black", ls="--", lw=1); ax.text(hi_f + 0.1, ytop * 0.45, f"IQR fence {hi_f:.1f}", fontsize=9)
+ax.axvline(C.HBA1C_DIABETES, color=OI["green"], ls=":", lw=1.5); ax.text(C.HBA1C_DIABETES - 0.1, ytop * 0.45, "diagnostic\nthreshold 6.5", ha="right", fontsize=9)
+ax.set_xlim(3.5, 14); ax.set_xlabel("HbA1c (%)"); ax.set_ylabel("adults")
+ax.set_title(f"A 1.5xIQR rule would delete {n_fl_pos / la1c.sum():.0%} of the diabetic HbA1c values", loc="left")
+ax.legend(loc="upper right", bbox_to_anchor=(1.0, 0.98))
+f_iqr = plots.savefig(fig, "S3_iqr_fence_harm",
+                      caption=f"HbA1c distribution in the cohort (N = {len(coh):,}). A 1.5xIQR fence (upper bound {hi_f:.1f} %) flags {n_fl} values; "
+                              f"{n_fl_pos} of them are at or above the diagnostic threshold of 6.5 %, i.e. {n_fl_pos / la1c.sum():.0%} of the {int(la1c.sum())} HbA1c-defined cases.")
+plt.show(); print("saved", f_iqr)
+
+# %% [markdown]
+# **So what.** The hard limits flag almost nothing: 2 BMI values. The robust z-score layer already shows the problem with statistical rules on clinical data. It flags 462 HbA1c values, which are the diabetic tail, so it may only flag and never delete. Only one value is flagged by both layers and goes to manual review. Two results show what blind deletion would cost:
+#
+# - **HbA1c fence.** The upper fence is 6.8 %. It flags 542 rows, and 519 of them have HbA1c ≥ 6.5 %. Deleting them would remove **72 % of all HbA1c-defined diabetes cases**, so the "outliers" are the outcome.
+# - **Joint predictor fence.** A fence over five predictors (BMI, waist, first SBP reading, total cholesterol, HDL) deletes 512 rows (8.9 %). The deleted group has an HbA1c-positive share of 17.2 % against 12.1 % among those kept, so the deletion shifts the label distribution.
+#
+# **Decision (DR-S3-03):** keep every value. Layers 1–2 only add flags, and layer 3 reviews the few values flagged by both layers. Skewness is handled as an ablation in Stage S6 (block B5: Yeo-Johnson; winsorising as an alternative arm), not by deleting values.
+
+# %%
+M3["outliers"] = {"layer_table": outl.set_index("var")[["layer1_outside_limits", "layer2_robust_z_gt_3.5", "both_layers"]].to_dict("index"),
+                  "manual_review": review,
+                  "a1c_iqr_fence_upper": float(hi_f), "a1c_iqr_flagged": n_fl, "a1c_iqr_flagged_positive": n_fl_pos,
+                  "a1c_iqr_positive_share": n_fl_pos / int(la1c.sum()),
+                  "joint_fence_vars": JOINT, "joint_fence_deleted": int(joint.sum()), "joint_fence_share": float(joint.mean()),
+                  "joint_fence_prev_deleted": float(prev_del), "joint_fence_prev_kept": float(prev_keep)}
+

@@ -1,0 +1,7 @@
+var,valid,min,max,limits,layer1_outside_limits,layer2_robust_z_gt_3.5,both_layers
+BMXBMI,5649,11.1,74.8,12-70,2,88,1
+bp_sys_mean,5550,70.0,232.33333333333334,70-260,0,67,0
+bp_dia_mean,5550,34.0,139.0,30-150,0,29,0
+LBXTC,5459,62.0,438.0,60-500,0,21,0
+LBDHDD,5459,22.0,159.0,10-200,0,60,0
+LBXGH,5730,3.2,17.1,3-18,0,462,0

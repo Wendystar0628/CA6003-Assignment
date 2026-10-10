@@ -1,0 +1,1 @@
+Unweighted logistic model for missing HbA1c among 6,064 examined adults (297 missing). Odds ratios with 95 % Wald CIs; red = CI excludes 1. LLR p = 2.8e-11, AUC = 0.65. Reference: NH White.
