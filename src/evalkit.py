@@ -510,3 +510,191 @@ def paired_fold_diffs(fm_a: pd.DataFrame, fm_b: pd.DataFrame, metric: str = "roc
     if not a.index.equals(b.index):
         raise ValueError("fold tables are not aligned (different folds were used)")
     return (a - b).to_numpy()
+
+
+# =============================================================================
+# 4. Paired comparisons: corrected t, paired bootstrap, verdicts
+# =============================================================================
+def corrected_t(diffs, n_train: int, n_test: int, alpha: float = 0.05) -> dict:
+    """Nadeau-Bengio (2003) corrected resampled t-test for J paired fold-level differences.
+
+    With ``d_j`` the metric difference (A - B) on resample j (J = n_splits * n_repeats),
+    mean ``d`` and sample variance ``s^2`` (ddof = 1):
+
+        var_corr = (1/J + n_test/n_train) * s^2,      t = d / sqrt(var_corr),   df = J - 1.
+
+    The naive variance ``s^2 / J`` ignores that the J train/test splits overlap and that the
+    test sets of one repeat are dependent; the extra term ``n_test/n_train`` (= 1/(k-1) = 1/4
+    for 5-fold CV) corrects this.  The CI is ``d +/- t_{1-alpha/2, J-1} * sqrt(var_corr)``
+    and the p-value is two-sided.  ``n_train``/``n_test`` are the (mean) fold sizes.
+
+    Returns a dict: mean, sd, se_corr, se_naive, t, df, p, ci_low, ci_high, J, ratio.
+    A zero-variance sample returns t = +/-inf (p = 0) unless the mean is also 0 (t = 0, p = 1).
+    """
+    d = np.asarray(diffs, dtype=float)
+    d = d[~np.isnan(d)]
+    J = len(d)
+    if J < 2:
+        raise ValueError("need at least two paired differences")
+    ratio = n_test / n_train
+    mean, s2 = float(d.mean()), float(d.var(ddof=1))
+    if s2 <= (1e-12 * max(abs(mean), 1e-12)) ** 2:  # numerically constant sample
+        s2 = 0.0
+    se_corr = float(np.sqrt((1.0 / J + ratio) * s2))
+    df = J - 1
+    tcrit = float(stats.t.ppf(1 - alpha / 2, df))
+    if se_corr > 0:
+        t = mean / se_corr
+        p = float(2 * stats.t.sf(abs(t), df))
+    else:
+        t, p = (0.0, 1.0) if mean == 0 else (float(np.sign(mean) * np.inf), 0.0)
+    return dict(mean=mean, sd=float(np.sqrt(s2)), se_corr=se_corr, se_naive=float(np.sqrt(s2 / J)),
+                t=float(t), df=int(df), p=p, ci_low=mean - tcrit * se_corr, ci_high=mean + tcrit * se_corr,
+                J=int(J), ratio=float(ratio))
+
+
+def _auc_matrix(Y: np.ndarray, P: np.ndarray) -> np.ndarray:
+    """Row-wise ROC-AUC for matrices Y, P of shape (B, n) via average ranks (ties handled)."""
+    ranks = stats.rankdata(P, axis=1)
+    npos = Y.sum(axis=1)
+    nneg = Y.shape[1] - npos
+    return ((ranks * Y).sum(axis=1) - npos * (npos + 1) / 2) / (npos * nneg)
+
+
+def _brier_matrix(Y: np.ndarray, P: np.ndarray) -> np.ndarray:
+    return ((P - Y) ** 2).mean(axis=1)
+
+
+def _scalar_metric(name: str) -> Callable:
+    table = {
+        "roc_auc": lambda y, p: roc_auc_score(y, p),
+        "pr_auc": lambda y, p: average_precision_score(y, p),
+        "brier": lambda y, p: float(np.mean((p - y) ** 2)),
+        "recall_at_spec": lambda y, p: recall_at_specificity(y, p, C.SPEC_FIXED)[0],
+        "balanced_accuracy": lambda y, p: metric_suite(y, p)["balanced_accuracy"],
+    }
+    if name not in table:
+        raise ValueError(f"unknown metric {name!r}; use one of {sorted(table)} or a callable f(y, p)")
+    return table[name]
+
+
+def paired_bootstrap(y, p_a, p_b, metric="roc_auc", *, n_boot: int = C.N_BOOT, seed: int = C.SEED_MASTER,
+                     eval_mask=None, stratify: bool = True, alpha: float = 0.05) -> dict:
+    """Paired percentile bootstrap of ``metric(y, p_a) - metric(y, p_b)`` on pooled OOF predictions.
+
+    Rows (restricted to ``eval_mask`` if given, e.g. E-SCREEN) are resampled with replacement
+    ``n_boot`` times; the SAME resampled rows are scored for models A and B, so the
+    between-model correlation is preserved (paired design, Efron & Tibshirani 1993).  With
+    ``stratify=True`` positives and negatives are resampled separately (fixed n_pos, n_neg),
+    which keeps the event count constant - important for E-SCREEN with ~150 events.
+
+    ``metric`` is ``"roc_auc"`` / ``"brier"`` (fully vectorised via ranks / matrix means),
+    ``"pr_auc"`` / ``"recall_at_spec"`` / ``"balanced_accuracy"`` (looped) or a callable
+    ``f(y, p) -> float``.  The difference is always A - B.
+
+    Returns: ``diff`` (observed on the full evaluation set), ``mean_diff`` (bootstrap mean),
+    ``se``, ``ci_low``/``ci_high`` (percentile ``alpha/2`` and ``1-alpha/2``), ``p`` (two-sided
+    bootstrap p = min(1, 2 * (min(#{d* <= 0}, #{d* >= 0}) + 1) / (B + 1)); approximate, only
+    indicative), ``boot`` (array of B differences), ``n_eval``, ``n_pos``, ``metric_a``, ``metric_b``.
+    This captures sampling variability of the evaluation rows only, not training variability
+    (that is what the fold-level corrected t adds).
+    """
+    y, p_a, _ = _clean_inputs(y, p_a)
+    p_b = np.asarray(p_b, dtype=float).ravel()
+    if len(p_b) != len(y):
+        raise ValueError("p_a and p_b must have the length of y")
+    sel = np.flatnonzero(_mask(eval_mask, len(y)))
+    y, p_a, p_b = y[sel], p_a[sel], p_b[sel]
+    rng = np.random.default_rng(seed)
+    pos, neg = np.flatnonzero(y == 1), np.flatnonzero(y == 0)
+    if len(pos) == 0 or len(neg) == 0:
+        raise ValueError("evaluation set needs both classes")
+    if stratify:
+        idx = np.concatenate([rng.choice(pos, (n_boot, len(pos))), rng.choice(neg, (n_boot, len(neg)))], axis=1)
+    else:
+        idx = rng.integers(0, len(y), (n_boot, len(y)))
+    Y = y[idx]
+    fn = metric if callable(metric) else _scalar_metric(metric)
+    if metric == "roc_auc" or metric == "brier":
+        mat = _auc_matrix if metric == "roc_auc" else _brier_matrix
+        ba, bb = mat(Y, p_a[idx]), mat(Y, p_b[idx])
+    else:
+        ba = np.array([fn(Y[b], p_a[idx[b]]) for b in range(n_boot)])
+        bb = np.array([fn(Y[b], p_b[idx[b]]) for b in range(n_boot)])
+    boot = ba - bb
+    boot_ok = boot[~np.isnan(boot)]
+    lo, hi = np.percentile(boot_ok, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    le, ge = (boot_ok <= 0).sum(), (boot_ok >= 0).sum()
+    ma, mb = float(fn(y, p_a)), float(fn(y, p_b))
+    return dict(diff=ma - mb, mean_diff=float(boot_ok.mean()), se=float(boot_ok.std(ddof=1)),
+                ci_low=float(lo), ci_high=float(hi), p=float(min(1.0, 2 * (min(le, ge) + 1) / (len(boot_ok) + 1))),
+                boot=boot, n_boot=int(n_boot), n_eval=int(len(y)), n_pos=int(len(pos)), metric_a=ma, metric_b=mb)
+
+
+_UP = {"+", "up", "higher", "greater", "positive", "increase"}
+_DOWN = {"-", "down", "lower", "less", "negative", "decrease"}
+
+
+def verdict(ci_low: float, ci_high: float, sesoi: float, direction: str = "+", estimate: float | None = None) -> str:
+    """Classify a difference from its confidence interval, the SESOI and the predicted direction.
+
+    SESOI = smallest effect size of interest (``config.SESOI``).  ``direction`` is the
+    hypothesised sign of the difference (``"+"``/"higher" or ``"-"``/"lower").  Rules are applied
+    in this order (Lakens 2017, equivalence testing / minimum-effect logic):
+
+    1. ``equivalent``    - the whole CI lies inside (-SESOI, +SESOI): any effect is practically negligible.
+    2. ``supported``     - the CI excludes 0 on the hypothesised side AND the estimate is at least
+                           SESOI in that direction (``estimate`` defaults to the CI midpoint).
+    3. ``refuted``       - the CI excludes 0 on the opposite side (and is not equivalent, rule 1).
+    4. ``inconclusive``  - everything else (CI contains 0 without being within the equivalence band,
+                           or excludes 0 but with an effect that may be below SESOI).
+
+    ``mixed`` is never returned here: it is a hypothesis-level statement obtained by combining
+    metric-level verdicts with :func:`combine_verdicts`.
+    """
+    if ci_low > ci_high:
+        raise ValueError("ci_low > ci_high")
+    d = str(direction).lower()
+    if d in _UP:
+        sign = 1
+    elif d in _DOWN:
+        sign = -1
+    else:
+        raise ValueError(f"direction must be one of {sorted(_UP | _DOWN)}")
+    if sesoi > 0 and ci_low > -sesoi and ci_high < sesoi:
+        return "equivalent"
+    lo, hi = (ci_low, ci_high) if sign == 1 else (-ci_high, -ci_low)  # re-orient so that "expected" is positive
+    est = (ci_low + ci_high) / 2 if estimate is None else estimate
+    est = sign * est
+    if lo > 0 and est >= sesoi:
+        return "supported"
+    if hi < 0:
+        return "refuted"
+    return "inconclusive"
+
+
+def combine_verdicts(verdicts: Sequence[str]) -> str:
+    """Combine metric-level verdicts into one hypothesis-level verdict.
+
+    * all equal -> that verdict;  a ``mixed`` input stays ``mixed``;
+    * two or more different *decisive* verdicts (supported / refuted / equivalent) -> ``mixed``
+      (e.g. AUC supported but Brier equivalent: the metrics disagree);
+    * one decisive verdict plus ``inconclusive`` entries -> ``inconclusive`` (not every metric
+      resolves the hypothesis);
+    * empty input -> ``inconclusive``.
+    """
+    vs = [str(v).lower() for v in verdicts]
+    bad = set(vs) - set(C.VERDICTS)
+    if bad:
+        raise ValueError(f"unknown verdicts {bad}")
+    s = set(vs)
+    if not s:
+        return "inconclusive"
+    if len(s) == 1:
+        return vs[0]
+    if "mixed" in s:
+        return "mixed"
+    decisive = s & {"supported", "refuted", "equivalent"}
+    if len(decisive) >= 2:
+        return "mixed"
+    return "inconclusive"

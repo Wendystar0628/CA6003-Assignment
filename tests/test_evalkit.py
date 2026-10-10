@@ -262,6 +262,133 @@ def test_fold_metrics_eval_mask_and_thresholds():
     assert d.shape == (10,) and np.allclose(d, 0)
 
 
+# ----------------------------------------------------------------------------- paired comparisons
+def test_corrected_t_hand_computed():
+    # diffs: mean .02, sum of squared deviations .0010 -> s^2 = .00025 (J=5)
+    d = [0.01, 0.02, 0.03, 0.00, 0.04]
+    r = ek.corrected_t(d, n_train=80, n_test=20)
+    assert abs(r["mean"] - 0.02) < 1e-15 and r["J"] == 5 and r["df"] == 4
+    # var_corr = (1/5 + 20/80) * .00025 = .0001125 -> se = .0106066, t = 1.885618
+    assert abs(r["se_corr"] - np.sqrt(0.0001125)) < 1e-12
+    assert abs(r["t"] - 0.02 / np.sqrt(0.0001125)) < 1e-9 and abs(r["t"] - 1.885618) < 1e-6
+    assert abs(r["se_naive"] - np.sqrt(0.00025 / 5)) < 1e-12
+    # two-sided p from t(4): 2 * P(T > 1.885618) = 0.1323 (tabulated)
+    assert abs(r["p"] - 0.13232) < 2e-4, r["p"]
+    # CI half-width = t_{.975,4} * se = 2.776445 * .0106066 = .029449
+    assert abs((r["ci_high"] - r["ci_low"]) / 2 - 2.776445 * 0.0106066) < 1e-6
+    assert abs((r["ci_high"] + r["ci_low"]) / 2 - 0.02) < 1e-12
+    # Nadeau-Bengio for 5x5 CV: J = 25, n2/n1 = 1/4 -> variance inflation factor (1/25 + 1/4)/(1/25) = 7.25
+    rng = np.random.default_rng(0)
+    d25 = rng.normal(0.01, 0.006, 25)
+    r25 = ek.corrected_t(d25, 4000, 1000)
+    assert abs((r25["se_corr"] / r25["se_naive"]) ** 2 - 7.25) < 1e-9
+    # degenerate input
+    assert ek.corrected_t([0.1, 0.1, 0.1], 3, 1)["p"] == 0.0 and ek.corrected_t([0, 0, 0], 3, 1)["p"] == 1.0
+
+
+def test_vectorised_auc_matches_sklearn():
+    rng = np.random.default_rng(1)
+    Y = (rng.random((6, 80)) < 0.3).astype(int)
+    P = np.round(rng.random((6, 80)), 1)            # many ties
+    got = ek._auc_matrix(Y, P)
+    want = [roc_auc_score(Y[i], P[i]) for i in range(6)]
+    assert np.allclose(got, want, atol=1e-12)
+
+
+def test_paired_bootstrap():
+    rng = np.random.default_rng(4)
+    n = 2000
+    y = (rng.random(n) < 0.2).astype(int)
+    s = rng.normal(size=n)
+    p_good = 1 / (1 + np.exp(-(1.6 * (y - 0.2) + 0.9 * s)))      # informative
+    p_bad = 1 / (1 + np.exp(-(0.4 * (y - 0.2) + 0.9 * s)))       # weaker
+    t0 = time.time()
+    r = ek.paired_bootstrap(y, p_good, p_bad, "roc_auc", n_boot=500, seed=5)
+    assert time.time() - t0 < 5
+    assert abs(r["diff"] - (roc_auc_score(y, p_good) - roc_auc_score(y, p_bad))) < 1e-12
+    assert r["ci_low"] < r["diff"] < r["ci_high"] and r["ci_low"] > 0 and r["p"] < 0.01
+    assert abs(r["mean_diff"] - r["diff"]) < 0.01 and r["n_pos"] == y.sum() and len(r["boot"]) == 500
+    # reproducible, and the seed matters
+    r2 = ek.paired_bootstrap(y, p_good, p_bad, "roc_auc", n_boot=500, seed=5)
+    r3 = ek.paired_bootstrap(y, p_good, p_bad, "roc_auc", n_boot=500, seed=6)
+    assert r["ci_low"] == r2["ci_low"] and r["ci_low"] != r3["ci_low"]
+    # identical models -> zero difference with a degenerate interval
+    z = ek.paired_bootstrap(y, p_good, p_good, "roc_auc", n_boot=100, seed=1)
+    assert z["diff"] == 0 and z["ci_low"] == 0 and z["ci_high"] == 0
+    # Brier (lower is better): good - bad < 0
+    b = ek.paired_bootstrap(y, p_good, p_bad, "brier", n_boot=200, seed=2)
+    assert abs(b["diff"] - (brier_score_loss(y, p_good) - brier_score_loss(y, p_bad))) < 1e-12 and b["ci_high"] < 0
+    # looped metrics and callables
+    pr = ek.paired_bootstrap(y, p_good, p_bad, "pr_auc", n_boot=50, seed=2)
+    assert pr["ci_low"] > 0
+    cb = ek.paired_bootstrap(y, p_good, p_bad, lambda yy, pp: roc_auc_score(yy, pp), n_boot=50, seed=2)
+    assert cb["ci_low"] > 0
+    # eval_mask restricts rows; non-stratified bootstrap works
+    mask = rng.random(n) < 0.3
+    m = ek.paired_bootstrap(y, p_good, p_bad, "roc_auc", n_boot=200, seed=3, eval_mask=mask)
+    assert m["n_eval"] == mask.sum() and m["n_pos"] == y[mask].sum()
+    assert abs(m["diff"] - (roc_auc_score(y[mask], p_good[mask]) - roc_auc_score(y[mask], p_bad[mask]))) < 1e-12
+    ns = ek.paired_bootstrap(y, p_good, p_bad, "roc_auc", n_boot=200, seed=3, stratify=False)
+    assert ns["ci_low"] > 0
+    # antisymmetry: swapping the models mirrors the interval; monotone transforms change nothing
+    sw = ek.paired_bootstrap(y, p_bad, p_good, "roc_auc", n_boot=500, seed=5)
+    assert abs(sw["ci_low"] + r["ci_high"]) < 1e-12 and abs(sw["ci_high"] + r["ci_low"]) < 1e-12
+    mono = ek.paired_bootstrap(y, p_good ** 3, p_good, "roc_auc", n_boot=100, seed=5)
+    assert mono["diff"] == 0 and mono["ci_low"] == 0 and mono["ci_high"] == 0
+
+
+# ----------------------------------------------------------------------------- verdicts
+def test_verdict_truth_table():
+    S = 0.01
+    table = [
+        # (ci_low, ci_high, direction, expected)
+        (0.020, 0.040, "+", "supported"),      # excludes 0, estimate .03 >= SESOI
+        (0.012, 0.030, "+", "supported"),
+        (0.002, 0.015, "+", "inconclusive"),   # excludes 0 but estimate .0085 < SESOI, not equivalent
+        (-0.003, 0.004, "+", "equivalent"),    # inside +/-SESOI
+        (0.001, 0.008, "+", "equivalent"),     # tiny but non-zero: practically negligible
+        (-0.030, -0.015, "+", "refuted"),      # excludes 0, wrong side
+        (-0.020, 0.030, "+", "inconclusive"),  # wide, contains 0
+        (-0.012, 0.004, "+", "inconclusive"),  # not within band (low < -SESOI), contains 0
+        (-0.040, -0.020, "-", "supported"),    # hypothesised decrease observed
+        (0.020, 0.040, "-", "refuted"),
+        (-0.004, 0.003, "-", "equivalent"),
+        (0.000, 0.020, "+", "inconclusive"),   # touches 0 -> does not exclude it
+        (0.010, 0.012, "+", "supported"),      # CI just above SESOI
+        (-0.010, 0.010, "+", "equivalent"),    # exactly the equivalence band (open interval cond. on strictness)
+    ]
+    for lo, hi, d, want in table:
+        got = ek.verdict(lo, hi, S, d)
+        if (lo, hi) == (-0.010, 0.010):        # boundary: CI == +/-SESOI is NOT strictly inside
+            assert got == "inconclusive", (lo, hi, d, got)
+        else:
+            assert got == want, (lo, hi, d, got, want)
+    assert ek.verdict(0.02, 0.04, S, "higher") == "supported" and ek.verdict(0.02, 0.04, S, "lower") == "refuted"
+    assert ek.verdict(0.001, 0.05, S, "+", estimate=0.002) == "inconclusive"   # explicit estimate below SESOI
+    try:
+        ek.verdict(0.0, 1.0, S, "sideways")
+        raise AssertionError("bad direction accepted")
+    except ValueError:
+        pass
+    assert all(ek.verdict(l, h, C.SESOI["roc_auc"], "+") in C.VERDICTS for l, h, _, _ in table)
+
+
+def test_combine_verdicts():
+    cv = ek.combine_verdicts
+    assert cv(["supported", "supported"]) == "supported"
+    assert cv(["equivalent"]) == "equivalent"
+    assert cv(["supported", "refuted"]) == "mixed"
+    assert cv(["supported", "equivalent", "supported"]) == "mixed"
+    assert cv(["supported", "inconclusive"]) == "inconclusive"
+    assert cv(["refuted", "inconclusive", "inconclusive"]) == "inconclusive"
+    assert cv(["supported", "mixed"]) == "mixed" and cv([]) == "inconclusive"
+    try:
+        cv(["supported", "maybe"])
+        raise AssertionError("unknown verdict accepted")
+    except ValueError:
+        pass
+
+
 # ----------------------------------------------------------------------------- runner
 def main():
     tests = [(k, v) for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
