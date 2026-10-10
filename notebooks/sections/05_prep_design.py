@@ -303,7 +303,7 @@ S6["B6"] = dict(train_prevalence=float(ytr.mean()), w_min=float(w.min()), w_max=
 # ## 9 Arms
 # **Why.** The comparison logic must be fixed before results exist: the cumulative path
 # M0 → +B2 (= M1) → +B1 → +B3 → +B4 → +B5 → +B6a → +B6b (= S), leave-one-block-out arms S−Bk (the primary
-# block evidence), T1-minus-care, S-linear (splines off) and S+WHtR.
+# block evidence), T1-minus-care, S-linear (splines off), S-linear-B3 (its coefficient-stability companion) and S+WHtR.
 
 # %%
 arms = P.arm_table()
@@ -382,3 +382,77 @@ S6["assertions"] = checks
 # arm is exactly invariant to P08/P09, as monotone transforms must be; (c) fitting the preparation on a permuted
 # label gives bit-identical design matrices for S, S+WHtR and M1 – no step peeks at y; (d) disabled toggles
 # return their input unchanged.
+
+# %% [markdown]
+# ## 11 Hypotheses and pre-registration lock
+# **Why.** A block ablation tempts post-hoc storytelling. The block hypotheses (direction, magnitude, SESOI,
+# falsifier and honest `prior_exposure`) and the verdict rules are therefore written to
+# `governance/hypotheses.md` and locked by a dedicated commit **before** the first ablation result is
+# committed. The lock is the file's SHA-256 recorded in that commit; git history shows the order.
+
+# %%
+HYP = C.GOVERNANCE_DIR / "hypotheses.md"
+text = HYP.read_text(encoding="utf-8")
+rows = [l for l in text.splitlines() if l.startswith("| ") and not l.startswith("| hyp_id") and not l.startswith("|---")]
+import re
+hyp = pd.DataFrame([[c.strip() for c in re.split(r"(?<!\\)\|", l.strip().strip("|"))][:10] for l in rows],
+                   columns=["hyp_id", "rq_or_block", "statement", "metric", "direction", "magnitude", "sesoi",
+                            "falsifier", "prior_exposure", "weights"])
+blocks_h = hyp[hyp["hyp_id"].str.match(r"^(B\d|P14)")]
+assert set(blocks_h["hyp_id"]) >= {"B1", "B2", "B2t", "B3", "B4", "B5", "B6a", "B6b", "P14"}
+assert blocks_h["prior_exposure"].str.match(r"^(none|analysis_seen|descriptive_seen|prototype_seen)").all()
+_show = blocks_h.assign(prior=blocks_h["prior_exposure"].str.split(" ").str[0], sesoi=blocks_h["sesoi"].str[:40])
+print(_show[["hyp_id", "direction", "sesoi", "prior"]].to_string(index=False))
+print("\nprior_exposure counts (all hypotheses):", hyp["prior_exposure"].str.split(" ").str[0].value_counts().to_dict())
+
+sha_now = hashlib.sha256(HYP.read_bytes()).hexdigest()
+LOCK_FILE = OUT / "prereg_lock.json"
+lock = None
+try:
+    log = subprocess.run(["git", "log", "--format=%H%x1f%cI%x1f%B%x1e", "--grep=lock hypotheses.md (prereg-lock)",
+                          "--fixed-strings", "--", "governance/hypotheses.md"],
+                         cwd=C.ROOT, capture_output=True, text=True, check=True).stdout
+    entries = [e.strip("\n") for e in log.split("\x1e") if e.strip()]
+    if entries:
+        h, ts, body = entries[-1].split("\x1f")
+        recorded = next(w for w in body.split() if len(w) == 64 and all(ch in "0123456789abcdef" for ch in w))
+        locked_bytes = subprocess.run(["git", "show", f"{h}:governance/hypotheses.md"], cwd=C.ROOT,
+                                      capture_output=True, check=True).stdout
+        sha_locked = hashlib.sha256(locked_bytes).hexdigest()
+        assert sha_locked == recorded, "hypotheses.md at the lock commit does not match the recorded SHA-256"
+        first_exp = subprocess.run(["git", "log", "--reverse", "--format=%H %cI", "--grep=^exp(S7)", "-E"],
+                                   cwd=C.ROOT, capture_output=True, text=True).stdout.split("\n")[0].split()
+        lock = dict(commit=h, timestamp=ts, sha256=sha_locked, first_exp_commit=first_exp[0] if first_exp else None,
+                    first_exp_timestamp=first_exp[1] if first_exp else None)
+        if first_exp:
+            assert subprocess.run(["git", "merge-base", "--is-ancestor", h, first_exp[0]], cwd=C.ROOT).returncode == 0, \
+                "first exp(S7) commit does not descend from the lock commit"
+        LOCK_FILE.write_text(json.dumps(lock, indent=1), encoding="utf-8")
+except (OSError, subprocess.CalledProcessError, StopIteration):
+    pass
+if lock is None and LOCK_FILE.exists():   # no git available (e.g. the assembled notebook): use the stored record
+    lock = json.loads(LOCK_FILE.read_text(encoding="utf-8"))
+if lock:
+    print(f"\nprereg-lock commit {lock['commit'][:12]}  at {lock['timestamp']}")
+    print(f"SHA-256 at lock   {lock['sha256']}")
+    print(f"SHA-256 now       {sha_now}  ({'unchanged' if sha_now == lock['sha256'] else 'post-lock amendments appended'})")
+    print(f"first exp(S7) commit: {lock.get('first_exp_commit') or 'none yet'} {lock.get('first_exp_timestamp') or ''}")
+else:
+    print(f"\nNOT YET LOCKED – current SHA-256 {sha_now}")
+S6["hypotheses"] = dict(n_total=len(hyp), block_ids=list(blocks_h["hyp_id"]), sha256_now=sha_now, lock=lock)
+
+# %% [markdown]
+# **So what.** Nine block-level hypotheses join the eight scope hypotheses. Only B2t, B6a and B6b are genuine
+# pre-registrations (`none`); B1 rests on damage counted in S3/S6, B2 and B3 on the design prototype, B4 on the
+# missingness table of section 6, B5 on the S4 linearity tests and P14 on the S5 single-feature AUCs – all
+# disclosed. The lock commit, its timestamp and the SHA-256 recomputed from that commit are printed above;
+# S7 results are committed only after it.
+
+# %% [markdown]
+# ## 12 Decisions and storage
+
+# %%
+reg = pd.read_csv(C.GOVERNANCE_DIR / "register" / "S6.csv")
+print(reg[["dr_id", "type", "decision"]].to_string(index=False, max_colwidth=110))
+R.save_section("S6", S6)
+print("saved results/metrics_S6.json")

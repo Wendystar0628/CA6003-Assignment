@@ -166,6 +166,8 @@ for _b in BLOCKS:
     ARMS[f"S-{_b}"] = _without([_b])
 ARMS["T1-minus-care"] = make_cfg(S_STEPS, no_care=True)
 ARMS["S-linear"] = make_cfg([s for s in S_STEPS if s != "P13"])
+#: coefficient-stability companion of S-linear without B3 (hypothesis B3b): BMI unsplined in both
+ARMS["S-linear-B3"] = make_cfg([s for s in S_STEPS if s not in ("P13", "P04", "P05")])
 ARMS["S+WHtR"] = make_cfg(S_STEPS + ["P14"])
 assert ARMS["cum+B6a"] == make_cfg(_CUM_ORDER[:6]) and make_cfg(_CUM_ORDER) == ARMS["S"]
 LOBO = tuple(f"S-{b}" for b in BLOCKS)
