@@ -111,7 +111,7 @@ S3–S5 已经在同一份数据上做过探索，所以与这些阶段结果相
 只有 7 天，所以：
 
 - 消融按 **6 个块**报告（代码内部仍可逐步开关）；
-- 工程工具（git、pytest 等）都是可选项；
+- 协作统一使用已建立的 GitHub 仓库 https://github.com/Wendystar0628/CA6003-Assignment（`main` 分支，原始数据已纳入）；pytest、jupytext 等其他工程工具都是可选项；
 - 每个回路都要有触发条件、退出条件、时间盒和冻结点；
 - 先完成"最低可信"清单，进阶项只在时间有余时做（见附录 B）。
 
@@ -272,7 +272,7 @@ flowchart TD
 | `genai_log.csv` | 每人 | 日期、成员、工具与版本、用途、共享了什么数据（禁止个体级数据）、输出用在哪里、如何人工验证 |
 | `results/final_metrics.json` + `oof_predictions.parquet` | D（S7）、B（写出器） | 幻灯片上的所有数字都从这里读 |
 | 代码模块 | D、B | `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；最终内联进 Notebook |
-| 冻结记录 | A | scope-freeze、target-freeze、prereg-lock、exp-freeze、content-freeze（有 git 用 tag，没有 git 用带时间戳的记录） |
+| 冻结记录 | A | scope-freeze、target-freeze、prereg-lock、exp-freeze、content-freeze（在仓库上打 git tag，并在登记表写时间戳） |
 
 ### 7.3 编号
 
@@ -316,7 +316,7 @@ framework.md、lead 裁定 R1–R7、README.md、任务书。S0 无上游阶段�
 
 ### 具体方案
 1. **角色（R1）。** A 负责问题、治理、综合、幻灯；B 负责数据质量与统计；C 负责标签、偏倚、谬误、公平；D 负责实验与 notebook 工程。S0 由 A 负责、D 审计；S1 由 A 负责、C 和 D 共同签字；S2 由 A（DUA、datasheet、最小化）加 B（variable_spec、loader）负责、D 审计。其余阶段按 R1 总表。审计必须是复现（重跑、重算、抽查数值），不是阅读。
-2. **最小可信工程（R7.6）。** 共享文件夹；`src/` 下四个模块 `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；每人每阶段一个 notebook；D 组装最终 notebook，把 helpers 内联；用 notebook 内 `assert` 代替 pytest。git、nbstripout、pytest、jupytext、papermill 全部是可选加分项，不进入验收。
+2. **最小可信工程（R7.6）。** 以 GitHub 仓库 https://github.com/Wendystar0628/CA6003-Assignment 作为唯一协作基地（四人各自 clone，小步提交，每人一个分支或直接提交到 `main` 前先 pull）；`src/` 下四个模块 `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；每人每阶段一个 notebook；D 组装最终 notebook，把 helpers 内联；用 notebook 内 `assert` 代替 pytest。nbstripout、pytest、jupytext、papermill 是可选加分项，不进入验收。`course/`（课程 PDF、含同学姓名的分组名单）只留本地，已写入 `.gitignore`。
 3. **目录。** 仓库 https://github.com/Wendystar0628/CA6003-Assignment 根目录下：`config/variable_spec.csv`；`governance/`（`decision_register.csv`、`hypotheses.md` 与 `hypotheses.csv`、`genai_log.csv`、`claims.csv`、`datasheet.md`、`dua_checklist.md`）；`data/nhanes_2021_2023/raw/`（只读，原始 CDC 文件已纳入 git，按 `MANIFEST.sha256` 校验，可用 `scripts/download_nhanes.py --force` 重新下载）、`data/interim/`；`results/final_metrics.json` 与 `results/oof_predictions.parquet`；仓库根目录 `requirements.txt`。全组只用这一套规范文件，不另设 yaml 配置。
 4. **规范文件列（R7.5）。**
    - `variable_spec.csv`（B 所有，其他人只读）：var, file, dtype, universe, valid_min, valid_max, sentinel_codes, top_code, role, admissible(N/T1/T2), admiss_reason, ada_item, use_tier, codebook_url, owner, note。
@@ -339,7 +339,7 @@ Sandve 等 2013（doi:10.1371/journal.pcbi.1003285）、Wilson 等 2017（doi:10
 ### 验收标准
 1. D 在干净环境按 `requirements.txt` 建环境，Restart & Run All 通过全部 `assert`。
 2. 六个规范文件的表头与 R7.5 逐列一致。
-3. 四人各至少有 1 条 Register 记录和 1 条 GenAI 日志。
+3. 四人各至少有 1 条 Register 记录和 1 条 GenAI 日志，且都已 clone 仓库并完成至少一次 push。
 4. 讲师问询已发出并记录答复。
 
 ### 反馈回路
@@ -442,7 +442,7 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 4. **展示标准（A，写入 `dua_checklist.md`）。** n<30 或有效样本量<30 则抑制或标记；95% CI 宽度≥0.30 则抑制或标记；域 df<8 则标记；比例的 CI 用 Korn–Graubard。Asian（315 人，阳性 50 例）一律作探索性并报 CI。
 5. **DB516 复现（B）。** 用 WTSAF2YR 在空腹子样本复现 15.78/11.29/4.48%（年龄调整 14.31/10.13/4.18%），作为刀切与年龄标准化流程的验证；通过后 S4、S9 复用。
 6. **最小化（A）。** 16 个文件只保留 spec 中 `include` 的列。`use_tier`：core 为 DEMO、GHB、DIQ、BMX、BPXO、TCHOL、HDL、HIQ、HUQ；recommended 为 BPQ、SMQ、PAQ；optional 为 MCQ；INQ 仅作冗余演示，GLU/TRIGLY 仅作侧分析。儿童专用、出生国和居留年限、军役、无关 MCQ 项明确排除并写明理由。加载器读入后立即丢弃排除列，输出 `minimisation_report.csv`。
-7. **溯源与 datasheet（A）。** `MANIFEST.sha256`（文件、行数、列数、哈希）；`datasheet.md` 按 Gebru 的章节写 motivation、composition（漏斗 11,933 → 7,809 → 6,064 → 5,767 → 5,730）、collection、preprocessing、uses、distribution、maintenance。下载日期 2026-10-10。每次运行先校验哈希。
+7. **溯源与 datasheet（A）。** `MANIFEST.sha256`（文件、行数、列数、哈希）；`datasheet.md` 按 Gebru 的章节写 motivation、composition（漏斗 11,933 → 7,809 → 6,064 → 5,767 → 5,730）、collection、preprocessing、uses、distribution、maintenance。下载日期 2026-10-10。原始 XPT 未经修改纳入仓库 `data/nhanes_2021_2023/raw/`，`.gitattributes` 将其标为二进制、`MANIFEST.sha256` 固定为 LF 换行；`scripts/download_nhanes.py` 校验哈希，`--force` 可从 CDC 重新获取。每次运行先校验哈希。
 8. **spec 与加载器（B）。** `variable_spec.csv` 按 R7.5 的 16 列。`sentinel_codes` 逐变量取自 codebook，禁止全局替换。`nhanes_io.py` 提供：
    - `load_nhanes(spec)`；
    - `fix_xpt(df)`：`x.mask((x.abs() < 1e-10) & x.notna(), 0.0)`，不得用 `where`（会把 NaN 变成 0）。该问题是 pandas 读取 XPT 的浮点伪迹，不是 SAS 编码；
@@ -1035,13 +1035,13 @@ D4 起 A 写占位符与 claim 模板；Thu 15 18:00 实验冻结并一次性跑
 S10 的 claims、`numbers_on_slides.csv`；各阶段成员 notebook、`src/` helpers（`nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`）、`variable_spec.csv`、`hypotheses.md`；GenAI log。
 
 ### 具体方案
-1. **工程最低要求**（R7.6）：共享文件夹、helpers 内联、单一 spec CSV、notebook 内 assert。git、jupytext、nbstripout、papermill 非必需，仅在团队已熟练时使用。
+1. **工程最低要求**（R7.6）：GitHub 仓库协作、helpers 内联、单一 spec CSV、notebook 内 assert。jupytext、nbstripout、papermill 非必需，仅在团队已熟练时使用。
 2. **装配**：D 从各成员 notebook 按序复制 cell，把 helpers 与 spec 内联到 §4 Setup（提交物只有 ipynb，评分者没有 `src/`）；每节顶部横幅"§n · Owner · Auditor"，节末"Audit note"；共享对象名固定为 `df_raw / df_min / df_sys / FOLDS / RESULTS`。
 3. **模式**：环境变量 `NB_MODE`，默认 FAST（5×2、B=100、≤5 min）；提交前以 `NB_MODE=FINAL` 执行并保存输出，开头单元打印 MODE，并说明"已保存输出来自 FINAL"。内嵌 `FINAL_REF`（头部数字字面量），FAST 运行时 assert 在宽容差内一致。
 4. **预注册证据**：§8 单元打印 `hypotheses.md` 的 SHA-256 与时间戳；全文放附录；记分牌显示 prior_exposure。
 5. **章节**：§0 标题、组号、视频链接、贡献表、GenAI 声明；§1 摘要与 3 个 finding；§2–§3 问题、治理、spec；§4 Setup；§5 profiling（B）；§6 EDA 与 fallacy（B/C）；§7 标签与偏差（C）；§8 准备设计与 DR（D）；§9 实验（D）；§10 公平性（C）；§11 稳健性（B）；§12–13 解释与限制（A）；§14 附录（完整 DR、预注册全文、GenAI 日志、参考文献）。每步骤 Why → What → So what。
 6. **贡献表模板**：Member｜Role｜负责节｜审计节｜视频段｜主要产出。**GenAI 声明模板**：Tool（版本、日期）｜使用者｜用途｜产出｜验证方式；加一句"流程中无 LLM 或复杂模型"，并如实列出本项目的 AI 规划与交叉审计；排练做 Q&A drill（每人讲解他人一节 2 min）。
-7. **可复现清单**：requirements 固定版本（含 pyarrow、networkx）；`SEED_MASTER=20261011` + `SeedSequence`；相对路径，grep 无 `E:\`；数据下载单元缓存并校验 SHA-256（不一致仅警告）；XPT 零值用 `x.mask((x.abs()<1e-10)&x.notna(), 0.0)` 并 assert 无 5.4e-79；全新环境 Restart & Run All 通过；FAST ≤5 min、FINAL 耗时记入 `runtime_log`；`execution_count` 连续；体积 ≤~20 MB [上限待核实]；`nbformat.validate` 通过。
+7. **可复现清单**：requirements 固定版本（含 pyarrow、networkx）；`SEED_MASTER=20261011` + `SeedSequence`；相对路径，grep 无 `E:\`；数据读取单元优先读取仓库内 `data/nhanes_2021_2023/raw/`，文件缺失时从 CDC 下载，两种情况都校验 SHA-256（不一致仅警告；评分人只拿到 .ipynb，所以下载回退必须保留）；XPT 零值用 `x.mask((x.abs()<1e-10)&x.notna(), 0.0)` 并 assert 无 5.4e-79；全新环境 Restart & Run All 通过；FAST ≤5 min、FINAL 耗时记入 `runtime_log`；`execution_count` 连续；体积 ≤~20 MB [上限待核实]；`nbformat.validate` 通过。
 8. **视频 storyboard**（目标 11:20，上限 11:40；幻灯片一页一图，标题用简短概括，结论用图下一行说明和口播表达）：
 
    | 时间 | 主讲 | 幻灯片标题与要点 |
@@ -1193,7 +1193,7 @@ Sat 17 晚 v1（约 1 h，A + B）；Sun 18 上午复核及按需 v2；Mon 19–
 
 | 类别 | 最低可信（必做） | 进阶（有余力再做） |
 |---|---|---|
-| 工程 | 共享文件夹；`src/` helpers 内联进 Notebook；单一 spec CSV；Notebook 内 assert；FAST/FINAL 两种模式 | git 分支与 tag、jupytext、nbstripout、pytest、papermill、构建脚本 |
+| 工程 | GitHub 仓库（含原始数据）；`src/` helpers 内联进 Notebook；单一 spec CSV；Notebook 内 assert；FAST/FINAL 两种模式 | 按成员分支加 PR 审计、冻结点 git tag 自动化、jupytext、nbstripout、pytest、papermill、构建脚本 |
 | 数据质量 | 按变量逐个处理哨兵值并做审计表；XPT 修复；一致性检查；缺失机制 logit；异常值三层规则（不删数据） | 敏感性中加 IPW |
 | EDA | DB516 复现；年龄标准化；辛普森扫描（只报头条结论）；DAG；VIF；偏态；线性检验；DAJ 表 | 完整的 219 组合附录、6 段年龄标准化 |
 | 实验 | M0/M1/S；B1–B6 累加与逐块去除；T1-minus-care；线性 LR 对照；BL0/ADA-lite；E-ALL 与 E-SCREEN | Shapley 顺序平均；Holm 校正；cluster bootstrap |
