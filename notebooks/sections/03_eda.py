@@ -787,6 +787,141 @@ reg("DR-S4-06", "interpretation",
 # probability around 0.7–0.8; Asian × `L_comb` | age close to a coin flip).
 
 # %% [markdown]
+# ## 4.8 Causal structure (DAG)
+# **Why.** Whether stratifying on a variable removes bias (confounder) or creates it (mediator,
+# collider) is not a statistical property of the data – it follows from assumptions about how the
+# variables are generated. Writing those assumptions down as a DAG makes them checkable: the
+# adjustment sets used in §4.5–4.7 and in S5 are verified with the back-door criterion
+# (d-separation in networkx) instead of being asserted.
+
+# %%
+import networkx as nx
+
+DAG_EDGES = [
+    ("U: birth cohort / migration", "Race/ancestry"), ("U: birth cohort / migration", "Age"),
+    ("Age", "Medicare"), ("Medicare", "Insurance"), ("SES", "Insurance"), ("Race/ancestry", "SES"),
+    ("Insurance", "UsualCare"), ("SES", "UsualCare"), ("Age", "UsualCare"), ("UsualCare", "Diagnosis"),
+    ("Race/ancestry", "Adiposity"), ("Age", "Adiposity"), ("Sex", "Adiposity"), ("SES", "Adiposity"),
+    ("Adiposity", "BMI (measured)"), ("Race/ancestry", "BMI (measured)"),     # body-composition: BMI-adiposity relation differs
+    ("Adiposity", "Diabetes"), ("Age", "Diabetes"), ("Sex", "Diabetes"), ("Race/ancestry", "Diabetes"), ("SES", "Diabetes"),
+    ("Diabetes", "Diagnosis"), ("Diagnosis", "Treatment"), ("Treatment", "HbA1c (measured)"), ("Diabetes", "HbA1c (measured)"),
+    ("Diabetes", "ExamSelection"), ("SES", "ExamSelection"), ("Age", "ExamSelection"),
+]
+G = nx.DiGraph(DAG_EDGES)
+assert nx.is_directed_acyclic_graph(G)
+LATENT = {"U: birth cohort / migration", "Adiposity", "Diabetes"}      # not directly observed
+
+
+def backdoor_ok(g, x, y, z):
+    """Back-door criterion: Z has no descendant of X and d-separates X and Y once X's out-edges are cut."""
+    z = set(z)
+    if z & nx.descendants(g, x) or z & LATENT:
+        return False
+    g2 = g.copy()
+    g2.remove_edges_from(list(g.out_edges(x)))
+    return nx.is_d_separator(g2, {x}, {y}, z)
+
+
+def minimal_sets(g, x, y, max_size=3):
+    cand = sorted(set(g) - {x, y} - nx.descendants(g, x) - LATENT)
+    found = []
+    from itertools import combinations
+    for k in range(0, max_size + 1):
+        for z in combinations(cand, k):
+            if backdoor_ok(g, x, y, z) and not any(set(f) <= set(z) for f in found):
+                found.append(z)
+    return found
+
+
+queries = [
+    ("Insurance", "Diagnosis", ["Age", "SES"], "Insurance → undiagnosed (S5)"),
+    ("Insurance", "Diagnosis", ["Age"], "… age only"),
+    ("Insurance", "Diagnosis", [], "… crude"),
+    ("Race/ancestry", "Diabetes", ["Age", "Sex"], "Race → diabetes (§4.5)"),
+    ("Race/ancestry", "Diabetes", ["Age"], "… age only"),
+    ("Race/ancestry", "Diabetes", [], "… crude"),
+    ("Race/ancestry", "Diabetes", ["Age", "Sex", "BMI (measured)"], "… + BMI"),
+    ("Race/ancestry", "Diabetes", ["Age", "Sex", "SES"], "… + SES (mediator)"),
+    ("Insurance", "Diabetes", ["Age", "SES"], "Insurance → diabetes (§4.6)"),
+]
+DAG_TAB = pd.DataFrame([{"question": lab, "exposure": x, "outcome": y, "adjustment set": "{" + ", ".join(z) + "}",
+                         "valid (back-door)": backdoor_ok(G, x, y, z),
+                         "contains descendant of exposure": bool(set(z) & nx.descendants(G, x))}
+                        for x, y, z, lab in queries])
+print(DAG_TAB.to_string(index=False))
+ms_ins = minimal_sets(G, "Insurance", "Diagnosis")
+ms_race = minimal_sets(G, "Race/ancestry", "Diabetes")
+print("\nminimal sufficient sets  Insurance -> Diagnosis:", ms_ins)
+print("minimal sufficient sets  Race -> Diabetes:", ms_race)
+# Selection: the cohort exists only for examined adults (conditioning on a collider)
+g_noses = G.copy(); g_noses.remove_edge("SES", "Diabetes"); g_noses.remove_edge("SES", "Adiposity")
+indep_without = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age"})
+indep_given_sel = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age", "ExamSelection"})
+print(f"\ncollider check (SES->diabetes edges removed): SES ⟂ Diabetes | Race, Age: {indep_without}; "
+      f"after also conditioning on ExamSelection: {indep_given_sel}  -> selection into the exam opens a path")
+assert DAG_TAB.loc[0, "valid (back-door)"] and DAG_TAB.loc[3, "valid (back-door)"] and not DAG_TAB.loc[6, "valid (back-door)"]
+DAG_TAB.to_csv(S4_DIR / "dag_adjustment_sets.csv", index=False)
+OUT["dag"] = {"n_nodes": G.number_of_nodes(), "n_edges": G.number_of_edges(),
+              "minimal_sets_insurance_diagnosis": [list(z) for z in ms_ins],
+              "minimal_sets_race_diabetes": [list(z) for z in ms_race],
+              "bmi_adjustment_valid": bool(DAG_TAB.loc[6, "valid (back-door)"]), "exam_selection_opens_path": bool(indep_without and not indep_given_sel)}
+
+# %%
+POS = {"U: birth cohort / migration": (0, 4.2), "Race/ancestry": (0, 2.6), "Age": (0, 5.8), "Sex": (0, 0.8),
+       "SES": (2, 2.2), "Medicare": (2, 6.2), "Insurance": (4, 5.4), "UsualCare": (6, 5.4),
+       "Adiposity": (2.6, 0.5), "BMI (measured)": (4.6, -0.6), "Diabetes": (6, 1.6), "Diagnosis": (8, 4.0),
+       "Treatment": (10, 4.0), "HbA1c (measured)": (10, 1.6), "ExamSelection": (8, -0.6)}
+KIND = {n: "latent" for n in LATENT} | {"BMI (measured)": "measure", "HbA1c (measured)": "measure",
+                                        "ExamSelection": "selection", "Diagnosis": "process", "Treatment": "process",
+                                        "UsualCare": "process"}
+KCOL = {"latent": C.OKABE_ITO["grey"], "measure": C.OKABE_ITO["orange"], "selection": C.OKABE_ITO["vermillion"],
+        "process": C.OKABE_ITO["green"], "observed": C.OKABE_ITO["sky"]}
+fig, ax = plt.subplots(figsize=(12, 6.5))
+cols_ = [KCOL[KIND.get(n, "observed")] for n in G.nodes]
+nx.draw_networkx_nodes(G, POS, ax=ax, node_color=cols_, node_size=2600, alpha=0.9,
+                       node_shape="o", linewidths=1, edgecolors="k")
+mediator_edges = [("Race/ancestry", "Adiposity"), ("Adiposity", "BMI (measured)"), ("Race/ancestry", "BMI (measured)")]
+nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e for e in G.edges if e not in mediator_edges], arrows=True,
+                       arrowsize=14, node_size=2600, edge_color="0.35", connectionstyle="arc3,rad=0.06")
+nx.draw_networkx_edges(G, POS, ax=ax, edgelist=mediator_edges, arrows=True, arrowsize=16, width=2.2, node_size=2600,
+                       edge_color=C.OKABE_ITO["vermillion"], style="dashed", connectionstyle="arc3,rad=0.06")
+nx.draw_networkx_labels(G, POS, ax=ax, labels={n: n.replace(" (measured)", "\n(measured)").replace(": ", ":\n").replace(" / ", "/\n") for n in G},
+                        font_size=8)
+from matplotlib.patches import Patch
+ax.legend(handles=[Patch(color=KCOL[k], label=lab) for k, lab in
+                   [("observed", "observed cause"), ("latent", "latent / unobserved"), ("measure", "measurement"),
+                    ("process", "care process"), ("selection", "selection (collider)")]] +
+          [plt.Line2D([], [], color=C.OKABE_ITO["vermillion"], ls="--", lw=2, label="race → adiposity → BMI (mediator path)")],
+          loc="upper right", fontsize=8, ncol=2)
+ax.set_title("Assumed causal structure: adjust race comparisons for {Age, Sex}, never for BMI; insurance → undiagnosed for {Age, SES}")
+ax.axis("off")
+fig.tight_layout()
+plots.savefig(fig, "S4_dag", caption="Directed acyclic graph of the assumed data-generating process (networkx); "
+                                     "adjustment sets verified with the back-door criterion in §4.8.")
+plt.show()
+
+reg("DR-S4-07", "method", "In the DAG, BMI is a descendant of race (race -> adiposity -> BMI) and of SES; ExamSelection is a collider.",
+    "figures/S4_dag.png; results/S4/dag_adjustment_sets.csv",
+    f"back-door valid: race->diabetes | {{Age, Sex}} = True, + BMI = False; insurance->diagnosis | {{Age, SES}} = True; minimal sets {ms_ins}",
+    "Adjust race comparisons for age (and sex) only; never present BMI-adjusted race contrasts as de-confounded; "
+    "model coefficients are associations (no Table 2 fallacy).",
+    "Adjusting for every available covariate (includes mediators and descendants); reading logistic coefficients causally.",
+    check_note="adjustment sets verified with networkx d-separation")
+
+# %% [markdown]
+# **So what.** Under the stated assumptions, {Age, SES} is a sufficient adjustment set for the
+# insurance → undiagnosed question of S5 (age alone is not, because SES drives both insurance and
+# care), and {Age} or {Age, Sex} suffices for race → diabetes. Adding BMI breaks the back-door
+# criterion: BMI is a descendant of race through adiposity, so "BMI-adjusted" race contrasts – and the
+# BMI-stratified flips of §4.7 – estimate something other than the total association. The graph also
+# makes two structural biases explicit: the cohort exists only for people who attended the exam
+# (conditioning on the collider *ExamSelection* opens SES ↔ diabetes paths, only partly repaired by
+# the weights), and the HbA1c-based label is a descendant of *Treatment*, so conditioning on
+# HbA1c ≥ 6.5 (as the undiagnosed domain does) inherits the treatment-masking problem quantified in
+# S5. The prediction models of S7 are not causal: their coefficients are associations conditional on
+# everything else in the model (Westreich & Greenland's "Table 2 fallacy").
+
+# %% [markdown]
 # ## Save results and register
 
 # %%

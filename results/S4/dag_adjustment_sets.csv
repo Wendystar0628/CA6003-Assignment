@@ -1,0 +1,10 @@
+question,exposure,outcome,adjustment set,valid (back-door),contains descendant of exposure
+Insurance → undiagnosed (S5),Insurance,Diagnosis,"{Age, SES}",True,False
+… age only,Insurance,Diagnosis,{Age},False,False
+… crude,Insurance,Diagnosis,{},False,False
+Race → diabetes (§4.5),Race/ancestry,Diabetes,"{Age, Sex}",True,False
+… age only,Race/ancestry,Diabetes,{Age},True,False
+… crude,Race/ancestry,Diabetes,{},False,False
+… + BMI,Race/ancestry,Diabetes,"{Age, Sex, BMI (measured)}",False,True
+… + SES (mediator),Race/ancestry,Diabetes,"{Age, Sex, SES}",False,True
+Insurance → diabetes (§4.6),Insurance,Diabetes,"{Age, SES}",True,False

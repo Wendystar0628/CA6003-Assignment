@@ -1,0 +1,1 @@
+Directed acyclic graph of the assumed data-generating process (networkx); adjustment sets verified with the back-door criterion in §4.8.

@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:09:49+00:00"
+    "written_utc": "2026-10-10T18:11:25+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -310,5 +310,26 @@
       "p_std_sign_as_point": 0.88
     },
     "n_dag_supported_flips": 2
+  },
+  "dag": {
+    "n_nodes": 15,
+    "n_edges": 28,
+    "minimal_sets_insurance_diagnosis": [
+      [
+        "Age",
+        "SES"
+      ],
+      [
+        "Medicare",
+        "SES"
+      ]
+    ],
+    "minimal_sets_race_diabetes": [
+      [
+        "Age"
+      ]
+    ],
+    "bmi_adjustment_valid": false,
+    "exam_selection_opens_path": true
   }
 }
