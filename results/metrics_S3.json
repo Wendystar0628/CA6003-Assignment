@@ -1,0 +1,382 @@
+{
+  "_meta": {
+    "section": "S3",
+    "nb_mode": "FAST",
+    "seed_master": 20261011,
+    "written_utc": "2026-10-10T18:10:07+00:00"
+  },
+  "xpt_artefact": {
+    "cells": 13676,
+    "files": [
+      "DEMO_L",
+      "GHB_L",
+      "GLU_L",
+      "TCHOL_L",
+      "HDL_L",
+      "TRIGLY_L",
+      "INQ_L",
+      "SMQ_L",
+      "PAQ_L"
+    ],
+    "n_files": 9,
+    "per_file": {
+      "DEMO_L": 3383,
+      "GHB_L": 449,
+      "GLU_L": 635,
+      "TCHOL_L": 752,
+      "HDL_L": 752,
+      "TRIGLY_L": 635,
+      "INQ_L": 218,
+      "SMQ_L": 735,
+      "PAQ_L": 6117
+    },
+    "paq_nan_before": 6276,
+    "paq_nan_after_mask": 6276,
+    "paq_nan_after_where": 0
+  },
+  "zero_weights": {
+    "WTMEC2YR_0": 3073,
+    "WTPH2YR_0": 449,
+    "WTSAF2YR_0": 635,
+    "cohort_WTPH2YR_0": 0
+  },
+  "funnel": {
+    "DEMO_L participants": 11933,
+    "Age >= 20": 7809,
+    "Interviewed and MEC-examined (RIDSTATR = 2)": 6064,
+    "HbA1c measured (LBXGH present)": 5767,
+    "Not pregnant (RIDEXPRG != 1)": 5730
+  },
+  "uniqueness": {
+    "files_seqn_unique": 16,
+    "files_subset_of_demo": 16
+  },
+  "preg_unknown_kept": 21,
+  "sentinel_audit": {
+    "n_variables": 25,
+    "cells_recoded_files": 1047,
+    "cells_recoded_cohort": 562,
+    "all_traceable": true,
+    "legit_codes_cohort": {
+      "DIQ010 = 3": 213,
+      "HUQ030 = 3": 34,
+      "RIDRETH3 = 7": 363
+    }
+  },
+  "blanket_recode": {
+    "valid_cells_destroyed_cohort": 1496,
+    "valid_cells_destroyed_full_file_same_20_vars": 2472,
+    "candidates": [
+      "RIDAGEYR",
+      "INDFMPIR",
+      "BMXWT",
+      "BMXHT",
+      "BMXBMI",
+      "BMXWAIST",
+      "BMXHIP",
+      "BMXARMC",
+      "BPXOSY1",
+      "BPXOSY2",
+      "BPXOSY3",
+      "BPXODI1",
+      "BPXODI2",
+      "BPXODI3",
+      "BPXOPLS1",
+      "BPXOPLS2",
+      "BPXOPLS3",
+      "LBXGH",
+      "LBXTC",
+      "LBDHDD"
+    ],
+    "per_variable": {
+      "BPXODI1": 237,
+      "BPXODI2": 224,
+      "BPXODI3": 200,
+      "BPXOPLS1": 157,
+      "BPXOPLS3": 155,
+      "BPXOPLS2": 148,
+      "RIDAGEYR": 65,
+      "BPXOSY1": 57,
+      "BPXOSY3": 56,
+      "BPXOSY2": 54,
+      "BMXWAIST": 35,
+      "LBDHDD": 32,
+      "LBXGH": 29,
+      "BMXHIP": 29,
+      "BMXWT": 13,
+      "LBXTC": 5,
+      "BMXHT": 0,
+      "INDFMPIR": 0,
+      "BMXBMI": 0,
+      "BMXARMC": 0
+    },
+    "a1c_positives_lost": 29,
+    "a1c_positives": 721,
+    "a1c_lost_share": 0.04022191400832178,
+    "l_comb_flips": 6,
+    "l_comb_positives": 971,
+    "questionnaire_only_cells": 57,
+    "questionnaire_only_per_item": {
+      "HIQ011": 9,
+      "HUQ030": 1,
+      "BPQ020": 4,
+      "BPQ080": 34,
+      "SMQ020": 7,
+      "DMDEDUC2": 2
+    },
+    "all_numeric_recoded": 3132,
+    "all_numeric_genuine": 562,
+    "ridreth3_7_destroyed": 363
+  },
+  "consistency": {
+    "bmi_triples": 8471,
+    "bmi_max_abs_diff": 0.049978549978554554,
+    "bmi_diff_gt_0_1": 0,
+    "sbp_le_dbp": 0,
+    "pp_lt20_cohort": [
+      5,
+      2,
+      3
+    ],
+    "pp_gt100_cohort": [
+      34,
+      39,
+      29
+    ],
+    "pp_lt20_file": [
+      12,
+      8,
+      11
+    ],
+    "pp_gt100_file": [
+      37,
+      43,
+      32
+    ],
+    "whtr_gt1": 4,
+    "diq050_universe": {
+      "answered": 1081,
+      "DIQ010=1": 1081,
+      "DIQ010=3": 0,
+      "DIQ010=2 & DIQ160=1": 0,
+      "other": 0
+    },
+    "diq070_universe": {
+      "answered": 2281,
+      "DIQ010=1": 1081,
+      "DIQ010=3": 282,
+      "DIQ010=2 & DIQ160=1": 918,
+      "other": 0
+    },
+    "cohort_diq070_yes": {
+      "self-reported diabetes": 592,
+      "borderline": 44,
+      "no diabetes (told prediabetes)": 41
+    }
+  },
+  "top_coding": {
+    "age_top": 321,
+    "pir_top": 1282,
+    "pir_top_share": 0.2237347294938918,
+    "pir_miss": 734,
+    "pir_miss_share": 0.1280977312390925,
+    "prev_age80": 0.2616822429906542,
+    "prev_age70_79": 0.25436681222707425
+  },
+  "missingness": {
+    "examined_adults": 6064,
+    "a1c_missing": 297,
+    "a1c_missing_share": 0.04897757255936675,
+    "llr_p": 2.766986232059699e-11,
+    "auc": 0.6500246088420183,
+    "odds_ratios": {
+      "age (per 10 y)": {
+        "OR": 0.893128812718214,
+        "ci_low": 0.8262968013260777,
+        "ci_high": 0.9653662882723203,
+        "p": 0.0043967222976134136
+      },
+      "female": {
+        "OR": 0.9475541223325705,
+        "ci_low": 0.7453120423612796,
+        "ci_high": 1.2046750404097504,
+        "p": 0.6600880073088087
+      },
+      "NH Black": {
+        "OR": 1.8531286609532323,
+        "ci_low": 1.3514126906390322,
+        "ci_high": 2.5411081735679644,
+        "p": 0.00012842861347304787
+      },
+      "NH Asian": {
+        "OR": 1.3833677461152345,
+        "ci_low": 0.8456007279941276,
+        "ci_high": 2.263132300668069,
+        "p": 0.19629413234350657
+      },
+      "Mexican American": {
+        "OR": 0.771626496011272,
+        "ci_low": 0.4483029523684552,
+        "ci_high": 1.328136355562688,
+        "p": 0.34941313108568395
+      },
+      "Other Hispanic": {
+        "OR": 0.8415088759425146,
+        "ci_low": 0.5410565501236854,
+        "ci_high": 1.308804390461874,
+        "p": 0.44382782352591754
+      },
+      "Other/Multi": {
+        "OR": 1.2440879754313643,
+        "ci_low": 0.7845023856076253,
+        "ci_high": 1.9729129178034546,
+        "p": 0.3532356197863301
+      },
+      "PIR (per unit)": {
+        "OR": 0.8197183268061189,
+        "ci_low": 0.75288028178596,
+        "ci_high": 0.892490016749903,
+        "p": 4.628835937140163e-06
+      },
+      "PIR missing": {
+        "OR": 1.5719829950047972,
+        "ci_low": 1.1506148774439706,
+        "ci_high": 2.147660859447374,
+        "p": 0.004494686321850084
+      },
+      "BMI (per unit)": {
+        "OR": 0.997007697608315,
+        "ci_low": 0.980616783582273,
+        "ci_high": 1.013672584165836,
+        "p": 0.7230934551433752
+      },
+      "BMI missing": {
+        "OR": 2.6456209565882065,
+        "ci_low": 1.433026864857257,
+        "ci_high": 4.8842840407153805,
+        "p": 0.001870183963061962
+      },
+      "uninsured": {
+        "OR": 0.6989271012304302,
+        "ci_low": 0.4377953711922607,
+        "ci_high": 1.1158160295391624,
+        "p": 0.13340181092436926
+      },
+      "no usual place of care": {
+        "OR": 1.174304290560696,
+        "ci_low": 0.8088558370875523,
+        "ci_high": 1.7048656925003989,
+        "p": 0.3982694550933443
+      },
+      "self-reported diabetes": {
+        "OR": 1.15352994909956,
+        "ci_low": 0.817196797062521,
+        "ci_high": 1.628287516853583,
+        "p": 0.41672969881883615
+      },
+      "told hypertension": {
+        "OR": 1.0931321375373508,
+        "ci_low": 0.8230208033517756,
+        "ci_high": 1.451892668144668,
+        "p": 0.5386030040638156
+      }
+    },
+    "missing_share_by_race": {
+      "Mexican American": 0.03950617283950617,
+      "NH Asian": 0.05970149253731343,
+      "NH Black": 0.09296148738379814,
+      "NH White": 0.039787055197534324,
+      "Other Hispanic": 0.04234527687296417,
+      "Other/Multi": 0.059278350515463915
+    },
+    "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in S9)"
+  },
+  "outliers": {
+    "layer_table": {
+      "BMXBMI": {
+        "layer1_outside_limits": 2,
+        "layer2_robust_z_gt_3.5": 88,
+        "both_layers": 1
+      },
+      "bp_sys_mean": {
+        "layer1_outside_limits": 0,
+        "layer2_robust_z_gt_3.5": 67,
+        "both_layers": 0
+      },
+      "bp_dia_mean": {
+        "layer1_outside_limits": 0,
+        "layer2_robust_z_gt_3.5": 29,
+        "both_layers": 0
+      },
+      "LBXTC": {
+        "layer1_outside_limits": 0,
+        "layer2_robust_z_gt_3.5": 21,
+        "both_layers": 0
+      },
+      "LBDHDD": {
+        "layer1_outside_limits": 0,
+        "layer2_robust_z_gt_3.5": 60,
+        "both_layers": 0
+      },
+      "LBXGH": {
+        "layer1_outside_limits": 0,
+        "layer2_robust_z_gt_3.5": 462,
+        "both_layers": 0
+      }
+    },
+    "manual_review": 1,
+    "a1c_iqr_fence_upper": 6.800000000000001,
+    "a1c_iqr_flagged": 542,
+    "a1c_iqr_flagged_positive": 519,
+    "a1c_iqr_positive_share": 0.7198335644937587,
+    "joint_fence_vars": [
+      "BMXBMI",
+      "BMXWAIST",
+      "BPXOSY1",
+      "LBXTC",
+      "LBDHDD"
+    ],
+    "joint_fence_deleted": 512,
+    "joint_fence_share": 0.0893542757417103,
+    "joint_fence_prev_deleted": 0.171875,
+    "joint_fence_prev_kept": 0.12131084706784208
+  },
+  "quality_matrix": {
+    "Completeness": {
+      "result": "12.8% (INDFMPIR); HbA1c missing in 4.9 % of examined adults, not MCAR",
+      "verdict": "pass with flags"
+    },
+    "Uniqueness": {
+      "result": "0 duplicates in 16 files; all subsets",
+      "verdict": "pass"
+    },
+    "Timeliness": {
+      "result": "Aug 2021 - Aug 2023, one cycle; no drift test possible (no pooling)",
+      "verdict": "not assessable"
+    },
+    "Validity": {
+      "result": "0 of 214,422 values out of range; 25/25 sentinel variables traceable; XPT artefact repaired (13,676 cells)",
+      "verdict": "pass"
+    },
+    "Accuracy": {
+      "result": "max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)",
+      "verdict": "pass for measures, limited for label"
+    },
+    "Consistency": {
+      "result": "SBP <= DBP: 0; WHtR > 1: 4 flagged; DIQ050/DIQ070 universes as documented",
+      "verdict": "pass"
+    },
+    "Credibility (ISO/IEC 25012)": {
+      "result": "interview response 34.6%, examination 25.7%; self-reported diagnosis part of the label",
+      "verdict": "limited"
+    }
+  },
+  "validity": {
+    "continuous_values_checked": 214422,
+    "out_of_range": 0
+  },
+  "max_item_missing_feature": {
+    "var": "INDFMPIR",
+    "share": 0.1280977312390925
+  }
+}

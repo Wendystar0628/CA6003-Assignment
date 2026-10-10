@@ -1,0 +1,121 @@
+{
+  "_meta": {
+    "section": "S2",
+    "nb_mode": "FAST",
+    "seed_master": 20261011,
+    "written_utc": "2026-10-10T18:10:07+00:00"
+  },
+  "raw_files_verified": 16,
+  "hash_mismatches": 0,
+  "spec_rows": 175,
+  "spec_problems": 0,
+  "minimisation": {
+    "cols_raw": 175,
+    "cols_kept": 78,
+    "cols_dropped": 97,
+    "per_file": {
+      "DEMO_L": {
+        "cols_raw": 27,
+        "cols_kept": 13,
+        "cols_dropped": 14
+      },
+      "GHB_L": {
+        "cols_raw": 3,
+        "cols_kept": 3,
+        "cols_dropped": 0
+      },
+      "GLU_L": {
+        "cols_raw": 4,
+        "cols_kept": 3,
+        "cols_dropped": 1
+      },
+      "BMX_L": {
+        "cols_raw": 22,
+        "cols_kept": 7,
+        "cols_dropped": 15
+      },
+      "BPXO_L": {
+        "cols_raw": 12,
+        "cols_kept": 10,
+        "cols_dropped": 2
+      },
+      "TCHOL_L": {
+        "cols_raw": 4,
+        "cols_kept": 2,
+        "cols_dropped": 2
+      },
+      "HDL_L": {
+        "cols_raw": 4,
+        "cols_kept": 2,
+        "cols_dropped": 2
+      },
+      "TRIGLY_L": {
+        "cols_raw": 10,
+        "cols_kept": 3,
+        "cols_dropped": 7
+      },
+      "DIQ_L": {
+        "cols_raw": 9,
+        "cols_kept": 9,
+        "cols_dropped": 0
+      },
+      "BPQ_L": {
+        "cols_raw": 6,
+        "cols_kept": 3,
+        "cols_dropped": 3
+      },
+      "MCQ_L": {
+        "cols_raw": 35,
+        "cols_kept": 6,
+        "cols_dropped": 29
+      },
+      "INQ_L": {
+        "cols_raw": 5,
+        "cols_kept": 3,
+        "cols_dropped": 2
+      },
+      "HIQ_L": {
+        "cols_raw": 11,
+        "cols_kept": 2,
+        "cols_dropped": 9
+      },
+      "HUQ_L": {
+        "cols_raw": 6,
+        "cols_kept": 2,
+        "cols_dropped": 4
+      },
+      "SMQ_L": {
+        "cols_raw": 9,
+        "cols_kept": 2,
+        "cols_dropped": 7
+      },
+      "PAQ_L": {
+        "cols_raw": 8,
+        "cols_kept": 8,
+        "cols_dropped": 0
+      }
+    }
+  },
+  "use_tier_counts": {
+    "core": 41,
+    "excluded": 97,
+    "optional": 5,
+    "recommended": 10,
+    "redundancy_demo": 2,
+    "side_analysis": 4
+  },
+  "role_admissible": {
+    "audit|N": 3,
+    "cohort_filter|N": 2,
+    "design|N": 2,
+    "feature|T1": 30,
+    "feature|T2": 2,
+    "label|N": 2,
+    "leak|N": 8,
+    "optional|N": 5,
+    "redundancy|N": 2,
+    "side|N": 2,
+    "weight|N": 4
+  },
+  "n_sentinel_variables": 25
+}
