@@ -257,7 +257,8 @@ print(arm_metrics[show].round(3).to_string(index=False))
 # ### Comparison engine
 # Paired difference A − B of a metric on a population: fold-level Nadeau–Bengio corrected t and a paired,
 # label-stratified bootstrap on the repeat-averaged OOF vectors; on E-ALL the **wider** interval is used, on
-# E-SCREEN the bootstrap only. The 80 %-power minimal detectable difference (MDD) is reported with each Δ. Verdict
+# E-SCREEN the bootstrap only. The estimate is always the same quantity per population: on E-ALL the mean of the
+# fold-level paired differences, on E-SCREEN the difference on the pooled OOF vector. The 80 %-power minimal detectable difference (MDD) is reported with each Δ. Verdict
 # rules are those locked in `governance/hypotheses.md`; for a directional claim an `evalkit` verdict of
 # "equivalent" (CI inside ±magnitude) means the claimed magnitude is excluded and is recorded as **refuted**.
 
@@ -287,7 +288,8 @@ def compare(a, b, tier=1, metric="roc_auc", pop="E-ALL", model="lr", pa=None, pb
         ct = ek.corrected_t(d, n_train_fold, n_test_fold)
         row.update(t_mean=ct["mean"], t_lo=ct["ci_low"], t_hi=ct["ci_high"], t_se=ct["se_corr"], t_p=ct["p"], J=ct["J"])
         use_t = (ct["ci_high"] - ct["ci_low"]) >= (bs["ci_high"] - bs["ci_low"])
-        est, lo, hi, se = (ct["mean"], ct["ci_low"], ct["ci_high"], ct["se_corr"]) if use_t else (bs["diff"], bs["ci_low"], bs["ci_high"], bs["se"])
+        lo, hi, se = (ct["ci_low"], ct["ci_high"], ct["se_corr"]) if use_t else (bs["ci_low"], bs["ci_high"], bs["se"])
+        est = ct["mean"]   # one estimand on E-ALL: the fold-mean paired difference (interval = the wider of the two)
         mdd = (stats.t.ppf(0.975, ct["df"]) + stats.t.ppf(0.80, ct["df"])) * se
         row["interval"] = "corrected_t" if use_t else "bootstrap"
     else:
