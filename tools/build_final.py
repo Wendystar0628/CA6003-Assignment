@@ -468,7 +468,7 @@ def front_matter(args, n_sections: int, runtime_marker: str) -> list:
                      "set `NB_MODE=FINAL` before starting Jupyter for the full protocol (5×5 CV, B = 1,000, 500 coefficient replicates, 100 permutations).")
     cells.append(md(
         "## Run mode and runtime\n\n" + mode_text + "\n\n"
-        "The notebook needs Python 3.12 with the packages pinned in the requirements shown in §0.2, and internet access only if the "
+        "The notebook needs Python 3.12 with the packages pinned in the requirements shown in §0.1, and internet access only if the "
         "raw files are not already in a `data/nhanes_2021_2023/raw/` folder above the notebook (then about 13 MB are downloaded from the CDC site and verified by SHA-256). "
         "It creates a `ca6003_workspace/` folder next to the notebook and writes nothing outside it.\n\n"
         + runtime_marker))
@@ -760,6 +760,15 @@ def validate(nb, path: Path, executed: bool) -> list[str]:
     return problems
 
 
+def code_hash(nb) -> str:
+    """SHA-256 over all code-cell sources (S12: after the video link is added only markdown may change)."""
+    h = hashlib.sha256()
+    for c in nb.cells:
+        if c.cell_type == "code":
+            h.update(c.source.encode("utf-8") + b"\n--cell--\n")
+    return h.hexdigest()
+
+
 def size_report(path: Path, nb) -> str:
     total = path.stat().st_size
     img = 0
@@ -796,7 +805,22 @@ def main() -> int:
     ap.add_argument("--download", action="store_true", help="when executing, do not offer the local raw data (tests the CDC download path)")
     ap.add_argument("--timeout", type=int, default=7200, help="per-cell timeout in seconds")
     ap.add_argument("--no-runtime-log", action="store_true")
+    ap.add_argument("--validate-only", metavar="NOTEBOOK", help="validate an existing notebook (schema, absolute paths, "
+                    "execution counts, size, code-cell hash) and exit")
     args = ap.parse_args()
+
+    if args.validate_only:
+        path = Path(args.validate_only).resolve()
+        nb = nbformat.read(path, as_version=4)
+        executed = any(c.get("execution_count") for c in nb.cells if c.cell_type == "code")
+        problems = validate(nb, path, executed)
+        print(size_report(path, nb))
+        print("executed:", executed, "| code-cell SHA-256:", code_hash(nb))
+        print("check_repo:", run_check_repo(path))
+        for p in problems:
+            print("PROBLEM", p)
+        print("validation", "FAILED" if problems else "OK")
+        return 1 if problems else 0
 
     out = Path(args.out).resolve()
     t0 = time.time()
@@ -841,6 +865,7 @@ def main() -> int:
     nbformat.write(nb, out)
     print(f"wrote {out}")
     print(size_report(out, nb))
+    print("code-cell SHA-256:", code_hash(nb))
     print("check_repo:", run_check_repo(out))
     for p in problems:
         print("PROBLEM", p)

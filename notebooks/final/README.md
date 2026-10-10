@@ -10,6 +10,9 @@
 .venv/Scripts/python tools/build_final.py --execute               # FAST  (default, target <= 5 min)
 .venv/Scripts/python tools/build_final.py --execute --mode FINAL  # FINAL (5x5 CV, B = 1000, 100 permutations)
 
+# validate an existing notebook only (schema, absolute paths, execution counts, size, code-cell SHA-256)
+.venv/Scripts/python tools/build_final.py --validate-only notebooks/final/CA6003_NHANES_Diabetes.ipynb
+
 # development helpers
 .venv/Scripts/python tools/build_final.py --out some/dir/x.ipynb --sections 00,01,02 --workdir some/run_dir
 .venv/Scripts/python tools/build_final.py --execute --download    # test the CDC download path instead of the local raw files
@@ -27,7 +30,7 @@ An executed build also appends a line to `notebooks/final/runtime_log.md` (mode,
 | Heading scheme | `# §N Title` is taken from the section file; `##` items become `N.M` and `###` items `N.M.k`. An explicit local number is kept (so prose such as "§6.5" or "§4.10" stays valid), unnumbered headings continue after the highest number used in that section. The generated setup is `0.0` |
 | Appendix A | A.1 merged decision register (all `governance/register/S*.csv`, saved as `governance/decision_register.csv` inside the workspace), A.2 pre-registration text with SHA-256, A.3 hypothesis scoreboard (S10 file if present, else S7), A.4 references, A.5 build record (commit and file hashes) |
 | Execution (`--execute`) | `nbclient` with the Windows selector event-loop policy, kernel working directory = a fresh temp dir, `NB_MODE` from `--mode`, local raw files offered through `CA6003_DATA_SRC`. Outputs are scrubbed of absolute paths, per-section runtimes are computed from cell timings |
-| Validation | `nbformat.validate`; no absolute path in any source cell or output; `execution_count` sequential 1..n and no error outputs (executed builds); size report (total / images / cell counts); `tools/check_repo.py` on the result |
+| Validation | `nbformat.validate`; no absolute path in any source cell or output; `execution_count` sequential 1..n and no error outputs (executed builds); size report (total / images / cell counts); SHA-256 of all code cells (S12: after the video link is added to §0 only markdown may change); `tools/check_repo.py` on the result |
 
 ## Contract for section authors
 
