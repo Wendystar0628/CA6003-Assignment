@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:07:52+00:00"
+    "written_utc": "2026-10-10T18:09:43+00:00"
   },
   "labels": {
     "confusion": {
@@ -563,6 +563,89 @@
         "width": 0.06287272618180063,
         "naive_width_m": 0.07298712060844104
       }
+    }
+  },
+  "freeze": {
+    "target": "L_comb = (DIQ010 == 1) | (LBXGH >= 6.5)",
+    "N": 5730,
+    "gate": {
+      "C1 descriptive evidence: each single instrument misses a material share of the union": "PASS (union justified; post-hoc judgement)",
+      "C2 no admissible feature is a component of the target": "PASS",
+      "C3 >= 500 positives overall and >= 40 in the smallest reported group": "PASS (NH Asian under L_A1c exactly at the line: descriptive only)",
+      "C4 borderline coding handled as sensitivity": "PASS (borderline negative + flagged; SL3 as sensitivity)"
+    },
+    "gate_posthoc": true,
+    "strata_3x3": {
+      "D_uncontrolled": 569,
+      "D_controlled": 250,
+      "Undiagnosed": 152,
+      "NonDiabetic": 4759
+    },
+    "escreen": {
+      "n": 4911,
+      "positives": 152,
+      "negatives": 4759,
+      "borderline_in_escreen": 213,
+      "borderline_positive": 36
+    },
+    "sensitivity_labels": {
+      "SL1": {
+        "n": 5730,
+        "positives": 721,
+        "prev_unweighted": 0.12582897033158813,
+        "w_prev": 0.10541947450226008,
+        "weight": "WTPH2YR"
+      },
+      "SL2": {
+        "n": 5730,
+        "positives": 819,
+        "prev_unweighted": 0.14293193717277486,
+        "w_prev": 0.11756930338027737,
+        "weight": "WTPH2YR"
+      },
+      "SL3": {
+        "n": 5730,
+        "positives": 1148,
+        "prev_unweighted": 0.20034904013961605,
+        "w_prev": 0.16668620394910807,
+        "weight": "WTPH2YR"
+      },
+      "SL4": {
+        "n": 5730,
+        "positives": 886,
+        "prev_unweighted": 0.15462478184991274,
+        "w_prev": 0.12790815692350918,
+        "weight": "WTPH2YR"
+      },
+      "SL5": {
+        "n": 2938,
+        "positives": 565,
+        "prev_unweighted": 0.19230769230769232,
+        "w_prev": 0.15786910949172617,
+        "weight": "WTSAF2YR"
+      }
+    },
+    "known_dx_share_of_positives": 0.84346035015448,
+    "label_freeze_sha256": "3a28026c7ffafac8dde5da8c461b9246b8f1875dad78cf812e64d9ca216a6800"
+  },
+  "hypotheses": {
+    "H1a": {
+      "estimate": "RD uninsured - insured +23.2 pp (6.2, 40.1)",
+      "rule": "lower CI bound > 0",
+      "verdict": "supported",
+      "note": "uninsured share exploratory (KG width >= 0.30)"
+    },
+    "H4a": {
+      "estimate": "BMI<25 among diabetics, Asian - White +43.9 pp (Newcombe 29.8, 57.7); weighted +43.4 pp (JK 23.2, 63.5)",
+      "rule": "difference >= 20 pp with CI above 20 pp",
+      "verdict": "supported",
+      "note": "47 Asian diabetics with BMI: exploratory"
+    },
+    "H4b": {
+      "estimate": "WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (+0.045, +0.138)",
+      "rule": "Asian gain larger and CIs not fully overlapping",
+      "verdict": "supported",
+      "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"
     }
   }
 }

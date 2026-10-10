@@ -1,0 +1,5 @@
+criterion,evidence,verdict
+C1 descriptive evidence: each single instrument misses a material share of the union,"L_self misses 152/971 = 15.7%; L_A1c misses 250/971 = 25.7%; kappa 0.70, PA 0.74, NA 0.96",PASS (union justified; post-hoc judgement)
+C2 no admissible feature is a component of the target,"variable_spec admissible flag of LBXGH, DIQ010, DIQ050, DIQ070, DID040, DID060, DIQ160, DIQ180, LBXGLU: ['N']",PASS
+C3 >= 500 positives overall and >= 40 in the smallest reported group,"L_comb 971; smallest race group (L_comb) NH Asian 50; NH Asian L_comb 50, L_A1c 40",PASS (NH Asian under L_A1c exactly at the line: descriptive only)
+C4 borderline coding handled as sensitivity,borderline positive (SL3): 1148 positives vs 971,PASS (borderline negative + flagged; SL3 as sensitivity)

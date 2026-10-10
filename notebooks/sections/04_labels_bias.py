@@ -773,6 +773,198 @@ register("DR-S5-08", "missingness",
 # NH Black adults the bounds are 21.5–28.4 % (width 0.069) against 12.4–15.9 % for NH White adults. The cohort stays complete-case
 # with WTPH2YR; an inverse-probability-weighting sensitivity check is assigned to S9.
 
+# %% [markdown]
+# ## 8 Decision gate L2 and target freeze
+#
+# **Why.** Loop L2 (process doc §4) sends the project back to S1 if the label audit changes the question. Four
+# criteria decide whether `L_comb` can be frozen. They are evaluated **after** seeing the data (post-hoc), so they
+# are a documented judgement, not a pre-registered test. The freeze then fixes the target, the second primary
+# evaluation population E-SCREEN, the 3×3 label-matrix strata and the sensitivity labels SL1–SL7, written as
+# executable definitions in `governance/label_freeze.md` (all point to `src/labels.py`).
+
+# %%
+spec = NIO.load_spec()
+TARGET_PARTS = ["LBXGH", "DIQ010", "DIQ050", "DIQ070", "DID040", "DID060", "DIQ160", "DIQ180", "LBXGLU"]
+adm = spec[spec["var"].isin(TARGET_PARTS)].drop_duplicates("var").set_index("var")["admissible"].astype(str)
+assert set(adm.index) == set(TARGET_PARTS), set(TARGET_PARTS) - set(adm.index)
+c2_bad = adm[adm.str.upper().isin(["T1", "T2"])]
+race_pos = d.groupby("race3")[["L_comb", "L_A1c"]].sum()
+sl = L.sensitivity_labels(d)
+c1 = {"self_missed": miss_self / n_comb, "a1c_missed": miss_a1c / n_comb, "kappa": unw["kappa"], "pa": unw["pa"], "na": unw["na"]}
+gate = pd.DataFrame([
+    {"criterion": "C1 descriptive evidence: each single instrument misses a material share of the union",
+     "evidence": f"L_self misses {miss_self}/{n_comb} = {pct(c1['self_missed'])}; L_A1c misses {miss_a1c}/{n_comb} = {pct(c1['a1c_missed'])}; "
+                 f"kappa {c1['kappa']:.2f}, PA {c1['pa']:.2f}, NA {c1['na']:.2f}",
+     "verdict": "PASS (union justified; post-hoc judgement)"},
+    {"criterion": "C2 no admissible feature is a component of the target",
+     "evidence": f"variable_spec admissible flag of {', '.join(TARGET_PARTS)}: {sorted(set(adm.fillna('missing')))}",
+     "verdict": "PASS" if c2_bad.empty else f"FAIL: {list(c2_bad.index)}"},
+    {"criterion": "C3 >= 500 positives overall and >= 40 in the smallest reported group",
+     "evidence": f"L_comb {n_comb}; smallest race group (L_comb) {race_pos['L_comb'].idxmin()} {int(race_pos['L_comb'].min())}; "
+                 f"NH Asian L_comb {int(race_pos.loc['NH Asian', 'L_comb'])}, L_A1c {int(race_pos.loc['NH Asian', 'L_A1c'])}",
+     "verdict": "PASS (NH Asian under L_A1c exactly at the line: descriptive only)"},
+    {"criterion": "C4 borderline coding handled as sensitivity",
+     "evidence": f"borderline positive (SL3): {int(sl['SL3'].sum())} positives vs {n_comb}",
+     "verdict": "PASS (borderline negative + flagged; SL3 as sensitivity)"},
+])
+print(gate.to_string(index=False))
+assert c2_bad.empty and n_comb >= 500 and race_pos["L_comb"].min() >= 40 and race_pos.loc["NH Asian", "L_A1c"] >= 40
+assert int(sl["SL3"].sum()) == 1148
+close(c1["self_missed"], 0.157, 0.001, "C1 self missed"); close(c1["a1c_missed"], 0.257, 0.001, "C1 A1c missed")
+gate.to_csv(OUT / "l2_gate.csv", index=False)
+
+# %% [markdown]
+# **E-SCREEN, 3×3 strata and sensitivity labels.** The frozen definitions are computed once more from
+# `src/labels.py` and compared with the counts written into `governance/label_freeze.md`, so the document and
+# the code cannot drift apart.
+
+# %%
+strata = L.strata_counts(d)
+esc = d[d["in_escreen"] == 1]
+esc_counts = {"n": len(esc), "positives": int(esc["y_escreen"].sum()), "negatives": int((esc["y_escreen"] == 0).sum()),
+              "borderline_in_escreen": int(esc["borderline"].sum()),
+              "borderline_positive": int(((esc["borderline"] == 1) & (esc["y_escreen"] == 1)).sum())}
+print("3x3 evaluation strata:", strata)
+print("E-SCREEN:", esc_counts)
+assert strata == {"D_uncontrolled": 569, "D_controlled": 250, "Undiagnosed": 152, "NonDiabetic": 4759}
+assert esc_counts["positives"] == 152 and esc_counts["borderline_positive"] == 36
+
+fm = L.fasting_mask(d)
+sl_rows = []
+for col, desc, wcol in [("SL1", "L_A1c only", WT), ("SL2", "L_self only", WT), ("SL3", "borderline counted positive", WT),
+                        ("SL4", "treatment-aware (A1c or treated self-report, DIQ070 universe)", WT),
+                        ("SL5", "NCHS: self-report or A1c>=6.5 or FPG>=126, fasting subsample", C.WEIGHT_FASTING)]:
+    w = S.weighted_prop(d.assign(_y=sl[col]), "_y", weight=wcol)
+    sl_rows.append({"label": col, "definition": desc, "n": int(sl[col].notna().sum()), "positives": int(sl[col].sum()),
+                    "prev_unweighted": sl[col].mean(), "weight": wcol, "w_prev": w["est"], "w_ci_low": w["ci_low"], "w_ci_high": w["ci_high"]})
+sl_tab = pd.DataFrame(sl_rows)
+print(sl_tab.round(3).to_string(index=False))
+univ = L.diq070_universe(d)
+pills_by_status = d[d["DIQ070"].eq(1)].groupby(d["DIQ010"].map({1: "diagnosed", 2: "no (told prediabetes)", 3: "borderline"})).size()
+print("DIQ070 = 1 by DIQ010:", pills_by_status.to_dict(), f"; DIQ070 universe n = {int(univ.sum())}")
+SLT = sl_tab.set_index("label")
+assert SLT["positives"].tolist() == [721, 819, 1148, 886, int(SLT.loc["SL5", "positives"])]
+assert pills_by_status.to_dict() == {"borderline": 44, "diagnosed": 592, "no (told prediabetes)": 41}
+close(SLT.loc["SL5", "w_prev"], 0.158, 0.006, "SL5 vs NCHS DB516 15.8%")
+
+freeze_path = C.GOVERNANCE_DIR / "label_freeze.md"
+freeze_text = freeze_path.read_text(encoding="utf-8")
+frozen = json.loads(freeze_text.split("```json")[1].split("```")[0])
+computed = {"N": len(d), "L_comb": n_comb, "L_self": int(d["L_self"].sum()), "L_A1c": int(d["L_A1c"].sum()),
+            "strata_3x3": strata, "escreen_positives": esc_counts["positives"], "escreen_negatives": esc_counts["negatives"],
+            "escreen_borderline_positive": esc_counts["borderline_positive"],
+            "SL_positives": {k: int(v) for k, v in SLT["positives"].items()}, "SL5_n": int(SLT.loc["SL5", "n"])}
+assert frozen == computed, {k: (frozen.get(k), v) for k, v in computed.items() if frozen.get(k) != v}
+freeze_sha = hashlib.sha256(freeze_path.read_bytes()).hexdigest()
+print(f"label_freeze.md counts match the code; SHA-256 {freeze_sha[:16]}…")
+
+fig, ax = plt.subplots(figsize=(8, 2.6))
+cols = [plots.PALETTE[5], plots.PALETTE[0], plots.PALETTE[2]]
+left = 0
+for k, col in zip(L.POSITIVE_STRATA, cols):
+    ax.barh(0, strata[k], left=left, height=0.5, color=col, edgecolor="white", zorder=3)
+    ax.text(left + strata[k] / 2, 0, f"{k.replace('_', ' ')}\n{strata[k]}", ha="center", va="center", fontsize=9.5,
+            color="white" if k == "D_uncontrolled" else "black", zorder=4)
+    left += strata[k]
+ax.set_yticks([])
+ax.grid(axis="y", visible=False)
+known = strata["D_uncontrolled"] + strata["D_controlled"]
+ax.set(xlabel=f"L_comb positives (n = {n_comb}); common negatives NonDiabetic n = {strata['NonDiabetic']:,}", ylim=(-0.5, 0.5),
+       title=f"{pct(known / n_comb, 0)} of L_comb positives are already diagnosed; E-SCREEN keeps the {strata['Undiagnosed']} undiagnosed")
+plots.savefig(fig, "S5_label_strata", caption="Composition of the 971 L_comb positives by self-report and HbA1c; "
+              "D_uncontrolled 569, D_controlled 250, Undiagnosed 152 (= E-SCREEN positives).")
+plt.show()
+
+sl_tab.to_csv(OUT / "sensitivity_labels.csv", index=False)
+RES["freeze"] = {"target": "L_comb = (DIQ010 == 1) | (LBXGH >= 6.5)", "N": len(d), "gate": gate.set_index("criterion")["verdict"].to_dict(),
+                 "gate_posthoc": True, "strata_3x3": strata, "escreen": esc_counts,
+                 "sensitivity_labels": sl_tab.set_index("label")[["n", "positives", "prev_unweighted", "w_prev", "weight"]].to_dict("index"),
+                 "known_dx_share_of_positives": strata["D_uncontrolled"] / n_comb + strata["D_controlled"] / n_comb,
+                 "label_freeze_sha256": freeze_sha}
+register("DR-S5-01", "target_freeze",
+         "L2 gate C1-C4 passes (post-hoc); the union label is the least biased single target",
+         "results/S5/l2_gate.csv; governance/label_freeze.md",
+         f"L_comb {n_comb} positives ({pct(n_comb / len(d))}; weighted {pct(w_prev['est'])}); C1 15.7%/25.7% missed by single labels; "
+         f"C3 Asian L_comb {int(race_pos.loc['NH Asian', 'L_comb'])}",
+         "Freeze L_comb = DIQ010==1 or LBXGH>=6.5 on N=5,730 (tag target-freeze); any change requires a register entry and reopening L2",
+         "Freeze L_self (misses 152 undiagnosed); freeze L_A1c (misses 250 controlled); borderline positive (SL3, kept as sensitivity)",
+         loop_ref="L2", check_note="Gate recomputed in section 5.8; post-hoc nature stated")
+register("DR-S5-09", "evaluation_population",
+         "84% of L_comb positives are already diagnosed, so E-ALL measures recognition of known disease",
+         "governance/label_freeze.md; figures/S5_label_strata.png",
+         f"E-SCREEN: {esc_counts['n']} adults, {esc_counts['positives']} positives vs {esc_counts['negatives']} negatives; "
+         f"borderline kept with {esc_counts['borderline_positive']} positive; 3x3 strata 569/250/152/4759",
+         "E-SCREEN (DIQ010!=1, y = HbA1c>=6.5) is a co-primary evaluation population next to E-ALL; 3x3 label matrix (SL6) evaluated in S8 at specificity 0.80",
+         "Evaluate on E-ALL only; train on E-SCREEN only (152 events too few)", loop_ref="L2")
+register("DR-S5-10", "sensitivity_labels",
+         "Label definition is a researcher degree of freedom; robustness needs pre-specified alternatives",
+         "results/S5/sensitivity_labels.csv; governance/label_freeze.md",
+         "SL1 721, SL2 819, SL3 1,148, SL4 886, SL5 " + f"{int(SLT.loc['SL5', 'positives'])}/{int(SLT.loc['SL5', 'n'])} (weighted {pct(SLT.loc['SL5', 'w_prev'])})",
+         "Freeze SL1-SL7 as executable definitions (src/labels.py); SL4 uses only the DIQ070 universe and excludes pills of non-diagnosed respondents; S9 reports results under SL1-SL5, S8 runs SL6, S9 runs SL7",
+         "Ad-hoc relabelling after seeing model results; DIQ070 pills as diabetes for all respondents (would count metformin for prediabetes)")
+
+# %% [markdown]
+# **So what.** All four gate criteria pass; we state explicitly that this is a post-hoc judgement made after
+# seeing the data. Each single instrument misses a material share of the union (15.7 % and 25.7 %), no admissible
+# feature is part of the target, every race group has at least 40 positives (NH Asian: 50 under `L_comb`, exactly
+# 40 under `L_A1c`, so Asian results stay descriptive), and the borderline coding is handled by SL3 (1,148
+# positives). **`L_comb` is frozen** (`target-freeze`).
+#
+# The 971 positives split into 569 uncontrolled and 250 controlled known diabetics and 152 undiagnosed adults:
+# 84 % of all positives are already diagnosed, so an AUC on E-ALL largely measures recognition of known disease.
+# E-SCREEN (adults not reporting diabetes; 152 HbA1c-positive vs 4,759 negatives, borderline respondents kept
+# and flagged, 36 of them positive) is therefore a co-primary evaluation population, and S8 evaluates every
+# training label on each 3×3 column against the common 4,759 negatives. The sensitivity labels behave as
+# expected: the treatment-aware SL4 (886) sits between `L_A1c` and `L_comb`, and the NCHS definition SL5 on the
+# fasting subsample reproduces the published 15.8 % prevalence closely, which anchors our label pipeline to an
+# external benchmark.
+
+# %% [markdown]
+# **Status of the S5 hypotheses.** Three entries of `governance/hypotheses.md` are checked in this section. All
+# three were written after the data had been analysed (`analysis_seen` / `descriptive_seen`), so a "supported"
+# verdict here confirms a reproduced description; it is not confirmatory evidence.
+
+# %%
+from statsmodels.stats.proportion import confint_proportions_2indep
+
+ka, na_ = int(bmi_dm.loc["NH Asian", "bmi_lt25"]), int(bmi_dm.loc["NH Asian", "diabetics_with_bmi"])
+kw, nw = int(bmi_dm.loc["NH White", "bmi_lt25"]), int(bmi_dm.loc["NH White", "diabetics_with_bmi"])
+h4a_lo, h4a_hi = confint_proportions_2indep(ka, na_, kw, nw, method="newcomb", compare="diff")
+h4a = ka / na_ - kw / nw
+rd_bmi = risk_difference(d.assign(bmi_lt25=(d["BMXBMI"] < 25).astype(float).where(d["BMXBMI"].notna())), "bmi_lt25",
+                         ((d["RIDRETH3"] == 6) & (d["L_comb"] == 1)).to_numpy(), ((d["RIDRETH3"] == 3) & (d["L_comb"] == 1)).to_numpy())
+g_as, g_wh = RO.loc[("NH Asian", "WHtR − BMI (paired)")], RO.loc[("NH White", "WHtR − BMI (paired)")]
+rd_un = RD.loc["uninsured - insured"]
+hyp = pd.DataFrame([
+    {"hyp_id": "H1a", "estimate": f"RD uninsured - insured {rd_un['rd_pp']:+.1f} pp ({rd_un['ci_low_pp']:.1f}, {rd_un['ci_high_pp']:.1f})",
+     "rule": "lower CI bound > 0", "verdict": "supported" if rd_un["ci_low_pp"] > 0 else "inconclusive",
+     "note": "uninsured share exploratory (KG width >= 0.30)"},
+    {"hyp_id": "H4a", "estimate": f"BMI<25 among diabetics, Asian - White {100 * h4a:+.1f} pp (Newcombe {100 * h4a_lo:.1f}, {100 * h4a_hi:.1f}); "
+                                  f"weighted {100 * rd_bmi['est']:+.1f} pp (JK {100 * rd_bmi['ci_low']:.1f}, {100 * rd_bmi['ci_high']:.1f})",
+     "rule": "difference >= 20 pp with CI above 20 pp",
+     "verdict": "supported" if h4a_lo >= 0.20 else ("inconclusive" if h4a >= 0.20 else "refuted"),
+     "note": "47 Asian diabetics with BMI: exploratory"},
+    {"hyp_id": "H4b", "estimate": f"WHtR - BMI gain Asian {g_as['auc']:+.3f} ({g_as['ci_low']:.3f}, {g_as['ci_high']:.3f}) vs "
+                                  f"White {g_wh['auc']:+.3f} ({g_wh['ci_low']:.3f}, {g_wh['ci_high']:.3f}); difference CI "
+                                  f"({gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f})",
+     "rule": "Asian gain larger and CIs not fully overlapping",
+     "verdict": "supported" if (g_as["auc"] > g_wh["auc"] and g_as["ci_low"] > g_wh["ci_low"] and gain_diff.quantile(.025) > 0) else "inconclusive",
+     "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"},
+])
+print(hyp.to_string(index=False))
+assert hyp["verdict"].tolist() == ["supported", "supported", "supported"]
+hyp.to_csv(OUT / "hypothesis_checks.csv", index=False)
+RES["hypotheses"] = hyp.set_index("hyp_id").to_dict("index")
+for r in REG:   # link register rows to the hypotheses they inform
+    r["hyp_id"] = {"DR-S5-05": "H1a", "DR-S5-06": "H4a; H4b", "DR-S5-09": "H2c; H3"}.get(r["dr_id"], r["hyp_id"])
+
+# %% [markdown]
+# **So what.** H1a (uninsured adults more often undiagnosed), H4a (BMI < 25 far more common among Asian
+# diabetics) and H4b (larger WHtR gain in Asian adults) are reproduced with intervals that satisfy their
+# pre-stated rules, with the caveats printed above. Because the hypotheses were written after seeing these data,
+# they are recorded as *supported (analysis_seen)*; the genuinely pre-registered tests are H2a–H3 and the WHtR
+# arm in S7/S8.
+
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"
