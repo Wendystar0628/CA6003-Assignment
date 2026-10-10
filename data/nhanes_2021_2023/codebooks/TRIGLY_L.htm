@@ -1,0 +1,798 @@
+﻿<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>TRIGLY_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Cholesterol - Low-Density Lipoproteins (LDL) &amp; Triglycerides Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Description_of_Laboratory_Methodology">Description of Laboratory Methodology</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Method_Files">Laboratory Method Files</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#References">References</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#WTSAF2YR">WTSAF2YR - Fasting Subsample 2 Year MEC Weight</a>
+              </li>
+              <li>
+                <a href="#LBXTLG">LBXTLG - Triglyceride (mg/dL)</a>
+              </li>
+              <li>
+                <a href="#LBDTRSI">LBDTRSI - Triglyceride (mmol/L)</a>
+              </li>
+              <li>
+                <a href="#LBDLDL">LBDLDL - LDL-Cholesterol, Friedewald (mg/dL)</a>
+              </li>
+              <li>
+                <a href="#LBDLDLSI">LBDLDLSI - LDL-Cholesterol, Friedewald (mmol/L)</a>
+              </li>
+              <li>
+                <a href="#LBDLDLM">LBDLDLM - LDL-Cholesterol, Martin-Hopkins (mg/dL)</a>
+              </li>
+              <li>
+                <a href="#LBDLDMSI">LBDLDMSI - LDL-Cholesterol, Martin-Hopkins (mmol/L)</a>
+              </li>
+              <li>
+                <a href="#LBDLDLN">LBDLDLN - LDL-Cholesterol, NIH equation 2 (mg/dL)</a>
+              </li>
+              <li>
+                <a href="#LBDLDNSI">LBDLDNSI - LDL-Cholesterol, NIH equation 2 (mmol/L)</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Cholesterol - Low-Density Lipoproteins (LDL) &amp; Triglycerides (TRIGLY_L)</h3>
+        <h4> Data File: TRIGLY_L.xpt</h4>
+        <h5 class="left">First Published: September 2025</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>Heart disease is the leading cause of death in the United States (Murphy, et. al., 2024). Blood lipid levels are fundamental measures included in NHANES that can be used for cardiovascular risk assessment. The goals of NHANES blood lipid measurements include: 1) monitoring the prevalence and trends in major cardiovascular conditions and overall risk factors in the U.S.; 2) evaluating prevention and treatment programs targeting cardiovascular disease in the U.S.; and 3) monitoring the status of hyperlipidemia.</p>
+<p>In 2018, new Blood Cholesterol Guidelines were released, by the American College of Cardiology and American Heart Association Task Force on Clinical Practice Guidelines, which aim to reduce the risk of atherosclerotic cardiovascular disease through cholesterol management (Grundy, et. al., 2018). The blood lipids measurements in NHANES include total cholesterol, high-density lipoprotein cholesterol (HDL-C), low-density lipoproteins cholesterol (LDL-C), and triglycerides. The present file provides data on LDL-C and triglycerides. Data on total cholesterol are provided in the Cholesterol - Total (TCHOL_L) file, and HDL-C data are provided in Cholesterol - High - Density Lipoprotein (HDL_L).</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>Participants aged 12 years and older who were examined in the morning sessions were eligible.</p><h2 id="Description_of_Laboratory_Methodology">Description of Laboratory Methodology</h2><p>This method is based on the work by Wahlefeld using a lipoprotein lipase from microorganisms for the rapid and complete hydrolysis of triglycerides to glycerol followed by oxidation to dihydroxyacetone phosphate and hydrogen peroxide. The hydrogen peroxide produced then reacts with 4-aminophenazone and 4-chlorophenol under the catalytic action of peroxidase to form a red dyestuff (Trinder endpoint reaction). The color intensity of the red dyestuff formed is directly proportional to the triglyceride concentration and can be measured photometrically.</p>
+<p>There was a change in the lab method in the NHANES August 2021-August 2023 cycle for triglycerides measurement. The glycerol blanked assay used in previous cycles were phased out by the manufacturer. In addition, the lab equipment used for the measurement was updated from the Cobas 6000 Analyzer to Cobas 8000. Please refer to the Analytic Notes section for additional information.</p>
+<p>Refer to the Laboratory Method Files section for a detailed description of the laboratory methods used.</p>
+<p>Serum LDL-C levels were calculated from directly measured values of total cholesterol, triglycerides, and HDL-C. Please see below the Data Processing and Editing section for more details. For laboratory methods used for total cholesterol and HDL-C, please refer to the accompanying documentation: <a href="https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/TCHOL_L.htm">TCHOL_L</a> and <a href="https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/HDL_L.htm">HDL_L</a>.</p><h2 id="Laboratory_Method_Files">Laboratory Method Files</h2>
+        <p>
+          <a target="_blank" href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/labmethods/TRIGLY-L-MET-508.pdf">Triglycerides</a>
+          <span> (September 2025)</span>
+        </p>
+        <h2 id="Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</h2><p>Serum samples were
+processed, stored, and shipped to University of Minnesota, Advanced Research
+Diagnostics Laboratory (ARDL), Minneapolis, MN for analysis. </p>
+<p>Detailed
+instructions on specimen collection and processing are discussed in the <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">NHANES Laboratory Procedures Manual
+(LPM)</a>. Vials are stored under appropriate frozen (&ndash;30&deg;C) conditions
+until they are shipped to University of Minnesota for testing. </p>
+<p>The NHANES quality
+assurance and quality control (QA/QC) meet the 1988 Clinical Laboratory
+Improvement Amendment mandates. Detailed QA/QC instructions are discussed in
+the <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">NHANES LPM</a>.</p>
+<p><strong>Mobile Examination
+Centers (MECs)</strong></p>
+<p>Laboratory team
+performance is monitored using several techniques. NCHS and contract
+consultants use a structured competency assessment evaluation during visits to
+evaluate both the quality of the laboratory work and the QC procedures. Each
+laboratory staff member is observed for equipment operation, specimen
+collection and preparation; testing procedures and constructive feedback are
+given to each staff member. Formal retraining sessions are conducted annually
+to ensure that required skill levels were maintained. </p>
+<p><strong>Analytical
+Laboratories</strong></p>
+<p>NHANES uses
+several methods to monitor the quality of the analyses performed by the
+contract laboratories. In the MEC, these methods include performing blind split
+samples collected during &ldquo;dry run&rdquo; sessions. In addition, contract laboratories
+randomly perform repeat testing on 2% of all specimens. </p>
+<p>NCHS
+developed and distributed a QC protocol for all CDC and contract laboratories,
+which outlined the use of Westgard rules (Westgard, et. al., 1981) when testing
+NHANES specimens. Progress reports containing any problems encountered during
+shipping or receipt of specimens, summary statistics for each control pool, QC
+graphs, instrument calibration, reagents, and any special considerations are submitted
+to NCHS quarterly. The reports are reviewed for trends or shifts in the data.
+The laboratories are required to explain any identified areas of concern.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data were
+reviewed. Incomplete data or improbable values were sent to the performing
+laboratory for confirmation. </p>
+<p>Seven derived
+variables were created in this data file: one for triglycerides, and six for
+LDL-C. The formulas used to derive these variables are provided below.</p>
+<p><strong><span style="text-decoration: underline;">Triglycerides -
+International System of Units (LBDTRSI)</span></strong></p>
+<p>The triglyceride
+values in mg/dL <strong>(LBXTLG)</strong> were converted to mmol/L <strong>(LBDTRSI)</strong> by multiplying
+by 0.01129.</p>
+<p><strong>Calculated LDL-C
+LEVELS</strong></p>
+<p>Serum LDL-C levels
+were derived for participants examined in the morning session only. LDL-C is
+calculated from directly measured values of total cholesterol (LBXTC),
+triglycerides (LBXTLG), and HDL-C (LBDHDD). Three equations are available for
+calculating LDL-C: the Friedewald equation; the Martin-Hopkins equation; and
+the NIH Equation 2.</p>
+<p>The Friedewald
+equation has been the standard equation used for the calculation of LDL-C for
+clinical use for decades. The Friedewald equation estimates LDL-C concentration
+using directly measured total cholesterol, triglycerides, and HDL-C results,
+and a fixed factor of 5 to estimate the triglyceride to very low-density
+lipoprotein cholesterol (VLDL-C) ratio and is based on a direct LDL-C by beta
+quantification reference method from 448 samples (Friedewald, 1972). NHANES has
+used the Friedewald equation to calculate LDL-C since the release of the Third
+National Health and Nutrition Examination Survey (NHANES III) (1988-1994 data)
+in 1996. Studies over the years have shown that the equation underestimates
+LDL-C at lower levels, specifically those with LDL-C levels less than 70 mg/dL
+and/or high triglyceride levels, potentially leading to an undertreatment with
+lipid-lowering medications (Sathiyakumar, et. al., 2020). The Friedewald
+equation is not valid for triglyceride results greater than 400 mg/dL.</p>
+<p>The Martin-Hopkins
+equation for calculating LDL-C was recommended in the 2018 Blood Cholesterol
+Guidelines, specifically those with LDL-C levels less than 70 mg/dL. It is
+based on a Vertical Auto Profile direct ultracentrifugation method from 1.35
+million patients (Martin, et. al., 2013). The Martin-Hopkins equation applies
+an adjustable factor on an individual participant&rsquo;s median triglyceride to
+VLDL-C ratio based on non-HDL cholesterol (NONHDL, calculated by subtracting
+HDL-C from total cholesterol [NON-HDL=LBXTC-LBDHDD]) and triglyceride
+concentrations (Martin, et. al., 2013). To establish the adjustable factors 10,
+20, 30, 60, 90, 120, 150, 180, 200, 300, 360, 400, 720, 800, 1000, and 2000
+cell two-dimensional strata tables were developed (Martin, et. al., 2013).
+NHANES employs the 360-cell strata table to generate adjustable factors for the
+triglyceride to VLDL-C ratio for calculating LDL-C. Like the Friedewald
+equation, the Martin-Hopkins equation is not valid for triglyceride results
+greater than 400 mg/dL. </p>
+<p>In January 2020, the
+NIH Equation 2 was released (Sampson, et. al., 2020). Like the Friedewald
+equation, it is based on a direct LDL-C by beta quantification reference
+method, though from a much larger sample consisting of 8,656 patients (18,715
+lipid samples) (Sampson, et. al., 2020). Of the three equations for calculating
+LDL-C, the NIH Equation 2 has the best accuracy at triglyceride levels greater
+than or equal to 400 mg/dL. NIH Equation 2 has not been as scrutinized as the
+Friedewald and Martin-Hopkins equations and requires additional external
+validation, as it was released in 2020. However, it has been implemented by one
+major U.S. laboratory with an expansive nationwide network. The NIH Equation 2
+is not valid for triglyceride results greater than 800 mg/dL.</p>
+<p>All three
+equations are being released in this dataset. All calculated LDL-C data were
+converted into International System of Units (SI units) for each equation. </p>
+<p><strong><span style="text-decoration: underline;">Friedewald
+Equation (LBDLDL):</span></strong></p>
+<p><strong>LBDLDL [LDL-C
+(Friedewald)] = LBXTC </strong><strong>&ndash;&nbsp;LBDHDD &ndash;&nbsp;&nbsp;LBXTLG<sup>a</sup>/5 </strong>&nbsp;</p>
+<p><sup>a</sup>Where triglyceride levels are less than 400 mg/dL.</p>
+<p><strong><span style="text-decoration: underline;">Friedewald
+Equation - SI units (LBDLDLSI)</span></strong></p>
+<p>The LDL-C
+(Friedewald) in mg/dL <strong>(LBDLDL)</strong> was converted to mmol/L <strong>(LBDLDLSI)</strong>
+by multiplying by 0.02586.</p>
+<p>LBDLDLSI=.02586*LBDLDL</p>
+<p><strong><span style="text-decoration: underline;">Martin-Hopkins
+Equation (LBDLDLM): </span></strong></p>
+<p><strong>LBDLDLM [LDL-C (Martin-Hopkins)] = LBXTC-LBDHDD-LBXTLG<sup>a</sup>/Adjustable
+Factor<sup>b</sup></strong></p>
+<p><strong><sup>a</sup></strong>Where triglyceride
+levels are less than 400 mg/dL</p>
+<p><strong><sup>b</sup></strong>Where the
+Adjustable factor, an estimate of the triglyceride to VLDL cholesterol ratio,
+depends upon the values of non-HDL-C and triglycerides.</p>
+<p><strong><span style="text-decoration: underline;">Martin-Hopkins
+Equation - SI units (LBDLDMSI)</span></strong></p>
+<p>The LDL-C
+(Martin-Hopkins) in mg/dL <strong>(LBDLDLM)</strong> was converted to mmol/L <strong>(LBDLDMSI)</strong>
+by multiplying by 0.02586.</p>
+<p>LBDLDMSI=.02586*LBDLDLM</p>
+<p><strong><span style="text-decoration: underline;">NIH Equation 2
+(LBDLDLN): </span></strong></p>
+<p><strong>LBDLDLN</strong> <strong>[LDL-C (NIH)] = </strong></p>
+<p><strong>LBXTC/0.948&ndash;LBDHDD/0.971-(LBXTLG/8.56 + LBXTLG<sup>c</sup> * NONHDL/2140&ndash;LBXTLG<sup>2</sup>/16100)&ndash;9.44</strong></p>
+<p><strong><sup>c</sup></strong>Where triglyceride levels are less than 800 mg/dL.</p>
+<p><a name="_Hlk61337421"></a><!--[if gte vml 1]><v:shapetype id="_x0000_t75"
+ coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe"
+ filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="Picture_x0020_1" o:spid="_x0000_i1025" type="#_x0000_t75"
+ style='width:353pt;height:32.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="file:///C:/Users/HLA3/AppData/Local/Temp/1/msohtmlclip1/01/clip_image001.gif"
+  o:title=""/>
+</v:shape><![endif]--><!--[if !vml]--><img alt="" width="471" height="43" src="data:image/png;base64,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" v:shapes="Picture_x0020_1" /><!--[endif]--></p>
+<p><strong><span style="text-decoration: underline;">NIH Equation 2 -
+SI units (LBDLDNSI)</span></strong></p>
+<p>The LDL-C (NIH
+Equation 2) in mg/dL <strong>(LBDLDLN)</strong> was converted to mmol/L <strong>(LBDLDNSI)</strong>
+by multiplying by 0.02586.</p>
+<p>LBDLDLNSI=.02586*LBDLDLN</p>
+<div>
+</div><h2 id="Analytic_Notes">Analytic Notes</h2><p>There are over 800
+laboratory tests performed on NHANES participants. However, not all
+participants provided biospecimens or enough volume for all the tests to be
+performed. </p>
+<p>Analysts should
+evaluate the extent of missing data in the dataset related to the outcome of
+interest as well as any predictor variables used in the analyses to determine
+whether additional re-weighting for item non-response is necessary. </p>
+<p>Please refer to
+the NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx#analytic-guidelines">Analytic Guidelines</a> and the on-line NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/default.aspx">Tutorial</a> for further
+details on the use of sample weights and other analytic issues.</p>
+<p><a></a><!--[if !supportAnnotations]--><strong>Subsample Weights</strong> <br />
+<br />
+Triglycerides were measured in a fasting subsample of participants 12 years and
+older. Special sample weights are required to analyze these data properly.
+Specific sample weights for this subsample are included in this data file and
+should be used when analyzing these data.</p>
+<p>Participants
+included in the fasting subsample but did not provide a blood specimen (n=324)
+have an assigned sample weight value of &ldquo;0&rdquo; in their records. In addition,
+participants who provided a blood specimen but did not meet the 8 to less than
+24 hours fasting criteria (n=311) have the sample weight value assigned as &ldquo;0&rdquo;
+(WTSAFPRP =0) as well.&nbsp;However, these participants have data in at least
+one other fasting subsample tests (e.g., plasma fasting glucose). Therefore,
+they have a sample weight larger than &ldquo;0,&rdquo; regardless of missing their
+triglyceride test results.</p>
+<p><strong>Demographic and
+Other Related Variables</strong> </p>
+<p>The analysis of
+NHANES laboratory data must be conducted using the appropriate survey design
+and demographic variables. The NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&amp;Cycle=2021-2023">August 2021-August 2023 Demographics
+File</a> contains demographic data, health indicators, and other
+related information collected during household interviews as well as the sample
+design variables. The recommended procedure for variance estimation requires
+use of stratum and PSU variables (SDMVSTRA and SDMVPSU, respectively) in the
+demographic data file.</p>
+<p>The August
+2021-August 2023 <a href="https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/FASTQX_L.htm">Fasting Questionnaire File</a> includes auxiliary information, such as fasting status, length of fast,
+and the time of venipuncture.</p>
+<p>The laboratory
+data file can be linked to the other NHANES data files using the unique survey
+participant identifier (i.e., SEQN). </p>
+<p><strong>Triglycerides (LBXTLG)</strong></p>
+<p>Serum levels were
+measured for participants that were examined in the morning session only. The
+distribution of serum triglycerides should only be estimated on participants
+aged 12 years and over who fasted at least 8 hours or more, but less than 24
+hours. PHAFSTHR (total length of &ldquo;food fast&rdquo;, hours) and PHAFSTMN (Total length
+of &ldquo;food fast&rdquo;, minutes) can be found in the <a href="https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/FASTQX_L.htm">Fasting Questionnaire File</a>.</p>
+<p>The TRIGLY_L data
+file contains laboratory test results for triglycerides (LBXTLG) using the
+reference analytic method. However, the NHANES Standard Biochemistry Profile
+(BIOPRO_L) also includes measurements of triglycerides (LBXSTR). The
+appropriate variable to use for the most accurate data analysis is <strong>LBXTLG</strong>
+from the TRIGLY_L data file.</p>
+<p><strong>Detection Limits</strong></p>
+<p>The detection
+limits were constant for this analyte in the data set. The variable prefixed
+LBX (ex., LBXTLG) provides the analytic result for that analyte.</p>
+<p>The lower limit of
+detection (LLOD, in mg/dL) for triglycerides:</p>
+<table>
+    <tbody>
+        <tr>
+            <td style="text-align: center;"><strong style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px;">Variable Name</strong></td>
+            <td style="text-align: center;"><strong style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px;">SAS Label</strong>&nbsp;</td>
+            <td style="text-align: center;">&nbsp;<strong style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px;">LLOD</strong></td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">&nbsp;LBXTLG</td>
+            <td style="text-align: center;">&nbsp;Serum Triglycerides</td>
+            <td style="text-align: center;">&nbsp;9</td>
+        </tr>
+    </tbody>
+</table>
+<p><strong>Triglyceride regression
+equations to compare 2017-March 2020 and August 2021-August 2023 data:</strong></p>
+<p>A method validation (bridging) studies were performed to compare results
+from an instrument change in the August 2021 &ndash; August 2023 cycle: the Cobas
+6000 Chemistry Analyzer was upgraded to the Cobas 8000 Chemistry Analyzer.
+There was also a change in method as the manufacturer phased out glycerol
+blanked assay for frozen triglycerides. Randomly selected serum sample (n=89)
+from previous NHANES were measured using both instruments and methods and the
+results were used to conduct the analysis. Data from the bridging study
+indicated the correlation coefficient (r) between the measurements was 0.999. Regression
+analyses were performed using Analyse-it, v4.30.4. Given that the data showed
+proportional differences in variability, a weighted Deming regression was
+chosen to describe the relation between the serum triglyceride results (mg/L)
+from the two methods as below:</p>
+<p><span style="text-decoration: underline;">Forward</span>: LBXTLG <sub>(New Instrument + New Triglyceride Method)</sub> = 12.45 +
+1.022 LBXTR<sub> (Old Instrument)</sub>; 95% CI of intercept (11.27 to 13.64)
+and slope (1.010 to 1.034)</p>
+<p><span style="text-decoration: underline;">Backward</span>: LBXTR <sub>(Old Instrument)</sub> = -12.19 + 0.9785 LBXTLG <sub>(New
+Instrument + New Triglyceride Method)</sub>; 95% CI of intercept (-13.46 to
+-10.91) and slope (0.9669 to 0.9900)</p>
+<p>These regression equations are provided for analytic use and should be
+applied according to the analytic aims and interest. The backward equation can
+be used to ensure comparability between the August 2021-August 2023 cycle and
+previous years that were measured using the glycerol blanked method (such as in
+2017-March 2020). The forward equation may be used if the interest is ensuring
+comparability with data collected using non-glycerol blanked method in August
+2021-August 2023 when comparing or combining the August 2021-August 2023 values
+with previous years of data. For more detailed information on the triglyceride
+data in the previous cycles, please refer to the documentations accompanying
+these datasets.</p></div>
+      <div id="References">
+        <h2>References</h2>
+        <ul>
+          <li>Friedewald WT, Levy RI, Fredrickson DS. Estimation of the concentration of low-density lipoprotein cholesterol in plasma, without use of the preparative ultracentrifuge. Clin Chem. 1972;18(6):499&ndash;502.</li>
+          <li>Grundy SM, Stone NJ, Bailey AL, Beam C, Birtcher KK, Blumenthal RS, Braun LT, Braun LT, de Ferranti S, Faiella-Tommasino J, Forman DE, Goldberg R, Heidenreich PA, Hlatky MA, Jones DW, Lloyd-Jones D, Lopez-Pajares N, Ndumele CE, Orringer CE, Peralta CA, Saseen JJ, Smith Jr SC, Sperling L, Virani SS, Yeboah J, 2018 AHA/ACC/AACVPR/AAPA/ABC/ACPM/ ADA/AGS/APhA/ASPC/NLA/PCNA Guideline on the Management of Blood Cholesterol: Executive Summary, Journal of the American College of Cardiology (2018), doi: <a href="https://linkinghub.elsevier.com/retrieve/pii/S0735109718390338">https://doi.org/10.1016/j.jacc.2018.11.002</a>.</li>
+          <li>Martin, S. S., Blaha, M. J., Elshazly, M. B., Toth, P. P., Kwiterovich, P. O., Blumenthal, R. S.,&amp; Jones, S. R. (2013). Comparison of a novel method vs the Friedewald equation for estimating low-density lipoprotein cholesterol levels from the standard lipid profile. JAMA, 310(19), 2061&ndash;2068. <a href="https://jamanetwork.com/journals/jama/fullarticle/1779534">https://doi.org/10.1001/jama.2013.280532</a>.</li>
+          <li>Murphy SL, Kochanek KD, Xu JQ, Arias E. Mortality in the United States, 2023. NCHS Data Brief, no 521. Hyattsville, MD: National Center for Health Statistics. 2024. DOI: https://dx.doi.org/10.15620/cdc/170564</li>
+          <li>Roche Trig/GB reagent package insert. Version 2014-06, V8.0. Roche Diagnostics Inc., 9115 Hague Road Indianapolis, IN 46250-0457.</li>
+          <li>Sampson M. Ling C, Qian Sun, Harb R, et al. A New Equation for Calculation of Low-Density Lipoprotein Cholesterol in Patients with Normolipidemia and/or Hypertriglyceridemia. JAMA Cardiol. February 26, 2020. E1-E8.</li>
+          <li>Sathiyakumar, V., Blumenthal, RS, Elshazly, MB. New Information on Accuracy of LDL-C Estimation, 2020. American College of Cardiology. https://www.acc.org/latest-in-cardiology/articles/2020/03/19/16/00/new-information-on-accuracy-of-ldl-c-estimation. Accessed December 2020</li>
+          <li>Westgard J.O., Barry P.L., Hunt M.R., Groth T. A multi-rule Shewhart chart for quality control in clinical chemistry. Clin Chem (1981) 27:493-501.</li>
+        </ul>
+      </div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="WTSAF2YR">WTSAF2YR - Fasting Subsample 2 Year MEC Weight</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">WTSAF2YR</dd>
+            <dt>SAS Label: </dt>
+            <dd>Fasting Subsample 2 Year MEC Weight</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Fasting Subsample 2 Year MEC Weight</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">11459.183689 to 561922.42956</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3361</td>
+                <td class="values" align="right">3361</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">0</td>
+                <td class="values">No Lab Result or Not Fasting for 8 to &lt;24 hours</td>
+                <td class="values" align="right">635</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBXTLG">LBXTLG - Triglyceride (mg/dL)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBXTLG</dd>
+            <dt>SAS Label: </dt>
+            <dd>Triglyceride (mg/dL)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Triglyceride (mg/dL)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">19 to 1745</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3517</td>
+                <td class="values" align="right">3517</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">479</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDTRSI">LBDTRSI - Triglyceride (mmol/L)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDTRSI</dd>
+            <dt>SAS Label: </dt>
+            <dd>Triglyceride (mmol/L)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Triglyceride (mmol/L)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0.215 to 19.701</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3517</td>
+                <td class="values" align="right">3517</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">479</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDL">LBDLDL - LDL-Cholesterol, Friedewald (mg/dL)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDL</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, Friedewald (mg/dL)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LDL-Cholesterol, Friedewald equation (mg/dL).
+
+LBDLDL = (LBXTC-(LBDHDD + LBXTR/5), round to 0 decimal places) for LBXTR less than 400 mg/dL, and missing for LBXTR greater than 400 mg/dL.
+
+LBDHDD from public release file HDL_J</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">3 to 314</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3480</td>
+                <td class="values" align="right">3480</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">516</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDLSI">LBDLDLSI - LDL-Cholesterol, Friedewald (mmol/L)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDLSI</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, Friedewald (mmol/L)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LDL-Cholesterol, Friedewald equation (mmol/L)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0.078 to 8.12</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3480</td>
+                <td class="values" align="right">3480</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">516</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDLM">LBDLDLM - LDL-Cholesterol, Martin-Hopkins (mg/dL)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDLM</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, Martin-Hopkins (mg/dL)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LDL-Cholesterol, Martin-Hopkins equation (mg/dL).
+
+LBDLDLM = (LBXTC-(LBDHDD + LBXTR/Adjustable Factor), round to 0 decimal places) for LBXTR less than 400 mg/dL, and missing for LBXTR greater than 400 mg/dL.
+
+LBDHDD from public release file HDL_J</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">17 to 313</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3480</td>
+                <td class="values" align="right">3480</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">516</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDMSI">LBDLDMSI - LDL-Cholesterol, Martin-Hopkins (mmol/L)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDMSI</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, Martin-Hopkins (mmol/L)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LDL-Cholesterol, Martin-Hopkins equation (mmol/L)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0.44 to 8.094</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3480</td>
+                <td class="values" align="right">3480</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">516</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDLN">LBDLDLN - LDL-Cholesterol, NIH equation 2 (mg/dL)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDLN</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, NIH equation 2 (mg/dL)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LBDLDLN = 
+ (LBXTC/0.948  – LBDHDD/0.971 – (LBXTR/8.56 + (LBXTR * (LBXTC – LBDHDD))/2140 – LBXTR^2/16100) – 9.44), round 0 decimal places) for LBXTR less than 800 mg/dL, and missing for LBXTR GE 800 mg/dL.
+
+^2 stands for power=2, or squared. 
+LBDHDD from public release file HDL_J</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">13 to 314</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3513</td>
+                <td class="values" align="right">3513</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">483</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDLDNSI">LBDLDNSI - LDL-Cholesterol, NIH equation 2 (mmol/L)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDLDNSI</dd>
+            <dt>SAS Label: </dt>
+            <dd>LDL-Cholesterol, NIH equation 2 (mmol/L)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">LDL-Cholesterol, NIH equation 2 (mmol/L)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0.336 to 8.12</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3513</td>
+                <td class="values" align="right">3513</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">483</td>
+                <td class="values" align="right">3996</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

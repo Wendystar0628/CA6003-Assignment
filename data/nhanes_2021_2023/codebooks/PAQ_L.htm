@@ -1,0 +1,564 @@
+<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>PAQ_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Physical Activity Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</a>
+          </li>
+          <li>
+            <a href="#Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#PAD790Q">PAD790Q - Frequency of moderate LTPA</a>
+              </li>
+              <li>
+                <a href="#PAD790U">PAD790U - Moderate LTPA unit (day/week/month/year)</a>
+              </li>
+              <li>
+                <a href="#PAD800">PAD800 - Minutes moderate LTPA</a>
+              </li>
+              <li>
+                <a href="#PAD810Q">PAD810Q - Frequency of vigorous LTPA</a>
+              </li>
+              <li>
+                <a href="#PAD810U">PAD810U - Vigorous LTPA unit (day/week/month/year)</a>
+              </li>
+              <li>
+                <a href="#PAD820">PAD820 - Minutes vigorous LTPA</a>
+              </li>
+              <li>
+                <a href="#PAD680">PAD680 - Minutes sedentary activity</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Physical Activity (PAQ_L)</h3>
+        <h4> Data File: PAQ_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>The adult section of the Physical Activity questionnaire (variable name prefix PAQ) provides respondent-level interview data on physical activities.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>Participants aged 18 years and over were eligible.</p><h2 id="Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</h2><p>These questions were asked, in the home or by telephone, by trained interviewers using the Computer-Assisted Personal Interview (CAPI) system. A proxy provided information for survey participants who could not answer the questions themselves. The respondent selected the language of interview (English or Spanish) or requested that an interpreter be used.</p>
+<p>The questionnaire and information about the interview procedures are available on the <a href="https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/questionnaires.aspx?Cycle=2021-2023" target="_self">NHANES website</a>.<br />
+</p><h2 id="Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</h2><p>The CAPI system is programmed with built-in consistency checks to reduce data entry errors. CAPI also uses online help screens to assist interviewers in defining key terms used in the questionnaire.</p>
+<p>After collection, interview data were reviewed by the NHANES field office staff for accuracy and completeness of selected items. The interviewers were required to audio-record interviews and the recorded interviews were reviewed by NCHS staff and interviewer supervisors.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data were reviewed for completeness, consistency, and illogical values. Data for respondents who reported an average of 24 hours or more per day of activity was set to missing. Users should carefully inspect the data for other values they may consider too high.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>Since the question on sedentary behavior (PAD680) was first asked in 2007, several probes have been used with it. For example, midway through the 2011-12 survey cycle, a probe was added querying times less than 8 hours. These probes may partially explain any observed differences in sedentary behavior between survey cycles.</p>
+<p>Since the questionnaire was asked during the household interview, the interview sample weights should be used in the analysis. However, if the data is joined with data from the Mobile Exam Center (MEC), the MEC sample weights should be used. Please refer to the <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">Analytic Guidelines</a> and the <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/" target="_blank">NHANES Tutorials</a> for the use of sample weights and other analytic issues.</p></div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD790Q">PAD790Q - Frequency of moderate LTPA</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD790Q</dd>
+            <dt>SAS Label: </dt>
+            <dd>Frequency of moderate LTPA</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The next questions are about physical activities such as exercise, sports, or physically active hobbies that you may do in your leisure time. We are interested in two types of physical activity: moderate and vigorous-intensity. Moderate-intensity activities cause moderate increases in breathing or heart rate whereas vigorous-intensity activities cause large increases in breathing or heart rate.  How often {do you/does SP} do moderate-intensity leisure-time physical activities?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER OF TIMES (PER DAY, WEEK, MONTH, OR YEAR)
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 4 PER DAY, &gt; 28 PER WEEK, &gt;31 PER MONTH, OR &gt; 365 PER YEAR.  
+ERROR MESSAGE:  PLEASE VERIFY THE QUANTITY AND UNIT.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0 to 180</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">8086</td>
+                <td class="values" align="right">8086</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">10</td>
+                <td class="values" align="right">8096</td>
+                <td class="values">PAD810Q</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">39</td>
+                <td class="values" align="right">8135</td>
+                <td class="values">PAD810Q</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">18</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD790U">PAD790U - Moderate LTPA unit (day/week/month/year)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD790U</dd>
+            <dt>SAS Label: </dt>
+            <dd>Moderate LTPA unit (day/week/month/year)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The next questions are about physical activities such as exercise, sports, or physically active hobbies that you may do in your leisure time. We are interested in two types of physical activity: moderate and vigorous-intensity. Moderate-intensity activities cause moderate increases in breathing or heart rate whereas vigorous-intensity activities cause large increases in breathing or heart rate.  How often {do you/does SP} do moderate-intensity leisure-time physical activities?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER UNIT
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 4 PER DAY, &gt; 28 PER WEEK, &gt;31 PER MONTH, OR &gt; 365 PER YEAR.  
+ERROR MESSAGE:  PLEASE VERIFY THE QUANTITY AND UNIT.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">D</td>
+                <td class="values">Day</td>
+                <td class="values" align="right">985</td>
+                <td class="values" align="right">985</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">M</td>
+                <td class="values">Month</td>
+                <td class="values" align="right">472</td>
+                <td class="values" align="right">1457</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">W</td>
+                <td class="values">Week</td>
+                <td class="values" align="right">4851</td>
+                <td class="values" align="right">6308</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">Y</td>
+                <td class="values">Year</td>
+                <td class="values" align="right">82</td>
+                <td class="values" align="right">6390</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">&lt; blank &gt;</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1763</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD800">PAD800 - Minutes moderate LTPA</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD800</dd>
+            <dt>SAS Label: </dt>
+            <dd>Minutes moderate LTPA</dd>
+            <dt>English Text: </dt>
+            <dd class="info">About how long {do you/does SP} do these moderate leisure-time physical activities each time?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER OF MINUTES OR HOURS
+PROBE IF NEEDED: Moderate-intensity activities cause moderate increases in breathing or heart rate.
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 120 MINUTES OR 2 HOURS.  
+ERROR MESSAGE:  YOU HAVE RECORDED THAT THE SP SPENDS MORE THAN 120 MINUTES OR 2 HOURS EACH TIME DOING MODERATE-INTENSITY LEISURE-TIME ACTIVITIES.  PLEASE CONFIRM WITH SP THAT OVER 120 MINUTES OR 2 HOURS IS CORRECT.
+HARD EDIT: 0 MINUTES OR HOURS
+HARD EDIT:  24 HOURS OR MORE.
+ERROR MESSAGE: THE TIME SHOULD BE LESS THAN 24 HOURS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1 to 720</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">6371</td>
+                <td class="values" align="right">6371</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">6371</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">19</td>
+                <td class="values" align="right">6390</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1763</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD810Q">PAD810Q - Frequency of vigorous LTPA</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD810Q</dd>
+            <dt>SAS Label: </dt>
+            <dd>Frequency of vigorous LTPA</dd>
+            <dt>English Text: </dt>
+            <dd class="info">How often {do you/does SP} do vigorous-intensity leisure-time physical activities?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER OF TIMES (PER DAY, WEEK, MONTH, OR YEAR)
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 4 PER DAY, &gt; 28 PER WEEK, &gt;31 PER MONTH, OR &gt; 365 PER YEAR  .  
+ERROR MESSAGE:  PLEASE VERIFY THE QUANTITY AND UNIT.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0 to 200</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">8099</td>
+                <td class="values" align="right">8099</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">8103</td>
+                <td class="values">PAD680</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">36</td>
+                <td class="values" align="right">8139</td>
+                <td class="values">PAD680</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">14</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD810U">PAD810U - Vigorous LTPA unit (day/week/month/year)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD810U</dd>
+            <dt>SAS Label: </dt>
+            <dd>Vigorous LTPA unit (day/week/month/year)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">How often {do you/does SP} do vigorous-intensity leisure-time physical activities?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER UNIT
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 4 PER DAY, &gt; 28 PER WEEK, &gt;31 PER MONTH, OR &gt; 365 PER YEAR  .  
+ERROR MESSAGE:  PLEASE VERIFY THE QUANTITY AND UNIT.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">D</td>
+                <td class="values">Day</td>
+                <td class="values" align="right">235</td>
+                <td class="values" align="right">235</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">M</td>
+                <td class="values">Month</td>
+                <td class="values" align="right">711</td>
+                <td class="values" align="right">946</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">W</td>
+                <td class="values">Week</td>
+                <td class="values" align="right">2590</td>
+                <td class="values" align="right">3536</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">Y</td>
+                <td class="values">Year</td>
+                <td class="values" align="right">150</td>
+                <td class="values" align="right">3686</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">&lt; blank &gt;</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">4467</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD820">PAD820 - Minutes vigorous LTPA</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD820</dd>
+            <dt>SAS Label: </dt>
+            <dd>Minutes vigorous LTPA</dd>
+            <dt>English Text: </dt>
+            <dd class="info">About how long {do you/does SP} do these vigorous leisure-time physical activities each time?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER OF MINUTES OR HOURS
+PROBE IF NEEDED: Vigorous-intensity activities cause large increases in breathing or heart rate.
+CAPI INSTRUCTIONS:
+SOFT EDIT:  &gt; 120 MINUTES OR 2 HOURS.
+ERROR MESSAGE:  YOU HAVE RECORDED THAT THE SP SPENDS MORE THAN 120 MINUTES OR 2 HOURS EACH TIME DOING VIGOROUS-INTENSITY LEISURE-TIME ACTIVITIES.  PLEASE CONFIRM WITH SP THAT OVER 120 MINUTES OR 2 HOURS IS CORRECT.
+HARD EDIT: 0 MINUTES OR HOURS.
+HARD EDIT:  24 HOURS OR MORE.
+ERROR MESSAGE: THE TIME SHOULD BE LESS THAN 24 HOURS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1 to 900</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">3673</td>
+                <td class="values" align="right">3673</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">3674</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">13</td>
+                <td class="values" align="right">3687</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">4466</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="PAD680">PAD680 - Minutes sedentary activity</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">PAD680</dd>
+            <dt>SAS Label: </dt>
+            <dd>Minutes sedentary activity</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The following question is about sitting at school, at home, getting to and from places, or with friends including time spent sitting at a desk, traveling in a car or bus, reading, playing cards, watching television, or using a computer. Do not include time spent sleeping. How much time {do you/does SP} usually spend sitting on a typical day?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER OF MINUTES OR HOURS.
+SOFT EDIT: 18 HOURS OR MORE. ERROR MESSAGE: PLEASE VERIFY TIMES OF 18 HOURS OR MORE.
+HARD EDIT: 24 HOURS OR MORE. ERROR MESSAGE: THE TIME SHOULD BE LESS THAN 24 HOURS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 18 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">0 to 1380</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">8065</td>
+                <td class="values" align="right">8065</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">8071</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">67</td>
+                <td class="values" align="right">8138</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">15</td>
+                <td class="values" align="right">8153</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

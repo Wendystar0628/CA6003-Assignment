@@ -1,0 +1,23 @@
+# Course materials (copyrighted / contain personal data) – keep local only
+course/
+
+# Raw NHANES data – downloaded by scripts/download_nhanes.py, verified by MANIFEST.sha256
+data/nhanes_2021_2023/raw/
+data/interim/
+*.xpt
+*.part
+
+# Python / Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -1,0 +1,149 @@
+tiny XPT values (5.4e-79) in raw DEMO INDFMPIR: 100
+
+== Coverage funnel
+DEMO participants: 11933
+Interview+exam (RIDSTATR=2): 8860
+Has HbA1c: 6715 | age>=20 with HbA1c: 5767
+Fasting subsample glucose: 3672
+Age top-coded at 80: 525
+INDFMPIR missing: 2041 | ==5 (top-coded): 2149 | ==0: 100
+
+== Adults 20+: 7809 | examined: 6064
+HbA1c missing among examined adults by race:
+race
+Mexican Am     0.040
+NH Asian       0.060
+NH Black       0.093
+NH White       0.040
+Other Hisp     0.042
+Other/Multi    0.059
+HbA1c missing by income-poverty ratio band (NaN band = PIR missing):
+pir_q
+1-2      0.056
+2-3.5    0.047
+3.5-5    0.028
+<1       0.077
+nan      0.068
+
+== Self-report diagnosis vs measured HbA1c>=6.5 (adults, examined)
+a1c_dm             0    1   All
+self_report_dm                 
+0               4796  152  4948
+1                250  569   819
+All             5046  721  5767
+Among self-reported diabetics: share with HbA1c<6.5 = 0.305
+  of those, on insulin or pills: 0.66
+
+== Share UNDIAGNOSED among those with HbA1c>=6.5 (unweighted), by group
+by race:
+             count   mean
+race                     
+Mexican Am      69  0.275
+NH Asian        40  0.300
+NH Black       119  0.244
+NH White       362  0.204
+Other Hisp      75  0.187
+Other/Multi     56  0.071
+by insurance (HIQ011 1=covered 2=not):
+        count   mean
+HIQ011              
+1.0       670  0.199
+2.0        49  0.367
+9.0         2  0.500
+by routine place of care (HUQ030 1=yes 2=no 3=>1 place):
+        count   mean
+HUQ030              
+1.0       675  0.199
+2.0        41  0.415
+3.0         5  0.200
+
+== Sample composition: unweighted vs MEC-weighted share by race (examined adults with HbA1c)
+             unweighted  weighted
+race                             
+Mexican Am        0.067     0.072
+NH Asian          0.055     0.060
+NH Black          0.118     0.106
+NH White          0.594     0.606
+Other Hisp        0.102     0.096
+Other/Multi       0.063     0.060
+
+== Diabetes prevalence (self-report OR A1c>=6.5): unweighted vs weighted, by race
+                n  unweighted  weighted  median_age
+race                                               
+Mexican Am    389       0.221     0.168        46.0
+NH Asian      315       0.159     0.114        51.0
+NH Black      683       0.240     0.217        53.0
+NH White     3427       0.145     0.122        60.0
+Other Hisp    588       0.175     0.126        52.0
+Other/Multi   365       0.195     0.165        55.0
+overall unweighted 0.168 weighted 0.138
+
+== Age-specific prevalence by race (unweighted)
+race      Mexican Am  NH Asian  NH Black  NH White  Other Hisp  Other/Multi
+age_band                                                                   
+20-39          0.042     0.021     0.073     0.023       0.042        0.047
+40-59          0.252     0.140     0.288     0.133       0.126        0.190
+60+            0.431     0.292     0.330     0.199       0.345        0.301
+age-standardised: {'Mexican Am': 0.281, 'NH Asian': 0.18, 'NH Black': 0.253, 'NH White': 0.136, 'Other Hisp': 0.205, 'Other/Multi': 0.205}
+
+== Diabetes prevalence by BMI category x race (unweighted)
+race     Mexican Am  NH Asian  NH Black  NH White  Other Hisp  Other/Multi
+bmi_cat                                                                   
+<23           0.154     0.117     0.165     0.041       0.081        0.127
+23-25         0.135     0.190     0.123     0.042       0.099        0.056
+25-27.5       0.200     0.121     0.135     0.088       0.157        0.176
+27.5-30       0.194     0.088     0.170     0.140       0.209        0.152
+30+           0.259     0.273     0.321     0.239       0.218        0.276
+
+Among diabetics: median BMI and share with BMI<25 by race
+             median   lt25
+race                      
+Mexican Am    31.25  0.105
+NH Asian      24.90  0.480
+NH Black      33.65  0.128
+NH White      32.70  0.070
+Other Hisp    29.95  0.117
+Other/Multi   32.30  0.113
+
+== Pearson correlation (selected pairs)
+  BMXWT ~ BMXBMI: 0.886  (n=5686)
+  BMXWT ~ BMXWAIST: 0.896  (n=5493)
+  BMXBMI ~ BMXWAIST: 0.896  (n=5486)
+  BMXWAIST ~ BMXHIP: 0.832  (n=5443)
+  BMXBMI ~ BMXARMC: 0.881  (n=5584)
+  BPXOSY1 ~ BPXOSY2: 0.936  (n=5579)
+  BPXOSY2 ~ BPXOSY3: 0.938  (n=5565)
+  LBXTC ~ LBDLDL: 0.937  (n=3042)
+  LBXGLU ~ LBXGH: 0.814  (n=3208)
+  LBXTLG ~ LBDHDD: -0.360  (n=3079)
+
+== Skewness
+BMXWT       1.09
+BMXHT       0.13
+BMXBMI      1.23
+BMXWAIST    0.58
+BMXHIP      1.11
+BMXARMC     0.58
+BPXOSY1     0.93
+BPXOSY2     0.89
+BPXOSY3     0.89
+BPXODI1     0.52
+LBXTC       0.55
+LBDLDL      0.43
+LBDHDD      1.08
+LBXTLG      6.21
+LBXGLU      4.47
+LBXGH       3.68
+INDFMPIR   -0.06
+RIDAGEYR   -0.28
+
+== VIF anthropometrics: {'BMXWT': np.float64(95.9), 'BMXHT': np.float64(21.6), 'BMXBMI': np.float64(97.9), 'BMXWAIST': np.float64(7.1), 'BMXHIP': np.float64(7.7), 'BMXARMC': np.float64(6.6)}
+
+== Legit measurements that collide with sentinel codes (would be wiped by blanket recode)
+  LBXGLU: 77 -> 8, 99 -> 131
+  BPXODI1: 77 -> 235, 99 -> 25
+  BMXWT: 77 -> 9, 99 -> 6
+  BMXWAIST: 77 -> 20, 99 -> 28
+  LBDLDL: 77 -> 34, 99 -> 47
+  DIQ010 in (7,9): 4 | DMDEDUC2 in (7,9): 11
+  WTMEC2YR == 0 (interview-only): 3073

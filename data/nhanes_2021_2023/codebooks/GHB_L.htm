@@ -1,0 +1,314 @@
+﻿<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>GHB_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Glycohemoglobin Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Description_of_Laboratory_Methodology">Description of Laboratory Methodology</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Method_Files">Laboratory Method Files</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#References">References</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Sequence number</a>
+              </li>
+              <li>
+                <a href="#WTPH2YR">WTPH2YR - Phlebotomy 2 Year Weight</a>
+              </li>
+              <li>
+                <a href="#LBXGH">LBXGH - Glycohemoglobin (%)</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Glycohemoglobin (GHB_L)</h3>
+        <h4> Data File: GHB_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>According to the National Diabetes Statistics Report, in 2021, diabetes was the eighth leading cause of death in the United States (Centers for Disease Control and Prevention, 2024). More than 38 million Americans are living with diabetes, where almost 30 million were diagnosed and nearly 9 million were undiagnosed (American Diabetes Association, 2023). Also, more than 97 million are living with prediabetes, which is a serious health condition that increases a person&rsquo;s risk of type-2 diabetes and other chronic diseases (American Diabetes Association, 2023). The prevalence of diabetes and overweight, one of the major risk factors for diabetes, continues to increase.  Recognized and accredited programs are available for people to prevent or manage diabetes, including the National Diabetes Prevention Program (Centers for Disease Control and Prevention, 2024) and diabetes self-management education and support services (Centers for Disease Control and Prevention, 2024).</p>
+<p>Diabetes testing
+provides population data to: 1) determine a national estimate of diabetes
+prevalence (diagnosed and undiagnosed); 2) identify the risk factors; 3) permit
+a national cohort to be established for follow-up studies of this condition;
+and 4) provide critical information to clinicians and public health officials
+for the development of preventive care and community-based interventions.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>Examined participants aged 12 years and older were eligible.</p><h2 id="Description_of_Laboratory_Methodology">Description of Laboratory Methodology</h2><p>There was a change to the lab equipment for the glycohemoglobin test in August 2021-August 2023. During the cycle, the laboratory instrument changed from the Tosoh G8 to the Bio-Rad D-100.</p>
+<p><strong>Tosoh G8 </strong></p>
+<p>In this assay, the
+stable (SA1c) and labile (LA1c) A1c forms can be individually resolved on the
+chromatogram without manual pretreatment, allowing accurate measurement of the
+stable form of HbA1c. The analyzer dilutes the whole blood specimen with a
+hemolysis solution, and then injects a small volume of the treated specimen
+onto the HPLC analytical column. Separation is achieved by utilizing
+differences in ionic interactions between the cation exchange group on the
+column resin surface and the hemoglobin components. The hemoglobin fractions
+(A1c, A1b, F, LA1c, SA1c, A0 and H-Var) are subsequently removed from the
+column material by step-wise elution using elution buffers each with a
+different salt concentration. The separated hemoglobin components pass through
+the photometer flow cell where the analyzer measures changes in absorbance at
+415 nm. The analyzer integrates and reduces the raw data, and then calculates
+the relative percentages of each hemoglobin fraction. Analysis requires three
+minutes. If a specimen showed a deterioration peak, hemoglobin variant, or a
+LA1c results &ge; 5% and/or LA1c results &gt; half SA1c during the regular test,
+it would be retested by a second method, ultra
+2 HPLC. In August 2021-August 2023, only 1.9% of the blood
+specimens required to be retested by the Ultra
+2 HPLC method. A lab instrumentation change was
+made for this secondary method during the data collection period. </p>
+<p><strong>Bio-Rad D-100</strong></p>
+<p>The D-100 test utilizes principles of ion-exchange
+high-performance liquid chromatography (HPLC). The samples are automatically
+diluted on the D-100 and injected into the analytical cartridge. The D-100
+delivers a programmed buffer gradient of increasing ionic strength to the
+cartridge, where the hemoglobins are separated based on their ionic
+interactions with the cartridge material. The separated hemoglobins then pass
+through the flow cell, where changes in the absorbance at 415 nm are measured.
+The D-100 software collects raw data from each analysis and calculates HbA1c
+values based on a bi-level calibration curve. The HbA1c area is calculated
+using an exponentially modified Gaussian (EMG) algorithm. A sample report and a
+chromatogram are generated for each sample.</p>
+<p>Refer to the
+Laboratory Method Files section for a detailed description of the laboratory
+methods used.</p>
+<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+line-height:15.95pt;">There were no changes to the lab method, or lab site for
+this component in the NHANES August 2021 - August 2023 cycle. </p><h2 id="Laboratory_Method_Files">Laboratory Method Files</h2>
+        <p>
+          <a target="_blank" href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/labmethods/GHB-L-MET-G8-508.pdf">Glycohemoglobin_G8</a>
+          <span> (September 2024)</span>
+        </p>
+        <p>
+          <a target="_blank" href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/labmethods/GHB-L-MET-D-100-508.pdf">Glycohemoglobin_D-100</a>
+          <span> (September 2024)</span>
+        </p>
+        <p>
+          <a target="_blank" href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/labmethods/GHB-L-MET-Premier-508.pdf">Glycohemoglobin_Premier</a>
+          <span> (September 2024)</span>
+        </p>
+        <h2 id="Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</h2><p>Whole blood specimens
+were processed, stored, and shipped to the University of Missouri-Columbia, MO
+for analysis. </p>
+<p>Detailed
+instructions on specimen collection and processing are discussed in the NHANES <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">Laboratory Procedures Manual (LPM)</a>. Vials are stored under appropriate&nbsp;refrigerated (2-8&deg;C) conditions
+until they were shipped to University of Missouri for testing.</p>
+<p>The NHANES quality
+assurance and quality control (QA/QC) protocols meet the 1988 Clinical
+Laboratory Improvement Amendments&nbsp;mandates. Detailed QA/QC instructions are discussed
+in the <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">NHANES LPM</a>.</p>
+<p><strong>Mobile Examination
+Centers (MECs)</strong> <br />
+Laboratory team performance is monitored using several techniques. NCHS and
+contract consultants use a structured competency assessment evaluation during
+visits to evaluate both the quality of the laboratory work and the QC procedures. Each laboratory staff&nbsp;member is observed for equipment
+operation, specimen collection and preparation; testing procedures and
+constructive feedback are given to each staff member. Formal retraining
+sessions are conducted annually to ensure that required skill levels were
+maintained. </p>
+<p><strong>Analytical
+Laboratories</strong> <br />
+NHANES uses several methods to monitor the quality of the analyses performed by
+the contract laboratories. In the MEC, these methods include performing blind
+split samples collected on &ldquo;dry run&rdquo; sessions. In addition, contract
+laboratories randomly perform repeat testing on 2% of all specimens.</p>
+<p>NCHS developed and
+distributed a QC protocol for all CDC and contract laboratories,
+which outlined the use of Westgard rules (Westgard et, al., 1981) when running
+NHANES specimens. Progress reports containing any problems encountered during
+shipping or receipt of specimens, summary statistics for each control pool, QC
+graphs, instrument calibration, reagents, and any special considerations are
+submitted to NCHS quarterly. The reports are reviewed for trends or shifts in
+the data. The laboratories are required to explain any identified areas of
+concern.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data were reviewed. Incomplete data or improbable values were sent to the performing laboratory for confirmation.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>There are over 800 laboratory tests performed on NHANES participants. However, not all participants provided biospecimens or enough volume for all the tests to be performed. The specimen availability can also vary by age or other population characteristics. Analysts should evaluate the extent of missing data in the dataset related to the outcome of interest as well as any predictor variables used in the analyses to determine whether additional re-weighting for item non-response is necessary.</p>
+<p>Please refer to the NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx">Analytic Guidelines</a> and the on-line <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/">NHANES Tutorial</a> for details
+on the use of sample weights and other analytic issues.</p>
+<p><strong>Phlebotomy Weights</strong> <br />
+<br />
+For the August 2021-August 2023 cycle, analysis of nonresponse patterns for the phlebotomy component in the MEC examination revealed differences by age group and race/ethnicity, among other characteristics. For example, approximately 67% of children aged 1-17 years who were examined in the MEC provided a blood specimen through phlebotomy, while 95% of examined adults aged 18 and older provided a blood specimen. Therefore, an additional phlebotomy weight, WTPH2YR, has been included in this data release to address possible nonresponse bias. Participants who are eligible but did not provide a blood specimen have their phlebotomy weight assigned a value of &ldquo;0&rdquo; in their records. The phlebotomy weight should be used for analyses that use variables derived from blood analytes, and is included in all relevant data files.</p>
+<p><strong>Demographic and
+Other Related Variables</strong><br />
+</p>
+<p>The analysis of
+NHANES laboratory data must be conducted using the appropriate survey design
+and demographic variables. The NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&amp;Cycle=2021-2023">August 2021&ndash;August 2023 Demographics File</a> contains
+demographic data, health indicators, and other related information collected
+during household interviews as well as the sample design variables. The
+recommended procedure for variance estimation requires use of stratum and PSU
+variables (SDMVSTRA and SDMVPSU, respectively) in the demographic data file. </p>
+<p>The <a href="https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/FASTQX_L.htm">Fasting Questionnaire File</a> includes auxiliary information, such as fasting status, length of fast and
+the time of venipuncture. </p>
+<p>This laboratory
+data file can be linked to the other NHANES data files using the unique survey
+participant identifier (i.e., SEQN). </p>
+<p><strong>Detection Limits </strong></p>
+<p>Since this data is
+reported in percent, the use of lower limits of detection (LLODs)&nbsp;isn&rsquo;t applicable.</p>
+<p><strong>No Correction Needed for Glycohemoglobin Results for NHANES August 2021-August 2023</strong></p>
+<p>A method validation (bridging) study was performed to compare results from a laboratory instrument change that occurred during the August 2021&ndash;August 2023 survey cycle. The Tosoh G8 was upgraded to the Bio-Rad D-100 during the cycle. Randomly selected whole blood samples (n=165 NHANES, n=36 non-NHANES, total n=201) were measured using both instruments and the results were used to conduct the analysis. No substantial differences were found between results from the two instruments. On average, GHB values measured from the Tosoh G8 were only 2.3% higher than values from the Bio-Rad D-100, which is below the total allowable error of 3% in Westgard&rsquo;s Desirable Biological Variation Database (Westgard, 2014). Data from the bridging study also indicated the correlation coefficient (r) between the measurements was 0.999. Therefore, the NHANES August 2021&ndash;August 2023 GHB data did not have to be adjusted.<br />
+</p></div>
+      <div id="References">
+        <h2>References</h2>
+        <ul>
+          <li>Centers for Disease Control and Prevention (2024). Diabetes Self-Management Education and Support.  About Diabetes Self-Management Education and Support | Diabetes | CDC. Accessed 09 September 2024.</li>
+          <li>Centers for Disease Control and Prevention (2024). National Diabetes Prevention Program. About the National Diabetes Prevention Program | National Diabetes Prevention Program | CDC.  Accessed 09 September 2024.</li>
+          <li>Centers for Disease Control and Prevention. National Diabetes Statistics Report (2024).(2023).  National Diabetes Statistics Report | Diabetes | CDC. Accessed 09 September 2024.</li>
+          <li>Westgard J.O., Barry P.L., Hunt M.R., Groth T. A multi-rule Shewhart chart for quality control in clinical chemistry. Clin Chem (1981) 27:493-501.</li>
+          <li>Westgard QC (2014). Desirable Biological Variation Database specifications.  Accessed from Desirable Biological Variation Database specifications &ndash; Westgard on August 5, 2024.</li>
+        </ul>
+      </div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="WTPH2YR">WTPH2YR - Phlebotomy 2 Year Weight</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">WTPH2YR</dd>
+            <dt>SAS Label: </dt>
+            <dd>Phlebotomy 2 Year Weight</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Phlebotomy 2 Year Weight</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">4391.8220579 to 241728.85724</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">6750</td>
+                <td class="values" align="right">6750</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">0</td>
+                <td class="values">No blood sample provided</td>
+                <td class="values" align="right">449</td>
+                <td class="values" align="right">7199</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7199</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBXGH">LBXGH - Glycohemoglobin (%)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBXGH</dd>
+            <dt>SAS Label: </dt>
+            <dd>Glycohemoglobin (%)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Glycohemoglobin (%)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">3.2 to 17.1</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">6715</td>
+                <td class="values" align="right">6715</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">0</td>
+                <td class="values">No Lab Result</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">6715</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">484</td>
+                <td class="values" align="right">7199</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

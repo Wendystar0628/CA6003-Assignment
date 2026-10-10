@@ -1,0 +1,421 @@
+﻿<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>TCHOL_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Cholesterol - Total  Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Description_of_Laboratory_Methodology">Description of Laboratory Methodology</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Method_Files">Laboratory Method Files</a>
+          </li>
+          <li>
+            <a href="#Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#References">References</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent Sequence Number</a>
+              </li>
+              <li>
+                <a href="#WTPH2YR">WTPH2YR - Phlebotomy 2 Year Weight</a>
+              </li>
+              <li>
+                <a href="#LBXTC">LBXTC - Total Cholesterol (mg/dL)</a>
+              </li>
+              <li>
+                <a href="#LBDTCSI">LBDTCSI - Total Cholesterol (mmol/L)</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Cholesterol - Total  (TCHOL_L)</h3>
+        <h4> Data File: TCHOL_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>Heart
+disease is the leading cause of death in the United States (Murphy, et. al.,
+2018). Blood lipid levels are fundamental measures included in NHANES that can
+be used for cardiovascular risk assessment. The goals the NHANES blood lipids
+measurements include: 1) monitoring the prevalence and trends in major
+cardiovascular conditions and overall risk factors in the U.S.; 2) evaluating
+prevention and treatment programs targeting cardiovascular disease in the U.S.;
+and 3) monitoring the status of hyperlipidemia.</p>
+<p>In 2018,
+new Blood Cholesterol Guidelines were released, by the American College of
+Cardiology and American Heart Association Task Force on Clinical Practice
+Guidelines, which aim to reduce the risk of atherosclerotic cardiovascular
+disease through cholesterol management (Grundy, et. al., 2018). The blood
+lipids measurements in NHANES include total cholesterol, high-density
+lipoprotein cholesterol (HDL-C), low-density lipoprotein cholesterol (LDL-C),
+and triglycerides. The present file provides data on total cholesterol. Data on
+LDL-C and triglycerides are provided in the Cholesterol &ndash; Low &ndash; Density
+Lipoprotein and Triglycerides (TRIGLY_L) files, and HDL-C data are provided in
+Cholesterol - High - Density Lipoprotein (HDL_L).</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>Examined
+participants aged 6 years and older were eligible.</p><h2 id="Description_of_Laboratory_Methodology">Description of Laboratory Methodology</h2><p><strong>Total Cholesterol</strong></p>
+<p>The
+laboratory method used to measure total cholesterol is an enzymatic assay. In
+this enzymatic assay, esterified cholesterol is converted to cholesterol by
+cholesterol esterase. The resulting cholesterol is then acted upon by
+cholesterol oxidase to produce cholest-4-en-3-one and hydrogen peroxide. The
+hydrogen peroxide then reacts with 4-aminophenazone in the presence of
+peroxidase to produce a colored product that is measured at 505 nm (secondary
+wavelength = 700 nm). The final step is known as the Trinder reaction. This
+method is a single reagent, endpoint reaction that is specific for cholesterol.</p>
+<p>Cholesterol,
+a steroid molecule with a hydroxyl group in the C3 position, is synthesized in
+many types of tissue, but mainly in the liver and intestinal wall. About 75
+percent of cholesterol is newly synthesized, with the remainder originating
+from dietary intake. Cholesterol measurement is performed to screen for
+atherosclerotic risk and in the diagnosis and treatment of disorders involving
+elevated cholesterol as well as lipid and lipoprotein metabolic disorders.</p>
+<p>Refer to
+the Laboratory Method Files
+section for a detailed description of the laboratory methods used.</p>
+<p>Serum
+total cholesterol levels were directly measured. Please see below the Data
+Processing and Editing section for more details. For laboratory methods used
+for LDL-C and triglycerides, and HDL-C, please refer to the accompanying documentation for the respective dataset.</p>
+<p>There
+were no changes to the lab method or lab site for this component in the NHANES August
+2021-2023 cycle. However, the lab equipment used changed from the Cobas 6000
+Analyzer to the Cobas 8000 during the cycle.</p><h2 id="Laboratory_Method_Files">Laboratory Method Files</h2>
+        <p>
+          <a target="_blank" href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/labmethods/TCHOL-L-MET-508.pdf">Total Cholesterol (Frozen) Laboratory Procedure Manual</a>
+          <span> (September 2024)</span>
+        </p>
+        <h2 id="Laboratory_Quality_Assurance_and_Monitoring">Laboratory Quality Assurance and Monitoring</h2><p>Serum
+specimens were processed, stored, and shipped to the University of Minnesota,
+Minneapolis, MN for analysis.</p>
+<p>Detailed
+instructions on specimen collection and processing are discussed in the <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">NHANES Laboratory Procedures Manuals (LPM)</a>.
+Vials are stored under appropriate frozen (&ndash;30&deg;C) conditions until they are
+shipped to University of Minnesota for testing.</p>
+<p>The
+NHANES quality assurance and quality control (QA/QC) protocols meet the 1988
+Clinical Laboratory Improvement Amendments mandates. Detailed QA/QC
+instructions are discussed in the <a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/manuals/2021-Laboratory-Procedures-508.pdf">NHANES LPM</a>.</p>
+<p><strong>Mobile Examination Centers (MECs)</strong></p>
+<p>Laboratory
+team performance is monitored using several techniques. NCHS and contract
+consultants use a structured competency assessment evaluation during visits to
+evaluate both the quality of the laboratory work and the QC procedures. Each
+laboratory staff member is observed for equipment operation, specimen
+collection and preparation; testing procedures and constructive feedback are
+given to each staff member. Formal retraining sessions are conducted annually
+to ensure that required skill levels were maintained.</p>
+<p><strong>Analytical Laboratories</strong></p>
+<p>NHANES
+uses several methods to monitor the quality of the analyses performed by the
+contract laboratories. In the MEC, these methods include performing blind split
+specimens collected on &ldquo;dry run&rdquo; sessions. In addition, contract laboratories
+randomly perform repeat testing on 2% of all specimens.</p>
+<p>NCHS
+developed and distributed a QC protocol for all CDC and contract laboratories,
+which outlined the use of Westgard rules (Westgard et. al., 1981) when testing
+NHANES specimens. Progress reports containing any problems encountered during
+shipping or receipt of specimens, summary statistics for each control pool, QC
+graphs, instrument calibration, reagents, and any special considerations are
+submitted to NCHS quarterly. The reports are reviewed for trends or shifts in
+the data. The laboratories are required to explain any identified areas of
+concern.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data
+were reviewed. Incomplete data or improbable values were sent to the performing
+laboratory for confirmation.</p>
+<p>One
+derived variable was created in this data file. The variable was created using
+the following formula:</p>
+<p><strong>LBDTCSI</strong></p>
+<p>The
+total cholesterol in mg/dL (LBXTC) was converted to mmol/L (LBDTCSI) by
+multiplying by 0.02586.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>There
+are over 800 laboratory tests performed on NHANES participants. However, not
+all participants provided biospecimens or enough volume for all the tests to be
+performed. The specimen availability can also vary by age or other population
+characteristics. Analysts should evaluate the extent of missing data in the
+dataset related to the outcome of interest as well as any predictor variables
+used in the analyses to determine whether additional re-weighting for item
+non-response is necessary.</p>
+<p>Please
+refer to the NHANES&nbsp;<a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">Analytic
+Guidelines&nbsp;</a>and the
+on-line NHANES&nbsp;<a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/">Tutorial&nbsp;</a>for further details on the use
+of sample weights and other analytic issues.</p>
+<p><strong>Phlebotomy Weights
+<br />
+<br />
+</strong>For the August 2021-August 2023 cycle, analysis of nonresponse
+patterns for the phlebotomy component in the MEC examination revealed
+differences by age group and race/ethnicity, among other characteristics. For
+example, approximately 67% of children aged 1-17 years who were examined in the
+MEC provided a blood specimen through phlebotomy, while 95% of examined adults
+aged 18 and older provided a blood specimen. Therefore, an additional
+phlebotomy weight, WTPH2YR, has been included in this data release to address
+possible nonresponse bias. Participants
+who are eligible but did not provide a blood specimen have their phlebotomy weight
+assigned a value of &ldquo;0&rdquo; in their records. The phlebotomy weight should be used for analyses
+that use variables derived from blood analytes, and is included in all relevant
+data files</p>
+<p><strong>Demographic and Other Related Variables</strong></p>
+<p>The
+analysis of NHANES laboratory data must be conducted using the appropriate survey
+design and demographic variables. The&nbsp;<a href="https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Demographics&amp;Cycle=2021-2023">NHANES August
+2021-August 2023 Demographics File</a>&nbsp;contains demographic data, health indicators, and
+other related information collected during household interviews as well as the
+sample design variables. The recommended procedure for variance estimation
+requires use of stratum and PSU variables (SDMVSTRA and SDMVPSU, respectively)
+in the demographic data file.</p>
+<p>The<a href="https://wwwn.cdc.gov/nchs/data/nhanes/public/2021/datafiles/FASTQX_L.htm">&nbsp;Fasting
+Questionnaire File&nbsp;i</a>ncludes auxiliary information, such
+as fasting status, length of fast, and the time of venipuncture.</p>
+<p>The
+laboratory data file can be linked to other NHANES data file using the unique
+survey participant identifier (i.e., SEQN).</p>
+<p><strong>Detection Limits</strong></p>
+<p>The
+detection limits were constant for this analyte in the data set.</p>
+<p>The
+lower limit of detection (LLOD, in mg/dL) for total cholesterol:</p>
+<div style="text-align: center;">
+<table border="1" cellspacing="0" cellpadding="0" width="600">
+    <tbody>
+        <tr>
+            <td valign="top" style="width: 132px;">
+            <p style="text-align: center;"><strong>Variable Name</strong></p>
+            </td>
+            <td valign="top" style="width: 297px;">
+            <p style="text-align: center;"><strong>Analyte Description</strong></p>
+            </td>
+            <td valign="top" style="width: 95px;">
+            <p style="text-align: center;"><strong>LLOD</strong></p>
+            </td>
+        </tr>
+        <tr>
+            <td valign="top" style="width: 132px;">
+            <p style="text-align: center;">LBXTC</p>
+            </td>
+            <td valign="top" style="width: 297px;">
+            <p style="text-align: center;">Serum Total cholesterol (Frozen)</p>
+            </td>
+            <td valign="top" style="width: 95px;">
+            <p style="text-align: center;">4</p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</div>
+<p><strong>No Correction Need for Total Cholesterol
+Results for NHANES August 2021 - August 2023</strong></p>
+<strong>
+</strong>
+<p>A method validation (bridging) study was performed to compare results from
+an instrument change in the August 2021-August 2023 cycle. The Cobas 6000 Chemistry
+Analyzer was upgraded to the Cobas 8000 Chemistry Analyzer during the cycle. Randomly
+selected serum samples (n=178) from previous NHANES were measured using both
+instruments and the results were used to conduct the analysis. On average, serum
+total cholesterol values measured from the Cobas 6000 were 0.56% higher than
+values from the Cobas 8000 (p = 0.0001). Data from the bridging study indicated
+the correlation coefficient (r) between the measurements was 0.998. Regression
+analyses were performed using Analyse-it, v4.30.4. The weighted Deming
+regression equation did not show a significant slope or intercept (95%
+confidence interval [CI] for slope included 1 and for intercept included 0 [mg/L]):</p>
+<p>Cobas 8000 = -0.985 + 1 * (Cobas 6000); 95% CI of slope (0.9909 to 1.009)
+and intercept (-2.536 to 0.5662).</p>
+<p>Therefore, the NHANES August 2021-August 2023 total cholesterol values did
+not have to be adjusted.</p></div>
+      <div id="References">
+        <h2>References</h2>
+        <ul>
+          <li>Grundy SM, Stone NJ, Bailey AL, Beam C, Birtcher KK, Blumenthal RS, Braun LT, de Ferranti S, Faiella-Tommasino J, Forman DE, Goldberg R, Heidenreich PA, Hlatky MA, Jones DW, Lloyd-Jones D, Lopez-Pajares N, Ndumele CE, Orringer CE, Peralta CA, Saseen JJ, Smith SC Jr, Sperling L, Virani SS, Yeboah J. (2018). AHA/ACC/AACVPR/AAPA/ABC/ACPM/ADA/AGS/APhA/ASPC/NLA/PCNA guideline on the management of blood cholesterol: a report of the American College of Cardiology/American Heart Association Task Force on Clinical Practice Guidelines. Circulation. 2019;139:e1082&ndash;e1143.</li>
+          <li>Murphy SL, Xu JQ, Kochanek KD, Arias, E. Mortality in the United States, 2017. NCHS Data Brief, no 328. Hyattsville, MD: National Center for Health Statistics. 2018. <a href="https://www.cdc.gov/nchs/data/databriefs/db328-h.pdf ">https://www.cdc.gov/nchs/data/databriefs/db328-h.pdf </a>
+          </li>
+          <li>Westgard J.O., Barry P.L., Hunt M.R., Groth T. A multi-rule Shewhart chart for quality control in clinical chemistry. Clin Chem (1981) 27:493-501.</li>
+        </ul>
+      </div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent Sequence Number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent Sequence Number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent Sequence Number</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 6 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="WTPH2YR">WTPH2YR - Phlebotomy 2 Year Weight</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">WTPH2YR</dd>
+            <dt>SAS Label: </dt>
+            <dd>Phlebotomy 2 Year Weight</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Phlebotomy 2 Year Weight</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 6 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">4391.8220579 to 241728.85724</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">7316</td>
+                <td class="values" align="right">7316</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">0</td>
+                <td class="values">No blood sample provided</td>
+                <td class="values" align="right">752</td>
+                <td class="values" align="right">8068</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">8068</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBXTC">LBXTC - Total Cholesterol (mg/dL)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBXTC</dd>
+            <dt>SAS Label: </dt>
+            <dd>Total Cholesterol (mg/dL)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Total Cholesterol (mg/dL)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 6 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">62 to 438</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">6890</td>
+                <td class="values" align="right">6890</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1178</td>
+                <td class="values" align="right">8068</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="LBDTCSI">LBDTCSI - Total Cholesterol (mmol/L)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">LBDTCSI</dd>
+            <dt>SAS Label: </dt>
+            <dd>Total Cholesterol (mmol/L)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Total Cholesterol (mmol/L)</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 6 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1.6 to 11.33</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">6890</td>
+                <td class="values" align="right">6890</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1178</td>
+                <td class="values" align="right">8068</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,673 @@
+<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>DIQ_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Diabetes  Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</a>
+          </li>
+          <li>
+            <a href="#Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#DIQ010">DIQ010 - Doctor told you have diabetes</a>
+              </li>
+              <li>
+                <a href="#DID040">DID040 - Age when first told you had diabetes</a>
+              </li>
+              <li>
+                <a href="#DIQ159">DIQ159 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#DIQ160">DIQ160 - Ever told you have prediabetes</a>
+              </li>
+              <li>
+                <a href="#DIQ180">DIQ180 - Had blood tested past three years</a>
+              </li>
+              <li>
+                <a href="#DIQ050">DIQ050 - Taking insulin now</a>
+              </li>
+              <li>
+                <a href="#DID060">DID060 - How long taking insulin</a>
+              </li>
+              <li>
+                <a href="#DIQ060U">DIQ060U - Unit of measure (month/year)</a>
+              </li>
+              <li>
+                <a href="#DIQ065">DIQ065 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#DIQ070">DIQ070 - Take diabetic pills to lower blood sugar</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Diabetes  (DIQ_L)</h3>
+        <h4> Data File: DIQ_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>The diabetes questionnaire (DIQ_L) data file provides personal interview data on diabetes, prediabetes, and use of insulin and/or oral hypoglycemic medications.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>All survey participants aged 1 year and older in the NHANES August 2021─August 2023 sample are included in this dataset. The questions asked varied by age and history of diabetes. Please refer to the diabetes questionnaire and corresponding codebook for question-specific details about the eligible target group.</p><h2 id="Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</h2><p>These questions were asked in the home or on the phone, by trained interviewers using the Computer-Assisted Personal Interview (CAPI) system. Help screens were provided for some medical terms in the questionnaires. When necessary, household interviewers read the help screen to survey participants.</p>
+<p>Participants 16 years of age and older and emancipated minors were interviewed directly. A proxy provided information for survey participants who were under 16 years of age and for participants who could not answer the questions themselves.</p>
+<p>The NHANES August 2021-August 2023 questionnaires are available on the NHANES website.</p><h2 id="Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</h2><p>The CAPI system is programmed with built-in consistency checks to reduce data entry errors. CAPI also uses online help screens to assist interviewers in defining key terms used in the questionnaire. Interviewers were required to audio-record interviews. The recorded interviews were reviewed by interviewer supervisors and NCHS staff.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>Frequency counts were checked, &ldquo;skip&rdquo; patterns were verified, and the reasonableness of question responses was reviewed. Edits were made to ensure the completeness, consistency, and analytic usefulness of the data. Edits were also made, when necessary, to address data disclosure concerns.</p>
+<p><span style="text-decoration: underline;">DID040: How old when a doctor first told you that you had diabetes?</span><br />
+All responses of age 80 years and older are coded as &ldquo;80&rdquo;, to be consistent with the coding for the participant age variable in the demographics file. Also, the onset of diabetes at age less than 1 year was coded as 666.</p>
+<p><span style="text-decoration: underline;">DID060: For how long have you been taking insulin?&nbsp;</span><br />
+Taking insulin less than 1 month was coded as 666.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>The core questions including doctor diagnosed diabetes, duration of diabetes, prediabetes, and oral diabetes medication are the same as the previous public use data. The insulin use question (variables DIQ050, DID060, DIQ060U) was only asked for participants with diagnosed diabetes in the DIQ_L data. The questions about the participants&rsquo; knowledge of their own levels of A1C, blood pressure, and cholesterol and knowledge of appropriate target levels, as suggested by their physicians were not collected in this survey cycle.</p>
+<p>The analysis of NHANES August 2021&ndash;August 2023 DIQ data must be conducted using the appropriate survey design variables, sample weights, and the basic demographic variables. Interview weights should only be used if questionnaire data are analyzed by themselves. However, if DIQ data are merged with the MEC examination data or laboratory full sample data, the MEC examination weights should be used for analyses. If DIQ data are merged with the laboratory fasting glucose data, fasting subsample weights should be used for analyses.</p>
+<p>Please also refer to the <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">NHANES Analytic Guidelines</a> and the on-line <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/" target="_blank">NHANES Tutorial</a> for details on the use of sample weights and other analytic issues.</p></div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ010">DIQ010 - Doctor told you have diabetes</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ010</dd>
+            <dt>SAS Label: </dt>
+            <dd>Doctor told you have diabetes</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The next questions are about specific medical conditions. {Other than during pregnancy, {have you/has SP}/{Have you/Has SP}} ever been told by a doctor or health professional that {you have/{he/she/SP} has} diabetes or sugar diabetes?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  IF SP AGE &lt; 15, DISPLAY "HAVE SP" FOR THE FIRST DISPLAY AND "SP HAS" FOR THE SECOND DISPLAY.   IF SP IS FEMALE AND AGE &gt;= 20, DISPLAY "OTHER THAN DURING PREGNANCY, {HAVE YOU/HAS SP}".</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1081</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">10371</td>
+                <td class="values" align="right">11452</td>
+                <td class="values">DIQ159</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Borderline</td>
+                <td class="values" align="right">284</td>
+                <td class="values" align="right">11736</td>
+                <td class="values">DIQ159</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11736</td>
+                <td class="values">DIQ159</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">11740</td>
+                <td class="values">DIQ159</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DID040">DID040 - Age when first told you had diabetes</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DID040</dd>
+            <dt>SAS Label: </dt>
+            <dd>Age when first told you had diabetes</dd>
+            <dt>English Text: </dt>
+            <dd class="info">How old {was SP/were you} when a doctor or other health professional first told {you/him/her} that {you/he/she} had diabetes or sugar diabetes?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER AGE IN YEARS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1 to 79</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">1050</td>
+                <td class="values" align="right">1050</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">80</td>
+                <td class="values">80 years or older</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">1057</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">666</td>
+                <td class="values">Less than 1 year</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1057</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1057</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">24</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10663</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ159">DIQ159 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ159</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">BOX 4. CHECK ITEM DIQ.159: IF ANY AGE AND DIQ.010 = 1 (YES), GO TO DIQ.050. IF AGE &gt;=12 AND DIQ.010 = 3, GO TO DIQ.180. IF AGE &lt; 12, GO TO END OF SECTION. OTHERWISE, CONTINUE.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ160">DIQ160 - Ever told you have prediabetes</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ160</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you have prediabetes</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Have you/Has SP} ever been told by a doctor or other health professional that {you have/SP has} any of the following:  prediabetes, impaired fasting glucose, impaired glucose tolerance, borderline diabetes or that {your/her/his} blood sugar is higher than normal but not high enough to be called diabetes or sugar diabetes?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  HELP SCREEN:  PREDIABETES, IMPAIRED FASTING GLUCOSE, IMPAIRED GLUCOSE TOLERANCE, OR BORDERLINE DIABETES OCCURS WHEN BLOOD SUGAR (GLUCOSE) LEVELS ARE HIGHER THAN NORMAL BUT NOT HIGH ENOUGH TO BE DIABETES.  HAND CARD DIQ1.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">918</td>
+                <td class="values" align="right">918</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7089</td>
+                <td class="values" align="right">8007</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">8007</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">15</td>
+                <td class="values" align="right">8022</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3722</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ180">DIQ180 - Had blood tested past three years</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ180</dd>
+            <dt>SAS Label: </dt>
+            <dd>Had blood tested past three years</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Have you/Has SP} had a blood test for high blood sugar or diabetes within the past three years?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER INSTRUCTION:  DO NOT INCLUDE URINE TESTS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">3370</td>
+                <td class="values" align="right">3370</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">4667</td>
+                <td class="values" align="right">8037</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">8039</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">265</td>
+                <td class="values" align="right">8304</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3440</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ050">DIQ050 - Taking insulin now</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ050</dd>
+            <dt>SAS Label: </dt>
+            <dd>Taking insulin now</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Is SP/Are you} now taking insulin</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">344</td>
+                <td class="values" align="right">344</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">737</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">DIQ065</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10663</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DID060">DID060 - How long taking insulin</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DID060</dd>
+            <dt>SAS Label: </dt>
+            <dd>How long taking insulin</dd>
+            <dt>English Text: </dt>
+            <dd class="info">For how long {have you/has SP} been taking insulin?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER NUMBER (OF MONTHS OR YEARS).</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1 to 60</td>
+                <td class="values">Range of Values</td>
+                <td class="values" align="right">332</td>
+                <td class="values" align="right">332</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">666</td>
+                <td class="values">Less than 1 month</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">335</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">777</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">335</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">999</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">8</td>
+                <td class="values" align="right">343</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11401</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ060U">DIQ060U - Unit of measure (month/year)</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ060U</dd>
+            <dt>SAS Label: </dt>
+            <dd>Unit of measure (month/year)</dd>
+            <dt>English Text: </dt>
+            <dd class="info">UNIT OF MEASURE</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">ENTER UNIT.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Months</td>
+                <td class="values" align="right">35</td>
+                <td class="values" align="right">35</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Years</td>
+                <td class="values" align="right">297</td>
+                <td class="values" align="right">332</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11412</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ065">DIQ065 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ065</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">BOX 0.  CHECK ITEM DIQ.065:  IF DIQ.010 = 1 (YES) OR DIQ.010 = 3 (BORDERLINE OR PREDIABETES) OR DIQ.160 = 1 (YES) CONTINUE.
+OTHERWISE, GO TO END OF SECTION.  
+</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="DIQ070">DIQ070 - Take diabetic pills to lower blood sugar</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">DIQ070</dd>
+            <dt>SAS Label: </dt>
+            <dd>Take diabetic pills to lower blood sugar</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Is SP/Are you} now taking diabetic pills to lower {{his/her}/your} blood sugar?  These are sometimes called oral agents or oral hypoglycemic agents.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">885</td>
+                <td class="values" align="right">885</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">1389</td>
+                <td class="values" align="right">2274</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">2274</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">2281</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">9463</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

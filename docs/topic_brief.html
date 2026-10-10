@@ -1,0 +1,992 @@
+<title>CA6003 选题说明</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+/* Layout: a paged briefing binder - sticky bar (brand, page tabs, language switch), one page per tab, 1040px column, prev/next at the foot. */
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#15202B; --muted:#5A6672; --line:#DCE1E6; --track:#E7EBEF;
+  --a:#0D7A63; --a-soft:#E2F2EE; --b:#2E4DB0; --b-soft:#E5EAF8;
+  --warn:#A8690E; --warn-soft:#FBF0DD; --bad:#B42318;
+  --f-display:"Noto Serif SC","Songti SC","SimSun",Georgia,serif;
+  --f-body:"IBM Plex Sans","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1419; --surface:#171E26; --ink:#E5E9ED; --muted:#9AA5B0; --line:#2B343E; --track:#232C36;
+  --a:#3DC4A2; --a-soft:#14302A; --b:#8099F2; --b-soft:#1C2645;
+  --warn:#E2AA4C; --warn-soft:#33270F; --bad:#F27A6E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1419; --surface:#171E26; --ink:#E5E9ED; --muted:#9AA5B0; --line:#2B343E; --track:#232C36;
+  --a:#3DC4A2; --a-soft:#14302A; --b:#8099F2; --b-soft:#1C2645;
+  --warn:#E2AA4C; --warn-soft:#33270F; --bad:#F27A6E; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px}
+
+/* top bar */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.tabs .wrap{display:flex;align-items:center;gap:14px;padding-block:10px}
+.brand{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+@media (max-width:720px){.brand{display:none}}
+.tablist{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1}
+.tablist::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:1px solid transparent;background:none;color:var(--muted);font:500 14px/1 var(--f-body);padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--ink);background:var(--track)}
+.tab[aria-current="page"]{color:var(--ink);background:var(--surface);border-color:var(--line)}
+.tab .n{font-family:var(--f-mono);font-size:11px;color:var(--muted);margin-right:6px}
+.lang{flex:none;display:flex;border:1.5px solid var(--b);border-radius:999px;overflow:hidden;background:var(--surface)}
+.lang button{appearance:none;border:none;background:none;color:var(--b);font:700 13px/1 var(--f-body);padding:9px 14px;cursor:pointer;letter-spacing:.02em}
+.lang button[aria-pressed="true"]{background:var(--b);color:var(--surface)}
+.lang button:not([aria-pressed="true"]):hover{background:var(--b-soft)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+
+/* pages */
+.page{padding-block:36px 28px;display:grid;gap:28px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:clamp(26px,4vw,36px)}
+h2{font-size:clamp(21px,3vw,26px)}
+h3{font-size:17px}
+p{margin:0}
+.lede{font-size:17px;color:var(--muted);max-width:66ch}
+.head{display:grid;gap:10px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:20px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px}
+.grid2>*,.grid4>*{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:12px;align-content:start}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+ul.clean{margin:0;padding-left:1.1em;display:grid;gap:6px}
+ul.clean li::marker{color:var(--muted)}
+
+.chip{display:inline-block;font:500 11px/1 var(--f-mono);letter-spacing:.04em;padding:4px 7px;border-radius:4px;vertical-align:2px;white-space:nowrap}
+.chip.v{background:var(--a-soft);color:var(--a)}
+.chip.h{background:var(--warn-soft);color:var(--warn)}
+.chip.b{background:var(--b-soft);color:var(--b)}
+
+.banner{border:1px dashed var(--warn);background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:12px 16px;font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.banner b{color:var(--warn)}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts>div{background:var(--surface);padding:14px 16px;display:grid;gap:2px}
+.facts dt{font-size:12px;color:var(--muted)}
+.facts dd{margin:0;font-weight:700}
+.cand{border-top:4px solid var(--c)}
+.cand .tag{font:500 12px/1 var(--f-mono);color:var(--c)}
+.cand h3{font-size:20px}
+.cand .stats{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.cand .stats b{display:block;font:500 18px/1.2 var(--f-mono);color:var(--ink)}
+.linkbtn{appearance:none;border:none;background:none;padding:0;color:var(--c);font:500 14px var(--f-body);cursor:pointer;justify-self:start}
+.linkbtn:hover{text-decoration:underline}
+
+.rub{display:grid;gap:6px;padding:16px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.rub .w{font:500 22px/1 var(--f-mono)}
+.rub .k{font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.04em;background:var(--bg)}
+td.num{font-family:var(--f-mono);color:var(--muted);white-space:nowrap}
+.must{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.must li{display:flex;gap:10px;align-items:baseline}
+.must li::before{content:"";flex:none;width:9px;height:9px;border:2px solid var(--a);border-radius:2px;transform:translateY(1px)}
+.loss li::marker{color:var(--bad)}
+
+.dshead{border-left:4px solid var(--c);padding-left:16px;display:grid;gap:8px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.chart{margin:0;display:grid;gap:8px}
+.chart svg{width:100%;height:auto;display:block}
+.chart .lbl{font:13px var(--f-body);fill:var(--ink)}
+.chart .val{font:500 12px var(--f-mono);fill:var(--muted)}
+.chart .axis{font:11px var(--f-mono);fill:var(--muted)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart figcaption{font-size:13px;color:var(--muted)}
+.fit{display:grid;gap:9px}
+.fitrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 46px;gap:10px;align-items:center;font-size:14px}
+.fitrow .bar{height:8px;background:var(--track);border-radius:4px;overflow:hidden}
+.fitrow .bar i{display:block;height:100%;background:var(--c);border-radius:4px}
+.fitrow .s{font:12px var(--f-mono);color:var(--muted);text-align:right}
+.fitrow small{display:block;color:var(--muted);font-size:12.5px;line-height:1.5}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.total b{font:500 26px/1 var(--f-mono);color:var(--c)}
+.rowhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.feas{display:flex;gap:4px}
+.feas i{width:22px;height:8px;border-radius:2px;background:var(--track)}
+.feas i.on{background:var(--c)}
+
+.win{font-weight:700}
+.win::after{content:" ●";color:var(--c);font-size:10px;vertical-align:2px}
+.reco{border:1px solid var(--a);background:var(--a-soft);border-radius:10px;padding:18px 20px;display:grid;gap:8px}
+.reco h3{color:var(--a)}
+
+.funnel{display:grid;gap:6px}
+.funnel div{display:flex;justify-content:space-between;gap:10px;padding:7px 12px;border-radius:6px;background:var(--track);font-size:14px}
+.funnel div:last-child{background:var(--c);color:var(--surface);font-weight:700}
+.funnel b{font-family:var(--f-mono);font-weight:500;white-space:nowrap}
+.flow{display:flex;align-items:stretch;flex-wrap:wrap}
+.flow>div{flex:1 1 160px;min-width:0;padding:14px 16px;border:1px solid var(--line);background:var(--surface);display:grid;gap:4px;align-content:start}
+.flow>div+div{border-left:none}
+.flow>div:first-child{border-radius:10px 0 0 10px}
+.flow>div:last-child{border-radius:0 10px 10px 0}
+.flow .k{font:500 11px var(--f-mono);letter-spacing:.06em;color:var(--muted)}
+.flow .t{font-weight:700}
+.flow .d{font-size:13px;color:var(--muted)}
+@media (max-width:700px){.flow>div{flex-basis:100%;border-left:1px solid var(--line)!important;border-radius:0!important}.flow>div:first-child{border-radius:10px 10px 0 0!important}.flow>div:last-child{border-radius:0 0 10px 10px!important}.flow>div+div{border-top:none}}
+
+.tl{display:flex;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.tl div{display:flex;align-items:center;justify-content:center;font:500 12px/1.2 var(--f-mono);color:var(--ink);border-right:1px solid var(--surface);text-align:center;padding:2px;min-width:0;overflow:hidden}
+.tl div:last-child{border-right:none}
+.roles td:first-child{font-family:var(--f-mono);font-weight:500;white-space:nowrap}
+.steps{display:grid;margin:0 0 0 6px;padding:0;list-style:none;border-left:2px solid var(--line)}
+.steps li{position:relative;padding:0 0 14px 20px;display:grid;gap:2px}
+.steps li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--muted)}
+.steps li.now::before{background:var(--warn);border-color:var(--warn)}
+.steps .d{font:500 12px var(--f-mono);color:var(--muted)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:18px}
+.pager button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px var(--f-body);padding:10px 16px;border-radius:8px;cursor:pointer}
+.pager button:hover{border-color:var(--muted)}
+.pager button[disabled]{opacity:.35;cursor:default}
+footer{padding-block:8px 32px;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.page:not([hidden]){animation:fade .25s ease-out}@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}}
+</style>
+
+<nav class="tabs" aria-label="Pages">
+  <div class="wrap">
+    <span class="brand">CA6003</span>
+    <div class="tablist" id="tablist"></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="zh" aria-pressed="true">中文</button>
+      <button type="button" data-lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+</nav>
+
+<!-- =====================================================================
+     中文版
+     ===================================================================== -->
+<main class="wrap" id="main-zh" lang="zh-CN">
+
+<section class="page" data-key="overview" data-title="总览">
+  <div class="head">
+    <span class="eyebrow">Best Practices in Data Governance · 小组作业</span>
+    <h1>选题总览</h1>
+    <p class="lede">这门作业考的是“用证据做数据决策”，模型只是证据，不追求准确率。我们已下载并实测两个候选数据集，后面依次说明得分要点、两个数据集、对比和项目简要说明。</p>
+  </div>
+  <dl class="facts">
+    <div><dt>交付物</dt><dd>视频 ≤ 12 分钟 + .ipynb</dd></div>
+    <div><dt>视频要求</dt><dd>4 人都要出镜讲解</dd></div>
+    <div><dt>主提交（90%）截止</dt><dd class="mono">10/18 周日 12:00</dd></div>
+    <div><dt>互评（10%）截止</dt><dd class="mono">10/21 周三 12:00</dd></div>
+  </dl>
+  <div class="grid2">
+    <article class="panel cand" style="--c:var(--a)">
+      <span class="tag">选题 A · 医疗健康</span>
+      <h3>NHANES 2021–23 美国国民健康调查</h3>
+      <p>用常规体检和问卷信息识别糖尿病。核心看点是标签偏差：自报诊断同时反映了谁能看上医生。</p>
+      <div class="stats"><span><b>5,730</b>成人样本</span><span><b>16.9%</b>阳性率</span><span><b>93</b>/100 吻合度</span></div>
+      <button class="linkbtn" type="button" data-go="nhanes">查看选题 A →</button>
+    </article>
+    <article class="panel cand" style="--c:var(--b)">
+      <span class="tag">选题 B · 金融信贷</span>
+      <h3>HMDA 2024 内华达州房贷申请</h3>
+      <p>预测房贷是否被拒。核心看点是完美泄漏和辛普森式构成效应：族裔差距在标准化后消失或保留。</p>
+      <div class="stats"><span><b>85,496</b>授信决策</span><span><b>24.4%</b>拒贷率</span><span><b>88</b>/100 吻合度</span></div>
+      <button class="linkbtn" type="button" data-go="hmda">查看选题 B →</button>
+    </article>
+  </div>
+  <div class="banner"><b>当前阶段：确认选题</b><span>本页为简要说明。完整清洗规则、Notebook 框架、分工到具体单元格等详细方案，待确认选题后实现。</span></div>
+  <p class="small muted"><span class="chip v">实测</span> 已在下载的数据上算出；<span class="chip h">原型</span> 快速预跑结果，最终数字会变；<span class="chip b">待验证</span> 假设。</p>
+</section>
+
+<section class="page" data-key="rubric" data-title="得分要点" hidden>
+  <div class="head">
+    <span class="eyebrow">评分逻辑</span>
+    <h2>高分要点</h2>
+    <p class="lede">视频四项评分各占 25%，评分人看的是推理过程而不是准确率。拆开后是下面 8 个得分点，两个数据集都按这套标准打分。</p>
+  </div>
+  <div class="grid4">
+    <div class="rub"><span class="w">25%</span><span class="k">方法得当</span><span class="small muted">每个阶段选的分析方法和图表是否合适</span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">正确与清晰</span><span class="small muted">技术正确，结论讲清楚，<b>每人贡献可区分</b></span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">数据解读</span><span class="small muted">点名要求：冗余、多重共线性、偏态、分析谬误</span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">新颖与深度</span><span class="small muted">选题、发现有原创性，用模型论证预处理决策</span></div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:44px">#</th><th style="width:28%">得分点</th><th>高分做法</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>问题背景与治理视角</td><td>先讲业务问题、谁受影响、数据来源、许可、隐私和数据生成机制</td></tr>
+        <tr><td class="num">2</td><td>证据驱动的决策链</td><td>每个预处理步骤都写：观察 → 成因假设 → 干预 → 验证影响</td></tr>
+        <tr><td class="num">3</td><td>不明显的发现</td><td>至少一个泄漏、辛普森悖论、混杂或非随机缺失，并证明成因</td></tr>
+        <tr><td class="num">4</td><td>回应评分关键词</td><td>单独展示 VIF / 相关矩阵、偏度和变换前后对比、一个谬误反例</td></tr>
+        <tr><td class="num">5</td><td>Bias 分析与缓解</td><td>分组看 TPR / FPR / 选择率并给置信区间，做一次缓解并说明代价</td></tr>
+        <tr><td class="num">6</td><td>严谨的对比实验</td><td>同一模型、同一切分，最少处理 vs 系统处理，加逐步消融</td></tr>
+        <tr><td class="num">7</td><td>解释性能变差</td><td>去掉泄漏后分数下降，说明这才是真实性能，即“ML 是证据”</td></tr>
+        <tr><td class="num">8</td><td>呈现</td><td>幻灯片少字多图，Notebook 可复现，写明 GenAI 使用声明</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>硬性要求</h3>
+      <ul class="must">
+        <li>至少深入解释一个不明显的模式、异常、偏差或误导性关系</li>
+        <li>用同一种建模方法，对比最少处理和系统处理的数据</li>
+        <li>只用基础可解释模型：线性回归、逻辑回归、决策树</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>常见扣分点</h3>
+      <ul class="clean loss">
+        <li>先在全量数据上标准化或填补，再切分（泄漏）</li>
+        <li>同一个实体同时出现在训练集和测试集</li>
+        <li>只报准确率，或花大量篇幅调参</li>
+        <li>视频念代码，或分不清谁做了什么</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-key="nhanes" data-title="选题 A" hidden style="--c:var(--a)">
+  <div class="dshead">
+    <span class="eyebrow">选题 A</span>
+    <h2>NHANES 2021–23 美国国民健康调查</h2>
+    <div class="meta"><span>CDC / NCHS 公共文件</span><span>受 NCHS 数据使用协议约束</span><span>16 个文件按 SEQN 合并</span><span class="mono">11,933 人 → 5,730 名成人</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>数据概况</h3>
+      <ul class="clean">
+        <li>美国全国代表性抽样调查，包含访谈问卷、体检和血液化验</li>
+        <li><b>任务：</b>用非血糖类的常规信息（人口、体测、血压、血脂、病史、医疗可及）识别糖尿病</li>
+        <li><b>主标签：</b>自报诊断 <span class="mono">DIQ010=1</span> 或实测 <span class="mono">HbA1c ≥ 6.5%</span>，共 971 例阳性（16.9%） <span class="chip v">实测</span></li>
+        <li><b>敏感属性：</b>种族（含单独的亚裔分组）、收入、医保、是否有固定就医点</li>
+      </ul>
+    </div>
+    <figure class="chart panel">
+      <h3>未诊断比例：按医疗可及性</h3>
+      <div id="ch-undx-zh"></div>
+      <figcaption>HbA1c 已达诊断标准、但本人报告从未被诊断的比例 <span class="chip v">实测</span>。用自报标签训练，模型学到的部分是医疗可及性。</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <figure class="chart panel">
+      <h3>糖尿病患者 BMI &lt; 25 占比：按种族</h3>
+      <div id="ch-bmi-zh"></div>
+      <figcaption>亚裔患者近半数 BMI 低于 25 <span class="chip v">实测</span>。新加坡对亚洲人采用 23 / 27.5 的更低切分点，可联系本地背景。</figcaption>
+    </figure>
+    <div class="panel">
+      <h3>得分点吻合度</h3>
+      <div class="fit" id="fit-nhanes-zh"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="rowhead"><h3>可行性</h3><div class="feas" aria-label="4 / 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+    <ul class="clean">
+      <li>数据量小（约 5.7k 行），单机几秒跑完；主要工作量在多表合并和查编码手册</li>
+      <li><b>风险：</b>亚裔样本小（315 人，40 例阳性），结论必须带置信区间</li>
+      <li><b>风险：</b>抽样权重和调查设计需要解释清楚；空腹化验只在约 2.9k 人的子样本里</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page" data-key="hmda" data-title="选题 B" hidden style="--c:var(--b)">
+  <div class="dshead">
+    <span class="eyebrow">选题 B</span>
+    <h2>HMDA 2024 内华达州房贷申请</h2>
+    <div class="meta"><span>FFIEC / CFPB 公开贷款级数据</span><span>发布前已做隐私处理</span><span class="mono">132,767 行 × 99 列</span><span class="mono">585 家贷款机构</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>数据概况</h3>
+      <ul class="clean">
+        <li>美国法定披露的房贷申请记录，每行一份申请</li>
+        <li><b>任务：</b>预测拒贷 <span class="mono">action_taken=3</span> 还是批准 <span class="mono">1/2</span></li>
+        <li><b>切片后：</b>85,496 份授信决策，拒贷率 24.4% <span class="chip v">实测</span></li>
+        <li><b>敏感属性：</b>种族、族裔、性别、年龄；只用于审计，不进模型</li>
+        <li><b>关键缺口：</b>公开数据没有信用分，任何差距都不能直接解读为歧视</li>
+      </ul>
+    </div>
+    <figure class="chart panel">
+      <h3>利率字段有值比例：按审批结果</h3>
+      <div id="ch-leak-zh"></div>
+      <figcaption>利率只在批准后才有，是完美泄漏 <span class="chip v">实测</span>。保留它 AUC 为 1.000，去掉后为 0.876 <span class="chip h">原型</span>。</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <figure class="chart panel">
+      <h3>拒贷率：整体 vs 标准化</h3>
+      <div id="ch-simpson-zh"></div>
+      <figcaption>按白人的 DTI 分布标准化 <span class="chip v">实测</span>。亚裔的差距完全来自 DTI 构成，黑人的差距仍然存在。</figcaption>
+    </figure>
+    <div class="panel">
+      <h3>得分点吻合度</h3>
+      <div class="fit" id="fit-hmda-zh"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="rowhead"><h3>可行性</h3><div class="feas" aria-label="4 / 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+    <ul class="clean">
+      <li>单个 CSV（50 MB），8.5 万行几秒跑完，不用合并表</li>
+      <li><b>风险：</b>99 列的编码多（<span class="mono">8888</span>、<span class="mono">9999</span>、<span class="mono">Exempt</span>、DTI 区间和整数混合），解码工作量大</li>
+      <li><b>风险：</b>baseline 的定义会影响所有数字，要提前写清；小族群样本噪声大</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page" data-key="compare" data-title="对比" hidden>
+  <div class="head">
+    <span class="eyebrow">对比与建议</span>
+    <h2>选题对比</h2>
+    <p class="lede">两个选题都能覆盖全部得分点，侧重点不同。</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:24%">维度</th><th style="color:var(--a)">A · NHANES</th><th style="color:var(--b)">B · HMDA</th></tr></thead>
+      <tbody>
+        <tr><td>最强的不明显发现</td><td style="--c:var(--a)" class="win">标签偏差：自报诊断反映医疗可及性</td><td>完美泄漏：利率字段</td></tr>
+        <tr><td>辛普森悖论 / 混杂</td><td>年龄混杂，标准化后组间排序反转</td><td style="--c:var(--b)" class="win">DTI 构成，标准化后差距消失</td></tr>
+        <tr><td>多重共线性</td><td style="--c:var(--a)" class="win">体重 / BMI 的 VIF ≈ 96–98</td><td>LTV = 贷款额 / 房价</td></tr>
+        <tr><td>偏态</td><td>甘油三酯 6.2，血糖 4.5</td><td style="--c:var(--b)" class="win">房价 96，贷款额 45</td></tr>
+        <tr><td>Bias 深度</td><td style="--c:var(--a)" class="win">标签偏差 + 测量偏差（亚裔 BMI）</td><td>种族差距 + 遗漏变量（信用分）</td></tr>
+        <tr><td>新颖性 / 本地关联</td><td style="--c:var(--a)" class="win">课程作业少见，可联系新加坡 BMI 标准</td><td>课程作业少见，美国背景</td></tr>
+        <tr><td>故事直观程度</td><td>需要先解释抽样权重</td><td style="--c:var(--b)" class="win">泄漏从 1.000 跌到 0.876，一眼就懂</td></tr>
+        <tr><td>数据处理工作量</td><td>8 张表合并，约 5.7k 行</td><td>单表，约 8.5 万行，编码复杂</td></tr>
+        <tr><td>吻合度总分</td><td class="mono"><b>93</b> / 100</td><td class="mono"><b>88</b> / 100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="reco">
+    <h3>推荐：选题 A · NHANES</h3>
+    <p>评分细则点名的关键词（多重共线性、偏态、分析谬误）它都有很强的实测证据。“自报标签反映医疗可及性”这一发现很少有人想到，还能联系新加坡背景。</p>
+    <p class="small">如果大家更想要一个泄漏加公平性、讲起来更直观的故事，选 B 同样可行。请在群里回复 <b>A</b> 或 <b>B</b>。</p>
+  </div>
+</section>
+
+<section class="page" data-key="plan" data-title="项目简要说明" hidden>
+  <div class="head">
+    <span class="eyebrow">项目骨架</span>
+    <h2>项目简要说明</h2>
+    <p class="lede">两个选题共用同一套实验框架，区别只在切片和陷阱字段。细节待确认选题后展开。</p>
+  </div>
+  <div class="grid2">
+    <div class="panel" style="--c:var(--a)">
+      <h3>A · NHANES 切片</h3>
+      <div class="funnel">
+        <div><span>全部参与者</span><b>11,933</b></div>
+        <div><span>成人（≥ 20 岁）</span><b>7,809</b></div>
+        <div><span>参加体检</span><b>6,064</b></div>
+        <div><span>有 HbA1c 化验值</span><b>5,767</b></div>
+        <div><span>去掉孕妇 → 分析样本</span><b>5,730</b></div>
+      </div>
+      <p class="small muted">合并 8 个文件，约 25 个特征。故意保留陷阱列：空腹血糖、用药问题（泄漏），体重 / 身高 / 三次血压 / LDL（共线性）。</p>
+    </div>
+    <div class="panel" style="--c:var(--b)">
+      <h3>B · HMDA 切片</h3>
+      <div class="funnel">
+        <div><span>内华达 2024 全部记录</span><b>132,767</b></div>
+        <div><span>只留授信决策（批准 / 拒绝）</span><b>91,945</b></div>
+        <div><span>去商业用途 / 反向抵押 / 多户 / 豁免</span><b>85,496</b></div>
+      </div>
+      <p class="small muted">约 30 列。故意保留陷阱列：利率、费用、拒贷原因（泄漏演示）。种族、性别、机构编号只用于审计。</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>建模</h3>
+      <ul class="clean">
+        <li><b>主模型：逻辑回归。</b>系数可解释，能直接看到共线性导致的系数不稳定和符号翻转</li>
+        <li><b>辅模型：决策树（深度 3–4）。</b>泄漏字段会成为第一刀，规则适合放进视频</li>
+        <li>两组实验用同一模型、同一超参数、同一切分</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>评估指标</h3>
+      <ul class="clean">
+        <li><b>区分度：</b>ROC-AUC + PR-AUC（类别不平衡时更可靠）</li>
+        <li><b>阈值指标：</b>Recall、Balanced Accuracy，准确率不作主指标</li>
+        <li><b>稳健性：</b>交叉验证标准差、bootstrap 系数稳定性</li>
+        <li><b>公平性：</b>分组 TPR / FPR / 选择率，带置信区间</li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>实验策略</h3>
+    <div class="flow">
+      <div><span class="k">STEP 1</span><span class="t">最少处理</span><span class="d">能跑通即可：去 ID、简单填补、独热编码</span></div>
+      <div><span class="k">STEP 2</span><span class="t">逐步消融</span><span class="d">每次只加一个预处理步骤，记录指标变化</span></div>
+      <div><span class="k">STEP 3</span><span class="t">系统处理</span><span class="d">去泄漏、按变量处理哨兵值、变换、去共线性</span></div>
+      <div><span class="k">STEP 4</span><span class="t">公平性缓解</span><span class="d">重加权或分组阈值，画出公平与性能的权衡</span></div>
+    </div>
+    <ul class="clean small">
+      <li>固定留出 20% 测试集；训练集上做 5 折 × 5 次重复分层交叉验证，报告均值 ± 标准差</li>
+      <li>所有预处理都放进 sklearn <span class="mono">Pipeline</span>，只在训练折上 fit，避免泄漏</li>
+      <li>同时做“累积加步”和“留一去步”两种消融，结果不一致时解释原因</li>
+    </ul>
+  </div>
+  <figure class="chart panel">
+    <h3>原型 AUC 对比</h3>
+    <div id="ch-abl-zh"></div>
+    <figcaption>ROC-AUC <span class="chip h">原型</span>。两个数据集去掉泄漏后都明显下降，这才是真实性能。后续步骤 AUC 几乎不变，但 NHANES 中 BMI 系数的 bootstrap 标准差从 0.25 降到 0.03，模型更可信。</figcaption>
+  </figure>
+</section>
+
+<section class="page" data-key="next" data-title="分工与排期" hidden>
+  <div class="head">
+    <span class="eyebrow">分工与时间</span>
+    <h2>分工与排期</h2>
+  </div>
+  <figure class="chart panel">
+    <h3>视频时间分配（12 分钟）</h3>
+    <div class="tl" id="tl-zh"></div>
+    <figcaption>每人至少出镜两次。幻灯片一页一图，标题写结论，正文不超过约 15 个词。</figcaption>
+  </figure>
+  <div class="tablewrap">
+    <table class="roles">
+      <thead><tr><th style="width:60px">角色</th><th>负责内容（Notebook 章节 + 视频段落）</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>问题定义、数据治理与伦理、结论与反思；与 C 共同负责公平性</td></tr>
+        <tr><td>B</td><td>数据质量审计：缺失、哨兵值、冗余、偏态、多重共线性</td></tr>
+        <tr><td>C</td><td>不明显发现：异常、偏差、辛普森悖论、混杂</td></tr>
+        <tr><td>D</td><td>对比实验：最少处理 vs 系统处理、消融、评估指标</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>排期</h3>
+      <ol class="steps">
+        <li class="now"><span class="d">10/10–11</span><span>确认选题；统一环境（安装 scikit-learn）</span></li>
+        <li><span class="d">10/12–13</span><span>数据质量审计、EDA、偏差分析</span></li>
+        <li><span class="d">10/14–15</span><span>对比实验、消融、公平性评估</span></li>
+        <li><span class="d">10/16</span><span>整理 Notebook，制作幻灯片</span></li>
+        <li><span class="d">10/17</span><span>录制和剪辑视频，核对 12 分钟时限</span></li>
+        <li><span class="d">10/18 12:00 前</span><span>上传 YouTube（公开），提交链接和 .ipynb</span></li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3>Notebook 结构</h3>
+      <ul class="clean small">
+        <li>0 封面、贡献表、GenAI 使用声明</li>
+        <li>1 问题与数据治理</li>
+        <li>2 数据质量审计</li>
+        <li>3 冗余、偏态、多重共线性</li>
+        <li>4 不明显发现与分析谬误</li>
+        <li>5–6 最少处理 / 系统处理与消融</li>
+        <li>7 评估：区分度、校准、稳健性</li>
+        <li>8 公平性评估与缓解</li>
+        <li>9 解读、局限、结论</li>
+      </ul>
+      <p class="small muted">每个章节标题后标注负责人，例如 <span class="mono">## 3. … (Member B)</span>。</p>
+    </div>
+  </div>
+  <div class="banner"><b>详细方案待确认选题后实现</b><span>包括逐字段清洗规则、Notebook 代码框架、每人负责的具体单元格和幻灯片草稿。</span></div>
+</section>
+</main>
+
+<!-- =====================================================================
+     English version
+     ===================================================================== -->
+<main class="wrap" id="main-en" lang="en" hidden>
+
+<section class="page" data-key="overview" data-title="Overview">
+  <div class="head">
+    <span class="eyebrow">Best Practices in Data Governance · Group project</span>
+    <h1>Topic Overview</h1>
+    <p class="lede">This assignment tests evidence-based data decisions. The model is evidence, not the goal, and accuracy is not the target. We downloaded and profiled two candidate datasets. The following pages cover the scoring points, both datasets, a comparison and a project brief.</p>
+  </div>
+  <dl class="facts">
+    <div><dt>Deliverables</dt><dd>Video ≤ 12 min + .ipynb</dd></div>
+    <div><dt>Video rule</dt><dd>All 4 members on camera</dd></div>
+    <div><dt>Main submission (90%)</dt><dd class="mono">Sun 18 Oct, 12:00</dd></div>
+    <div><dt>Peer review (10%)</dt><dd class="mono">Wed 21 Oct, 12:00</dd></div>
+  </dl>
+  <div class="grid2">
+    <article class="panel cand" style="--c:var(--a)">
+      <span class="tag">Option A · Health</span>
+      <h3>NHANES 2021–23 US National Health Survey</h3>
+      <p>Identify diabetes from routine exam and survey data. Key angle: label bias, because a self-reported diagnosis also reflects who can see a doctor.</p>
+      <div class="stats"><span><b>5,730</b>adults</span><span><b>16.9%</b>positive</span><span><b>93</b>/100 fit</span></div>
+      <button class="linkbtn" type="button" data-go="nhanes">View Option A →</button>
+    </article>
+    <article class="panel cand" style="--c:var(--b)">
+      <span class="tag">Option B · Lending</span>
+      <h3>HMDA 2024 Nevada Mortgage Applications</h3>
+      <p>Predict mortgage denial. Key angles: perfect leakage and a Simpson's-type composition effect, where ethnic gaps vanish or persist after standardisation.</p>
+      <div class="stats"><span><b>85,496</b>decisions</span><span><b>24.4%</b>denied</span><span><b>88</b>/100 fit</span></div>
+      <button class="linkbtn" type="button" data-go="hmda">View Option B →</button>
+    </article>
+  </div>
+  <div class="banner"><b>Current stage: topic selection</b><span>This is a minimal brief. Detailed cleaning rules, the notebook skeleton and a cell-level task split will follow once the topic is confirmed.</span></div>
+  <p class="small muted"><span class="chip v">VERIFIED</span> computed on the downloaded data; <span class="chip h">PROTOTYPE</span> quick pre-run, final numbers will change; <span class="chip b">TO VERIFY</span> hypothesis.</p>
+</section>
+
+<section class="page" data-key="rubric" data-title="Scoring" hidden>
+  <div class="head">
+    <span class="eyebrow">Grading logic</span>
+    <h2>Scoring Points</h2>
+    <p class="lede">The four video criteria are worth 25% each, and markers look at reasoning rather than accuracy. Broken down, they give the 8 scoring points below; both datasets are scored against them.</p>
+  </div>
+  <div class="grid4">
+    <div class="rub"><span class="w">25%</span><span class="k">Appropriateness</span><span class="small muted">Suitable techniques and charts at each stage</span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">Correctness &amp; clarity</span><span class="small muted">Technically correct, clearly explained, <b>each member's contribution distinguishable</b></span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">Data interpretation</span><span class="small muted">Named in the rubric: redundancy, multicollinearity, skewness, analytical fallacies</span></div>
+    <div class="rub"><span class="w">25%</span><span class="k">Novelty &amp; depth</span><span class="small muted">Original topic and findings; ML used to justify preparation decisions</span></div>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:44px">#</th><th style="width:28%">Scoring point</th><th>High-scoring practice</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>Context &amp; governance</td><td>State the question, who is affected, data source, licence, privacy and how the data was generated</td></tr>
+        <tr><td class="num">2</td><td>Evidence-driven decisions</td><td>For every preparation step: observation → suspected cause → intervention → measured impact</td></tr>
+        <tr><td class="num">3</td><td>Non-obvious finding</td><td>At least one leakage, Simpson's paradox, confounder or non-random missingness, with its cause shown</td></tr>
+        <tr><td class="num">4</td><td>Rubric keywords</td><td>Show VIF / correlation matrix, skewness with before/after transforms, and one fallacy example</td></tr>
+        <tr><td class="num">5</td><td>Bias analysis &amp; mitigation</td><td>Group TPR / FPR / selection rate with confidence intervals; one mitigation and its cost</td></tr>
+        <tr><td class="num">6</td><td>Rigorous comparison</td><td>Same model and split; minimal vs systematic preparation plus step-wise ablation</td></tr>
+        <tr><td class="num">7</td><td>Explaining worse scores</td><td>A drop after removing leakage is the true performance: "ML is evidence"</td></tr>
+        <tr><td class="num">8</td><td>Presentation</td><td>Few words and one chart per slide; reproducible notebook; GenAI declaration</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Hard Requirements</h3>
+      <ul class="must">
+        <li>Explain at least one non-obvious pattern, anomaly, bias or misleading relationship in depth</li>
+        <li>Compare minimally vs systematically prepared data with the same modelling approach</li>
+        <li>Basic interpretable models only: linear regression, logistic regression, decision tree</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Common Mark Losses</h3>
+      <ul class="clean loss">
+        <li>Scaling or imputing on the full data before splitting (leakage)</li>
+        <li>The same entity in both the training and test sets</li>
+        <li>Reporting accuracy only, or long hyperparameter tuning</li>
+        <li>Reading code aloud in the video, or unclear ownership</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-key="nhanes" data-title="Option A" hidden style="--c:var(--a)">
+  <div class="dshead">
+    <span class="eyebrow">Option A</span>
+    <h2>NHANES 2021–23 US National Health Survey</h2>
+    <div class="meta"><span>CDC / NCHS public-use files</span><span>NCHS Data User Agreement applies</span><span>16 files joined on SEQN</span><span class="mono">11,933 people → 5,730 adults</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Data Profile</h3>
+      <ul class="clean">
+        <li>Nationally representative US survey with interviews, physical exams and blood tests</li>
+        <li><b>Task:</b> identify diabetes from routine non-glucose data (demographics, body measures, blood pressure, lipids, history, access to care)</li>
+        <li><b>Primary label:</b> self-reported <span class="mono">DIQ010=1</span> or measured <span class="mono">HbA1c ≥ 6.5%</span>; 971 positives (16.9%) <span class="chip v">VERIFIED</span></li>
+        <li><b>Sensitive attributes:</b> race (including a separate Asian group), income, insurance, usual place of care</li>
+      </ul>
+    </div>
+    <figure class="chart panel">
+      <h3>Undiagnosed Share by Access to Care</h3>
+      <div id="ch-undx-en"></div>
+      <figcaption>Share whose HbA1c meets the diagnostic threshold but who report never being diagnosed <span class="chip v">VERIFIED</span>. A model trained on self-report partly learns access to care.</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <figure class="chart panel">
+      <h3>Diabetics with BMI &lt; 25 by Race</h3>
+      <div id="ch-bmi-en"></div>
+      <figcaption>Almost half of Asian diabetics have BMI below 25 <span class="chip v">VERIFIED</span>. Singapore uses lower cut-offs (23 / 27.5) for Asians, which gives a local link.</figcaption>
+    </figure>
+    <div class="panel">
+      <h3>Scoring-Point Fit</h3>
+      <div class="fit" id="fit-nhanes-en"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="rowhead"><h3>Feasibility</h3><div class="feas" aria-label="4 / 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+    <ul class="clean">
+      <li>Small data (~5.7k rows) that runs in seconds; the main effort is joining files and reading codebooks</li>
+      <li><b>Risk:</b> small Asian subgroup (315 people, 40 positives), so results need confidence intervals</li>
+      <li><b>Risk:</b> survey weights and design need explaining; fasting labs exist only for a ~2.9k subsample</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page" data-key="hmda" data-title="Option B" hidden style="--c:var(--b)">
+  <div class="dshead">
+    <span class="eyebrow">Option B</span>
+    <h2>HMDA 2024 Nevada Mortgage Applications</h2>
+    <div class="meta"><span>FFIEC / CFPB public loan-level data</span><span>Privacy-modified before release</span><span class="mono">132,767 rows × 99 columns</span><span class="mono">585 lenders</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Data Profile</h3>
+      <ul class="clean">
+        <li>US regulatory disclosure of mortgage applications, one row per application</li>
+        <li><b>Task:</b> predict denial <span class="mono">action_taken=3</span> vs approval <span class="mono">1/2</span></li>
+        <li><b>After slicing:</b> 85,496 credit decisions, 24.4% denied <span class="chip v">VERIFIED</span></li>
+        <li><b>Sensitive attributes:</b> race, ethnicity, sex, age; used for auditing only, not as model inputs</li>
+        <li><b>Key gap:</b> no credit score in the public data, so no gap can be read directly as discrimination</li>
+      </ul>
+    </div>
+    <figure class="chart panel">
+      <h3>Interest Rate Present by Outcome</h3>
+      <div id="ch-leak-en"></div>
+      <figcaption>The rate exists only after approval, so it is perfect leakage <span class="chip v">VERIFIED</span>. With it AUC is 1.000; without it, 0.876 <span class="chip h">PROTOTYPE</span>.</figcaption>
+    </figure>
+  </div>
+  <div class="grid2">
+    <figure class="chart panel">
+      <h3>Denial Rate: Pooled vs Standardised</h3>
+      <div id="ch-simpson-en"></div>
+      <figcaption>Standardised to the White DTI mix <span class="chip v">VERIFIED</span>. The Asian gap is entirely a DTI-composition effect; the Black gap persists.</figcaption>
+    </figure>
+    <div class="panel">
+      <h3>Scoring-Point Fit</h3>
+      <div class="fit" id="fit-hmda-en"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="rowhead"><h3>Feasibility</h3><div class="feas" aria-label="4 / 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div></div>
+    <ul class="clean">
+      <li>One CSV (50 MB); 85k rows run in seconds with no joins</li>
+      <li><b>Risk:</b> many codes across 99 columns (<span class="mono">8888</span>, <span class="mono">9999</span>, <span class="mono">Exempt</span>, mixed DTI ranges and integers), so decoding takes effort</li>
+      <li><b>Risk:</b> the baseline definition drives every number and must be fixed early; small groups are noisy</li>
+    </ul>
+  </div>
+</section>
+
+<section class="page" data-key="compare" data-title="Comparison" hidden>
+  <div class="head">
+    <span class="eyebrow">Comparison &amp; recommendation</span>
+    <h2>Topic Comparison</h2>
+    <p class="lede">Both topics cover every scoring point; they differ in emphasis.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:24%">Dimension</th><th style="color:var(--a)">A · NHANES</th><th style="color:var(--b)">B · HMDA</th></tr></thead>
+      <tbody>
+        <tr><td>Strongest non-obvious finding</td><td style="--c:var(--a)" class="win">Label bias: self-report reflects access to care</td><td>Perfect leakage: interest rate</td></tr>
+        <tr><td>Simpson's paradox / confounding</td><td>Age confounding; group order reverses after standardisation</td><td style="--c:var(--b)" class="win">DTI composition; gap vanishes after standardisation</td></tr>
+        <tr><td>Multicollinearity</td><td style="--c:var(--a)" class="win">Weight / BMI VIF ≈ 96–98</td><td>LTV = loan amount / property value</td></tr>
+        <tr><td>Skewness</td><td>Triglycerides 6.2, glucose 4.5</td><td style="--c:var(--b)" class="win">Property value 96, loan amount 45</td></tr>
+        <tr><td>Bias depth</td><td style="--c:var(--a)" class="win">Label bias + measurement bias (Asian BMI)</td><td>Racial gaps + omitted variable (credit score)</td></tr>
+        <tr><td>Novelty / local link</td><td style="--c:var(--a)" class="win">Rare in coursework; links to Singapore BMI standards</td><td>Rare in coursework; US context</td></tr>
+        <tr><td>Story clarity</td><td>Survey weights need explaining first</td><td style="--c:var(--b)" class="win">Leakage drop from 1.000 to 0.876 is instantly clear</td></tr>
+        <tr><td>Data-handling effort</td><td>8 files to join, ~5.7k rows</td><td>One table, ~85k rows, complex codes</td></tr>
+        <tr><td>Fit score</td><td class="mono"><b>93</b> / 100</td><td class="mono"><b>88</b> / 100</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="reco">
+    <h3>Recommended: Option A · NHANES</h3>
+    <p>It has strong verified evidence for every rubric keyword (multicollinearity, skewness, analytical fallacies). The finding that self-reported labels reflect access to care is unusual, and it connects to Singapore.</p>
+    <p class="small">If the team prefers a punchier story about leakage and fairness, Option B also works. Please reply <b>A</b> or <b>B</b> in the group chat.</p>
+  </div>
+</section>
+
+<section class="page" data-key="plan" data-title="Project Brief" hidden>
+  <div class="head">
+    <span class="eyebrow">Project skeleton</span>
+    <h2>Project Brief</h2>
+    <p class="lede">Both topics share one experiment framework; only the slicing and trap columns differ. Details follow once the topic is confirmed.</p>
+  </div>
+  <div class="grid2">
+    <div class="panel" style="--c:var(--a)">
+      <h3>A · NHANES Slicing</h3>
+      <div class="funnel">
+        <div><span>All participants</span><b>11,933</b></div>
+        <div><span>Adults (≥ 20)</span><b>7,809</b></div>
+        <div><span>Examined</span><b>6,064</b></div>
+        <div><span>HbA1c available</span><b>5,767</b></div>
+        <div><span>Excluding pregnancy → sample</span><b>5,730</b></div>
+      </div>
+      <p class="small muted">8 files, ~25 features. Trap columns kept on purpose: fasting glucose and medication questions (leakage); weight, height, three BP readings, LDL (collinearity).</p>
+    </div>
+    <div class="panel" style="--c:var(--b)">
+      <h3>B · HMDA Slicing</h3>
+      <div class="funnel">
+        <div><span>All Nevada 2024 records</span><b>132,767</b></div>
+        <div><span>Credit decisions only (approved / denied)</span><b>91,945</b></div>
+        <div><span>Excl. business, reverse, multifamily, exempt</span><b>85,496</b></div>
+      </div>
+      <p class="small muted">~30 columns. Trap columns kept on purpose: interest rate, costs, denial reason (leakage demo). Race, sex and lender ID are for auditing only.</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Modelling</h3>
+      <ul class="clean">
+        <li><b>Primary: logistic regression.</b> Coefficients are interpretable and expose instability and sign flips caused by collinearity</li>
+        <li><b>Secondary: decision tree (depth 3–4).</b> Leaky fields become the first split, and the rules suit the video</li>
+        <li>Same model, hyperparameters and split for both arms</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Evaluation Metrics</h3>
+      <ul class="clean">
+        <li><b>Discrimination:</b> ROC-AUC + PR-AUC (more reliable under class imbalance)</li>
+        <li><b>Threshold metrics:</b> recall, balanced accuracy; accuracy is not the headline</li>
+        <li><b>Robustness:</b> CV standard deviation, bootstrap coefficient stability</li>
+        <li><b>Fairness:</b> group TPR / FPR / selection rate with confidence intervals</li>
+      </ul>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Experiment Strategy</h3>
+    <div class="flow">
+      <div><span class="k">STEP 1</span><span class="t">Minimal</span><span class="d">Just enough to run: drop IDs, simple imputation, one-hot encoding</span></div>
+      <div><span class="k">STEP 2</span><span class="t">Ablation</span><span class="d">Add one preparation step at a time and record the change</span></div>
+      <div><span class="k">STEP 3</span><span class="t">Systematic</span><span class="d">Remove leakage, variable-specific sentinels, transforms, collinearity</span></div>
+      <div><span class="k">STEP 4</span><span class="t">Mitigation</span><span class="d">Reweighing or group thresholds; plot the fairness–performance trade-off</span></div>
+    </div>
+    <ul class="clean small">
+      <li>Fixed 20% hold-out test set; 5-fold × 5-repeat stratified CV on the training data, reported as mean ± SD</li>
+      <li>All preprocessing inside an sklearn <span class="mono">Pipeline</span>, fitted on training folds only</li>
+      <li>Both cumulative add-one and leave-one-out ablations; explain any disagreement</li>
+    </ul>
+  </div>
+  <figure class="chart panel">
+    <h3>Prototype AUC Comparison</h3>
+    <div id="ch-abl-en"></div>
+    <figcaption>ROC-AUC <span class="chip h">PROTOTYPE</span>. Both datasets drop sharply once leakage is removed, which is the true performance. Later steps barely move AUC, but in NHANES the bootstrap SD of the BMI coefficient falls from 0.25 to 0.03.</figcaption>
+  </figure>
+</section>
+
+<section class="page" data-key="next" data-title="Roles &amp; Schedule" hidden>
+  <div class="head">
+    <span class="eyebrow">Team and timeline</span>
+    <h2>Roles &amp; Schedule</h2>
+  </div>
+  <figure class="chart panel">
+    <h3>Video Time Allocation (12 min)</h3>
+    <div class="tl" id="tl-en"></div>
+    <figcaption>Each member appears at least twice. One chart per slide, the slide title states the finding, and body text stays under about 15 words.</figcaption>
+  </figure>
+  <div class="tablewrap">
+    <table class="roles">
+      <thead><tr><th style="width:60px">Role</th><th>Owns (notebook section + video segment)</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td>Problem definition, governance &amp; ethics, conclusion &amp; reflection; fairness together with C</td></tr>
+        <tr><td>B</td><td>Data-quality audit: missingness, sentinels, redundancy, skewness, multicollinearity</td></tr>
+        <tr><td>C</td><td>Non-obvious findings: anomalies, bias, Simpson's paradox, confounding</td></tr>
+        <tr><td>D</td><td>Comparison experiments: minimal vs systematic, ablation, metrics</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Schedule</h3>
+      <ol class="steps">
+        <li class="now"><span class="d">10/10–11</span><span>Confirm topic; align environment (install scikit-learn)</span></li>
+        <li><span class="d">10/12–13</span><span>Data-quality audit, EDA, bias analysis</span></li>
+        <li><span class="d">10/14–15</span><span>Comparison, ablation, fairness evaluation</span></li>
+        <li><span class="d">10/16</span><span>Tidy notebook, build slides</span></li>
+        <li><span class="d">10/17</span><span>Record and edit video; check the 12-minute limit</span></li>
+        <li><span class="d">By 10/18 12:00</span><span>Upload to YouTube (public); submit link and .ipynb</span></li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3>Notebook Structure</h3>
+      <ul class="clean small">
+        <li>0 Cover, contribution table, GenAI declaration</li>
+        <li>1 Problem &amp; data governance</li>
+        <li>2 Data-quality audit</li>
+        <li>3 Redundancy, skewness, multicollinearity</li>
+        <li>4 Non-obvious findings &amp; analytical fallacies</li>
+        <li>5–6 Minimal / systematic preparation &amp; ablation</li>
+        <li>7 Evaluation: discrimination, calibration, robustness</li>
+        <li>8 Fairness assessment &amp; mitigation</li>
+        <li>9 Interpretation, limits, conclusion</li>
+      </ul>
+      <p class="small muted">Tag each section heading with its owner, e.g. <span class="mono">## 3. … (Member B)</span>.</p>
+    </div>
+  </div>
+  <div class="banner"><b>Detailed plan after topic confirmation</b><span>Field-level cleaning rules, notebook code skeleton, each member's cells and draft slides.</span></div>
+</section>
+</main>
+
+<div class="wrap">
+  <nav class="pager" aria-label="Pager">
+    <button id="prev" type="button">← 上一页</button>
+    <button id="next-btn" type="button">下一页 →</button>
+  </nav>
+</div>
+<footer class="wrap">
+  <p data-l="zh">数据下载与实测日期：2026-10-10。来源：CDC NHANES 公共文件；FFIEC HMDA Data Browser（内华达 2024）。原型结果为快速预跑，最终数字以 Notebook 为准。</p>
+  <p data-l="en" hidden>Data downloaded and profiled on 2026-10-10. Sources: CDC NHANES public-use files; FFIEC HMDA Data Browser (Nevada 2024). Prototype results are quick pre-runs; final numbers come from the notebook.</p>
+</footer>
+
+<script>
+(function(){
+  var mains = {zh: document.getElementById('main-zh'), en: document.getElementById('main-en')};
+  var tablist = document.getElementById('tablist');
+  var prevBtn = document.getElementById('prev'), nextBtn = document.getElementById('next-btn');
+  var PAGER = {zh: ['← 上一页', '下一页 →'], en: ['← Previous', 'Next →']};
+  var lang = 'zh';
+  try { var saved = localStorage.getItem('ca6003-brief-lang'); if (saved === 'zh' || saved === 'en') lang = saved; } catch (e) {}
+  var curKey = (location.hash || '').slice(1) || 'overview';
+
+  function pages(){ return Array.prototype.slice.call(mains[lang].querySelectorAll('section.page')); }
+  function buildTabs(){
+    tablist.innerHTML = '';
+    pages().forEach(function(p, i){
+      var b = document.createElement('button');
+      b.className = 'tab'; b.type = 'button'; b.dataset.go = p.dataset.key;
+      b.innerHTML = '<span class="n">' + (i + 1) + '</span>' + p.dataset.title;
+      tablist.appendChild(b);
+    });
+  }
+  function show(key, push){
+    var ps = pages(), i = ps.findIndex(function(p){ return p.dataset.key === key; });
+    if (i < 0) i = 0;
+    curKey = ps[i].dataset.key;
+    ps.forEach(function(p, j){ p.hidden = j !== i; });
+    Array.prototype.forEach.call(tablist.children, function(t, j){
+      if (j === i) { t.setAttribute('aria-current', 'page'); t.scrollIntoView({block: 'nearest', inline: 'nearest'}); }
+      else t.removeAttribute('aria-current');
+    });
+    prevBtn.disabled = i === 0; nextBtn.disabled = i === ps.length - 1;
+    if (push) { try { history.replaceState(null, '', '#' + curKey); } catch (e) {} window.scrollTo(0, 0); }
+  }
+  function step(d){ var ps = pages(), i = ps.findIndex(function(p){ return p.dataset.key === curKey; }); show(ps[Math.max(0, Math.min(ps.length - 1, i + d))].dataset.key, true); }
+  function setLang(l){
+    lang = l;
+    Object.keys(mains).forEach(function(k){ mains[k].hidden = k !== l; });
+    document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    document.title = l === 'zh' ? 'CA6003 选题说明' : 'CA6003 Topic Brief';
+    document.querySelectorAll('.lang button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === l)); });
+    document.querySelectorAll('footer [data-l]').forEach(function(p){ p.hidden = p.dataset.l !== l; });
+    prevBtn.textContent = PAGER[l][0]; nextBtn.textContent = PAGER[l][1];
+    buildTabs(); show(curKey, false);
+    try { localStorage.setItem('ca6003-brief-lang', l); } catch (e) {}
+  }
+  document.addEventListener('click', function(e){
+    var g = e.target.closest('[data-go]'); if (g) { show(g.dataset.go, true); return; }
+    var l = e.target.closest('[data-lang]'); if (l) setLang(l.dataset.lang);
+  });
+  prevBtn.addEventListener('click', function(){ step(-1); });
+  nextBtn.addEventListener('click', function(){ step(1); });
+  document.addEventListener('keydown', function(e){
+    if (e.target.closest('input,textarea,select')) return;
+    if (e.key === 'ArrowRight') step(1);
+    if (e.key === 'ArrowLeft') step(-1);
+  });
+
+  // ---------- charts: one linear scale per chart ----------
+  function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  function hbars(id, rows, opt){
+    var W = 560, labelW = opt.labelW || 150, padR = 64, rowH = 32, gapAfter = opt.gapAfter || [];
+    var H = rows.length * rowH + gapAfter.length * 12 + 26, plotW = W - labelW - padR, max = opt.max, s = '', y = 4;
+    for (var t = 0; t <= max; t += opt.tick) {
+      var x = labelW + plotW * t / max;
+      s += '<line class="grid" x1="' + x + '" x2="' + x + '" y1="0" y2="' + (H - 22) + '"/>';
+      s += '<text class="axis" x="' + x + '" y="' + (H - 6) + '" text-anchor="middle">' + t + (opt.unit || '') + '</text>';
+    }
+    rows.forEach(function(r, i){
+      var bw = plotW * r.v / max;
+      s += '<text class="lbl" x="' + (labelW - 10) + '" y="' + (y + 19) + '" text-anchor="end">' + esc(r.l) + '</text>';
+      s += '<rect x="' + labelW + '" y="' + (y + 6) + '" width="' + Math.max(bw, 1.5) + '" height="18" rx="3" style="fill:var(' + r.c + ')"/>';
+      s += '<text class="val" x="' + (labelW + bw + 6) + '" y="' + (y + 19) + '">' + (r.v + (opt.unit || '')) + '</text>';
+      y += rowH + (gapAfter.indexOf(i) >= 0 ? 12 : 0);
+    });
+    var aria = rows.map(function(r){ return r.l + ' ' + r.v + (opt.unit || ''); }).join('; ');
+    document.getElementById(id).innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(aria) + '">' + s + '</svg>';
+  }
+  function ablation(id, stages, legendNote){
+    var W = 560, H = 250, padL = 44, padB = 54, padT = 14, plotH = H - padB - padT, plotW = W - padL - 10, yMin = 0.7, yMax = 1.0;
+    var data = [{c: '--a', n: 'NHANES', v: [0.958, 0.860, 0.858]}, {c: '--b', n: 'HMDA', v: [1.000, 0.876, 0.879]}];
+    function Y(v){ return padT + plotH * (1 - (v - yMin) / (yMax - yMin)); }
+    var s = '';
+    [0.7, 0.8, 0.9, 1.0].forEach(function(t){
+      s += '<line class="grid" x1="' + padL + '" x2="' + (W - 10) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/>';
+      s += '<text class="axis" x="' + (padL - 8) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + t.toFixed(1) + '</text>';
+    });
+    var gw = plotW / stages.length, bw = 44;
+    stages.forEach(function(st, i){
+      var cx = padL + gw * i + gw / 2;
+      data.forEach(function(d, k){
+        var x = cx + (k === 0 ? -bw - 3 : 3), v = d.v[i];
+        s += '<rect x="' + x + '" y="' + Y(v) + '" width="' + bw + '" height="' + (Y(yMin) - Y(v)) + '" rx="3" style="fill:var(' + d.c + ')"/>';
+        s += '<text class="val" x="' + (x + bw / 2) + '" y="' + (Y(v) - 5) + '" text-anchor="middle">' + v.toFixed(3) + '</text>';
+      });
+      s += '<text class="lbl" x="' + cx + '" y="' + (H - padB + 20) + '" text-anchor="middle">' + esc(st) + '</text>';
+    });
+    data.forEach(function(d, k){
+      var lx = padL + 4 + k * 110, ly = H - 12;
+      s += '<rect x="' + lx + '" y="' + (ly - 9) + '" width="10" height="10" rx="2" style="fill:var(' + d.c + ')"/>';
+      s += '<text class="axis" x="' + (lx + 16) + '" y="' + ly + '">' + d.n + '</text>';
+    });
+    s += '<text class="axis" x="' + (W - 10) + '" y="' + (H - 12) + '" text-anchor="end">' + esc(legendNote) + '</text>';
+    document.getElementById(id).innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="AUC NHANES 0.958 / 0.860 / 0.858; HMDA 1.000 / 0.876 / 0.879">' + s + '</svg>';
+  }
+  function fit(id, rows, totalLabel){
+    var total = 0, h = '';
+    rows.forEach(function(r){
+      total += r[2];
+      h += '<div class="fitrow"><span>' + r[0] + '<small>' + r[3] + '</small></span><span class="bar"><i style="width:' + (100 * r[2] / r[1]) + '%"></i></span><span class="s">' + r[2] + '/' + r[1] + '</span></div>';
+    });
+    h += '<div class="total"><span>' + totalLabel + '</span><b>' + total + '</b></div>';
+    document.getElementById(id).innerHTML = h;
+  }
+  function timeline(id, segs){
+    document.getElementById(id).innerHTML = segs.map(function(s){
+      return '<div style="flex:' + s[0] + ';background:var(' + s[3] + ')" title="' + esc(s[1] + ' ' + s[2] + ' ' + s[0] + ' min') + '">' + s[1] + (s[2] ? ' · ' + s[2] : '') + '</div>';
+    }).join('');
+  }
+
+  var T = {
+    zh: {
+      undx: ['有医保', '无医保', '有固定就医点', '无固定就医点'],
+      bmi: ['亚裔', '黑人', '墨西哥裔', '白人'],
+      leak: ['已放款', '批准未接受', '被拒绝'],
+      simp: ['亚裔 · 整体', '亚裔 · 标准化', '黑人 · 整体', '黑人 · 标准化', '白人（参照）'],
+      abl: ['含泄漏（最少处理）', '去掉泄漏', '系统处理完成'], ablNote: '纵轴从 0.7 起', total: '合计',
+      fitA: [['脏数据', '哨兵值因变量而异，77 / 99 与真实测量值冲突'], ['不明显发现', '标签偏差、用药掩盖、跳题造成的泄漏'], ['Bias 分析', '医保 / 收入 / 种族，亚裔 BMI 测量偏差'], ['共线性 / 偏态 / 冗余', '体重 VIF 95.9，三次血压 r = 0.94'], ['适合简单模型', '二分类，逻辑回归 / 决策树'], ['新颖性', '课程作业少见，可联系新加坡'], ['治理故事', '数据使用协议、抽样设计、去标识化']],
+      fitB: [['脏数据', '8888 / 9999 / Exempt，DTI 混合编码'], ['不明显发现', '完美泄漏、DTI 构成效应、隐私造成的“重复”'], ['Bias 分析', '种族 / 族裔 / 性别；无信用分是遗漏变量'], ['共线性 / 偏态 / 冗余', 'LTV 函数依赖，金额严重右偏'], ['适合简单模型', '二分类，样本量充足'], ['新颖性', '课程作业少见，但为美国背景'], ['治理故事', '隐私处理：金额取分桶中点、年龄分箱']],
+      tl: ['问题与治理', '数据质量', '不明显发现', '对比实验', '公平性', '全员']
+    },
+    en: {
+      undx: ['Insured', 'Uninsured', 'Usual place of care', 'No usual place'],
+      bmi: ['Asian', 'Black', 'Mexican American', 'White'],
+      leak: ['Originated', 'Approved, not taken', 'Denied'],
+      simp: ['Asian · pooled', 'Asian · standardised', 'Black · pooled', 'Black · standardised', 'White (reference)'],
+      abl: ['With leakage (minimal)', 'Leakage removed', 'Fully prepared'], ablNote: 'y-axis starts at 0.7', total: 'Total',
+      fitA: [['Dirty data', 'Variable-specific sentinels; 77 / 99 collide with real measurements'], ['Non-obvious findings', 'Label bias, treatment masking, skip-pattern leakage'], ['Bias analysis', 'Insurance / income / race; Asian BMI measurement bias'], ['Collinearity / skew / redundancy', 'Weight VIF 95.9; three BP readings r = 0.94'], ['Fits a basic model', 'Binary target; logistic regression / tree'], ['Novelty', 'Rare in coursework; links to Singapore'], ['Governance story', 'Data User Agreement, survey design, de-identification']],
+      fitB: [['Dirty data', '8888 / 9999 / Exempt; mixed DTI encoding'], ['Non-obvious findings', 'Perfect leakage, DTI composition, privacy-made "duplicates"'], ['Bias analysis', 'Race / ethnicity / sex; credit score is an omitted variable'], ['Collinearity / skew / redundancy', 'LTV functional dependency; heavily skewed amounts'], ['Fits a basic model', 'Binary target, ample sample'], ['Novelty', 'Rare in coursework, but US context'], ['Governance story', 'Privacy edits: bucket-midpoint amounts, binned age']],
+      tl: ['Problem & governance', 'Data quality', 'Findings', 'Experiments', 'Fairness', 'All']
+    }
+  };
+  var SCORES_A = [[15, 14], [25, 23], [18, 17], [10, 10], [10, 9], [12, 11], [10, 9]];
+  var SCORES_B = [[15, 14], [25, 24], [18, 16], [10, 7], [10, 10], [12, 8], [10, 9]];
+  ['zh', 'en'].forEach(function(l){
+    var t = T[l];
+    hbars('ch-undx-' + l, [
+      {l: t.undx[0], v: 19.9, c: '--muted'}, {l: t.undx[1], v: 36.7, c: '--a'},
+      {l: t.undx[2], v: 19.9, c: '--muted'}, {l: t.undx[3], v: 41.5, c: '--a'}
+    ], {max: 50, tick: 10, unit: '%', gapAfter: [1], labelW: 160});
+    hbars('ch-bmi-' + l, [
+      {l: t.bmi[0], v: 48.0, c: '--a'}, {l: t.bmi[1], v: 12.8, c: '--muted'},
+      {l: t.bmi[2], v: 10.5, c: '--muted'}, {l: t.bmi[3], v: 7.0, c: '--muted'}
+    ], {max: 50, tick: 10, unit: '%', labelW: 160});
+    hbars('ch-leak-' + l, [
+      {l: t.leak[0], v: 99.6, c: '--b'}, {l: t.leak[1], v: 98.0, c: '--b'}, {l: t.leak[2], v: 0, c: '--bad'}
+    ], {max: 100, tick: 25, unit: '%', labelW: 160});
+    hbars('ch-simpson-' + l, [
+      {l: t.simp[0], v: 24.8, c: '--b'}, {l: t.simp[1], v: 22.0, c: '--b'},
+      {l: t.simp[2], v: 29.7, c: '--warn'}, {l: t.simp[3], v: 27.9, c: '--warn'},
+      {l: t.simp[4], v: 22.2, c: '--muted'}
+    ], {max: 35, tick: 5, unit: '%', labelW: 170, gapAfter: [1, 3]});
+    ablation('ch-abl-' + l, t.abl, t.ablNote);
+    fit('fit-nhanes-' + l, t.fitA.map(function(r, i){ return [r[0], SCORES_A[i][0], SCORES_A[i][1], r[1]]; }), t.total);
+    fit('fit-hmda-' + l, t.fitB.map(function(r, i){ return [r[0], SCORES_B[i][0], SCORES_B[i][1], r[1]]; }), t.total);
+    timeline('tl-' + l, [[1.5, 'A', t.tl[0], '--a-soft'], [2.5, 'B', t.tl[1], '--b-soft'], [2.5, 'C', t.tl[2], '--warn-soft'], [3, 'D', t.tl[3], '--a-soft'], [2, 'A+C', t.tl[4], '--b-soft'], [0.5, t.tl[5], '', '--track']]);
+  });
+
+  setLang(lang);
+})();
+</script>

@@ -1,0 +1,3082 @@
+<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>MCQ_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Medical Conditions Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</a>
+          </li>
+          <li>
+            <a href="#Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#MCQ010">MCQ010 - Ever been told you have asthma</a>
+              </li>
+              <li>
+                <a href="#MCQ035">MCQ035 - Still have asthma</a>
+              </li>
+              <li>
+                <a href="#MCQ040">MCQ040 - Had asthma attack in past year</a>
+              </li>
+              <li>
+                <a href="#MCQ050">MCQ050 - Emergency care visit for asthma/past yr</a>
+              </li>
+              <li>
+                <a href="#AGQ030">AGQ030 - Did SP have episode of hay fever/past yr</a>
+              </li>
+              <li>
+                <a href="#MCQ053">MCQ053 - Taking treatment for anemia/past 3 mos</a>
+              </li>
+              <li>
+                <a href="#MCQ145">MCQ145 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#MCQ149">MCQ149 - Menstrual periods started yet?</a>
+              </li>
+              <li>
+                <a href="#MCQ157">MCQ157 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#MCQ160a">MCQ160a - Doctor ever said you had arthritis</a>
+              </li>
+              <li>
+                <a href="#MCQ195">MCQ195 - Which type of arthritis was it?</a>
+              </li>
+              <li>
+                <a href="#MCQ160b">MCQ160b - Ever told had congestive heart failure</a>
+              </li>
+              <li>
+                <a href="#MCQ160c">MCQ160c - Ever told you had coronary heart disease</a>
+              </li>
+              <li>
+                <a href="#MCQ160d">MCQ160d - Ever told you had angina/angina pectoris</a>
+              </li>
+              <li>
+                <a href="#MCQ160e">MCQ160e - Ever told you had heart attack</a>
+              </li>
+              <li>
+                <a href="#MCQ160f">MCQ160f - Ever told you had a stroke</a>
+              </li>
+              <li>
+                <a href="#MCQ160m">MCQ160m - Ever told you had thyroid problem</a>
+              </li>
+              <li>
+                <a href="#MCQ170m">MCQ170m - Do you still have thyroid problem</a>
+              </li>
+              <li>
+                <a href="#MCQ160p">MCQ160p - Ever told you had COPD, emphysema, ChB</a>
+              </li>
+              <li>
+                <a href="#MCQ160l">MCQ160l - Ever told you had any liver condition</a>
+              </li>
+              <li>
+                <a href="#MCQ170l">MCQ170l - Do you still have a liver condition</a>
+              </li>
+              <li>
+                <a href="#MCQ500">MCQ500 - Ever told you had any liver condition</a>
+              </li>
+              <li>
+                <a href="#MCQ510a">MCQ510a - Liver condition: Fatty liver</a>
+              </li>
+              <li>
+                <a href="#MCQ510b">MCQ510b - Liver condition: Liver fibrosis</a>
+              </li>
+              <li>
+                <a href="#MCQ510c">MCQ510c - Liver condition: Liver cirrhosis</a>
+              </li>
+              <li>
+                <a href="#MCQ510d">MCQ510d - Liver condition: Viral hepatitis</a>
+              </li>
+              <li>
+                <a href="#MCQ510e">MCQ510e - Liver condition: Autoimmune hepatitis</a>
+              </li>
+              <li>
+                <a href="#MCQ510f">MCQ510f - Liver condition: Other liver disease</a>
+              </li>
+              <li>
+                <a href="#MCQ515">MCQ515 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#MCQ550">MCQ550 - Has DR ever said you have gallstones</a>
+              </li>
+              <li>
+                <a href="#MCQ560">MCQ560 - Ever had gallbladder surgery?</a>
+              </li>
+              <li>
+                <a href="#MCQ220">MCQ220 - Ever told you had cancer or malignancy</a>
+              </li>
+              <li>
+                <a href="#MCQ230a">MCQ230a - 1st cancer - what kind was it?</a>
+              </li>
+              <li>
+                <a href="#MCQ230b">MCQ230b - 2nd cancer - what kind was it?</a>
+              </li>
+              <li>
+                <a href="#MCQ230c">MCQ230c - 3rd cancer - what kind was it?</a>
+              </li>
+              <li>
+                <a href="#MCQ230d">MCQ230d - More than 3 kinds of cancer</a>
+              </li>
+              <li>
+                <a href="#OSQ230">OSQ230 - Any metal objects inside your body?</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Medical Conditions (MCQ_L)</h3>
+        <h4> Data File: MCQ_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>The medical conditions (variable name prefix MCQ) section provides self- and proxy-reported personal interview data on a broad range of health conditions and medical history for both children and adults.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>The target sample for questions in this section varies by age and gender. Please review the questionnaire and codebook carefully.&nbsp;&nbsp;</p><h2 id="Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</h2><p>This questionnaire was asked, in the home or by telephone, by trained interviewers, using the Computer-Assisted Personal Interview (CAPI) system.</p>
+<p>The NHANES August 2021-August 2023 questionnaire is available on the NHANES website.</p><h2 id="Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</h2><p>The CAPI system is programmed with built-in consistency checks to reduce data entry errors. CAPI also uses online help screens to assist interviewers in defining key terms used in the questionnaire. Interviewers were required to audio-record interviews. The recorded interviews were reviewed by interviewer supervisors and NCHS staff.&nbsp;</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>
+Frequency counts were checked, &ldquo;skip&rdquo; patterns were verified, and the reasonableness of question responses was reviewed. Edits were made to ensure the completeness, consistency, and analytic usefulness of the data. Edits were also made, when necessary, to address data disclosure concerns.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>Several questions were dropped in NHANES 2021-2023 and are not included in this data file, including MCQ025, MCQ080, MCQ092,&nbsp; MCQ151, MCQ180B, MCQ520, MCQ530, MCQ540, MCQ570, MCQ206, MCQ300A, MCQ300B, MCQ300C, MCQ366A, MCQ366B, MCQ366C, MCQ366D, MCQ371A, MCQ371B, MCQ371C, MCQ371D, MCQ088, MCD093, RHD018, MCD180C, MCD180D, MCD180E, MCD180F, MCD180M, and MCD180L.</p>
+<p>The analysis of NHANES August 2021&ndash;August 2023 MCQ data must be conducted using the appropriate survey design variables, sample weights, and the basic demographic variables. Although these data were collected as part of the household questionnaire, if they are merged with the MEC exam data, exam sample weights should be used for the analyses.</p>
+<p>Please  refer to the NHANES <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">Analytic Guidelines</a>
+and the online <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/" target="_blank">NHANES Tutorial</a> for further details on the use of sample weights and other analytic issues.</p></div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ010">MCQ010 - Ever been told you have asthma</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ010</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever been told you have asthma</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The following questions are about different medical conditions. Has a doctor or other health professional ever told {you/SP} that {you have/s/he/SP has} asthma (az-ma)?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  IF SP AGE &gt;= 16, DISPLAY "YOU" AND "YOU HAVE".  IF SP AGE = 12-15, DISPLAY "SP" AND "S/HE HAS". IF SP AGE &lt; 12, DISPLAY "YOU" AND "SP HAS".</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1946</td>
+                <td class="values" align="right">1946</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">9782</td>
+                <td class="values" align="right">11728</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11728</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">15</td>
+                <td class="values" align="right">11743</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ035">MCQ035 - Still have asthma</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ035</dd>
+            <dt>SAS Label: </dt>
+            <dd>Still have asthma</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Do you/Does SP} still have asthma (az-ma)?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1219</td>
+                <td class="values" align="right">1219</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">690</td>
+                <td class="values" align="right">1909</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1909</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">37</td>
+                <td class="values" align="right">1946</td>
+                <td class="values">AGQ030</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">9798</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ040">MCQ040 - Had asthma attack in past year</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ040</dd>
+            <dt>SAS Label: </dt>
+            <dd>Had asthma attack in past year</dd>
+            <dt>English Text: </dt>
+            <dd class="info">During the past 12 months, {have you/has SP} had an episode of asthma (az-ma) or an asthma attack?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">591</td>
+                <td class="values" align="right">591</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">624</td>
+                <td class="values" align="right">1215</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1215</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">1219</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10525</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ050">MCQ050 - Emergency care visit for asthma/past yr</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ050</dd>
+            <dt>SAS Label: </dt>
+            <dd>Emergency care visit for asthma/past yr</dd>
+            <dt>English Text: </dt>
+            <dd class="info">[During the past 12 months], {have you/has SP} had to visit an emergency room or urgent care center because of asthma (az-ma)?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">161</td>
+                <td class="values" align="right">161</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">1056</td>
+                <td class="values" align="right">1217</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1217</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">1219</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10525</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="AGQ030">AGQ030 - Did SP have episode of hay fever/past yr</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">AGQ030</dd>
+            <dt>SAS Label: </dt>
+            <dd>Did SP have episode of hay fever/past yr</dd>
+            <dt>English Text: </dt>
+            <dd class="info">During the past 12 months, {have you/has SP} had an episode of hay fever?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">2067</td>
+                <td class="values" align="right">2067</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">9665</td>
+                <td class="values" align="right">11732</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11732</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">11</td>
+                <td class="values" align="right">11743</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ053">MCQ053 - Taking treatment for anemia/past 3 mos</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ053</dd>
+            <dt>SAS Label: </dt>
+            <dd>Taking treatment for anemia/past 3 mos</dd>
+            <dt>English Text: </dt>
+            <dd class="info">During the past 3 months, {have you/has SP} been on treatment for anemia (a-nee-me-a), sometimes called "tired blood" or "low blood"?  [Include diet, iron pills, iron shots, transfusions as treatment.]</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">433</td>
+                <td class="values" align="right">433</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">11300</td>
+                <td class="values" align="right">11733</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">11734</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">11741</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ145">MCQ145 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ145</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">BOX 7 CHECK ITEM MCQ.145: IF SP'S AGE &gt;= 20, GO TO MCQ.160. IF SP's AGE = 12-19, GO TO MCQ.500. IF SP AGE 8-11 AND SP IS FEMALE, CONTINUE.OTHERWISE, GO TO END OF SECTION.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 2 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ149">MCQ149 - Menstrual periods started yet?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ149</dd>
+            <dt>SAS Label: </dt>
+            <dd>Menstrual periods started yet?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Have {SP's} periods or menstrual (men-stral) cycles started yet?</dd>
+            <dt>Target: </dt>
+            <dd> Females only 8 YEARS -
+			11 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">64</td>
+                <td class="values" align="right">64</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">368</td>
+                <td class="values" align="right">432</td>
+                <td class="values">MCQ220</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">432</td>
+                <td class="values">MCQ220</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">434</td>
+                <td class="values">MCQ220</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11310</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ157">MCQ157 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ157</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">English Instructions: BOX 8B CHECK ITEM MCQ157: IF SP's AGE = 6-11, GO TO END OF SECTION</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 6 YEARS -
+			11 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160a">MCQ160a - Doctor ever said you had arthritis</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160a</dd>
+            <dt>SAS Label: </dt>
+            <dd>Doctor ever said you had arthritis</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP} that {you/s/he} . . .had arthritis (ar-thry-tis)?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION: TEXT OF QUESTION SHOULD BE OPTIONAL AFTER FIRST ITEM IS READ.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">2532</td>
+                <td class="values" align="right">2532</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">5258</td>
+                <td class="values" align="right">7790</td>
+                <td class="values">MCQ160B</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7790</td>
+                <td class="values">MCQ160B</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">17</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">MCQ160B</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ195">MCQ195 - Which type of arthritis was it?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ195</dd>
+            <dt>SAS Label: </dt>
+            <dd>Which type of arthritis was it?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of arthritis was it?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Osteoarthritis or degenerative arthritis</td>
+                <td class="values" align="right">1297</td>
+                <td class="values" align="right">1297</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Rheumatoid arthritis</td>
+                <td class="values" align="right">419</td>
+                <td class="values" align="right">1716</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Psoriatic arthritis</td>
+                <td class="values" align="right">61</td>
+                <td class="values" align="right">1777</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">4</td>
+                <td class="values">Other</td>
+                <td class="values" align="right">254</td>
+                <td class="values" align="right">2031</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">2036</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">496</td>
+                <td class="values" align="right">2532</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">9212</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160b">MCQ160b - Ever told had congestive heart failure</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160b</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told had congestive heart failure</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had congestive heart failure?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">343</td>
+                <td class="values" align="right">343</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7448</td>
+                <td class="values" align="right">7791</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7791</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">17</td>
+                <td class="values" align="right">7808</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3936</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160c">MCQ160c - Ever told you had coronary heart disease</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160c</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had coronary heart disease</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had coronary (kor-o-nare-ee) heart disease?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">402</td>
+                <td class="values" align="right">402</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7371</td>
+                <td class="values" align="right">7773</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7773</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">34</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160d">MCQ160d - Ever told you had angina/angina pectoris</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160d</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had angina/angina pectoris</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had angina (an-gi-na), also called angina pectoris?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">181</td>
+                <td class="values" align="right">181</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7602</td>
+                <td class="values" align="right">7783</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7783</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">25</td>
+                <td class="values" align="right">7808</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3936</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160e">MCQ160e - Ever told you had heart attack</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160e</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had heart attack</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had a heart attack (also called myocardial infarction (my-o-car-dee-al in-fark-shun))?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">332</td>
+                <td class="values" align="right">332</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7462</td>
+                <td class="values" align="right">7794</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7794</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">13</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160f">MCQ160f - Ever told you had a stroke</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160f</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had a stroke</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had a stroke?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">367</td>
+                <td class="values" align="right">367</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7418</td>
+                <td class="values" align="right">7785</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7785</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">21</td>
+                <td class="values" align="right">7806</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3938</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160m">MCQ160m - Ever told you had thyroid problem</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160m</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had thyroid problem</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had another thyroid (thigh-roid) problem?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1053</td>
+                <td class="values" align="right">1053</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">6734</td>
+                <td class="values" align="right">7787</td>
+                <td class="values">MCQ160P</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">7788</td>
+                <td class="values">MCQ160P</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">18</td>
+                <td class="values" align="right">7806</td>
+                <td class="values">MCQ160P</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3938</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ170m">MCQ170m - Do you still have thyroid problem</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ170m</dd>
+            <dt>SAS Label: </dt>
+            <dd>Do you still have thyroid problem</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Do you/Does SP} still . . . have another thyroid problem?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">830</td>
+                <td class="values" align="right">830</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">200</td>
+                <td class="values" align="right">1030</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1030</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">23</td>
+                <td class="values" align="right">1053</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10691</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160p">MCQ160p - Ever told you had COPD, emphysema, ChB</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160p</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had COPD, emphysema, ChB</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Have you/Has SP} ever been told by a doctor or other health professional that {you/he/she} . . . had chronic obstructive pulmonary disease or COPD, emphysema, or chronic bronchitis?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  
+TEXT OF QUESTION SHOULD BE OPTIONAL AFTER FIRST ITEM IS READ.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">567</td>
+                <td class="values" align="right">567</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7226</td>
+                <td class="values" align="right">7793</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7793</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">14</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ160l">MCQ160l - Ever told you had any liver condition</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ160l</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had any liver condition</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP}  that {you/s/he} . . .had any kind of liver condition?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION: TEXT OF QUESTION SHOULD BE OPTIONAL AFTER FIRST ITEM IS READ.
+INTERVIEWER: INCLUDE VIRAL HEPATITIS (INCLUDING HEPATITIS A, HEPATITIS B; AND HEPATITIS C); AUTOIMMUNE LIVER DISEASE (INCLUDING PRIMARY BILIARY CIRRHOSIS; AUTOIMMUNE HEPATITIS, SCLEROSING CHOLANGITIS); GENETIC LIVER DISEASES (INCLUDING ALPHA-1-ANTITRYSIN DEFICIENCY, HEMOCHROMOTOSIS, AND WILSON'S DISEASE); DRUG- OR MEDICATION-INDUCED LIVER DISEASE; ALCOHOLIC LIVER DISEASE; NON-ALCOHOLIC FATTY LIVER DISEASE; FATTY LIVER DISEASE; LIVER CANCER; LIVER CYST; LIVER ABSCESS; LIVER FIBROSIS; AND LIVER CIRRHOSIS. INTERVIEWER DO NOT INCLUDE GALLBLADDER DISEASE; GALLSTONES; OR CHOLECYSTITIS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">425</td>
+                <td class="values" align="right">425</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">7369</td>
+                <td class="values" align="right">7794</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">7796</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">11</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ170l">MCQ170l - Do you still have a liver condition</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ170l</dd>
+            <dt>SAS Label: </dt>
+            <dd>Do you still have a liver condition</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Do you/Does SP} still . . . have any kind of liver condition?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">243</td>
+                <td class="values" align="right">243</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">127</td>
+                <td class="values" align="right">370</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">371</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">54</td>
+                <td class="values" align="right">425</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11319</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ500">MCQ500 - Ever told you had any liver condition</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ500</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had any liver condition</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP} that {you/s/he} ever had any kind of liver condition?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: INCLUDE VIRAL HEPATITIS (INCLUDING HEPATITIS A, HEPATITIS B; AND HEPATITIS C); AUTOIMMUNE LIVER DISEASE (INCLUDING PRIMARY BILIARY CIRRHOSIS; AUTOIMMUNE HEPATITIS, SCLEROSING CHOLANGITIS); GENETIC LIVER DISEASES (INCLUDING ALPHA-1-ANTITRYSIN DEFICIENCY, HEMOCHROMOTOSIS, AND WILSON'S DISEASE); DRUG- OR MEDICATION-INDUCED LIVER DISEASE; ALCOHOLIC LIVER DISEASE; NON-ALCOHOLIC FATTY LIVER DISEASE; FATTY LIVER DISEASE; LIVER CANCER; LIVER CYST; LIVER ABSCESS; LIVER FIBROSIS; AND LIVER CIRRHOSIS. INTERVIEWER DO NOT INCLUDE GALLBLADDER DISEASE; GALLSTONES; OR CHOLECYSTITIS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			19 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">15</td>
+                <td class="values" align="right">15</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">1562</td>
+                <td class="values" align="right">1577</td>
+                <td class="values">MCQ515</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1577</td>
+                <td class="values">MCQ515</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">1578</td>
+                <td class="values">MCQ515</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10166</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510a">MCQ510a - Liver condition: Fatty liver</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510a</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Fatty liver</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Fatty liver</td>
+                <td class="values" align="right">227</td>
+                <td class="values" align="right">227</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">229</td>
+                <td class="values">MCQ515</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">31</td>
+                <td class="values" align="right">260</td>
+                <td class="values">MCQ515</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11484</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510b">MCQ510b - Liver condition: Liver fibrosis</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510b</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Liver fibrosis</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Liver fibrosis</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">4</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11740</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510c">MCQ510c - Liver condition: Liver cirrhosis</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510c</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Liver cirrhosis</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Liver cirrhosis</td>
+                <td class="values" align="right">47</td>
+                <td class="values" align="right">47</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11697</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510d">MCQ510d - Liver condition: Viral hepatitis</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510d</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Viral hepatitis</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">4</td>
+                <td class="values">Viral hepatitis</td>
+                <td class="values" align="right">62</td>
+                <td class="values" align="right">62</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11682</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510e">MCQ510e - Liver condition: Autoimmune hepatitis</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510e</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Autoimmune hepatitis</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">5</td>
+                <td class="values">Autoimmune hepatitis</td>
+                <td class="values" align="right">16</td>
+                <td class="values" align="right">16</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11728</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ510f">MCQ510f - Liver condition: Other liver disease</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ510f</dd>
+            <dt>SAS Label: </dt>
+            <dd>Liver condition: Other liver disease</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Which type of liver condition was it . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER: READ OPTIONS. CODE ALL THAT APPLY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 12 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">6</td>
+                <td class="values">Other liver disease</td>
+                <td class="values" align="right">79</td>
+                <td class="values" align="right">79</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11665</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ515">MCQ515 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ515</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">BOX 8C CHECK ITEM MCQ.515: IF SP'S AGE 12-19, GO TO END OF SECTION.OTHERWISE, CONTINUE.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 1 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ550">MCQ550 - Has DR ever said you have gallstones</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ550</dd>
+            <dt>SAS Label: </dt>
+            <dd>Has DR ever said you have gallstones</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Has a doctor or other health professional ever told {you/SP} that {you/s/he} had gallstones?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">864</td>
+                <td class="values" align="right">864</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">6924</td>
+                <td class="values" align="right">7788</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">7789</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">18</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ560">MCQ560 - Ever had gallbladder surgery?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ560</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever had gallbladder surgery?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Have {you/s/he} ever had gallbladder surgery?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">926</td>
+                <td class="values" align="right">926</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">6874</td>
+                <td class="values" align="right">7800</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">7800</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ220">MCQ220 - Ever told you had cancer or malignancy</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ220</dd>
+            <dt>SAS Label: </dt>
+            <dd>Ever told you had cancer or malignancy</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Have you/Has SP} ever been told by a doctor or other health professional that {you/s/he} had cancer or a malignancy (ma-lig-nan-see) of any kind?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1169</td>
+                <td class="values" align="right">1169</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">6631</td>
+                <td class="values" align="right">7800</td>
+                <td class="values">OSQ230</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">7802</td>
+                <td class="values">OSQ230</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">7807</td>
+                <td class="values">OSQ230</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">3937</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ230a">MCQ230a - 1st cancer - what kind was it?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ230a</dd>
+            <dt>SAS Label: </dt>
+            <dd>1st cancer - what kind was it?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">1st cancer - what kind was it?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">10</td>
+                <td class="values">Bladder</td>
+                <td class="values" align="right">30</td>
+                <td class="values" align="right">30</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">11</td>
+                <td class="values">Blood</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">37</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">12</td>
+                <td class="values">Bone</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">41</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">13</td>
+                <td class="values">Brain</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">47</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">14</td>
+                <td class="values">Breast</td>
+                <td class="values" align="right">203</td>
+                <td class="values" align="right">250</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">15</td>
+                <td class="values">Cervix (cervical)</td>
+                <td class="values" align="right">49</td>
+                <td class="values" align="right">299</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">16</td>
+                <td class="values">Colon</td>
+                <td class="values" align="right">49</td>
+                <td class="values" align="right">348</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">17</td>
+                <td class="values">Esophagus (esophageal)</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">353</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">18</td>
+                <td class="values">Gallbladder</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">353</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">19</td>
+                <td class="values">Kidney</td>
+                <td class="values" align="right">27</td>
+                <td class="values" align="right">380</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">20</td>
+                <td class="values">Larynx/ windpipe</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">383</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">21</td>
+                <td class="values">Leukemia</td>
+                <td class="values" align="right">22</td>
+                <td class="values" align="right">405</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">22</td>
+                <td class="values">Liver</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">412</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">23</td>
+                <td class="values">Lung</td>
+                <td class="values" align="right">34</td>
+                <td class="values" align="right">446</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">24</td>
+                <td class="values">Lymphoma/ Hodgkin's disease</td>
+                <td class="values" align="right">24</td>
+                <td class="values" align="right">470</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">25</td>
+                <td class="values">Melanoma</td>
+                <td class="values" align="right">81</td>
+                <td class="values" align="right">551</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">26</td>
+                <td class="values">Mouth/tongue/lip</td>
+                <td class="values" align="right">10</td>
+                <td class="values" align="right">561</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">27</td>
+                <td class="values">Nervous system</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">561</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">28</td>
+                <td class="values">Ovary (ovarian)</td>
+                <td class="values" align="right">14</td>
+                <td class="values" align="right">575</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">29</td>
+                <td class="values">Pancreas (pancreatic)</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">579</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">30</td>
+                <td class="values">Prostate</td>
+                <td class="values" align="right">133</td>
+                <td class="values" align="right">712</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">31</td>
+                <td class="values">Rectum (rectal)</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">717</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">32</td>
+                <td class="values">Skin (non-melanoma)</td>
+                <td class="values" align="right">203</td>
+                <td class="values" align="right">920</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">33</td>
+                <td class="values">Skin (don't know what kind)</td>
+                <td class="values" align="right">71</td>
+                <td class="values" align="right">991</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">34</td>
+                <td class="values">Soft tissue (muscle or fat)</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">994</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">35</td>
+                <td class="values">Stomach</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">1000</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">36</td>
+                <td class="values">Testis (testicular)</td>
+                <td class="values" align="right">10</td>
+                <td class="values" align="right">1010</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">37</td>
+                <td class="values">Thyroid</td>
+                <td class="values" align="right">35</td>
+                <td class="values" align="right">1045</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">38</td>
+                <td class="values">Uterus (uterine)</td>
+                <td class="values" align="right">36</td>
+                <td class="values" align="right">1081</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">39</td>
+                <td class="values">Other</td>
+                <td class="values" align="right">76</td>
+                <td class="values" align="right">1157</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">66</td>
+                <td class="values">More than 3 kinds</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1157</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1157</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">12</td>
+                <td class="values" align="right">1169</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10575</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ230b">MCQ230b - 2nd cancer - what kind was it?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ230b</dd>
+            <dt>SAS Label: </dt>
+            <dd>2nd cancer - what kind was it?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">2nd cancer - what kind was it?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">10</td>
+                <td class="values">Bladder</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">11</td>
+                <td class="values">Blood</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">12</td>
+                <td class="values">Bone</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">4</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">13</td>
+                <td class="values">Brain</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">4</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">14</td>
+                <td class="values">Breast</td>
+                <td class="values" align="right">12</td>
+                <td class="values" align="right">16</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">15</td>
+                <td class="values">Cervix (cervical)</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">21</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">16</td>
+                <td class="values">Colon</td>
+                <td class="values" align="right">9</td>
+                <td class="values" align="right">30</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">17</td>
+                <td class="values">Esophagus (esophageal)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">30</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">18</td>
+                <td class="values">Gallbladder</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">31</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">19</td>
+                <td class="values">Kidney</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">37</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">20</td>
+                <td class="values">Larynx/ windpipe</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">38</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">21</td>
+                <td class="values">Leukemia</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">39</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">22</td>
+                <td class="values">Liver</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">39</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">23</td>
+                <td class="values">Lung</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">45</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">24</td>
+                <td class="values">Lymphoma/ Hodgkins disease</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">48</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">25</td>
+                <td class="values">Melanoma</td>
+                <td class="values" align="right">7</td>
+                <td class="values" align="right">55</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">26</td>
+                <td class="values">Mouth/tongue/lip</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">55</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">27</td>
+                <td class="values">Nervous system</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">55</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">28</td>
+                <td class="values">Ovary (ovarian)</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">58</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">29</td>
+                <td class="values">Pancreas (pancreatic)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">58</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">30</td>
+                <td class="values">Prostate</td>
+                <td class="values" align="right">8</td>
+                <td class="values" align="right">66</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">31</td>
+                <td class="values">Rectum (rectal)</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">69</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">32</td>
+                <td class="values">Skin (non-melanoma)</td>
+                <td class="values" align="right">34</td>
+                <td class="values" align="right">103</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">33</td>
+                <td class="values">Skin (don't know what kind)</td>
+                <td class="values" align="right">16</td>
+                <td class="values" align="right">119</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">34</td>
+                <td class="values">Soft tissue (muscle or fat)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">119</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">35</td>
+                <td class="values">Stomach</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">122</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">36</td>
+                <td class="values">Testis (testicular)</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">123</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">37</td>
+                <td class="values">Thyroid</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">125</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">38</td>
+                <td class="values">Uterus (uterine)</td>
+                <td class="values" align="right">5</td>
+                <td class="values" align="right">130</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">39</td>
+                <td class="values">Other</td>
+                <td class="values" align="right">29</td>
+                <td class="values" align="right">159</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">66</td>
+                <td class="values">More than 3 kinds</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">159</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">159</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">159</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11585</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ230c">MCQ230c - 3rd cancer - what kind was it?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ230c</dd>
+            <dt>SAS Label: </dt>
+            <dd>3rd cancer - what kind was it?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">3rd cancer - what kind was it?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">10</td>
+                <td class="values">Bladder</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">0</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">11</td>
+                <td class="values">Blood</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">0</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">12</td>
+                <td class="values">Bone</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">0</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">13</td>
+                <td class="values">Brain</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">1</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">14</td>
+                <td class="values">Breast</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">1</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">15</td>
+                <td class="values">Cervix (cervical)</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">2</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">16</td>
+                <td class="values">Colon</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">17</td>
+                <td class="values">Esophagus (esophageal)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">18</td>
+                <td class="values">Gallbladder</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">19</td>
+                <td class="values">Kidney</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">20</td>
+                <td class="values">Larynx/ windpipe</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">3</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">21</td>
+                <td class="values">Leukemia</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">4</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">22</td>
+                <td class="values">Liver</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">5</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">23</td>
+                <td class="values">Lung</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">7</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">24</td>
+                <td class="values">Lymphoma/ Hodgkins disease</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">8</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">25</td>
+                <td class="values">Melanoma</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">11</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">26</td>
+                <td class="values">Mouth/tongue/lip</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">27</td>
+                <td class="values">Nervous system</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">28</td>
+                <td class="values">Ovary (ovarian)</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">13</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">29</td>
+                <td class="values">Pancreas (pancreatic)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">13</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">30</td>
+                <td class="values">Prostate</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">15</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">31</td>
+                <td class="values">Rectum (rectal)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">15</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">32</td>
+                <td class="values">Skin (non-melanoma)</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">18</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">33</td>
+                <td class="values">Skin (don't know what kind)</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">21</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">34</td>
+                <td class="values">Soft tissue (muscle or fat)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">21</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">35</td>
+                <td class="values">Stomach</td>
+                <td class="values" align="right">1</td>
+                <td class="values" align="right">22</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">36</td>
+                <td class="values">Testis (testicular)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">22</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">37</td>
+                <td class="values">Thyroid</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">22</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">38</td>
+                <td class="values">Uterus (uterine)</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">22</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">39</td>
+                <td class="values">Other</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">26</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">66</td>
+                <td class="values">More than 3 kinds</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">26</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">26</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">26</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11718</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="MCQ230d">MCQ230d - More than 3 kinds of cancer</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">MCQ230d</dd>
+            <dt>SAS Label: </dt>
+            <dd>More than 3 kinds of cancer</dd>
+            <dt>English Text: </dt>
+            <dd class="info">More than 3 kinds of cancer.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 20 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">66</td>
+                <td class="values">More than 3 kinds</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">2</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">2</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">2</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11742</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="OSQ230">OSQ230 - Any metal objects inside your body?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">OSQ230</dd>
+            <dt>SAS Label: </dt>
+            <dd>Any metal objects inside your body?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">The following question is about metal objects you may have inside your body.  Do you have any artificial joints, pins, plates, metal suture material, or other types of metal objects in your body? Some common examples are on the hand card.</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">INTERVIEWER INSTRUCTION: Do not include piercings, crowns, dental braces or retainers, shrapnel, or bullets. The metal object should NOT be visible on the outside of the body or in the mouth.
+HAND CARD OSQ3</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 40 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1917</td>
+                <td class="values" align="right">1917</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">3770</td>
+                <td class="values" align="right">5687</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">5687</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">36</td>
+                <td class="values" align="right">5723</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">6021</td>
+                <td class="values" align="right">11744</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

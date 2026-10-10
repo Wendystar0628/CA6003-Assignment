@@ -1,0 +1,599 @@
+<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>HIQ_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Health Insurance  Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</a>
+          </li>
+          <li>
+            <a href="#Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#HIQ011">HIQ011 - Covered by health insurance</a>
+              </li>
+              <li>
+                <a href="#HIQ032A">HIQ032A - Covered by private insurance</a>
+              </li>
+              <li>
+                <a href="#HIQ032B">HIQ032B - Covered by Medicare</a>
+              </li>
+              <li>
+                <a href="#HIQ032C">HIQ032C - Covered by Medi-Gap</a>
+              </li>
+              <li>
+                <a href="#HIQ032D">HIQ032D - Covered by Medicaid</a>
+              </li>
+              <li>
+                <a href="#HIQ032E">HIQ032E - Covered by CHIP</a>
+              </li>
+              <li>
+                <a href="#HIQ032F">HIQ032F - Covered by military health care</a>
+              </li>
+              <li>
+                <a href="#HIQ032H">HIQ032H - Covered by state-sponsored health plan</a>
+              </li>
+              <li>
+                <a href="#HIQ032I">HIQ032I - Covered by other government insurance</a>
+              </li>
+              <li>
+                <a href="#HIQ210">HIQ210 - Time when no insurance in past year?</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Health Insurance  (HIQ_L)</h3>
+        <h4> Data File: HIQ_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>The Health Insurance questionnaire (variable name prefix HIQ) provides respondent-level interview data on insurance coverage.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>All participants were eligible.</p><h2 id="Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</h2><p>These questions were asked, in the home or by telephone, by trained interviewers using the Computer-Assisted Personal Interview (CAPI) system. A proxy provided information for survey participants who were under 16 years of age and for individuals who could not answer the questions themselves. The respondent selected the language of interview (English or Spanish) or requested that an interpreter be used.</p>
+<p>The questionnaire and information about the interview procedures are available on the <a href="https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/questionnaires.aspx?Cycle=2021-2023" target="_blank">NHANES website</a>.<br />
+</p><h2 id="Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</h2><p>The CAPI system is programmed with built-in consistency checks to reduce data entry errors. CAPI also uses online help screens to assist interviewers in defining key terms used in the questionnaire.</p>
+<p>After collection, interview data were reviewed by the NHANES field office staff for accuracy and completeness of selected items. The interviewers were required to audio-record interviews and the recorded interviews were reviewed by NCHS staff and interviewer supervisors.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data were reviewed for completeness, consistency, and illogical values. To reduce the risk of disclosure, the response &ldquo;Indian Health Services&rdquo; for kind of health care coverage was recoded to &ldquo;Other Government Program&rdquo;.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>Since the questionnaire was asked during the household interview, the interview sample weights should be used in the analysis. However, if the data is joined with data from the Mobile Exam Center (MEC), the MEC sample weights should be used. Please refer to the <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">Analytic Guidelines</a> and the <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/" target="_blank">NHANES Tutorials</a> for the use of sample weights and other analytic issues.</p></div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ011">HIQ011 - Covered by health insurance</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ011</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by health insurance</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by health insurance or some other kind of health care plan?  [Include health insurance obtained through employment or purchased directly as well as government programs like Medicare and Medicaid that provide medical care or help pay medical bills.]</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">11007</td>
+                <td class="values" align="right">11007</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">864</td>
+                <td class="values" align="right">11871</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">10</td>
+                <td class="values" align="right">11881</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">29</td>
+                <td class="values" align="right">11910</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">23</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032A">HIQ032A - Covered by private insurance</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032A</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by private insurance</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by private insurance?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Covered by private insurance</td>
+                <td class="values" align="right">5827</td>
+                <td class="values" align="right">5827</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">13</td>
+                <td class="values" align="right">5840</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">107</td>
+                <td class="values" align="right">5947</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">5986</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032B">HIQ032B - Covered by Medicare</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032B</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by Medicare</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by Medicare?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Covered by Medicare</td>
+                <td class="values" align="right">2776</td>
+                <td class="values" align="right">2776</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">9157</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032C">HIQ032C - Covered by Medi-Gap</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032C</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by Medi-Gap</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by Medi-Gap?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Covered by Medi-Gap</td>
+                <td class="values" align="right">201</td>
+                <td class="values" align="right">201</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11732</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032D">HIQ032D - Covered by Medicaid</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032D</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by Medicaid</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by Medicaid?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">4</td>
+                <td class="values">Covered by Medicaid</td>
+                <td class="values" align="right">2565</td>
+                <td class="values" align="right">2565</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">9368</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032E">HIQ032E - Covered by CHIP</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032E</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by CHIP</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by CHIP (Children's Health Insurance Program)?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">5</td>
+                <td class="values">Covered by CHIP</td>
+                <td class="values" align="right">94</td>
+                <td class="values" align="right">94</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11839</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032F">HIQ032F - Covered by military health care</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032F</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by military health care</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by military health plan (Tricare/VA/Champ-VA)?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">6</td>
+                <td class="values">Covered by military health care</td>
+                <td class="values" align="right">370</td>
+                <td class="values" align="right">370</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11563</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032H">HIQ032H - Covered by state-sponsored health plan</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032H</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by state-sponsored health plan</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by state-sponsored health plan?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">8</td>
+                <td class="values">Covered by state-sponsored health plan</td>
+                <td class="values" align="right">1120</td>
+                <td class="values" align="right">1120</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">10813</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ032I">HIQ032I - Covered by other government insurance</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ032I</dd>
+            <dt>SAS Label: </dt>
+            <dd>Covered by other government insurance</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{Are you/Is SP} covered by other government insurance?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Covered by other government insurance</td>
+                <td class="values" align="right">451</td>
+                <td class="values" align="right">451</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">11482</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HIQ210">HIQ210 - Time when no insurance in past year?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HIQ210</dd>
+            <dt>SAS Label: </dt>
+            <dd>Time when no insurance in past year?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">In the past 12 months, was there any time when {you/SP} did not have any health insurance coverage?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">455</td>
+                <td class="values" align="right">455</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">10529</td>
+                <td class="values" align="right">10984</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">10986</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">19</td>
+                <td class="values" align="right">11005</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">928</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

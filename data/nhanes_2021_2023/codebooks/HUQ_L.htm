@@ -1,0 +1,513 @@
+<!DOCTYPE html><html xml:lang="en" lang="en" xmlns="http://www.w3c.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>HUQ_L</title>
+    <meta name="title" content="NHANES August 2021-August 2023: Hospital Utilization &amp; Access to Care  Data Documentation, Codebook, and Frequencies" />
+    <link rel="stylesheet" href="https://wwwn.cdc.gov/nchs/nhanes/css/documentation.css" />
+  </head>
+  <body class="nhanes-doc">
+    <div id="toc">
+      <h3>Table of Contents</h3>
+      <div id="toc-scroll">
+        <ul>
+          <li>
+            <a href="#Component_Description">Component Description</a>
+          </li>
+          <li>
+            <a href="#Eligible_Sample">Eligible Sample</a>
+          </li>
+          <li>
+            <a href="#Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</a>
+          </li>
+          <li>
+            <a href="#Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</a>
+          </li>
+          <li>
+            <a href="#Data_Processing_and_Editing">Data Processing and Editing</a>
+          </li>
+          <li>
+            <a href="#Analytic_Notes">Analytic Notes</a>
+          </li>
+          <li>
+            <a href="#Codebook">Codebook</a>
+            <ul id="CodebookLinks">
+              <li>
+                <a href="#SEQN">SEQN - Respondent sequence number</a>
+              </li>
+              <li>
+                <a href="#HUQ010">HUQ010 - General health condition</a>
+              </li>
+              <li>
+                <a href="#HUQ030">HUQ030 - Routine place to go for healthcare</a>
+              </li>
+              <li>
+                <a href="#HUQ042">HUQ042 - Type place most often go for healthcare</a>
+              </li>
+              <li>
+                <a href="#HUQ055">HUQ055 - Past 12 months had video conf w/Dr?</a>
+              </li>
+              <li>
+                <a href="#HUQ085">HUQ085 - CHECK ITEM</a>
+              </li>
+              <li>
+                <a href="#HUQ090">HUQ090 - Seen mental health professional/past yr</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="wrapper">
+      <div id="PageHeader">
+        <h1>National Health and Nutrition Examination Survey</h1>
+        <h2>August 2021-August 2023 Data Documentation, Codebook, and Frequencies</h2>
+        <h3>Hospital Utilization &amp; Access to Care  (HUQ_L)</h3>
+        <h4> Data File: HUQ_L.xpt</h4>
+        <h5 class="left">First Published: September 2024</h5>
+        <h5 class="right">Last Revised: NA</h5>
+      </div>
+      <div id="Sections">
+        <h2 id="Component_Description">Component Description</h2><p>The Hospital Utilization and Access to Care questionnaire (variable name prefix HUQ) provides respondent-level interview data on self-reported health status and access to health care topics.</p><h2 id="Eligible_Sample">Eligible Sample</h2><p>All participants were eligible.</p><h2 id="Interview_Setting_and_Mode_of_Administration">Interview Setting and Mode of Administration</h2><p>These questions were asked, in the home or by telephone, by trained interviewers using the Computer-Assisted Personal Interview (CAPI) system. A proxy provided information for survey participants who were under 16 years of age and for individuals who could not answer the questions themselves. The respondent selected the language of interview (English or Spanish) or requested that an interpreter be used.</p>
+<p>The questionnaire and information about the interview procedures are available on the <a href="https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/questionnaires.aspx?Cycle=2021-2023" target="_blank">NHANES website</a>.<br />
+</p><h2 id="Quality_Assurance_&amp;_Quality_Control">Quality Assurance &amp; Quality Control</h2><p>The CAPI system is programmed with built-in consistency checks to reduce data entry errors. CAPI also uses online help screens to assist interviewers in defining key terms used in the questionnaire.</p>
+<p>After collection, interview data were reviewed by the NHANES field office staff for accuracy and completeness of selected items. The interviewers were required to audio-record interviews and the recorded interviews were reviewed by NCHS staff and interviewer supervisors.</p><h2 id="Data_Processing_and_Editing">Data Processing and Editing</h2><p>The data were reviewed for completeness, consistency, and illogical values.</p><h2 id="Analytic_Notes">Analytic Notes</h2><p>Since the questionnaire was asked during the household interview, the interview sample weights should be used in the analysis. However, if the data is joined with data from the Mobile Exam Center (MEC), the MEC sample weights should be used. Please refer to the <a href="https://wwwn.cdc.gov/nchs/nhanes/analyticguidelines.aspx" target="_blank">Analytic Guidelines</a> and the <a href="https://wwwn.cdc.gov/nchs/nhanes/tutorials/" target="_blank">NHANES Tutorials</a> for the use of sample weights and other analytic issues.</p></div>
+      <div id="Codebook">
+        <h2>Codebook and Frequencies</h2>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="SEQN">SEQN - Respondent sequence number</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">SEQN</dd>
+            <dt>SAS Label: </dt>
+            <dd>Respondent sequence number</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Respondent sequence number.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ010">HUQ010 - General health condition</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ010</dd>
+            <dt>SAS Label: </dt>
+            <dd>General health condition</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{First/Next} I have some general questions about {your/SP's} health.  Would you say {your/SP's} health in general is . . .</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  DISPLAY "FIRST" IF SP AGE IS &gt;= 16 YEARS.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Excellent,</td>
+                <td class="values" align="right">3078</td>
+                <td class="values" align="right">3078</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Very good,</td>
+                <td class="values" align="right">3632</td>
+                <td class="values" align="right">6710</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Good,</td>
+                <td class="values" align="right">3508</td>
+                <td class="values" align="right">10218</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">4</td>
+                <td class="values">Fair, or</td>
+                <td class="values" align="right">1388</td>
+                <td class="values" align="right">11606</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">5</td>
+                <td class="values">Poor?</td>
+                <td class="values" align="right">320</td>
+                <td class="values" align="right">11926</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">11930</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">3</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ030">HUQ030 - Routine place to go for healthcare</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ030</dd>
+            <dt>SAS Label: </dt>
+            <dd>Routine place to go for healthcare</dd>
+            <dt>English Text: </dt>
+            <dd class="info">Is there a place that {you/SP} usually {go/goes} when {you are/he/she is} sick or {you/s/he} need{s} advice about {your/his/her} health?</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:  IF SP AGE &lt; 12, DISPLAY "YOU" IN THE FOURTH DISPLAY AND DON'T DISPLAY THE "S" IN THE FIFTH DISPLAY.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">10645</td>
+                <td class="values" align="right">10645</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">There is no place</td>
+                <td class="values" align="right">1221</td>
+                <td class="values" align="right">11866</td>
+                <td class="values">HUQ055</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">There is more than one place</td>
+                <td class="values" align="right">57</td>
+                <td class="values" align="right">11923</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">4</td>
+                <td class="values" align="right">11927</td>
+                <td class="values">HUQ055</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">HUQ055</td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ042">HUQ042 - Type place most often go for healthcare</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ042</dd>
+            <dt>SAS Label: </dt>
+            <dd>Type place most often go for healthcare</dd>
+            <dt>English Text: </dt>
+            <dd class="info">{What kind of place is it/
+What kind of place {do you/does SP} go to most often} - a doctor's office or health center; an urgent care center or clinic in a drug store or grocery store; an emergency room; a VA Medical Center or VA outpatient clinic; or some other place?
+READ IF NECESSARY: A doctor's office or health center is a place where you see the same doctor or same group of doctors every visit, where you usually need to make an appointment ahead of time, and where your medical records are on file.
+READ IF NECESSARY: Urgent care centers, and clinics in a drug store or grocery store are places where you do not need to make an appointment ahead of time, and do not usually see the same health care provider.</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CAPI INSTRUCTION:
+IF HUQ030 = 1 DISPLAY "What kind of place is it 
+IF HUQ030 = 3 DISPLAY "What kind of place {do you/does SP} go to most often</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">A doctor's office or health center</td>
+                <td class="values" align="right">8721</td>
+                <td class="values" align="right">8721</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">Urgent care center or clinic in a drug store or grocery store</td>
+                <td class="values" align="right">1138</td>
+                <td class="values" align="right">9859</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">3</td>
+                <td class="values">Emergency room</td>
+                <td class="values" align="right">465</td>
+                <td class="values" align="right">10324</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">4</td>
+                <td class="values">A VA medical center or VA outpatient clinic</td>
+                <td class="values" align="right">252</td>
+                <td class="values" align="right">10576</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">5</td>
+                <td class="values">Some other place</td>
+                <td class="values" align="right">110</td>
+                <td class="values" align="right">10686</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">6</td>
+                <td class="values">Doesn't go to one place most often</td>
+                <td class="values" align="right">10</td>
+                <td class="values" align="right">10696</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">77</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">10696</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">99</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">6</td>
+                <td class="values" align="right">10702</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">1231</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ055">HUQ055 - Past 12 months had video conf w/Dr?</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ055</dd>
+            <dt>SAS Label: </dt>
+            <dd>Past 12 months had video conf w/Dr?</dd>
+            <dt>English Text: </dt>
+            <dd class="info">In past 12 months, {have you/has SP} had an appointment with a doctor, nurse, or other health professional by video conference or by phone?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">3567</td>
+                <td class="values" align="right">3567</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">8342</td>
+                <td class="values" align="right">11909</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">2</td>
+                <td class="values" align="right">11911</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">22</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">0</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ085">HUQ085 - CHECK ITEM</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ085</dd>
+            <dt class="info">English Instructions: </dt>
+            <dd class="info">CHECK ITEM HUQ085:  IF SP AGE &gt;= 4, CONTINUE.  OTHERWISE, GO TO END OF SECTION.</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 0 YEARS -
+			150 YEARS</dd>
+          </dl>
+        </div>
+        <div class="pagebreak">
+          <h3 class="vartitle" id="HUQ090">HUQ090 - Seen mental health professional/past yr</h3>
+          <dl>
+            <dt>Variable Name: </dt>
+            <dd class="info">HUQ090</dd>
+            <dt>SAS Label: </dt>
+            <dd>Seen mental health professional/past yr</dd>
+            <dt>English Text: </dt>
+            <dd class="info">During the past 12 months, did {you/SP} receive counseling or therapy from a mental health professional such 
+as a psychiatrist, psychologist, psychiatric nurse, or clinical social worker?</dd>
+            <dt>Target: </dt>
+            <dd> Both males and females 4 YEARS -
+			150 YEARS</dd>
+          </dl>
+          <table class="values">
+            <thead>
+              <tr>
+                <th scope="column" class="values">Code or Value</th>
+                <th scope="column" class="values">Value Description</th>
+                <th scope="column" class="values">Count</th>
+                <th scope="column" class="values">Cumulative</th>
+                <th scope="column" class="values">Skip to Item</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td scope="row" class="values">1</td>
+                <td class="values">Yes</td>
+                <td class="values" align="right">1644</td>
+                <td class="values" align="right">1644</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">2</td>
+                <td class="values">No</td>
+                <td class="values" align="right">9498</td>
+                <td class="values" align="right">11142</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">7</td>
+                <td class="values">Refused</td>
+                <td class="values" align="right">13</td>
+                <td class="values" align="right">11155</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">9</td>
+                <td class="values">Don't know</td>
+                <td class="values" align="right">14</td>
+                <td class="values" align="right">11169</td>
+                <td class="values">
+                </td>
+              </tr>
+              <tr>
+                <td scope="row" class="values">.</td>
+                <td class="values">Missing</td>
+                <td class="values" align="right">764</td>
+                <td class="values" align="right">11933</td>
+                <td class="values">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
