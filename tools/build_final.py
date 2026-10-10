@@ -575,6 +575,89 @@ else:
     print("no scoreboard available (run section 7 first)")'''
 
 
+# Reference numbers: (id, section, dotted path in results/metrics_<S>.json, tolerance FAST, tolerance FINAL).
+# `--make-final-ref` stores the values of a FINAL run in notebooks/final/final_ref.json; the appendix cell asserts
+# every run against them. Deterministic counts have tolerance 0; Monte-Carlo quantities get a margin that is wide
+# enough for 5x2 CV / B = 100 but far below the effect sizes interpreted in the text.
+REF_SPECS = [
+    ("cohort_n", "S1", "n_cohort", 0, 0),
+    ("L_comb_positives", "S1", "labels.L_comb", 0, 0),
+    ("prevalence_weighted", "S1", "prevalence_comb.weighted", 1e-6, 1e-6),
+    ("S7_auc_M0_eall_T1", "S7", "headline.auc_M0_eall_T1", 0.02, 0.005),
+    ("S7_auc_M1_eall_T1", "S7", "headline.auc_M1_eall_T1", 0.02, 0.005),
+    ("S7_auc_S_eall_T1", "S7", "headline.auc_S_eall_T1", 0.02, 0.005),
+    ("S7_auc_S_escreen_T1", "S7", "headline.auc_S_escreen_T1", 0.04, 0.01),
+    ("S7_leak_gate_est", "S7", "headline.leak_gate_T1_eall.est", 0.03, 0.01),
+    ("S7_S_minus_M1_est", "S7", "headline.S_minus_M1_T1_eall.est", 0.015, 0.005),
+]
+FINAL_REF_FILE = FINAL_DIR / "final_ref.json"
+
+REFCHECK_CODE = '''new_section()
+import json
+import pandas as pd
+from IPython.display import display
+
+FINAL_REF = @@REF@@
+
+def dig(d, path):
+    for k in path.split("."):
+        d = d[k]
+    return d
+
+rows = []
+for r in FINAL_REF:
+    met = R.load_section(r["section"], missing_ok=True)
+    if not met:                      # section not run in this (partial) session
+        continue
+    try:
+        val = float(dig(met, r["path"]))
+    except (KeyError, TypeError):
+        val = float("nan")
+    tol = r["tol_final"] if C.IS_FINAL else r["tol_fast"]
+    ok = abs(val - r["value"]) <= tol + 1e-12
+    rows.append({"quantity": r["id"], "reference (FINAL)": r["value"], f"this run ({C.NB_MODE})": val, "tolerance": tol, "within": ok})
+ref_table = pd.DataFrame(rows)
+display(ref_table.round(4))
+bad = ref_table[~ref_table["within"]]
+assert bad.empty, f"values outside the tolerance of the FINAL reference:\\n{bad}"
+print(f"{len(ref_table)} reference quantities reproduced within tolerance ({C.NB_MODE} mode)")'''
+
+
+def refcheck_cells() -> list:
+    if not FINAL_REF_FILE.exists():
+        return []
+    ref = json.loads(FINAL_REF_FILE.read_text(encoding="utf-8"))
+    literal = "[\n" + "".join(f"    {json.dumps(r)},\n" for r in ref["entries"]) + "]"
+    return [md("## A.5 Reference check (FINAL_REF)\n"
+               "**Why.** The stored outputs come from the FINAL protocol. A reader who re-runs the faster FAST mode should obtain the same "
+               "headline numbers up to Monte-Carlo error. The reference values below are the FINAL numbers; each run is compared with them "
+               "within a tolerance chosen far below the effect sizes interpreted in the text (counts must match exactly)."),
+            code(REFCHECK_CODE.replace("@@REF@@", literal)),
+            md("**So what.** If the table shows every quantity inside its tolerance, the notebook reproduces the numbers reported in the text and "
+               "the video; a failure here means that a package version or the data changed the analysis and the narrative must be re-checked.")]
+
+
+def make_final_ref() -> int:
+    entries, modes = [], set()
+    for id_, sec, path, tf, tfin in REF_SPECS:
+        f = ROOT / "results" / f"metrics_{sec}.json"
+        if not f.exists():
+            print(f"skip {id_}: {f.name} missing")
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        for k in path.split("."):
+            d = d[k]
+        meta = json.loads(f.read_text(encoding="utf-8"))["_meta"]["nb_mode"]
+        if tf > 1e-3 and meta != "FINAL":
+            print(f"WARN {id_}: stored value comes from a {meta} run, not FINAL")
+        modes.add(meta)
+        entries.append({"id": id_, "section": sec, "path": path, "value": d, "tol_fast": tf, "tol_final": tfin})
+    FINAL_REF_FILE.write_text(json.dumps({"written_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                          "source_modes": sorted(modes), "entries": entries}, indent=1), encoding="utf-8")
+    print(f"wrote {FINAL_REF_FILE.relative_to(ROOT)} with {len(entries)} entries")
+    return 0
+
+
 def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> list:
     cells = [md("# Appendix A: Registers, pre-registration and references"),
              md("## A.1 Decision register\n"
@@ -593,10 +676,11 @@ def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> li
                 "section and (when available) updated by the synthesis section."),
              code(SCOREBOARD_CODE),
              md("## A.4 References\n\n" + "\n".join(f"- {r}" for r in REFERENCES))]
+    cells += refcheck_cells()
     commit = git("rev-parse", "HEAD") or "unknown"
     rows = [[f"notebooks/sections/{p.name}", section_sha[p.name][:16]] for p in section_files]
     rows += [[rel, sha256_text(read_text(rel))[:16]] for rel in SRC_FILES]
-    cells.append(md("## A.5 Build record\n\n"
+    cells.append(md("## A.6 Build record\n\n"
                     f"Assembled by `tools/build_final.py` from repository commit `{commit[:12]}`. "
                     "Inlined files and section scripts (first 16 hex digits of the SHA-256 of the LF-normalised text):\n\n"
                     + md_table(rows, ["file", "sha256 (16)"])))
@@ -805,10 +889,14 @@ def main() -> int:
     ap.add_argument("--download", action="store_true", help="when executing, do not offer the local raw data (tests the CDC download path)")
     ap.add_argument("--timeout", type=int, default=7200, help="per-cell timeout in seconds")
     ap.add_argument("--no-runtime-log", action="store_true")
+    ap.add_argument("--make-final-ref", action="store_true",
+                    help="write notebooks/final/final_ref.json from results/metrics_*.json (run after a FINAL execution) and exit")
     ap.add_argument("--validate-only", metavar="NOTEBOOK", help="validate an existing notebook (schema, absolute paths, "
                     "execution counts, size, code-cell hash) and exit")
     args = ap.parse_args()
 
+    if args.make_final_ref:
+        return make_final_ref()
     if args.validate_only:
         path = Path(args.validate_only).resolve()
         nb = nbformat.read(path, as_version=4)

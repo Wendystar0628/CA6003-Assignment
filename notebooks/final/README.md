@@ -13,6 +13,9 @@
 # validate an existing notebook only (schema, absolute paths, execution counts, size, code-cell SHA-256)
 .venv/Scripts/python tools/build_final.py --validate-only notebooks/final/CA6003_NHANES_Diabetes.ipynb
 
+# refresh the FINAL reference numbers (after a FINAL execution has updated results/metrics_*.json)
+.venv/Scripts/python tools/build_final.py --make-final-ref
+
 # development helpers
 .venv/Scripts/python tools/build_final.py --out some/dir/x.ipynb --sections 00,01,02 --workdir some/run_dir
 .venv/Scripts/python tools/build_final.py --execute --download    # test the CDC download path instead of the local raw files
@@ -28,7 +31,7 @@ An executed build also appends a line to `notebooks/final/runtime_log.md` (mode,
 | §0.0 Self-contained workspace | creates `ca6003_workspace/` next to the notebook (override: `CA6003_WORKSPACE`), `chdir`s into it and writes the repository files with collapsed cells: `src/*.py` (`%%writefile`), `config/variable_spec.csv`, `requirements.txt`, the governance inputs the sections read or hash-check (`hypotheses.md`, `label_freeze.md`, `S1_scope.md`, `genai_log.csv`, ...), all `governance/register/S*.csv`, the SHA-256 manifest, the 16 CDC codebooks (zip + base64, hash-checked) and the stored pre-registration lock record (`SEED_RESULTS` in the builder). Then the single global bootstrap (`from src import config as C, plots, results_io as R`, `ROOT`, `new_section()`), then the data cell (local `data/nhanes_2021_2023/raw` above the notebook, or `CA6003_DATA_SRC`, else download from CDC; all 16 files verified against the inlined manifest, mismatches are warnings) |
 | Sections | `notebooks/sections/NN_*.py` in file order. The five-line bootstrap of every section is removed; each section after the first starts with `new_section()` (clears the namespace, closes figures) so it runs exactly as it did standalone and no variable can leak between sections. Cell order and content are otherwise untouched |
 | Heading scheme | `# §N Title` is taken from the section file; `##` items become `N.M` and `###` items `N.M.k`. An explicit local number is kept (so prose such as "§6.5" or "§4.10" stays valid), unnumbered headings continue after the highest number used in that section. The generated setup is `0.0` |
-| Appendix A | A.1 merged decision register (all `governance/register/S*.csv`, saved as `governance/decision_register.csv` inside the workspace), A.2 pre-registration text with SHA-256, A.3 hypothesis scoreboard (S10 file if present, else S7), A.4 references, A.5 build record (commit and file hashes) |
+| Appendix A | A.1 merged decision register (all `governance/register/S*.csv`, saved as `governance/decision_register.csv` inside the workspace), A.2 pre-registration text with SHA-256, A.3 hypothesis scoreboard (S10 file if present, else S7), A.4 references, A.5 reference check (`FINAL_REF`: headline numbers of the FINAL run from `final_ref.json`, asserted within a FAST/FINAL tolerance in every run), A.6 build record (commit and file hashes) |
 | Execution (`--execute`) | `nbclient` with the Windows selector event-loop policy, kernel working directory = a fresh temp dir, `NB_MODE` from `--mode`, local raw files offered through `CA6003_DATA_SRC`. Outputs are scrubbed of absolute paths, per-section runtimes are computed from cell timings |
 | Validation | `nbformat.validate`; no absolute path in any source cell or output; `execution_count` sequential 1..n and no error outputs (executed builds); size report (total / images / cell counts); SHA-256 of all code cells (S12: after the video link is added to §0 only markdown may change); `tools/check_repo.py` on the result |
 
@@ -54,5 +57,6 @@ The execution directory holds only the notebook-created workspace, so anything a
 ## Files
 
 * `CA6003_NHANES_Diabetes.ipynb` – the assembled notebook (committed by the lead once executed with FINAL outputs).
+* `final_ref.json` – reference values (`REF_SPECS` in the builder) for the appendix check; regenerate with `--make-final-ref` after the FINAL run.
 * `runtime_log.md` – one line per executed build.
 * `README.md` – this file.

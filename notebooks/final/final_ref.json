@@ -1,0 +1,81 @@
+{
+ "written_utc": "2026-10-10T19:28:41+00:00",
+ "source_modes": [
+  "FAST",
+  "FINAL"
+ ],
+ "entries": [
+  {
+   "id": "cohort_n",
+   "section": "S1",
+   "path": "n_cohort",
+   "value": 5730,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "L_comb_positives",
+   "section": "S1",
+   "path": "labels.L_comb",
+   "value": 971,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "prevalence_weighted",
+   "section": "S1",
+   "path": "prevalence_comb.weighted",
+   "value": 0.14035739528195537,
+   "tol_fast": 1e-06,
+   "tol_final": 1e-06
+  },
+  {
+   "id": "S7_auc_M0_eall_T1",
+   "section": "S7",
+   "path": "headline.auc_M0_eall_T1",
+   "value": 0.9606127573030646,
+   "tol_fast": 0.02,
+   "tol_final": 0.005
+  },
+  {
+   "id": "S7_auc_M1_eall_T1",
+   "section": "S7",
+   "path": "headline.auc_M1_eall_T1",
+   "value": 0.8284525660412184,
+   "tol_fast": 0.02,
+   "tol_final": 0.005
+  },
+  {
+   "id": "S7_auc_S_eall_T1",
+   "section": "S7",
+   "path": "headline.auc_S_eall_T1",
+   "value": 0.8359179848541551,
+   "tol_fast": 0.02,
+   "tol_final": 0.005
+  },
+  {
+   "id": "S7_auc_S_escreen_T1",
+   "section": "S7",
+   "path": "headline.auc_S_escreen_T1",
+   "value": 0.7807354458943223,
+   "tol_fast": 0.04,
+   "tol_final": 0.01
+  },
+  {
+   "id": "S7_leak_gate_est",
+   "section": "S7",
+   "path": "headline.leak_gate_T1_eall.est",
+   "value": -0.13084083945101074,
+   "tol_fast": 0.03,
+   "tol_final": 0.01
+  },
+  {
+   "id": "S7_S_minus_M1_est",
+   "section": "S7",
+   "path": "headline.S_minus_M1_T1_eall.est",
+   "value": 0.00790745997840257,
+   "tol_fast": 0.015,
+   "tol_final": 0.005
+  }
+ ]
+}
