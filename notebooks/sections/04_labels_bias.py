@@ -354,49 +354,77 @@ for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual pl
     close(RD.loc[name, "ci_high_pp"], hi, 0.15, name + " high")
 
 # %% [markdown]
-# **Adjusted model.** Insurance, a usual place of care and race are correlated (and all correlate with age), so
-# each contrast is also estimated in a logistic model of "undiagnosed" among the HbA1c-positive adults,
-# adjusted for age, sex and BMI. The primary fit is unweighted (model-based CI), matching the S5 plan; a
-# WTPH2YR-weighted fit with jackknife CIs is shown as a design-based sensitivity check.
+# **Adjusted models.** The risk differences above are crude. To check whether they survive confounding, each
+# exposure gets **its own** logistic model of "undiagnosed" among the HbA1c-positive adults, with the adjustment
+# set that the S4 DAG (back-door criterion, `results/S4/dag_adjustment_sets.csv`) identifies for that exposure:
+#
+# | Exposure | Adjustment set (S4 DAG) | Not adjusted for, and why |
+# |---|---|---|
+# | uninsured | age, sex, SES (PIR + missing-PIR indicator) | usual place of care: a *mediator* (insurance → usual care → diagnosis) |
+# | no usual place of care | age, sex, SES (PIR + missing-PIR indicator) | insurance: an ancestor of usual care whose back-door paths are already closed by age and SES |
+# | NH Asian (vs NH White) | age, sex | SES and BMI: *mediators* of race (race → SES / adiposity → diagnosis) |
+#
+# PIR is missing for some adults, so it enters as median-filled value plus the indicator `pir_miss`. Each model
+# is fitted unweighted (model-based CI) and WTPH2YR-weighted (delete-one-PSU jackknife on the full design, the
+# domain formed by zero weights). Both are reported because they disagree in places. A mutually adjusted model
+# (all exposures plus BMI in one equation, as in an earlier draft) is not used: it would adjust insurance for its
+# own mediator and present every coefficient as if it were an effect.
 
 # %%
-FORM = "undx ~ no_usual_place + uninsured + race_cat + age10 + male + BMXBMI"   # reference race: NH White
 RACE_LEVELS = ["NH White", *[r for r in RACE.values() if r != "NH White"]]
-lg = d[a1c_dom].assign(age10=lambda x: x["RIDAGEYR"] / 10, male=lambda x: x["RIAGENDR"].eq(1).astype(float),
-                       race_cat=lambda x: pd.Categorical(x["race3"], categories=RACE_LEVELS))
-lg = lg.dropna(subset=["undx", "no_usual_place", "uninsured", "race3", "age10", "BMXBMI"])
-fit = smf.logit(FORM, data=lg).fit(disp=0)
-KEYS = {"no_usual_place": "no usual place", "uninsured": "uninsured", "race_cat[T.NH Asian]": "NH Asian"}
-ci = fit.conf_int()
-logit_tab = pd.DataFrame({"term": list(KEYS.values()), "OR": np.exp(fit.params[list(KEYS)]).values,
-                          "ci_low": np.exp(ci.loc[list(KEYS), 0]).values, "ci_high": np.exp(ci.loc[list(KEYS), 1]).values})
+d["age10"] = d["RIDAGEYR"] / 10
+d["male"] = d["RIAGENDR"].eq(1).astype(float)
+d["pir"] = d["INDFMPIR"].fillna(d["INDFMPIR"].median())
+d["race_cat"] = pd.Categorical(d["race3"], categories=RACE_LEVELS)
+ADJ_MODELS = [  # (exposure label, coefficient, formula, adjustment set)
+    ("uninsured", "uninsured", "undx ~ uninsured + age10 + male + pir + pir_miss", "age, sex, PIR (+ pir_miss)"),
+    ("no usual place", "no_usual_place", "undx ~ no_usual_place + age10 + male + pir + pir_miss", "age, sex, PIR (+ pir_miss)"),
+    ("NH Asian", "race_cat[T.NH Asian]", "undx ~ race_cat + age10 + male", "age, sex"),
+]
 
 
-def wlogit_logor(df, w):
-    m = w > 0
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        f = smf.glm(FORM, data=df[m], family=sm.families.Binomial(), freq_weights=w[m] / w[m].mean()).fit()
-    return f.params[list(KEYS)].to_numpy()
+def _wlogit(form, term, mask):
+    """stat_fn for survey.jackknife: weighted logit coefficient of `term` on rows with mask & w > 0."""
+    def f(df, w):
+        m = mask & (w > 0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fit_w = smf.glm(form, data=df[m], family=sm.families.Binomial(), freq_weights=w[m] / w[m].mean()).fit()
+        return fit_w.params[term]
+    return f
 
 
-jk_lg = S.jackknife(lg, wlogit_logor, weight=WT)
-logit_tab["OR_w"] = np.exp(jk_lg["est"])
-logit_tab["w_ci_low"] = np.exp(jk_lg["ci_low"])
-logit_tab["w_ci_high"] = np.exp(jk_lg["ci_high"])
-n_dom = int(a1c_dom.sum())
-print(f"complete cases n = {len(lg)} of {n_dom} (dropped: {int(d.loc[a1c_dom, 'BMXBMI'].isna().sum())} without BMI, "
-      f"{int(d.loc[a1c_dom, 'uninsured'].isna().sum())} with unknown insurance); undiagnosed events = {int(lg['undx'].sum())}")
-print(logit_tab.round(2).to_string(index=False))
-LT = logit_tab.set_index("term")
-# S5 plan: n=706, OR 2.84 / 1.80 / 1.69. Our complete-case model (unknown insurance excluded, not coded insured)
-# has n=704; the ORs agree within sampling noise and the inferential pattern is identical (asserted).
-assert len(lg) == 704
-close(LT.loc["no usual place", "OR"], 2.84, 0.30, "OR no usual place")
-close(LT.loc["uninsured", "OR"], 1.80, 0.10, "OR uninsured")
-close(LT.loc["NH Asian", "OR"], 1.69, 0.10, "OR Asian")
-assert LT.loc["no usual place", "ci_low"] > 1 and LT.loc["uninsured", "ci_low"] < 1 < LT.loc["uninsured", "ci_high"]
-assert LT.loc["NH Asian", "ci_low"] < 1 < LT.loc["NH Asian", "ci_high"]
+adj_rows = []
+for lab, term, form, adj in ADJ_MODELS:
+    col = term.split("[")[0]
+    cc = a1c_dom & d[[col, "age10", "male", "pir", "pir_miss"]].notna().all(axis=1).to_numpy()
+    fit = smf.logit(form, data=d[cc]).fit(disp=0)
+    ci = fit.conf_int().loc[term]
+    jk = S.jackknife(d, _wlogit(form, term, cc), weight=WT, df_override=S.domain_df(d, cc))
+    adj_rows.append({"exposure": lab, "adjustment_set": adj, "n": int(cc.sum()), "events": int(d.loc[cc, "undx"].sum()),
+                     "OR": np.exp(fit.params[term]), "ci_low": np.exp(ci[0]), "ci_high": np.exp(ci[1]),
+                     "OR_w": np.exp(jk["est"]), "w_ci_low": np.exp(jk["ci_low"]), "w_ci_high": np.exp(jk["ci_high"]),
+                     "df": jk["df"], "formula": form})
+logit_tab = pd.DataFrame(adj_rows)
+print(f"domain: {int(a1c_dom.sum())} adults with HbA1c >= 6.5; PIR missing for {int(d.loc[a1c_dom, 'pir_miss'].sum())} "
+      f"(indicator); unknown insurance: {int(d.loc[a1c_dom, 'uninsured'].isna().sum())}")
+print(logit_tab.drop(columns="formula").round(2).to_string(index=False))
+LT = logit_tab.set_index("exposure")
+assert LT["n"].tolist() == [719, 721, 721]
+excl = lambda lo, hi: lo > 1 or hi < 1   # noqa: E731
+LT["unweighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["ci_low"], LT["ci_high"])]
+LT["weighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["w_ci_low"], LT["w_ci_high"])]
+print(LT[["unweighted_excludes_1", "weighted_excludes_1"]])
+assert (LT[["OR", "OR_w"]] > 1).all().all()          # every exposure points in the same direction as its crude RD
+assert LT.loc["uninsured", "unweighted_excludes_1"] and LT.loc["uninsured", "weighted_excludes_1"]
+assert not LT.loc["NH Asian", "unweighted_excludes_1"] and not LT.loc["NH Asian", "weighted_excludes_1"]
+assert LT.loc["no usual place", "unweighted_excludes_1"] and not LT.loc["no usual place", "weighted_excludes_1"]  # fits disagree
+
+# %% [markdown]
+# **Reading the models (Table-2 caveat).** Each odds ratio is the estimate for *its own* exposure only. The
+# coefficients of the adjustment covariates (age, sex, PIR) in the same fits are not effects and are therefore not
+# shown: they are themselves confounded or partly mediated (Westreich & Greenland 2013, "Table 2 fallacy").
+# The odds ratios are associations under the assumed DAG, not causal effects of insurance or care.
 
 # %%
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4), gridspec_kw={"width_ratios": [1.25, 1]})
@@ -431,28 +459,35 @@ logit_tab.to_csv(OUT / "undiagnosed_logit.csv", index=False)
 RES["undiagnosed_inequality"] = {
     "proportions": props.set_index("group").drop(columns=["contrast"]).to_dict("index"),
     "risk_differences_pp": rds.set_index("contrast").to_dict("index"),
-    "logit": {"n": len(lg), "events": int(lg["undx"].sum()), "formula": FORM,
-              "or": logit_tab.set_index("term").to_dict("index")},
+    "adjusted_logit": {r["exposure"]: {k: r[k] for k in ("adjustment_set", "formula", "n", "events", "OR", "ci_low", "ci_high",
+                                                          "OR_w", "w_ci_low", "w_ci_high", "df")} for r in adj_rows},
 }
 register("DR-S5-05", "label_bias",
          "Undiagnosed share is higher without insurance or a usual place of care; small cells do not meet NCHS standards",
          "results/S5/undiagnosed_by_group.csv; results/S5/undiagnosed_risk_differences.csv; figures/S5_undiagnosed_inequality.png",
          f"RD uninsured-insured {RD.loc['uninsured - insured', 'rd_pp']:.1f}pp ({RD.loc['uninsured - insured', 'ci_low_pp']:.1f}, "
          f"{RD.loc['uninsured - insured', 'ci_high_pp']:.1f}); uninsured share 43.0% KG width {P.loc['uninsured', 'ci_width']:.2f}; "
-         f"adjusted OR no usual place {LT.loc['no usual place', 'OR']:.2f}",
+         f"DAG-adjusted OR (age, sex, PIR) uninsured {LT.loc['uninsured', 'OR']:.2f} ({LT.loc['uninsured', 'ci_low']:.2f}, "
+         f"{LT.loc['uninsured', 'ci_high']:.2f}), weighted {LT.loc['uninsured', 'OR_w']:.2f} ({LT.loc['uninsured', 'w_ci_low']:.2f}, "
+         f"{LT.loc['uninsured', 'w_ci_high']:.2f}); no usual place {LT.loc['no usual place', 'OR']:.2f} ({LT.loc['no usual place', 'ci_low']:.2f}, "
+         f"{LT.loc['no usual place', 'ci_high']:.2f}), weighted {LT.loc['no usual place', 'OR_w']:.2f} ({LT.loc['no usual place', 'w_ci_low']:.2f}, "
+         f"{LT.loc['no usual place', 'w_ci_high']:.2f})",
          "Headline = risk difference with JK CI; proportions with KG CI and NCHS flag; insurance and access are audit/stratification variables only; S8 audits L_self vs L_comb by low_access",
-         "Report small-cell proportions as headline; drop small groups; put insurance into the model")
+         "Report small-cell proportions as headline; drop small groups; put insurance into the model; one mutually adjusted model "
+         "(adjusts insurance for its mediator usual care; Table-2 fallacy)")
 
 # %% [markdown]
 # **So what.** Among HbA1c-positive adults, 43.0 % of the uninsured but 19.9 % of the insured do not know their
 # diagnosis: a risk difference of +23.2 pp (6.2, 40.1) whose interval excludes zero. Without a usual place of care
 # the difference is +19.9 pp (−1.6, 41.5) and for NH Asian versus NH White adults +15.6 pp (−5.7, 36.9); both
-# intervals include zero. All three group proportions have KG intervals wider than 0.30 (uninsured 24.2–63.5 %,
-# df = 9; Asian 13.1–65.2 %, n = 40, df = 4), so they are *exploratory and do not meet the NCHS standard*; they
-# are not headlines. Adjusted for age,
-# sex, BMI and each other (complete cases, n = 704), lacking a usual place of care remains associated with being
-# undiagnosed (OR 2.6, CI excludes 1), the insurance and Asian ORs are imprecise (CIs include 1), and the design-based weighted fit
-# gives wider intervals. Consequence for the label: `L_self` systematically under-counts disease in groups with
+# intervals include zero. All three group proportions are flagged by the NCHS presentation rules, so they are
+# *exploratory and do not meet the NCHS standard*; they are not headlines. In the DAG-guided models (one per
+# exposure), lacking insurance stays associated with being undiagnosed after adjusting for age, sex and income
+# (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1). For lacking a usual place of care the two fits disagree:
+# the unweighted CI excludes 1 (OR 2.8), the design-based weighted CI does not (OR 2.5, 0.9–7.1), so this
+# association is suggestive only. The Asian–White OR (age- and sex-adjusted) is imprecise in both fits. The
+# headline therefore remains the crude risk difference for insurance. Consequence for the label: `L_self`
+# systematically under-counts disease in groups with
 # poorer access, which is why the target is the union `L_comb` and why S8 compares training labels.
 
 # %% [markdown]

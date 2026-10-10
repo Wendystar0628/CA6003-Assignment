@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:37:06+00:00"
+    "written_utc": "2026-10-10T18:37:53+00:00"
   },
   "labels": {
     "confusion": {
@@ -203,35 +203,45 @@
         "df": 15
       }
     },
-    "logit": {
-      "n": 704,
-      "events": 149,
-      "formula": "undx ~ no_usual_place + uninsured + race_cat + age10 + male + BMXBMI",
-      "or": {
-        "no usual place": {
-          "OR": 2.5898247874039813,
-          "ci_low": 1.2466469928259742,
-          "ci_high": 5.380185784788853,
-          "OR_w": 2.152184221303058,
-          "w_ci_low": 0.9064006070122714,
-          "w_ci_high": 5.110209422402937
-        },
-        "uninsured": {
-          "OR": 1.8355462914133067,
-          "ci_low": 0.9249478624846781,
-          "ci_high": 3.6426163296063145,
-          "OR_w": 2.2365609238370396,
-          "w_ci_low": 1.0844182641487485,
-          "w_ci_high": 4.612800181820476
-        },
-        "NH Asian": {
-          "OR": 1.677180195313596,
-          "ci_low": 0.7616686716470713,
-          "ci_high": 3.6931194786695394,
-          "OR_w": 2.228708258870657,
-          "w_ci_low": 0.8363994903579339,
-          "w_ci_high": 5.938717754398208
-        }
+    "adjusted_logit": {
+      "uninsured": {
+        "adjustment_set": "age, sex, PIR (+ pir_miss)",
+        "formula": "undx ~ uninsured + age10 + male + pir + pir_miss",
+        "n": 719,
+        "events": 151,
+        "OR": 2.2174104738805753,
+        "ci_low": 1.1762322392341333,
+        "ci_high": 4.1802197267410115,
+        "OR_w": 2.8956559397923773,
+        "w_ci_low": 1.4791527799799782,
+        "w_ci_high": 5.668666168323987,
+        "df": 15
+      },
+      "no usual place": {
+        "adjustment_set": "age, sex, PIR (+ pir_miss)",
+        "formula": "undx ~ no_usual_place + age10 + male + pir + pir_miss",
+        "n": 721,
+        "events": 152,
+        "OR": 2.757067798137012,
+        "ci_low": 1.42600839111527,
+        "ci_high": 5.3305596873655565,
+        "OR_w": 2.518291522068965,
+        "w_ci_low": 0.8947088468423149,
+        "w_ci_high": 7.088107167495254,
+        "df": 15
+      },
+      "NH Asian": {
+        "adjustment_set": "age, sex",
+        "formula": "undx ~ race_cat + age10 + male",
+        "n": 721,
+        "events": 152,
+        "OR": 1.669108141048283,
+        "ci_low": 0.8091048726777391,
+        "ci_high": 3.443214941091164,
+        "OR_w": 2.1762506816661626,
+        "w_ci_low": 0.8426092087125479,
+        "w_ci_high": 5.6207159623722145,
+        "df": 15
       }
     }
   },
