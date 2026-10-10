@@ -2,42 +2,63 @@
 
 > 课程：CA6003 Best Practices in Data Governance, Preparation and Analytics
 > 选题：A · NHANES 2021–23 成人糖尿病识别（Aug 2021 – Aug 2023 周期，文件后缀 `_L`）
-> 版本：v1.0 · 2026-10-11 · 状态：**已通过交叉审计与汇总验收，可执行**
-> 截止：主提交 2026-10-18（日）12:00；同伴评价 2026-10-21（三）12:00
+> 仓库：https://github.com/Wendystar0628/CA6003-Assignment（`main` 分支）
+> 版本：v1.1 · 2026-10-11 · 范围：**本地开发**（单人开发，Claude 辅助）
+> 截止：主提交 2026-10-18（日）12:00
 
 ---
 
 ## 0 文档说明
 
-**用途**：记录本项目从启动到提交的全流程，包括阶段划分、反馈回路、冻结点、分工，以及每个阶段的具体方案。全组以本文档为执行依据。
+**用途**：本文档是本地开发的执行依据，覆盖从环境搭建到提交的全流程，包括阶段划分、反馈回路、冻结点、Git 提交规范，以及每个阶段的具体方案。团队分工、出镜安排、互评等协作事项不在本文档范围内。
 
 **生成方式**：
 
 | 轮次 | 做法 | 产出 |
 |---|---|---|
-| 框架 | Opus 设定阶段骨架、回路、统一格式与 10 条高层指导 | `framework.md` |
-| 第 1 轮 | 4 个 Sonnet 作者并行起草（S0–S2 / S3–S5 / S6–S9 / S10–S12），其中 3 个在原始数据上复算了关键数字 | 4 份草稿 |
-| 裁决 1 | Opus 统一角色、参数，更正事实（R1–R6） | `lead_rulings.md` |
-| 交叉审计 | 3 个 Sonnet 审计员：前段（S0–S5）、中段（S6–S9）、端到端一致性；均独立复算或核对文献 | 约 60 条发现（P0 4 条） |
-| 裁决 2 | Opus 就审计发现做第二轮裁决（R7），含"用例与评估人群不匹配"这一最深层问题 | `lead_rulings_R7.md` |
+| 框架 | Opus 设定阶段骨架、回路、统一格式与高层指导 | `framework.md` |
+| 第 1 轮 | 4 个 Sonnet 作者并行起草 S0–S12，其中 3 个在原始数据上复算了关键数字 | 4 份草稿 |
+| 裁决 1 | Opus 统一参数、更正事实（R1–R6） | `lead_rulings.md` |
+| 交叉审计 | 3 个 Sonnet 审计员：前段、中段、端到端一致性，均独立复算或核对文献 | 约 60 条发现（P0 4 条） |
+| 裁决 2 | Opus 第二轮裁决（R7），包括"用例与评估人群不匹配"这一最深层问题 | `lead_rulings_R7.md` |
 | 第 2 轮 | 4 位作者按审计意见与 R7 修订 | S0–S12 阶段方案 |
-| 验收 | Opus 汇总、检查一致性，并对照得分要点验收 | 本文档 |
+| v1.1 | 改为本地单人开发视角，新增 Git 提交规范与各阶段提交点 | 本文档 |
 
-**读法**：第 1–2 节是高层指导和项目定义，所有人必读；第 3–8 节是流程与约定；S0–S12 各节是各阶段的具体方案，按负责人分头读；附录是审计记录和待核实清单。
+**读法**：第 1–2 节是高层指导和项目定义；第 3–8 节是流程、提交规范与统一约定；S0–S12 是各阶段的具体方案，每阶段末尾列出计划提交；附录是审计记录和待核实清单。
 
-**裁决编号对照**：阶段方案中出现的 R1–R7 指 Opus 裁决，其内容已并入本文：R1 → 第 6 节；R2 → 第 7.1 节；R3、R7.3 → 第 8 节；R4、R7.1、R7.4 → 第 1.3–1.6 节与 S6–S7；R5 → 第 1.2 节；R6 → 第 5 节；R7.2 → S5、S8；R7.5 → 第 7.2 节；R7.6 → 附录 B。
+**裁决编号对照**：阶段方案中的 R2–R7 指 Opus 裁决，内容已并入本文：
 
-**标记约定**：`[已核实]` 表示已在原始数据或官方页面上确认；`[待核实]` 表示动手前需要核对；`prior_exposure` 表示某个假设在提出前是否已经看过相关数据。
+| 裁决 | 对应位置 |
+|---|---|
+| R2 | 第 7.1 节 |
+| R3、R7.3 | 第 8 节 |
+| R4、R7.1、R7.4 | 第 1.3–1.6 节与 S6–S7 |
+| R5 | 第 1.2 节 |
+| R6 | 第 5 节 |
+| R7.2 | S5、S8 |
+| R7.5 | 第 7.2 节 |
+| R7.6 | 附录 B |
+
+R1（团队角色）已取消。
+
+**标记约定**：
+- `[已核实]` 表示已在原始数据或官方页面上确认。
+- `[待核实]` 表示动手前需要核对。
+- `prior_exposure` 表示提出某个假设之前是否已经看过相关数据。
 
 ---
 
 ## 1 高层指导意见
 
-这一节写的是贯穿全流程的判断。具体方案与这些判断冲突时，以本节为准。
+这一节写的是贯穿全流程的判断。具体方案与本节冲突时，以本节为准。
 
 ### 1.1 证据链导向
 
-评分人看的是推理，不是代码量。所以每个阶段都只输出三样东西：**主张、证据、决策**，统一写进 `decision_register.csv`。Notebook 是这条证据链的展开，视频只讲其中 3 个发现，而不是按 12 个阶段逐一汇报。判断一个步骤值不值得做，标准只有一个：它能否为某条主张提供证据。
+评分人看的是推理，不是代码量。每个阶段只输出三样东西：**主张、证据、决策**，统一写进 `decision_register.csv`。
+
+- Notebook 是这条证据链的展开。
+- 视频只讲其中 3 个发现，不按 12 个阶段逐一汇报。
+- 判断一个步骤值不值得做，只看一点：它能否为某条主张提供证据。
 
 ### 1.2 三层测量审计
 
@@ -45,79 +66,96 @@
 
 | 测量层 | 问题 | 本项目的证据 |
 |---|---|---|
-| 标签层 | 自报诊断和 HbA1c 各自测的是什么 | κ=0.70；治疗掩盖（自报者中 30.5% 的 HbA1c 低于 6.5）；未诊断者中 68% 近 3 年测过血糖，问题在诊断和沟通环节 |
-| 特征层 | 同一个 BMI 对不同人群是否含义相同 | 亚裔糖尿病患者中 51.1% 的 BMI 低于 25（白人 7.2%）；亚裔用 WHtR 时 AUC 比用 BMI 高 0.136，白人对照只高 0.048 |
-| 样本层 | 5,730 个人能代表谁 | 访谈应答率 34.6%、体检应答率 25.7%，本周期取消了族裔过采样；加权与不加权的患病率不同（14.0% vs 16.9%） |
-
-视频和 Notebook 的叙事都围绕这三层展开。
+| 标签层 | 自报诊断和 HbA1c 各自测的是什么 | κ=0.70；治疗掩盖（自报者中 30.5% 的 HbA1c 低于 6.5）；未诊断者中 68% 近 3 年测过血糖，问题出在诊断和沟通环节 |
+| 特征层 | 同一个 BMI 对不同人群是否含义相同 | 亚裔糖尿病患者中 51.1% 的 BMI 低于 25（白人 7.2%）；亚裔用 WHtR 的 AUC 比用 BMI 高 0.136，白人只高 0.048 |
+| 样本层 | 5,730 个人能代表谁 | 访谈应答率 34.6%、体检 25.7%；本周期取消族裔过采样；患病率加权 14.0%，不加权 16.9% |
 
 ### 1.3 用例与评估人群
 
-综合标签下 971 名阳性中有 819 名（84%）**已经确诊**。在全样本上得到的高 AUC，主要反映的是"认出已知病人"的能力，而这些人身上本来就带着就医痕迹（高血压诊断、服药后的血压和血脂）。这不等于筛查价值。因此：
+在综合标签 `L_comb` 的 971 个阳性中，819 个（84%）**已经确诊**。所以在全样本上的高 AUC，主要反映的是"认出已知病人"的能力。这些人身上本来就带着就医痕迹，因此这个 AUC 不等于筛查价值。设计上做如下处理：
 
-- 训练目标仍然是冻结的 `L_comb`，阳性多、结构稳定；
-- 评估设两个**并列主指标**的人群：**E-ALL**（全样本，`L_comb`）和 **E-SCREEN**（未自报糖尿病者，阳性定义为 HbA1c ≥ 6.5，共 152 例）；
-- ADA-lite 基线只在 E-SCREEN 上比较，与 Bang 2009 的结局定义对齐；
-- **E-ALL 与 E-SCREEN 之间的差距本身就是主要发现之一**：标签构成会虚高模型的筛查价值。
+- 训练目标仍是冻结的 `L_comb`。
+- 评估设两个**并列主指标**的人群：
+  - **E-ALL**：全样本，标签为 `L_comb`。
+  - **E-SCREEN**：未自报糖尿病的人，HbA1c ≥ 6.5 记为阳性，共 152 个。
+- ADA-lite 基线只在 E-SCREEN 上比较，与 Bang 2009 的结局对齐。
+- **E-ALL 与 E-SCREEN 之间的差距本身就是头条发现**：标签构成会虚高模型看起来的筛查价值。
 
 ### 1.4 可得性规则与泄漏
 
-使用场景设定为：在任何血糖检测之前对成人做筛查。一个特征只有在那个时点能拿到，才可以进模型。这一条规则就足以判定所有泄漏：血糖、HbA1c、胰岛素和口服药、确诊年龄、糖尿病前期问题（DIQ160）、近期血糖检测（DIQ180）都不可用。这条规则同样暴露出就医痕迹类变量（BPQ020、BPQ080）的问题，所以要单独设一个"去就医痕迹"消融臂。泄漏判断要回到规则本身，不要逐个变量凭感觉。
+使用场景设定为：在任何血糖检测之前，对成人进行筛查。一个特征只有在那个时点能拿到，才允许进模型。
+
+- 这条规则就能判定全部泄漏：血糖、HbA1c、胰岛素与口服药、确诊年龄、DIQ160、DIQ180 都不可用。
+- 同一条规则也暴露出就医痕迹变量（BPQ020、BPQ080），因此单设"去就医痕迹"消融臂。
+- 判断泄漏时一律回到这条规则，不对单个变量凭感觉判断。
 
 ### 1.5 约束下的方法创新
 
-模型只能用 LR 和浅树，所以创新只能体现在实验设计上：
+作业只允许基础可解释模型，所以创新只能放在实验设计上：
 
-1. **3×3 标签矩阵**：训练标签 × 评估层，把"标签是被测量出来的"变成一张可以直接读的图；
-2. **朴素清洗的代价量化**：统一按 7/9/77/99 重编码会毁掉 1,496 个有效值；
-3. **考虑调查设计的评估**：加权作为一个独立的消融块，方差用 jackknife；
-4. **预注册的配对消融**：给出 equivalent（等效）这类判定，"没有效应"也算结论；
-5. **测量层面的修复**：WHtR 替代腰围，并设白人对照。
+1. **3×3 标签矩阵**：训练标签 × 评估层，把"标签是被测量出来的"变成一张可以直接读的图。
+2. **朴素清洗的代价量化**：统一重编码会毁掉 1,496 个有效值。
+3. **考虑抽样设计的评估**：加权作为独立的消融块，方差用 jackknife。
+4. **预注册的配对消融**：允许"等效"这样的判定，没有效应本身也是结论。
+5. **测量层面的修复**：用 WHtR 替代腰围，并设白人作为对照。
 
-所有表述都不说"首次"。
+不说"首次"。
 
 ### 1.6 数据驱动的算法选择
 
-每个建模决定都要对应一个诊断数字（S4 的 DAJ 表）：
+每个建模决定都对应一个诊断数字，见 S4 的 DAJ 表：
 
-- 年龄和 BMI 与结局的关系存在显著非线性（RCS 似然比检验 p<0.01），所以用 **L2 逻辑回归 + 样条**；
-- 种族与 BMI 的交互**检测不到**（p=0.42，且样本量不足），所以不加交互项；
-- 决策树深度 ≤ 3，作用限定为**阈值和泄漏探测**；
-- 存在高 VIF，所以先删冗余变量，再用 L2 作第二道防线；
-- 每一项都要写清楚"为什么不用其他做法"。
+| 诊断结果 | 建模决定 |
+|---|---|
+| 年龄、BMI 显著非线性 | L2 逻辑回归 + 样条 |
+| 种族×BMI 交互检测不到（功效不足） | 不加交互项 |
+| 存在结构性冗余（高 VIF） | 先删冗余变量，再用 L2 作第二道防线 |
+| 需要发现阈值、排查泄漏 | 决策树深度 ≤ 3，只用于阈值和泄漏探测 |
+
+每一项都要写明"为什么不用其他做法"。
 
 ### 1.7 可信度与不确定性
 
-- **外部锚点**：已精确复现 NCHS Data Brief 516（15.78 / 11.29 / 4.48，官方为 15.8 / 11.3 / 4.5）；
-- **内部检验**：重复分层交叉验证、配对 bootstrap、Nadeau–Bengio 校正 t、10 个随机种子、只用一次的留出集；
-- **阴性对照**：标签置换后 AUC 约为 0.5，用来排查流程中的泄漏；
-- **报告标准**：遵守 NCHS 呈现标准，CI 宽度 ≥ 0.30 或 df < 8 的估计标记为探索性；
-- **负结果照报**：亚裔差异不显著、种族与 BMI 交互检测不到、对种族做 reweighing 基本无效。
+| 类别 | 做法 |
+|---|---|
+| 外部锚点 | 已精确复现 NCHS Data Brief 516：15.78 / 11.29 / 4.48，官方为 15.8 / 11.3 / 4.5 |
+| 内部检验 | 重复分层交叉验证、配对 bootstrap、Nadeau–Bengio 校正 t、10 个随机种子、只用一次的留出集 |
+| 阴性对照 | 置换标签后 AUC ≈ 0.5 |
+| 报告标准 | NCHS 呈现标准：CI 宽度 ≥ 0.30 或 df < 8 的估计标为探索性 |
 
-一个敢报"不显著"的项目，比一个只报"显著"的项目更可信。
+负结果照样报告，例如：亚裔差异不显著、种族×BMI 交互检测不到、按种族 reweighing 基本无效。
 
 ### 1.8 预注册分级
 
-S3–S5 已经在同一份数据上做过探索，所以与这些阶段结果相关的假设一律标为 `prior_exposure=analysis_seen`。只有 S7/S8 中实验结果尚未出现的假设，才称作真正的预注册。锁定方式是：`hypotheses.md` 的 SHA-256 加时间戳，打印在 Notebook 里，评分人可以直接看到。
+S3–S5 已在同一份数据上做过探索，相关假设一律标 `prior_exposure=analysis_seen`。只有 S7/S8 中结果尚未出现的实验假设，才称为真正的预注册。
+
+锁定 = `hypotheses.md` 的 SHA-256 + 时间戳 + 一次单独的 Git 提交。Git 历史会证明锁定提交早于首次消融提交。
 
 ### 1.9 统计措辞规范
 
-- 符号**翻转**才叫辛普森悖论；只是**衰减**（如保险差异 +5.3 → +0.7）应称为年龄混杂；
-- BMI 处在"种族 → 体脂 → 糖尿病"的路径上，是**中介**变量，不是混杂变量，按 BMI 分层得到的"翻转"不能解读为去混杂；
+- 符号**翻转**才叫辛普森悖论；只是**衰减**（如保险 +5.3 → +0.7）的，称为年龄混杂。
+- BMI 处在"种族 → 体脂 → 糖尿病"的路径上，是**中介**，不是混杂。
 - 写"检测不到"，不写"不存在"；写"关联"，不写"导致"。
 
 ### 1.10 最低可信优先
 
-只有 7 天，所以：
+只有 7 天，因此：
 
-- 消融按 **6 个块**报告（代码内部仍可逐步开关）；
-- 协作统一使用已建立的 GitHub 仓库 https://github.com/Wendystar0628/CA6003-Assignment（`main` 分支，原始数据已纳入）；pytest、jupytext 等其他工程工具都是可选项；
-- 每个回路都要有触发条件、退出条件、时间盒和冻结点；
-- 先完成"最低可信"清单，进阶项只在时间有余时做（见附录 B）。
+- 消融按 **6 个块**报告。
+- 先完成附录 B 的"最低可信"清单，进阶项有余力再做。
+- 每个回路都有触发条件、退出条件、时间盒和冻结点。
 
-### 1.11 复现式审计
+### 1.11 复现式自查
 
-审计人必须**重新算出**被审阶段的关键数字，读一遍不算审计。这次流程设计中，交叉审计已经纠正了多处错误：README 中的亚裔"18.0 vs 13.6"无法复现、"约 2,350 格"口径不一致、保险差异被误称为"反转"、XPT 修复代码会把 NaN 变成 0。所以**README 里的数字在 S3–S5 复现之前，一律视为临时值**。
+每个阶段结束时，从头重跑该阶段代码，**重新算出**关键数字，再做冻结提交。只读一遍不算自查。
+
+设计阶段的交叉审计已经纠正过多处错误：
+- README 中亚裔"18.0 vs 13.6"无法复现；
+- "约 2,350 格"口径不一致；
+- 保险差异被误称为"反转"；
+- XPT 修复代码会把 NaN 变成 0。
+
+所以 README 里的数字在 S3–S5 复现之前，都只是临时值。
 
 ---
 
@@ -125,15 +163,15 @@ S3–S5 已经在同一份数据上做过探索，所以与这些阶段结果相
 
 | 项 | 内容 |
 |---|---|
-| 研究问题 | 能否只用就诊时可得的非血糖信息识别成人糖尿病（含未确诊者），这些表现中有多少能保留到真正的筛查人群？数据准备决策会怎样改变模型告诉我们的结论？ |
-| 人群 | 美国平民非机构化成人，≥ 20 岁，参加了体检，有 HbA1c，非孕；N = 5,730 |
-| 训练目标（已冻结） | `L_comb` = 自报诊断（DIQ010=1）或 HbA1c ≥ 6.5；971 例阳性（16.9%，WTPH2YR 加权后 14.0%） |
-| 评估人群 | E-ALL（全样本，`L_comb`）；E-SCREEN（DIQ010≠1，阳性为 HbA1c ≥ 6.5，152 例阳性） |
+| 研究问题 | 能否只用就诊时可得的非血糖信息识别成人糖尿病（含未确诊）？这种识别能力有多少能保留到真正的筛查人群？数据准备决策会怎样改变模型给出的结论？ |
+| 人群 | 美国平民非机构化成人，≥ 20 岁、参加体检、有 HbA1c、非孕；N = 5,730 |
+| 训练目标（已冻结） | `L_comb` = 自报诊断（DIQ010=1）或 HbA1c ≥ 6.5；971 个阳性（16.9%，WTPH2YR 加权 14.0%） |
+| 评估人群 | E-ALL：全样本，`L_comb`；E-SCREEN：DIQ010≠1，阳性为 HbA1c ≥ 6.5，共 152 个阳性 |
 | 特征层 | T1 非实验室：人口学、BMI、腰围或 WHtR、平均血压、BPQ020/BPQ080、SMQ020、PAQ；T2 = T1 + 总胆固醇（TC）、HDL |
-| 模型 | 主模型：L2 逻辑回归 + 样条；次模型：深度 3 的决策树（阈值和泄漏探测）；基线：BL0（Dummy）、BL-ADAlite（缺 2 项）、BL-ADAlite-LR |
-| 对比臂 | M0 = 最少处理（含泄漏）；M1 = M0 + 只按可得性筛特征；S = 系统处理。最少处理与系统处理的对比主要看 **M1 vs S**；M0 → M1 是泄漏检查门 |
-| 研究问题分解 | RQ1 标签即测量（未确诊的不平等、治疗掩盖）；RQ2 规则和准备步骤的效应（泄漏代价、6 个消融块）；RQ3 3×3 标签矩阵；RQ4 亚裔的 BMI 测量偏差与 WHtR 修复 |
-| 不做什么 | 不用 LLM 或复杂模型；不做因果估计；不链接外部个体数据（NCHS 数据使用协议）；不跨周期合并；不把亚裔小样本结果当定论 |
+| 模型 | 主模型：L2 逻辑回归 + 样条；次模型：深度 3 的决策树；基线：BL0、BL-ADAlite（缺 2 项）、BL-ADAlite-LR |
+| 对比臂 | M0 = 最少处理（含泄漏）；M1 = M0 + 可得性筛选；S = 系统处理。"最少处理 vs 系统处理"的主比较是 **M1 vs S**，M0 → M1 作为泄漏检查门 |
+| 研究问题分解 | RQ1 标签即测量；RQ2 规则与准备步骤的效应；RQ3 3×3 标签矩阵；RQ4 亚裔 BMI 测量偏差与 WHtR 修复 |
+| 不做什么 | 不用 LLM 或复杂模型；不做因果估计；不链接外部个体数据；不跨周期合并；亚裔小样本结果不作定论 |
 
 ---
 
@@ -141,60 +179,61 @@ S3–S5 已经在同一份数据上做过探索，所以与这些阶段结果相
 
 ```mermaid
 flowchart TD
-  S0["S0 项目启动 · D1"] --> S1["S1 问题框架 · D1"]
+  S0["S0 本地环境与规范 · D1"] --> S1["S1 问题框架 · D1"]
   S1 --> S2["S2 数据治理与变量规格 · D1-D2"]
   S2 --> S3["S3 数据画像与质量审计 · D1-D2"]
-  S3 --> FZ1{{"冻结1 范围<br/>周一 22:00<br/>spec + 漏斗 5,730"}}
+  S3 --> FZ1{{"冻结1 范围<br/>周一 22:00<br/>tag scope-freeze"}}
   S3 -. "L1 变量不可用<br/>2h x1" .-> S2
   FZ1 --> S4["S4 EDA 与分析谬误 · D2-D3"]
   S4 --> S5["S5 标签与偏差审计 · D3"]
-  S5 --> FZ2{{"冻结2 目标<br/>周二 12:00<br/>L_comb + E-SCREEN"}}
+  S5 --> FZ2{{"冻结2 目标<br/>周二 12:00<br/>tag target-freeze"}}
   S5 -. "L2 判定门<br/>2h" .-> S1
   FZ2 --> S6["S6 准备设计与假设 · D3"]
-  S6 --> FZ3{{"冻结3 预注册锁<br/>周二晚 · 首次消融前<br/>hypotheses.md SHA-256"}}
+  S6 --> FZ3{{"冻结3 预注册锁<br/>周二晚 · 首次消融前<br/>tag prereg-lock"}}
   FZ3 --> S7["S7 实验与消融 · D4-D5"]
   S7 --> S8["S8 公平性与 3x3 标签矩阵 · D4-D5"]
   S8 -. "L4 意外的新步骤<br/>3h x1 · 标注事后" .-> S6
   S8 --> S9["S9 稳健性与可信度 · D5"]
-  S9 -. "L3 泄漏 / 不稳 / 阴性对照失败<br/>仅限可采纳臂 · 3h x2" .-> S7
-  S9 --> FZ4{{"冻结4 实验<br/>周四 18:00"}}
+  S9 -. "L3 泄漏 / 不稳 / 阴性对照失败<br/>仅可采纳臂 · 3h x2" .-> S7
+  S9 --> FZ4{{"冻结4 实验<br/>周四 18:00<br/>tag exp-freeze"}}
   FZ4 --> HO["留出集评估 一次<br/>周四晚"]
-  FZ4 -. "仅 bug：变更申请" .-> S7
+  FZ4 -. "仅 bug：fix 提交并记录" .-> S7
   HO --> S10["S10 解释与综合 · D5-D6"]
-  S10 --> G5{"主张审计<br/>数字重算"}
+  S10 --> G5{"主张自查<br/>数字重算"}
   G5 -. "只能降级主张" .-> S10
   G5 --> S11A["S11a Notebook 装配 · D6"]
   G5 --> S11B["S11b 幻灯片与讲稿 · D6"]
-  S11A --> FZ5{{"冻结5 内容<br/>周五 22:00<br/>rubric 矩阵全绿"}}
+  S11A --> FZ5{{"冻结5 内容<br/>周五 22:00<br/>tag content-freeze"}}
   S11B --> FZ5
   FZ5 -. "L5 缺口 · 3h x2<br/>冻结后仅修 P0" .-> S10
-  FZ5 --> REH["排练 1 周五 / 排练 2 周六上午"]
-  REH --> G7{"两次计时<br/>≤ 11:40"}
+  FZ5 --> REH["排练与计时"]
+  REH --> G7{"计时<br/>≤ 11:40"}
   G7 -. "L6 删减 · 90min x2" .-> S11B
-  G7 --> REC["录制、剪辑、上传 YouTube<br/>周六下午"]
+  G7 --> REC["视频素材与上传<br/>周六"]
   REC --> G8{"公开链接 + 干净环境运行<br/>+ ipynb 有效"}
   G8 -. "修复后重传" .-> REC
   G8 --> SUB["S12 提交 v1 · 周六晚"]
-  SUB --> END["周日 11:00 内部截止<br/>互评 10/21 12:00 前"]
+  SUB --> END["周日 11:00 内部截止<br/>tag submitted-v1"]
   classDef freeze fill:#fde68a,stroke:#b45309,stroke-width:2px;
   class FZ1,FZ2,FZ3,FZ4,FZ5 freeze;
 ```
 
-| 阶段 | 名称 | 负责 / 审计 | 时间 | 关键产出 | 出口门 |
+| 阶段 | 名称 | 时间 | 关键产出 | 计划提交数 | 出口门 |
 |---|---|---|---|---|---|
-| S0 | 项目启动与团队治理 | A / D | D1 | 目录、环境、模板、角色表 | 环境能导入 sklearn |
-| S1 | 问题框架与范围 | A / C+D 签字 | D1–D2 | 用例、可得性规则、RQ 与假设、新颖性陈述 | 冻结 1 |
-| S2 | 数据获取、溯源与治理 | A+B / D | D1–D2 | `variable_spec.csv`、数据使用协议清单、datasheet、加载器 | 冻结 1 |
-| S3 | 数据画像与质量审计 | B / C | D1–D2 | 哨兵值审计、质量矩阵、缺失机制、清洗后队列 | 冻结 1 |
-| S4 | EDA 与分析谬误 | B+C / 交叉 | D2–D3 | DB516 复现、标准化、辛普森扫描、DAG、VIF、偏态、DAJ 表 | — |
-| S5 | 标签与偏差审计 | C / A | D3 | 标签冻结、E-SCREEN、敏感性标签 SL1–SL7、WHtR 证据 | 冻结 2 |
-| S6 | 准备设计与决策登记 | D / B | D3 | M0/M1/S 三条管线、B1–B6、`hypotheses.md` | 冻结 3 |
-| S7 | 建模与实验协议 | D / C | D4–D5 | 消融结果、基线、`final_metrics.json` | — |
-| S8 | 公平性评估与缓解 | C / D | D4–D5 | 分组指标、3×3 矩阵、WHtR 臂 | — |
-| S9 | 稳健性与可信度检查 | B / A | D5 | 阴性对照、种子、敏感性、泄漏排查、留出集 | 冻结 4 |
-| S10 | 解释与综合 | A / D（C 复核） | D5–D6 | `claims.csv`、假设记分牌、局限与伦理 | 主张审计 |
-| S11 | 交付物制作与 QA | D / A / B | D6–D7 | Notebook、幻灯片、视频、rubric 矩阵 | 冻结 5、G7、G8 |
-| S12 | 提交与同伴评价 | A / B | D7–D8 | 提交确认、互评完成 | 内部截止 |
+| S0 | 本地环境与规范 | D1 | 环境、目录、模板 | 3 | 环境能导入 sklearn |
+| S1 | 问题框架与范围 | D1–D2 | 用例、可得性规则、RQ 与假设、新颖性陈述 | 2 | 冻结 1 |
+| S2 | 数据获取、溯源与治理 | D1–D2 | `variable_spec.csv`、DUA 清单、datasheet、加载器 | 4 | 冻结 1 |
+| S3 | 数据画像与质量审计 | D1–D2 | 哨兵值审计、质量矩阵、缺失机制 | 5 | 冻结 1 |
+| S4 | EDA 与分析谬误 | D2–D3 | DB516 复现、标准化、辛普森扫描、DAG、VIF、偏态、DAJ 表 | 6 | — |
+| S5 | 标签与偏差审计 | D3 | 标签冻结、E-SCREEN、SL1–SL7、WHtR 证据 | 4 | 冻结 2 |
+| S6 | 准备设计与决策登记 | D3 | M0/M1/S、B1–B6、`hypotheses.md` | 4 | 冻结 3 |
+| S7 | 建模与实验协议 | D4–D5 | 消融结果、基线、`final_metrics.json` | 6 | — |
+| S8 | 公平性评估与缓解 | D4–D5 | 分组指标、3×3 矩阵、WHtR 臂 | 4 | — |
+| S9 | 稳健性与可信度检查 | D5 | 阴性对照、种子、敏感性、泄漏排查、留出集 | 6 | 冻结 4 |
+| S10 | 解释与综合 | D5–D6 | `claims.csv`、记分牌、局限与伦理 | 3 | 主张自查 |
+| S11 | 交付物制作与 QA | D6–D7 | Notebook、幻灯片、视频素材、rubric 矩阵 | 6 | 冻结 5、G7、G8 |
+| S12 | 提交 | D7–D8 | 提交确认 | 2 | 内部截止 |
+| 合计 | | | | **约 55** | |
 
 ---
 
@@ -202,47 +241,113 @@ flowchart TD
 
 | 回路 | 方向 | 触发 | 退出条件 | 时间盒 | 截止 |
 |---|---|---|---|---|---|
-| L1 | S3 → S2 | 某变量在队列内缺失 > 40%、无变异，或属于检查后才产生的变量 | `variable_spec.csv` 已更新，登记表记为 deviation | 2h × 1 | 冻结 1 |
-| L2 | S5 → S1 | R1–R4 中任一条不通过，或标签审计改变了问题定义 | 研究问题重写，C 和 D 重新签字 | 2h（判定门） | 周二 12:00 |
-| L3 | S9 → S7/S6 | 只针对可采纳臂：T1 在 E-ALL 上 AUC > 0.90；单个特征 AUC > 0.75（年龄除外）；置换检验失败；系数不稳定 | 前 10 个特征全部通过可得性证明，置换检验通过 | 3h × 2 | 冻结 4 |
-| L4 | S8 → S6 | 需要一个预注册时没有预见到的新准备步骤 | 追加预注册，标注"事后添加"，消融重跑 | 3h × 1 | 冻结 4 |
-| L5 | S11 → 任一阶段 | rubric 矩阵有空格、主张缺证据、5 分钟冷读测试失败 | 矩阵全绿 | 3h × 2 | 冻结 5（之后只修 P0） |
-| L6 | 排练 → 讲稿/幻灯片 | 总时长 > 11:40，或某段超出预算 10% | 连续两次计时合格 | 90min × 2 | 周六录制前 |
+| L1 | S3 → S2 | 队列内某变量缺失 > 40%、无变异，或属于检查后才产生的变量 | `variable_spec.csv` 已更新，登记表记为 deviation，`fix` 提交 | 2h × 1 | 冻结 1 |
+| L2 | S5 → S1 | C1–C4 中任一条不通过，或标签审计改变了问题定义 | 研究问题重写，记入登记表并重新冻结目标 | 2h（判定门） | 周二 12:00 |
+| L3 | S9 → S7/S6 | 仅针对可采纳臂：T1 在 E-ALL 上 AUC > 0.90；单特征 AUC > 0.75（年龄除外）；置换检验失败；系数不稳定 | 前 10 个特征全部通过可得性证明，置换检验通过 | 3h × 2 | 冻结 4 |
+| L4 | S8 → S6 | 需要预注册时未预见的新准备步骤 | 追加预注册并标注"事后添加"，消融重跑 | 3h × 1 | 冻结 4 |
+| L5 | S11 → 任一阶段 | rubric 矩阵有空格、主张缺证据、冷读测试失败 | 矩阵全绿 | 3h × 2 | 冻结 5（之后只修 P0） |
+| L6 | 排练 → 讲稿/幻灯片 | 总时长 > 11:40，或某段超预算 10% | 连续两次计时合格 | 90min × 2 | 周六 |
 
-**冻结后的规则**：实验冻结之后，结论撑不住时只能降级、移入局限或删除，不能为了让结果好看而重跑。重跑只限于修 bug，并且要在登记表里记一条变更申请（change request）。
-
----
-
-## 5 排期与冻结点
-
-| 日 | 日期 | A 问题、治理、综合 | B 数据质量与统计 | C 标签、偏差、公平性 | D 实验与工程 | 冻结点 |
-|---|---|---|---|---|---|---|
-| D1 | 周日 10/11 | S0 规则与模板；S1 草稿；**今天问讲师视频拼接是否算"单一连续视频"** | 加载全部 `_L` 文件；`variable_spec.csv` 骨架；S3 起步 | 读 DIQ/HIQ/HUQ 编码手册；整理标签与跳问清单 | 安装 sklearn、statsmodels、pyarrow；固定环境；目录 | — |
-| D2 | 周一 10/12 | S2 治理文档；S1 定稿 | S3 完成；S4 的加权、标准化、DB516 复现 | S4 的辛普森扫描与 DAG | S6 骨架；`nhanes_io.py`、`prep.py` | **冻结 1 范围 22:00** |
-| D3 | 周二 10/13 | 起草 `hypotheses.md`；ADA-lite 代码；DAG 图；Notebook 骨架 | S4 的 VIF、偏态、线性检验；`evalkit.py` | S5 完成（12:00 前冻结目标） | S6 管线；B1–B6 开关 | **冻结 2 目标 12:00**；**冻结 3 预注册锁（晚）** |
-| D4 | 周三 10/14 | S10 用占位符起草；幻灯片模板；5 分钟复盘 | `final_metrics` 写出器；S9 阴性对照调通 | S8 指标设计；3×3 矩阵代码 | S7 基线与消融 | — |
-| D5 | 周四 10/15 | S10 随结果填充 | S9 稳健性与敏感性 | S8 完成 | S7 完成；L3/L4；18:00 冻结后跑留出集 | **冻结 4 实验 18:00** |
-| D6 | 周五 10/16 | S10 定稿；讲稿；幻灯片 | 干净环境运行；rubric 矩阵 | 幻灯片图；F3 文案 | Notebook 装配；运行时调优 | **冻结 5 内容 22:00**；排练 1 |
-| D7 | 周六 10/17 | 总协调；结论段 | 剪辑；上传（下午）；QA | F2、F3 段录制 | F1、综合段录制 | 排练 2 → 录制 → 上传 → **提交 v1（晚）** |
-| D8 | 周日 10/18 | 复核；必要时提交 v2 | 链接复测 | — | — | **内部截止 11:00**（官方 12:00） |
-| — | 周一至周三 | 互评 | 互评 | 互评 | 互评 | 10/21 12:00 前完成 |
-
-**每日例会**：15 分钟，只回答三个问题：完成了什么、卡在哪、下一个门有没有风险。周一、周四、周五各开一次 60 分钟长会。
+**冻结后的规则**：结论撑不住时，只能降级、移入局限或删除，不能为了让结果好看而重跑实验。只有修 bug 可以重跑，要用 `fix` 提交，并在登记表记一条 change_request。
 
 ---
 
-## 6 角色与审计环
+## 5 本地开发排期
 
-| 角色 | 职责 | 负责阶段 | 审计对象 |
-|---|---|---|---|
-| A | 问题、治理、综合、幻灯片 | S0、S1、S2（治理部分）、S10、S11b、S12 | S5、S9、S11c |
-| B | 数据质量与统计 | S2（规格部分）、S3、S4（统计部分）、S9、S11c | S4（谬误部分）、S6、S11a、S12 |
-| C | 标签、偏差、谬误、公平性 | S4（谬误部分）、S5、S8 | S3、S4（统计部分）、S7、S11b；S1 签字 |
-| D | 实验与 Notebook 工程 | S6、S7、S11a | S0、S2、S8、S10；S1 签字 |
+| 日 | 日期 | 开发任务 | 冻结点 | 预计提交 |
+|---|---|---|---|---|
+| D1 | 周日 10/11 | S0 环境与目录；S1 草稿；S2 起步（spec 骨架、加载器）；S3 起步（XPT 修复、哨兵值审计） | — | 8–10 |
+| D2 | 周一 10/12 | S1 定稿；S2 治理文档；S3 完成；S4 加权、标准化与 DB516 复现 | **冻结 1 范围 22:00** | 8–10 |
+| D3 | 周二 10/13 | S4 VIF、偏态、线性检验、辛普森扫描、DAG；S5 完成；S6 管线与 `hypotheses.md` | **冻结 2 目标 12:00**；**冻结 3 预注册锁（晚）** | 9–11 |
+| D4 | 周三 10/14 | S7 基线、消融；S8 指标与 3×3 矩阵；Notebook 骨架 | — | 6–8 |
+| D5 | 周四 10/15 | S7 收尾；S8 完成；S9 稳健性；18:00 冻结后跑留出集；S10 起草 | **冻结 4 实验 18:00** | 7–9 |
+| D6 | 周五 10/16 | S10 定稿；S11 Notebook 装配、幻灯片、rubric 矩阵；排练 | **冻结 5 内容 22:00** | 6–8 |
+| D7 | 周六 10/17 | 干净环境运行；视频素材；上传；提交 v1 | G7、G8 | 3–4 |
+| D8 | 周日 10/18 | 复核，必要时提交 v2 | **内部截止 11:00**（官方 12:00） | 1–2 |
 
-**审计要求**：审计人必须复算关键数字，并写 Audit note，说明查了什么、发现了什么、改了什么，判定为 PASS、PASS-FIX 或 FAIL。
+**每日收尾**：当天工作全部提交并 `git push`；把当天提交数和下一步写进 `governance/devlog.md`（单独提交一次也算一个 commit）。
 
-**贡献可区分**：Notebook 每节顶部写明 Owner 和 Auditor；视频里每段由该段负责人主讲，审计人在段尾说一句"我复核了……"。
+---
+
+## 6 Git 提交规范
+
+### 6.1 提交粒度
+
+**每完成或修改一个中等大小的步骤，就提交一次。** 目标是开发结束时有 **约 50–60 次**有意义的提交。
+
+一个"中等步骤"是指一个能独立说清楚、能运行的工作单元，通常 30–90 分钟、几十到几百行改动，例如：
+
+- 一个可运行的函数或模块（如 `fix_xpt`、`apply_sentinels`）
+- 一个分析小节，含其表或图（如 DB516 复现、VIF 表）
+- 一个产物文件的新建或一轮修改（如 `variable_spec.csv`、`hypotheses.md`）
+- 一个 bug 修复
+- 一组相关的文档修改
+- 一个冻结点
+
+**不要做的**：
+- 攒到阶段结束才一次性提交。
+- 每改一行就提交。
+- 把不相关的改动混在同一个提交里。
+
+### 6.2 提交触发点
+
+满足任一条件就提交：
+
+1. 一个 Notebook 小节写完，并且 Restart & Run 该节通过。
+2. 新建或修改了规范产物：spec、register、hypotheses、claims、`final_metrics.json`。
+3. 一个函数写完，并且 notebook 内的 `assert` 通过。
+4. 修复了一个 bug，或者更正了一个数字。
+5. 到达冻结点（单独提交并打 tag）。
+6. 每天收尾（devlog 提交，然后 push）。
+
+### 6.3 提交信息格式
+
+```
+<type>(<scope>): <summary>
+
+<body：做了什么、为什么；关键数字；对应的 decision_register ID>
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>   ← 有 AI 辅助时保留
+```
+
+| 字段 | 取值 |
+|---|---|
+| type | `feat` 新代码 / `analysis` 新分析、图、表 / `exp` 实验运行与结果 / `data` spec、manifest 等数据产物 / `fix` 修复 / `refactor` 重构 / `docs` 文档 / `chore` 环境与冻结 |
+| scope | 阶段号 `S0`–`S12` |
+| summary | 英文祈使句，≤ 72 字符，结尾不加句号 |
+
+示例：
+
+```
+feat(S3): add per-variable sentinel recoding from codebooks
+analysis(S4): replicate NCHS DB516 prevalence with PSU jackknife
+exp(S7): run block ablation B1-B6 on E-ALL and E-SCREEN
+chore(S6): lock hypotheses.md (prereg-lock)
+fix(S3): keep NaN when repairing XPT zero artefact
+```
+
+### 6.4 提交前检查
+
+- 改动的 notebook 小节或脚本能从头运行；`assert` 全部通过。
+- 没有绝对路径（grep 搜不到 `E:\`），没有 `course/` 下的文件。
+- 单个文件不超过 50 MB。不提交 `data/interim/` 和导出的个体级中间数据。
+- Notebook 输出体积合理（开发期每个 notebook < 5 MB；超过就清掉大图输出再提交）。
+- `git diff --stat` 检查过，只包含与本提交相关的改动。
+
+### 6.5 分支、标签与推送
+
+- 本地单人开发，直接在 `main` 上提交。风险较大的尝试开短分支 `exp/<topic>`，完成后合并回 `main`，合并本身也算一次提交。
+- 冻结点打 tag 并推送：`scope-freeze`、`target-freeze`、`prereg-lock`、`exp-freeze`、`content-freeze`、`submitted-v1`（`git push --tags`）。
+- 每个冻结点之后 push，每天收尾 push。
+- 冻结后只允许 `fix` 类提交，并在登记表记 change_request。
+
+### 6.6 提交记录的用途
+
+Git 历史本身就是过程证据，可以直接用于以下三点：
+
+- **证明预注册**：`prereg-lock` 提交早于第一个 `exp(S7)` 提交。
+- **证明开发是逐步推进的**：在 GenAI 声明里引用提交历史，说明每一步都由开发者执行和验证。
+- **快速回退**：出问题时可以定位到具体提交。
 
 ---
 
@@ -252,109 +357,112 @@ flowchart TD
 
 | 项 | 取值 |
 |---|---|
-| 随机种子 | `SEED_MASTER = 20261011`；用 `np.random.SeedSequence` 派生；稳健性检验用 10 个种子（只改变 CV 和 bootstrap） |
-| 切分 | 20% 留出集（按标签 × 种族分层），只在冻结 4 后用一次；训练集上用 `RepeatedStratifiedKFold(5, 5)`（FAST 模式 5×2），所有臂共用同一份已存储的切分 |
-| 配对比较 | Nadeau–Bengio 校正 t（J=25，n_test/n_train=1/4）+ OOF 配对 bootstrap，取两者中较保守的区间 |
-| SESOI（最小有意义效应） | ΔROC-AUC 0.01（主指标）、ΔPR-AUC 0.02、ΔBrier 0.005、系数 SD 比 ≥ 2、组间 TPR 差 0.05（"实质性"取 0.10） |
+| 随机种子 | `SEED_MASTER = 20261011`；用 `np.random.SeedSequence` 派生；稳健性检验用 10 个种子，只改变 CV 和 bootstrap |
+| 切分 | 20% 留出集，按标签 × 种族分层，冻结 4 之后只用一次；训练集上用 `RepeatedStratifiedKFold(5, 5)`（FAST 模式为 5×2）；切分只生成一次并存储，所有臂共用 |
+| 配对比较 | Nadeau–Bengio 校正 t（J=25，n_test/n_train=1/4）+ OOF 配对 bootstrap，取两者中较保守的一个 |
+| SESOI | ΔROC-AUC 0.01（主指标）；ΔPR-AUC 0.02；ΔBrier 0.005；系数 SD 比 ≥ 2；组间 TPR 差 0.05（"实质性"为 0.10） |
 | 判定词表 | supported / refuted / equivalent / inconclusive / mixed |
-| 权重 | 队列分析用 WTPH2YR；DB516 复现用 WTSAF2YR；方差用 delete-one-PSU jackknife（15 个 strata，df=15；子域的 df 取包含该子域的 strata 数） |
-| 小样本 | NCHS 呈现标准：n 或有效 n < 30，或 CI 宽度 ≥ 0.30，或 df < 8，则标记为探索性；比例用 Korn–Graubard 区间 |
-| 运行模式 | FAST（5×2，B=100，≤ 5 分钟，给评分人重跑用）；FINAL 的执行结果保存在提交的 Notebook 里 |
+| 权重 | 队列分析用 WTPH2YR；DB516 复现用 WTSAF2YR；方差用 delete-one-PSU jackknife（15 个 strata，df=15；子域 df 取包含该子域的 strata 数） |
+| 小样本 | n 或有效 n < 30、CI 宽度 ≥ 0.30、或 df < 8 时，标为探索性；比例用 Korn–Graubard 区间 |
+| 运行模式 | FAST：5×2、B=100、≤ 5 分钟，供评分人重跑；FINAL 的输出保存在提交的 notebook 里 |
 
 ### 7.2 规范产物
 
-| 产物 | 维护者 | 说明 |
-|---|---|---|
-| `config/variable_spec.csv` | B（其他人只读） | 唯一的变量事实来源；列：var, file, dtype, universe, valid_min, valid_max, sentinel_codes, top_code, role, admissible(N/T1/T2), admiss_reason, ada_item, use_tier, codebook_url, owner, note |
-| `decision_register.csv` | 各阶段负责人 | dr_id, stage, date, owner, auditor, type, finding, evidence_ref, evidence_value, decision, alternatives_rejected, hyp_id, status, audit_verdict, audit_note, loop_ref, change_request |
-| `hypotheses.md` | A 起草，D 锁定 | hyp_id, rq_or_block, statement, metric, direction, magnitude, sesoi, falsifier, prior_exposure, weights；锁定时打印 SHA-256 和时间戳；结果写入记分牌 |
-| `claims.csv` | A | claim_id, statement（≤ 25 词）, type, evidence_refs, effect_ci, grade(E1–E4), prereg, robustness, external_ref, scope, falsifier, owner, auditor, video_seg |
-| `genai_log.csv` | 每人 | 日期、成员、工具与版本、用途、共享了什么数据（禁止个体级数据）、输出用在哪里、如何人工验证 |
-| `results/final_metrics.json` + `oof_predictions.parquet` | D（S7）、B（写出器） | 幻灯片上的所有数字都从这里读 |
-| 代码模块 | D、B | `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；最终内联进 Notebook |
-| 冻结记录 | A | scope-freeze、target-freeze、prereg-lock、exp-freeze、content-freeze（在仓库上打 git tag，并在登记表写时间戳） |
+| 产物 | 说明 |
+|---|---|
+| `config/variable_spec.csv` | 唯一的变量事实来源。列：var, file, dtype, universe, valid_min, valid_max, sentinel_codes, top_code, role, admissible(N/T1/T2), admiss_reason, ada_item, use_tier, codebook_url, note |
+| `governance/decision_register.csv` | dr_id, stage, date, type, finding, evidence_ref, evidence_value, decision, alternatives_rejected, hyp_id, status, check_verdict, check_note, loop_ref, change_request, commit |
+| `governance/hypotheses.md` | hyp_id, rq_or_block, statement, metric, direction, magnitude, sesoi, falsifier, prior_exposure, weights。锁定时打印 SHA-256 与时间戳，结果写入记分牌 |
+| `governance/claims.csv` | claim_id, statement（≤ 25 词）, type, evidence_refs, effect_ci, grade(E1–E4), prereg, robustness, external_ref, scope, falsifier, video_seg |
+| `governance/genai_log.csv` | 日期、工具与版本、用途、共享了什么数据（禁止个体级数据）、输出用在哪里、人工如何验证 |
+| `governance/devlog.md` | 每日开发记录：完成内容、提交数、下一步 |
+| `results/final_metrics.json` + `oof_predictions.parquet` | 幻灯片上的所有数字都从这里读取 |
+| 代码模块 | `src/nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；最终内联进 notebook |
 
 ### 7.3 编号
 
 - 评分维度：RB1 方法得当、RB2 正确与清晰、RB3 数据解读、RB4 新颖与深度。
-- 硬性要求：HR1 非显而易见的发现、HR2 最少处理 vs 系统处理且用同一模型、HR3 只用基础模型、HR4 改善与恶化都要解释、HR5 GenAI 声明、HR6 ≤ 12 分钟且全员出镜、HR7 公开的 YouTube 链接加组号、HR8 只交 .ipynb。
+- 硬性要求：
+  - HR1 非显而易见的发现
+  - HR2 最少处理 vs 系统处理，用同一模型
+  - HR3 只用基础模型
+  - HR4 改善与恶化都要解释
+  - HR5 GenAI 声明
+  - HR6 视频 ≤ 12 分钟、全员出镜
+  - HR7 公开的 YouTube 链接 + 组号
+  - HR8 只交 .ipynb
 
 ---
 
 ## 8 关键事实（已核实）
 
-后续所有材料都以本表为准。草稿或 README 中与本表不一致的数字一律作废。
+后续材料一律以本表为准。草稿或 README 中与本表不一致的数字作废。
 
 | 事实 | 数值 | 来源 |
 |---|---|---|
 | 样本漏斗 | 11,933 → 7,809 → 6,064 → 5,767 → 5,730 | S3 复算 |
-| 标签 | `L_comb` 971 例（未加权 16.9%，WTPH2YR 加权 14.0%）；自报 819；仅 A1c 721；未确诊 152 | S5 |
-| 标签一致性 | κ = 0.70（加权 0.709，CI 0.665–0.752） | S5 |
+| 标签 | `L_comb` 971（未加权 16.9%，WTPH2YR 加权 14.0%）；自报 819；仅 A1c 721；未确诊 152 | S5 |
+| 标签一致性 | κ = 0.70（加权 0.709，CI 0.665–0.752）；正一致率 0.74，负一致率 0.96 | S5 |
 | 治疗掩盖 | 自报者中 250 人（30.5%）A1c < 6.5，其中 165 人在用药 | S5 |
 | 未确诊者的医疗接触 | 152 人中 68% 近 3 年测过血糖，24% 曾被告知处于临界 | S5 |
-| 未确诊比例 × 医保 | 无医保 43.0%（KG 24.8–62.7，**不达 NCHS 标准**） vs 有医保 19.9%；头条用风险差 **+23.2pp（6.2–40.1）** | S5 |
-| 保险与患病率 | 粗差 +5.3pp（1.8–8.8）→ 年龄标准化后 +0.7pp（−2.6–3.9）：**年龄混杂导致的衰减** | S4 |
-| 亚裔 vs 白人 | 粗差 −0.8（−5.1–3.5）→ 标准化后 +2.1（−2.6–6.8）：两者都不显著，作为诚实报告不确定性的例子 | S4 |
-| BMI 测量偏差 | 亚裔糖尿病患者 BMI < 25 占 51.1%（24/47），白人 7.2%；单指标 AUC：亚裔 BMI 0.573 vs WHtR 0.714（差 +0.136，0.092–0.183），白人差 +0.048 | S5 |
-| 朴素清洗的代价 | 统一重编码毁掉 1,496 个有效值；A1c 标签下丢失 29/721 个真阳性；`L_comb` 下只有 6/971 个标签翻转 | S3 |
-| 冗余 | 体重 VIF 95.7、BMI 97.6；6 次血压读数的 VIF 8.8–11.7；TC 与 LDL r = 0.94 | S4 |
-| 偏态 | 甘油三酯 6.23；BMI 1.22（Yeo-Johnson 变换后约 0） | S4 |
-| 非线性 | 年龄 χ²=57.6、BMI 11.6、HDL 18.5、TC 41.8（RCS 似然比检验） | S4 |
-| 外部锚点 | DB516 复现：15.78 / 11.29 / 4.48（官方 15.8 / 11.3 / 4.5） | S4 |
-| 周期特征 | 访谈应答率 34.6%、体检 25.7%；本周期取消族裔与收入过采样；没有家族史和妊娠糖尿病题项 | S2 |
-| 原型结果（待替换） | M0 → M1 的 AUC 约 0.958 → 0.860；BMI 系数 bootstrap SD 0.25 → 0.03 | 原型 |
+| 未确诊 × 医保 | 无医保 43.0%（KG 24.8–62.7，**不达 NCHS 标准**），有医保 19.9%；头条用风险差 **+23.2pp（6.2–40.1）** | S5 |
+| 保险与患病率 | 粗差 +5.3pp（1.8–8.8）→ 年龄标准化 +0.7pp（−2.6–3.9）：**年龄混杂导致的衰减** | S4 |
+| 亚裔 vs 白人 | 粗差 −0.8（−5.1–3.5）→ 标准化 +2.1（−2.6–6.8）：都不显著，作为诚实报告不确定性的例子 | S4 |
+| BMI 测量偏差 | 亚裔糖尿病患者 BMI < 25 占 51.1%（24/47），白人 7.2%；单指标 AUC：亚裔 BMI 0.573，WHtR 0.714（差 +0.136，0.092–0.183），白人差 +0.048 | S5 |
+| 朴素清洗代价 | 统一重编码毁掉 1,496 个有效值；A1c 标签丢失 29/721 个真阳性；`L_comb` 下只有 6/971 翻转 | S3 |
+| 冗余 | 体重 VIF 95.7、BMI 97.6；6 次血压读数 VIF 8.8–11.7；TC 与 LDL r = 0.94 | S4 |
+| 偏态 | 甘油三酯 6.23；BMI 1.22（Yeo-Johnson 后约为 0） | S4 |
+| 非线性 | RCS 似然比检验：年龄 χ²=57.6、BMI 11.6、HDL 18.5、TC 41.8 | S4 |
+| 外部锚点 | DB516 复现 15.78 / 11.29 / 4.48（官方 15.8 / 11.3 / 4.5） | S4 |
+| 周期特征 | 访谈应答率 34.6%、体检 25.7%；取消族裔与收入过采样；无家族史和妊娠糖尿病题项 | S2 |
+| 原型结果（待替换） | M0 → M1 AUC 约 0.958 → 0.860；BMI 系数 bootstrap SD 0.25 → 0.03 | 原型 |
 
 ---
 
-## S0 项目启动与团队治理
+## S0 本地开发环境搭建
 
 ### 目标
-Day1（周日 11 日）内用最小可信工程搭好四人协作底座：角色与审计关系、共享目录、单一变量配置、固定环境、种子、三张日志与冻结点。
+Day1（周日 11 日）内用最小可信工程搭好单人本地开发底座：固定环境、仓库与目录、规范文件表头、种子、三张日志、Git 提交约定与冻结点。规范文件与日志的定义见第 7.2 节，参数与种子见第 7.1 节，Git 约定见第 6 节。
 
 ### 输入
-framework.md、lead 裁定 R1–R7、README.md、任务书。S0 无上游阶段产出。
+framework.md、裁定 R1–R7、README.md、任务书。S0 无上游阶段产出。
 
 ### 具体方案
-1. **角色（R1）。** A 负责问题、治理、综合、幻灯；B 负责数据质量与统计；C 负责标签、偏倚、谬误、公平；D 负责实验与 notebook 工程。S0 由 A 负责、D 审计；S1 由 A 负责、C 和 D 共同签字；S2 由 A（DUA、datasheet、最小化）加 B（variable_spec、loader）负责、D 审计。其余阶段按 R1 总表。审计必须是复现（重跑、重算、抽查数值），不是阅读。
-2. **最小可信工程（R7.6）。** 以 GitHub 仓库 https://github.com/Wendystar0628/CA6003-Assignment 作为唯一协作基地（四人各自 clone，小步提交，每人一个分支或直接提交到 `main` 前先 pull）；`src/` 下四个模块 `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；每人每阶段一个 notebook；D 组装最终 notebook，把 helpers 内联；用 notebook 内 `assert` 代替 pytest。nbstripout、pytest、jupytext、papermill 是可选加分项，不进入验收。`course/`（课程 PDF、含同学姓名的分组名单）只留本地，已写入 `.gitignore`。
-3. **目录。** 仓库 https://github.com/Wendystar0628/CA6003-Assignment 根目录下：`config/variable_spec.csv`；`governance/`（`decision_register.csv`、`hypotheses.md` 与 `hypotheses.csv`、`genai_log.csv`、`claims.csv`、`datasheet.md`、`dua_checklist.md`）；`data/nhanes_2021_2023/raw/`（只读，原始 CDC 文件已纳入 git，按 `MANIFEST.sha256` 校验，可用 `scripts/download_nhanes.py --force` 重新下载）、`data/interim/`；`results/final_metrics.json` 与 `results/oof_predictions.parquet`；仓库根目录 `requirements.txt`。全组只用这一套规范文件，不另设 yaml 配置。
-4. **规范文件列（R7.5）。**
-   - `variable_spec.csv`（B 所有，其他人只读）：var, file, dtype, universe, valid_min, valid_max, sentinel_codes, top_code, role, admissible(N/T1/T2), admiss_reason, ada_item, use_tier, codebook_url, owner, note。
-   - `decision_register.csv`：dr_id, stage, date, owner, auditor, type, finding, evidence_ref, evidence_value, decision, alternatives_rejected, hyp_id, status, audit_verdict(PASS/PASS-FIX/FAIL), audit_note, loop_ref, change_request。
-   - `hypotheses.csv`：hyp_id, rq_or_block, statement, metric, direction, magnitude, sesoi, falsifier, prior_exposure(none/descriptive_seen/analysis_seen/prototype_seen), weights；结果回填 result_delta, ci, verdict(supported/refuted/equivalent/inconclusive/mixed), explanation。
-   - `claims.csv`：claim_id, statement(≤25 词), type, evidence_refs, effect_ci, grade(E1–E4), prereg, robustness, external_ref, scope, falsifier, owner, auditor, video_seg。
-   - `genai_log.csv`：log_id, date, member, tool_model_version, purpose, prompt_summary, data_shared(schema only/aggregates/none), output_used_where, human_verification, verified_by, numbers_or_citations_checked, risk_flag。不得向 GenAI 粘贴参与者级记录。
-   - `final_metrics.json` 顶层键：meta, cohort, label, survey（含 DB516）, ablation, baselines, fairness, robustness, holdout。所有幻灯数字只从该文件读取。
-5. **环境。** `requirements.txt`（Python 3.12.5，已用 `pip install --dry-run` 验证可解析）：numpy==2.2.3、pandas==2.2.3、scipy==1.16.3、scikit-learn==1.9.1、statsmodels==0.15.0、matplotlib==3.10.8、seaborn==0.13.2、pyarrow==26.0.0、networkx==3.7、PyYAML==6.0.2；可选 pyreadstat==1.3.6。读取 XPT 默认用 `pandas.read_sas(format="xport")`。
-6. **种子。** notebook 首单元定义 `SEED_MASTER = 20261011`，用 `np.random.SeedSequence(SEED_MASTER).spawn(k)` 派生 split、CV、bootstrap、permutation 子流；sklearn 一律显式 `random_state`。稳健性用 10 个种子，且只在最终配置上跑；20% hold-out 固定，种子只改变 CV 与 bootstrap。
-7. **冻结点（R6）。** scope-freeze（D2 周一）、target-freeze（D3 周二）、prereg-lock（D3 晚，`hypotheses.md` 的 SHA-256 加时间戳打印在 notebook 中）、exp-freeze（D5 周四 18:00）、content-freeze（D6 周五）。评分点编号 RB1–RB4，硬性要求编号 HR1–HR8。
-8. **今日待办。** 询问讲师：拼接的多段录制是否算"single continuous video"（备选：一次 Zoom 小组录制）。
+1. **自查原则。** 本项目由一人在本地开发（Claude 辅助），原先的"审计"一律改为自查：自查必须是复现（从干净环境重跑、重算关键数值、抽查数字），不是阅读。各阶段自查结果记入 `decision_register.csv` 的 `check_verdict`（PASS/PASS-FIX/FAIL）与 `check_note`。
+2. **最小可信工程（R7.6）。** 以 GitHub 仓库 https://github.com/Wendystar0628/CA6003-Assignment 作为唯一代码与产出基地（本地 clone，小步提交，提交约定见第 6 节）；`src/` 下四个模块 `nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`；每阶段一个 notebook，最终 notebook 把 helpers 内联；用 notebook 内 `assert` 代替 pytest。nbstripout、pytest、jupytext、papermill 是可选加分项，不进入验收。`course/`（课程 PDF、含同学姓名的分组名单）只留本地，已写入 `.gitignore`。
+3. **目录与规范文件。** 仓库根目录下的目录布局（`config/`、`governance/`、`data/nhanes_2021_2023/raw/`、`data/interim/`、`results/`、`requirements.txt`）、六个规范文件（`variable_spec.csv`、`decision_register.csv`、`hypotheses.csv`、`claims.csv`、`genai_log.csv`、`final_metrics.json`）的列定义见第 7.2 节。原始 CDC 文件只读，已纳入 git，按 `MANIFEST.sha256` 校验，可用 `scripts/download_nhanes.py --force` 重新下载。只用这一套规范文件，不另设 yaml 配置。`final_metrics.json` 顶层键：meta, cohort, label, survey（含 DB516）, ablation, baselines, fairness, robustness, holdout。所有幻灯数字只从该文件读取。不得向 GenAI 粘贴参与者级记录。
+4. **环境。** `requirements.txt`（Python 3.12.5，已用 `pip install --dry-run` 验证可解析）：numpy==2.2.3、pandas==2.2.3、scipy==1.16.3、scikit-learn==1.9.1、statsmodels==0.15.0、matplotlib==3.10.8、seaborn==0.13.2、pyarrow==26.0.0、networkx==3.7、PyYAML==6.0.2；可选 pyreadstat==1.3.6。读取 XPT 默认用 `pandas.read_sas(format="xport")`。
+5. **种子。** notebook 首单元定义 `SEED_MASTER = 20261011`，用 `np.random.SeedSequence(SEED_MASTER).spawn(k)` 派生 split、CV、bootstrap、permutation 子流；sklearn 一律显式 `random_state`。稳健性用 10 个种子，且只在最终配置上跑；20% hold-out 固定，种子只改变 CV 与 bootstrap。
+6. **冻结点（R6）。** scope-freeze（D2 周一）、target-freeze（D3 周二）、prereg-lock（D3 晚，`hypotheses.md` 的 SHA-256 加时间戳打印在 notebook 中）、exp-freeze（D5 周四 18:00）、content-freeze（D6 周五）。每个冻结点单独一次提交并打同名 tag（见第 6 节）。评分点编号 RB1–RB4，硬性要求编号 HR1–HR8。
+7. **今日待办。** 询问讲师：拼接的多段录制是否算"single continuous video"（备选：一次 Zoom 录制）。
 
 ### 理论依据
 Sandve 等 2013（doi:10.1371/journal.pcbi.1003285）、Wilson 等 2017（doi:10.1371/journal.pcbi.1005510）、Nosek 等 2018 预注册（doi:10.1073/pnas.1708274114），三者均凭记忆 [待核实]。Gebru 等 2021，Datasheets for Datasets，CACM 64(12):86–92，https://arxiv.org/pdf/1803.09010v5 [二手确认出版信息]。
 
 ### 产出物
-目录骨架；`variable_spec.csv` 表头；`decision_register.csv`、`hypotheses.csv`、`claims.csv`、`genai_log.csv` 表头；`requirements.txt`；`ROLES.md`（含互审表与冻结日历）。
+目录骨架；`variable_spec.csv` 表头；`decision_register.csv`、`hypotheses.csv`、`claims.csv`、`genai_log.csv` 表头；`requirements.txt`；冻结日历（含自查安排）。
 
 ### 验收标准
-1. D 在干净环境按 `requirements.txt` 建环境，Restart & Run All 通过全部 `assert`。
-2. 六个规范文件的表头与 R7.5 逐列一致。
-3. 四人各至少有 1 条 Register 记录和 1 条 GenAI 日志，且都已 clone 仓库并完成至少一次 push。
+1. 在干净环境按 `requirements.txt` 建环境，Restart & Run All 通过全部 `assert`。
+2. 六个规范文件的表头与第 7.2 节逐列一致。
+3. Register 至少有 1 条记录、GenAI 日志至少有 1 条记录，且仓库已完成至少一次 push。
 4. 讲师问询已发出并记录答复。
 
 ### 反馈回路
-接收 L5（S11 审查缺口）触发的治理修订。时间盒 1 小时，退出条件是修订条目写入 Register 并经 D 复核。
+接收 L5（S11 审查缺口）触发的治理修订。时间盒 1 小时，退出条件是修订条目记入 decision_register 并重新冻结。
 
-### 负责与审计
-A 负责，D 审计。
+### Git 提交点
+1. `chore(S0): scaffold repo layout and pinned requirements` — 目录骨架、`.gitignore`（含 `course/`）、`requirements.txt`（Python 3.12.5 与上述固定版本）
+2. `data(S0): add canonical artifact headers` — 六个规范文件表头，与第 7.2 节逐列一致；冻结日历
+3. `chore(S0): add seed cell and run-all asserts` — 首单元 `SEED_MASTER = 20261011` 与 SeedSequence 派生；干净环境 Restart & Run All 通过
 
 ### 时间
 Day1，约 3 小时。
 
 ### 风险与应对
 - 版本漂移：Day1 用 `pip freeze` 固化 lock 文件。
-- helpers 内联失败：D 在 Day4 做一次预演。
-- 成员未用日志：D1 结束前人工检查四人各一条记录。
+- helpers 内联失败：Day4 自行预演一次。
+- 忘记写日志：D1 结束前自查 Register 与 GenAI 日志各至少有一条记录。
 
 ---
 
@@ -402,14 +510,15 @@ S0 的规范文件与冻结日历；README 与 R3/R7.3 校正数字；文献检�
 1. 每个假设有指标、方向、magnitude、sesoi、falsifier、权重与 `prior_exposure`。
 2. 每个特征在 spec 中有 `admissible` 及理由。
 3. 新颖性陈述不含"首次/最优"。
-4. C 与 D 在 Register 中签字。
+4. 自查通过（重读可得性规则并逐特征复核 `admissible`、重算 971/819/152/4,759 等关键人数），结果写入 decision_register 的 DR-S1-xx 条目（含 `check_verdict`）。
 5. D2 末 scope-freeze，D3 target-freeze。
 
 ### 反馈回路
-接收 L2。触发条件：S5 要求改动标签、人群或规则。退出条件：RQ 与假设表修订，C、D 重新签字，之后目标不再改动。时间盒 2 小时，周二 12:00 前完成。
+接收 L2。触发条件：S5 要求改动标签、人群或规则。退出条件：RQ 与假设表修订，记入 decision_register 并重新冻结，之后目标不再改动。时间盒 2 小时，周二 12:00 前完成。
 
-### 负责与审计
-A 负责，C 与 D 共同签字。
+### Git 提交点
+1. `docs(S1): draft scope, availability rules and hypotheses` — `S1_scope.md`、`hypotheses.csv` 初稿（H1a–H4b）、ADA-lite 映射表、新颖性陈述、变量角色回填 `variable_spec.csv`
+2. `docs(S1): finalise scope, availability rule and hypotheses` — D2 自查后定稿用例、可得性规则与假设表，写入 DR-S1-xx（目标冻结在 S5 完成）
 
 ### 时间
 D1 起草，D2 冻结范围，D3 冻结目标，累计约 5 小时。
@@ -430,20 +539,20 @@ D1 起草，D2 冻结范围，D3 冻结目标，累计约 5 小时。
 S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 docs\*.htm（只读）。
 
 ### 具体方案
-1. **DUA 清单（A）。** 只用于统计报告与分析；不尝试识别任何个人或机构；不与其他可识别个人的数据集链接；不研究披露控制方法。推论：外部验证只能对照已发表汇总数，不能链接微观数据。
-2. **披露控制（A）。** 年龄≥80 编码为 80；PIR≥5 编码为 5；家庭人数上限 7；孕状态仅 20–44 岁女性；方差单元被掩码（15 个 stratum、30 个 PSU）。写入 spec 的 `top_code` 与 `note`。
-3. **权重选择（B）。**
+1. **DUA 清单。** 只用于统计报告与分析；不尝试识别任何个人或机构；不与其他可识别个人的数据集链接；不研究披露控制方法。推论：外部验证只能对照已发表汇总数，不能链接微观数据。
+2. **披露控制。** 年龄≥80 编码为 80；PIR≥5 编码为 5；家庭人数上限 7；孕状态仅 20–44 岁女性；方差单元被掩码（15 个 stratum、30 个 PSU）。写入 spec 的 `top_code` 与 `note`。
+3. **权重选择。**
    - WTINT2YR：仅访谈变量的描述。
    - WTMEC2YR：含体检变量。
    - WTPH2YR：任何用到 HbA1c 或血脂的分析，含加权描述与加权拟合消融。
    - WTSAF2YR：仅用于空腹子样本及 DB516 复现。
    - 设计变量 SDMVSTRA、SDMVPSU，方差用 delete-one-PSU 刀切，全国 df=15。子总体不删行，把域外权重置 0；域的 df 取含该域的 stratum 数。
    - 周期事实：访谈应答率 34.6%、体检 25.7%；无族裔与收入过采样；NCHS 通常不建议与其他周期合并。
-4. **展示标准（A，写入 `dua_checklist.md`）。** n<30 或有效样本量<30 则抑制或标记；95% CI 宽度≥0.30 则抑制或标记；域 df<8 则标记；比例的 CI 用 Korn–Graubard。Asian（315 人，阳性 50 例）一律作探索性并报 CI。
-5. **DB516 复现（B）。** 用 WTSAF2YR 在空腹子样本复现 15.78/11.29/4.48%（年龄调整 14.31/10.13/4.18%），作为刀切与年龄标准化流程的验证；通过后 S4、S9 复用。
-6. **最小化（A）。** 16 个文件只保留 spec 中 `include` 的列。`use_tier`：core 为 DEMO、GHB、DIQ、BMX、BPXO、TCHOL、HDL、HIQ、HUQ；recommended 为 BPQ、SMQ、PAQ；optional 为 MCQ；INQ 仅作冗余演示，GLU/TRIGLY 仅作侧分析。儿童专用、出生国和居留年限、军役、无关 MCQ 项明确排除并写明理由。加载器读入后立即丢弃排除列，输出 `minimisation_report.csv`。
-7. **溯源与 datasheet（A）。** `MANIFEST.sha256`（文件、行数、列数、哈希）；`datasheet.md` 按 Gebru 的章节写 motivation、composition（漏斗 11,933 → 7,809 → 6,064 → 5,767 → 5,730）、collection、preprocessing、uses、distribution、maintenance。下载日期 2026-10-10。原始 XPT 未经修改纳入仓库 `data/nhanes_2021_2023/raw/`，`.gitattributes` 将其标为二进制、`MANIFEST.sha256` 固定为 LF 换行；`scripts/download_nhanes.py` 校验哈希，`--force` 可从 CDC 重新获取。每次运行先校验哈希。
-8. **spec 与加载器（B）。** `variable_spec.csv` 按 R7.5 的 16 列。`sentinel_codes` 逐变量取自 codebook，禁止全局替换。`nhanes_io.py` 提供：
+4. **展示标准（写入 `dua_checklist.md`）。** n<30 或有效样本量<30 则抑制或标记；95% CI 宽度≥0.30 则抑制或标记；域 df<8 则标记；比例的 CI 用 Korn–Graubard。Asian（315 人，阳性 50 例）一律作探索性并报 CI。
+5. **DB516 复现。** 在 S4 执行（见 S4 第 2 步）：用 WTSAF2YR 在空腹子样本复现 15.78/11.29/4.48%（年龄调整 14.31/10.13/4.18%），验证刀切与年龄标准化流程；S2 只负责准备所需的权重与设计变量。
+6. **最小化。** 16 个文件只保留 spec 中 `include` 的列。`use_tier`：core 为 DEMO、GHB、DIQ、BMX、BPXO、TCHOL、HDL、HIQ、HUQ；recommended 为 BPQ、SMQ、PAQ；optional 为 MCQ；INQ 仅作冗余演示，GLU/TRIGLY 仅作侧分析。儿童专用、出生国和居留年限、军役、无关 MCQ 项明确排除并写明理由。加载器读入后立即丢弃排除列，输出 `minimisation_report.csv`。
+7. **溯源与 datasheet。** `MANIFEST.sha256`（文件、行数、列数、哈希）；`datasheet.md` 按 Gebru 的章节写 motivation、composition（漏斗 11,933 → 7,809 → 6,064 → 5,767 → 5,730）、collection、preprocessing、uses、distribution、maintenance。下载日期 2026-10-10。原始 XPT 未经修改纳入仓库 `data/nhanes_2021_2023/raw/`，`.gitattributes` 将其标为二进制、`MANIFEST.sha256` 固定为 LF 换行；`scripts/download_nhanes.py` 校验哈希，`--force` 可从 CDC 重新获取。每次运行先校验哈希。
+8. **spec 与加载器。** `variable_spec.csv` 列定义见第 7.2 节（共 15 列）。`sentinel_codes` 逐变量取自 codebook，禁止全局替换。`nhanes_io.py` 提供：
    - `load_nhanes(spec)`；
    - `fix_xpt(df)`：`x.mask((x.abs() < 1e-10) & x.notna(), 0.0)`，不得用 `where`（会把 NaN 变成 0）。该问题是 pandas 读取 XPT 的浮点伪迹，不是 SAS 编码；
    - `apply_sentinels(df, spec, mode="per_variable"|"blanket")`，供 S6 做 minimal 与 systematic 对照；损失量由 S3 实测，S2 不预设数字。
@@ -468,13 +577,16 @@ S0 的目录与规范列；S1 的变量角色与可得性规则；raw\*.xpt 与 
 3. `fix_xpt` 的修复单元格数量有记录，且 NaN 保持为 NaN。
 4. 被排除变量均有理由。
 5. DB516 复现与已发表值一致（小数点后两位）。
-6. D 复现上述全部检查。
+6. 自查：从干净环境重跑上述全部检查并重算关键数字（漏斗人数、哈希、DB516 各项），结果写入 Register 的 `check_verdict`。
 
 ### 反馈回路
 接收 L1：S3 发现某变量不可用或需新增。触发条件：profiling 报告缺失率、编码或样本量问题。退出条件：spec 更新，Register 记 `deviation`，不改动已冻结的目标。时间盒 2 小时。
 
-### 负责与审计
-A（DUA、datasheet、最小化）加 B（variable_spec、loader）负责，D 审计。
+### Git 提交点
+1. `docs(S2): add DUA checklist, datasheet and MANIFEST.sha256` — `dua_checklist.md`（DUA、披露控制、展示标准）、`datasheet.md`（漏斗 11,933 → 5,730）、`MANIFEST.sha256`、权重选择说明
+2. `data(S2): build variable_spec.csv from codebooks` — 15 列 spec、逐变量 `sentinel_codes`、`top_code`、`codebook_url`、`use_tier` 与排除理由
+3. `feat(S2): add nhanes_io loader with fix_xpt and apply_sentinels` — `load_nhanes`、`fix_xpt`、`apply_sentinels(mode=per_variable|blanket)` 及验收断言
+4. `data(S2): add minimisation report and exclusion rationale` — `minimisation_report.csv`（每个文件保留/丢弃列数）、排除变量理由、漏斗与哈希断言，写入 DR-S2-xx 与自查结论
 
 ### 时间
 D1 下午至 D2 上午，约 5 小时。
@@ -494,7 +606,7 @@ D1 下午至 D2 上午，约 5 小时。
 - 量化 blanket recode 的破坏，修复 XPT 读入伪影，并给出缺失、异常值、top-coding 的数据支撑决策。
 
 ### 输入
-- S2 产出的 `config/variable_spec.csv`（列：var、file、dtype、universe、valid_min、valid_max、sentinel_codes、top_code、role、admissible、admiss_reason、ada_item、use_tier、codebook_url、owner、note）、`nhanes_io.py` 加载器、`raw\*.xpt`、`docs\*.htm`。
+- S2 产出的 `config/variable_spec.csv`（列：var、file、dtype、universe、valid_min、valid_max、sentinel_codes、top_code、role、admissible、admiss_reason、ada_item、use_tier、codebook_url、note）、`nhanes_io.py` 加载器、`raw\*.xpt`、`docs\*.htm`。
 - README 与 `profiling\*.txt` 的既有发现，本阶段复核。
 
 ### 具体方案
@@ -526,12 +638,17 @@ D1 下午至 D2 上午，约 5 小时。
 - 每个被替换的编码可在 codebook 追溯。
 - 1,496、29/721、6/971 三个数字可由 run-all 复现。
 - 一致性断言通过或 flag 有说明。
+- 自查：抽 20 个变量对照 codebook，并复核 sentinel 表，结果写入 Register 的 `check_verdict`。
 
 ### 反馈回路
-**L1。** 触发：某变量在队列内缺失 >40%、无变异或属检查后变量。退出标准：2 小时内通过 change_request 修改 `variable_spec.csv`，由 B 合并。范围冻结：Day 2（周一）结束。已知触发：无家族史与妊娠糖尿病条目，ADA 风险分只能简化复现。
+**L1。** 触发：某变量在队列内缺失 >40%、无变异或属检查后变量。退出标准：2 小时内通过 change_request 修改 `variable_spec.csv`，合并后记入 decision_register。范围冻结：Day 2（周一）结束。已知触发：无家族史与妊娠糖尿病条目，ADA 风险分只能简化复现。
 
-### 负责与审计
-- 负责：B。审计：C（抽 20 个变量对照 codebook，并复核 sentinel 表）。
+### Git 提交点
+1. `fix(S3): repair XPT float artefacts while preserving NaN` — `fix_xpt` 实测 13,676 格（11 个文件）、零权重转 NaN、漏斗断言 11,933 → 5,730
+2. `feat(S3): add per-variable sentinel recoding from codebooks` — 分类变量 7/9、77/99、7777/9999 映射，DIQ010=3 与 HUQ030=3 保留，输出 `sentinel_audit.csv`
+3. `analysis(S3): quantify blanket recode damage on the cohort` — 1,496 格误毁、29/721、6/971 与"仅问卷列"中间臂（57 格）
+4. `analysis(S3): add consistency, missingness, outlier and quality audits` — BMI 重算、top-coding、缺失 logit（OR 表）、三层异常值规则与 IQR 围栏危害图、`quality_matrix.csv`，DR-S3-01 到 DR-S3-06
+5. `chore(S3): freeze scope` + tag `scope-freeze` — Day 2（周一）末冻结变量范围，抽 20 个变量对照 codebook 的自查结论入 Register
 
 ### 时间
 Day 1 晚到 Day 2（周一）上午，约 6 小时。
@@ -560,10 +677,10 @@ Day 1 晚到 Day 2（周一）上午，约 6 小时。
 3. **年龄标准化。** 标准人口取美国 2000 标准人口（Klein & Schoenborn 2001）三段 20–39/40–59/60+，权重 0.3966/0.3718/0.2316（由 5 岁组标准百万数求和得到，上述 DB516 复现间接印证，三段权重未在 NCHS 页面直接核到原值 [待核实]）。另做 6 段和样本内部标准作敏感性。规范数字：Asian 对 White（综合标签，WTPH2YR）粗差 −0.8pp (−5.1, 3.5)，三段标准化后 +2.1pp (−2.6, 6.8)，两者 CI 都含 0，是"方向翻转、不确定性很大"的诚实示例，不作头条。README 的 18.0% 对 13.6% 用美国 2000 三段标准无法复现，予以撤回。
 4. **保险：Simpson 型衰减，非反转。** insured 减 uninsured 的粗差 +5.3pp (1.8, 8.8)，年龄标准化后 +0.7pp (−2.6, 3.9)。这是年龄混杂（Age → Medicare → Insurance；Age → 糖尿病）造成的衰减。
 5. **Simpson 扫描（219 次比较）。** 9 个暴露 × 4 个结局 × 至多 7 个分层变量，判据为粗差与分层标准化差异号且两者绝对值均 >1pp。发现 5 个符号翻转，另有 25 个以上衰减超过 50%。扫描使用样本分层份额标准化，属探索性；补充做了 Rao–Wu 重缩放 bootstrap（1,000 次）：翻转概率不高（如 uninsured × A1c × 年龄粗差 −2.8 → +1.1，符号不同概率 0.77，标准化符号与点估计一致的概率 0.78；Asian × 综合标签 × 年龄符号不同概率 0.53），仅作补充。只有 DAG 支持的结果进入头条。按 BMI 分层得到的"翻转"不当作去混杂，因为 BMI 在 race → 体脂 → BMI 路径上是中介或测量代理。
-6. **DAG（C 负责，networkx 绘制）。** 节点：Age、Sex、Race/ancestry、SES、Insurance（含 Medicare）、UsualCare、Adiposity、BMI（测量）、Diabetes、Diagnosis、Treatment、HbA1c（测量）、ExamSelection（collider）。边：Age → Medicare → Insurance；Insurance → UsualCare → Diagnosis；Diabetes → Diagnosis → Treatment → HbA1c；Race → Adiposity → BMI；Health → ExamSelection。调整集：Insurance → undiagnosed 取 {Age, SES}；Race → diabetes 取 {Age, Sex}，不调整 BMI。声明：模型系数只是关联，避免 Table 2 谬误。
-7. **冗余与共线性（B 负责）。** 原始 VIF（n=5,388）：BMXWT 95.7、BMXHT 21.6、BMXBMI 97.6、waist 7.1、hip 7.7、arm 6.6。(HT, BMI) 各 1.0；(BMI, waist) 各 5.1；六个血压读数 8.8–11.7，改用均值 SBP/DBP 后各 1.6；Tier-1 候选 [age, BMI, waist, SBP, PIR] 最大 5.9，[age, BMI, SBP, TC, HDL] 最大 1.2。阈值按 O'Brien (2007) 解读：VIF 本身不是删变量的充分理由，结合系数方差与可解释性判断。log(BMI) 与 log(W)−2log(H) 相关 0.99999，属结构性冗余。输出 Spearman 聚类热图（距离 1−|ρ|，`scipy.cluster.hierarchy` 加 `seaborn.clustermap`）。
-8. **偏态（B）。** 偏度 原始 → log → Yeo-Johnson：BMI 1.22 → 0.42 → 0.00（λ=−0.65）；SBP 0.93 → 0.38 → −0.01；HDL 1.08 → 0.21 → 0.00；waist 0.58 → 0.12 → 0.00；TC 0.54 → −0.25 → 0.01；甘油三酯 6.23 → 0.54。λ 只在训练折内拟合；是否变换由 S7 消融决定。
-9. **线性与交互（B）。** 4 结点 RCS 对线性的 LR 检验（n=4,478，综合标签）：age χ²(2)=57.6，p<1e-4；BMI 11.6，p=0.003；waist 7.1，p=0.03；SBP 5.9，p=0.053；HDL 18.5，p=1e-4；TC 41.8，p<1e-4；PIR 0.8，p=0.66。分箱 log-odds：BMI 在 <25 近乎持平（约 −2.7 到 −2.4），之后上升；年龄 60 岁后趋平。交互 LR：race×BMI p=0.42，Asian×BMI p=0.83，age×BMI p=0.20，sex×BMI p=0.48。表述为"未检出（功效不足）"，不是"不存在交互"。
+6. **DAG（networkx 绘制）。** 节点：Age、Sex、Race/ancestry、SES、Insurance（含 Medicare）、UsualCare、Adiposity、BMI（测量）、Diabetes、Diagnosis、Treatment、HbA1c（测量）、ExamSelection（collider）。边：Age → Medicare → Insurance；Insurance → UsualCare → Diagnosis；Diabetes → Diagnosis → Treatment → HbA1c；Race → Adiposity → BMI；Health → ExamSelection。调整集：Insurance → undiagnosed 取 {Age, SES}；Race → diabetes 取 {Age, Sex}，不调整 BMI。声明：模型系数只是关联，避免 Table 2 谬误。
+7. **冗余与共线性。** 原始 VIF（n=5,388）：BMXWT 95.7、BMXHT 21.6、BMXBMI 97.6、waist 7.1、hip 7.7、arm 6.6。(HT, BMI) 各 1.0；(BMI, waist) 各 5.1；六个血压读数 8.8–11.7，改用均值 SBP/DBP 后各 1.6；Tier-1 候选 [age, BMI, waist, SBP, PIR] 最大 5.9，[age, BMI, SBP, TC, HDL] 最大 1.2。阈值按 O'Brien (2007) 解读：VIF 本身不是删变量的充分理由，结合系数方差与可解释性判断。log(BMI) 与 log(W)−2log(H) 相关 0.99999，属结构性冗余。输出 Spearman 聚类热图（距离 1−|ρ|，`scipy.cluster.hierarchy` 加 `seaborn.clustermap`）。
+8. **偏态。** 偏度 原始 → log → Yeo-Johnson：BMI 1.22 → 0.42 → 0.00（λ=−0.65）；SBP 0.93 → 0.38 → −0.01；HDL 1.08 → 0.21 → 0.00；waist 0.58 → 0.12 → 0.00；TC 0.54 → −0.25 → 0.01；甘油三酯 6.23 → 0.54。λ 只在训练折内拟合；是否变换由 S7 消融决定。
+9. **线性与交互。** 4 结点 RCS 对线性的 LR 检验（n=4,478，综合标签）：age χ²(2)=57.6，p<1e-4；BMI 11.6，p=0.003；waist 7.1，p=0.03；SBP 5.9，p=0.053；HDL 18.5，p=1e-4；TC 41.8，p<1e-4；PIR 0.8，p=0.66。分箱 log-odds：BMI 在 <25 近乎持平（约 −2.7 到 −2.4），之后上升；年龄 60 岁后趋平。交互 LR：race×BMI p=0.42，Asian×BMI p=0.83，age×BMI p=0.20，sex×BMI p=0.48。表述为"未检出（功效不足）"，不是"不存在交互"。
 10. **DAJ 对照表。** 年龄、BMI 单调但弯曲 → 主模型 L2 逻辑回归加 `SplineTransformer(n_knots=4, degree=3, knots='quantile', extrapolation='linear')`，线性版作消融对照；交互未检出 → 不放 race×BMI 项，浅树只做阈值与泄漏探测；VIF 与结构冗余 → 去掉 weight、height、hip、arm，血压取均值；TC 非单调 → Tier 2 解读注明他汀的反向因果可能。
 
 ### 理论依据
@@ -584,12 +701,18 @@ Day 1 晚到 Day 2（周一）上午，约 6 小时。
 - Simpson 扫描公布比较总数 219 与翻转概率，头条结果均带 CI。
 - DAJ 每一行对应具体诊断数字。
 - 所有加权估计注明 df，df<8 的标为不稳定。
+- 自查：从头重跑权重、DB516 复现、Simpson 扫描、DAG 与 VIF/偏态/线性各节，重算关键数字（15.78/11.29/4.48、+5.3pp 与 +0.7pp、219 次比较、VIF 与偏度值）并与上文逐项核对，结果写入 Register 的 `check_verdict`。
 
 ### 反馈回路
 无强制回路。若 DB516 复现偏差 >0.5pp，先查权重和定义再进入 S5。
 
-### 负责与审计
-- 负责：B（权重、VIF、偏态、线性）与 C（Simpson、DAG）。交叉审计：C 审 B 的部分，B 审 C 的部分。
+### Git 提交点
+1. `feat(S4): add delete-one-PSU jackknife survey module` — `survey.py`（约 25 行）、权重地图 `weights_map.md`、domain df<8 标记
+2. `analysis(S4): replicate NCHS DB516 prevalence with PSU jackknife` — WTSAF2YR 复现 15.78/11.29/4.48 与年龄标准化 14.31/10.13/4.18，对照 WTPH2YR 的 14.0% 与 Kish 设计效应约 1.55
+3. `analysis(S4): add age standardisation and insurance attenuation` — 三段标准人口 0.3966/0.3718/0.2316、`std_prev_table.csv`、保险 +5.3pp → +0.7pp、撤回 18.0%/13.6%
+4. `analysis(S4): run Simpson scan over 219 comparisons` — `simpson_scan.csv`（5 个符号翻转，Rao–Wu bootstrap 1,000 次补充）
+5. `analysis(S4): add DAG, collinearity, skewness and linearity checks` — networkx DAG 与调整集、`vif_table.csv`、`skew_table.csv`、`linearity_tests.csv`、Spearman 聚类热图
+6. `docs(S4): add DAJ table and register entries DR-S4-01 to 07` — "数据→算法"对照表、DR-S4-01 到 DR-S4-07，自查结论
 
 ### 时间
 Day 2（周一）下午到 Day 3（周二）上午，约 8 小时。
@@ -598,6 +721,8 @@ Day 2（周一）下午到 Day 3（周二）上午，约 8 小时。
 - jackknife 与 Taylor 不完全等价。应对：用 DB516 复现验证并注明。
 - 亚裔子样本小。应对：只报告 CI，不下显著性结论。
 - 扫描存在多重比较。应对：标为探索性，只保留 DAG 支持的头条结果。
+
+---
 
 ---
 
@@ -624,7 +749,7 @@ Day 2（周一）下午到 Day 3（周二）上午，约 8 小时。
    - C2：任何入选特征都不是目标组成部分（HbA1c、DIQ050、DIQ070、DID040、DID060、DIQ160、DIQ180 不入）。
    - C3：总阳性 ≥500、最小报告组阳性 ≥40。L_comb 下 Asian 50 例通过；L_A1c 下 Asian 为 40 例，勉强达线，亚裔结论只作描述。
    - C4：borderline 计阳性使阳性数由 971 增至 1,148，作敏感性。
-   - 冻结：L_comb=DIQ010==1 或 LBXGH≥6.5，成人、已体检、非孕，N=5,730；此后更改需主管批准重开 L2。
+   - 冻结：L_comb=DIQ010==1 或 LBXGH≥6.5，成人、已体检、非孕，N=5,730；此后更改须记入 decision_register 并重开 L2。
    - E-SCREEN（与 E-ALL 并列的共同主评估集）：DIQ010≠1 的成人，阳性为 HbA1c≥6.5（152 阳性对约 4,759 阴性），borderline 阴性并标记，其中 36 人 A1c≥6.5 计阳性。
    - 3×3 标签矩阵：行为训练标签 {L_self, L_A1c, L_comb}；列为评估分层 {D-uncontrolled：自报且 A1c≥6.5，569；D-controlled：自报且 A1c<6.5，250；Undiagnosed：152}；公共阴性 4,759；指标为特异度固定 0.80 下的召回率，AUC 为次要。预注册模式：L_self 最漏 Undiagnosed，L_A1c 最漏 D-controlled，L_comb 最差格差最小；差异 <0.05 则报告为等效。
    - 敏感性标签：SL1=L_A1c；SL2=L_self；SL3=borderline 计阳性；SL4=治疗感知标签，只在 DIQ070 作答范围（DIQ010=1，或 3，或 DIQ010=2 且 DIQ160=1）内使用 DIQ050/DIQ070，须排除二甲双胍用于前驱糖尿病（队列内 DIQ070=1 中 592 人自报糖尿病、44 人 borderline、41 人非糖尿病）；SL5=NCHS 定义（FPG≥126 或 A1c≥6.5 或自报，空腹子样本约 2,940 人，用 WTSAF2YR）；SL6=3×3 矩阵；SL7=置换标签阴性对照。
@@ -649,10 +774,13 @@ Day 2（周一）下午到 Day 3（周二）上午，约 8 小时。
 - `label_freeze.md` 把 E-SCREEN、3×3 矩阵与 SL1–SL7 写成可执行定义。
 
 ### 反馈回路
-**L2。** 触发：C1 到 C4 任一不通过，或审计改变了研究问题。退出标准：重写 S1 的研究问题并重算 C1 到 C4。时间盒 2 小时，周二 12:00 前必须冻结。
+**L2。** 触发：C1 到 C4 任一不通过，或审计改变了研究问题。退出标准：重写 S1 的研究问题并重算 C1 到 C4，记入 decision_register 并重新冻结。时间盒 2 小时，周二 12:00 前必须冻结。
 
-### 负责与审计
-- 负责：C。审计：A。
+### Git 提交点
+1. `analysis(S5): audit three labels with kappa, PA/NA and treatment masking` — 三种标签混淆表（n=5,730）、κ 0.699 / 加权 0.709、PA 0.739、NA 0.959；治疗掩盖（250 人 A1c<6.5，其中 165 人用药）与"未诊断"含义；`label_audit.csv`
+2. `analysis(S5): quantify undiagnosed inequality and BMI bias in Asians` — 风险差与 KG 区间、调整 logit、BMI/waist/WHtR 的 AUC 与敏感度；`undiagnosed_by_group.csv`、`bmi_race_roc.csv`
+3. `analysis(S5): add representation and HbA1c missingness bias tables` — 60+ 占比、响应率、Kish 设计效应、Manski 界限；`representation.csv`
+4. `chore(S5): freeze L_comb, E-SCREEN and 3x3 label matrix` + tag `target-freeze` — C1–C4 判定（注明事后性质）、`label_freeze.md`（E-SCREEN、3×3 矩阵、SL1–SL7）、DR-S5-01 至 DR-S5-08
 
 ### 时间
 Day 3（周二）上午，约 6 小时。
@@ -670,9 +798,9 @@ Day 3（周二）上午，约 6 小时。
 把"发现 → 证据 → 步骤 → 预注册假设 → 结果 → 判定"固化进 Decision Register 与 `hypotheses.md`。精确定义 M0、M1、S 三个参照臂，并把 S 的 14 个可开关步骤归并为 6 个报告块（B1–B6）。
 
 ### 输入
-- S3/B：`config/variable_spec.csv`（sentinel、valid 范围、top_code、role、admissible 等）。
+- S3：`config/variable_spec.csv`（sentinel、valid 范围、top_code、role、admissible 等）。
 - S4：VIF 簇、binned log-odds 与 LR 检验、skew 表、WTPH2YR 选择、DB516 复现。
-- S5/C：冻结的 L_comb（N=5,730）、borderline 编码、sentinel 破坏的准确数字（1,496 个有效格；29/721 个 HbA1c 阳性受损）。
+- S5：冻结的 L_comb（N=5,730）、borderline 编码、sentinel 破坏的准确数字（1,496 个有效格；29/721 个 HbA1c 阳性受损）。
 
 ### 具体方案
 1. **三个参照臂**。
@@ -712,7 +840,7 @@ Day 3（周二）上午，约 6 小时。
 | B6b 调查权重 | P12 | 未加权 AUC 下降 ≤0.01 | 下降 >0.01 | none |
 | P14 WHtR | 替换腰围 | Asian 在 spec 0.80 处的 TPR 升 ≥0.05；总体 \|ΔAUC\|<0.01 | TPR 升 <0.05 | descriptive_seen |
 
-5. **Decision Register 与 hypotheses.md**。字段按 R7.5。`prior_exposure` 如实标注：S3–S5 已看到的结果标 analysis_seen 或 descriptive_seen，只有 S7/S8 的实验假设才称真正预注册。锁定方式：`hypotheses.md` 的 SHA-256 加时间戳，在 notebook 首个单元打印。不要求 git tag。
+5. **Decision Register 与 hypotheses.md**。字段按 R7.5。`prior_exposure` 如实标注：S3–S5 已看到的结果标 analysis_seen 或 descriptive_seen，只有 S7/S8 的实验假设才称真正预注册。锁定方式：`hypotheses.md` 的 SHA-256 加时间戳，在 notebook 首个单元打印；lock 提交早于首个 ablation 提交，git log 本身即为证据。不要求 git tag。
 6. **判定规则（R2 的 SESOI）**。主指标 ΔAUC 阈值 0.01，ΔPR-AUC 0.02，ΔBrier 0.005，系数 SD 比 ≥2，组 TPR 差 0.05（0.10 为"实质性"）。supported：区间排除 0 且 \|Δ\|≥SESOI，方向一致。equivalent：区间完全落在 ±SESOI 内。refuted：方向相反且区间排除 0。inconclusive：其余。mixed：主次指标冲突。
 7. **实现**。`build_pipeline(cfg, tier)` 用 `Pipeline` 加 `ColumnTransformer`，每步包成 `Toggle(enabled)`，关闭即恒等。检查用 notebook 内 `assert`，不要求 pytest：cfg 全 False 等价于 M0；P08/P09 对 tree 的输出不变；换成随机 y 后，所有无状态步骤的输出不变。
 
@@ -723,18 +851,21 @@ Day 3（周二）上午，约 6 小时。
 - 预注册的透明性依据 Nosek 等 2018 PNAS [待核实]。
 
 ### 产出物
-`src/prep.py`、`hypotheses.md` 及其哈希、`decision_register.csv`、管线 DAG 图（A 负责画）、M0/M1/S 对照表。
+`src/prep.py`、`hypotheses.md` 及其哈希、`decision_register.csv`、管线 DAG 图、M0/M1/S 对照表。
 
 ### 验收标准
 - 每个块至少一条假设，含方向、量级、证伪条件、prior_exposure。
 - cfg 全 False 的断言通过；P03 清单与 S1 规则逐项一致。
-- B 审计者重算 `hypotheses.md` 哈希并核对时间戳早于首次 ablation 运行。
+- 自查：重算 `hypotheses.md` 的 SHA-256，并核对时间戳早于首次 ablation 提交（git log 本身即为证据：lock 提交早于 ablation 提交）。
 
 ### 反馈回路
-接收 L3（S9 泄漏狩猎）与 L4（S8 的 WHtR）。退出条件：新增或修改步骤已追加到 `hypotheses.md`（标注事后添加，哈希更新），断言重新通过。每轮不超过 3 小时，最多 2 轮。
+接收 L3（S9 泄漏狩猎）与 L4（S8 的 WHtR）。退出条件：新增或修改步骤已追加到 `hypotheses.md`（标注事后添加，哈希更新），断言重新通过，记入 decision_register 并重新冻结。每轮不超过 3 小时，最多 2 轮。
 
-### 负责与审计
-负责：D。审计：B。A 协助起草 `hypotheses.md`。
+### Git 提交点
+1. `feat(S6): add Toggle-wrapped build_pipeline with steps P01-P14` — `src/prep.py`：无状态步骤、P03–P14、模型级 P11/P12，notebook 内 assert（cfg 全 False 等价 M0、tree 下 P08/P09 不变、随机 y 下无状态步骤不变）
+2. `data(S6): define M0, M1 and S arms with P03 exclusion list` — 三个参照臂、R4 排除清单、T1-minus-care 臂；M0/M1/S 对照表与管线 DAG 图
+3. `docs(S6): draft decision register and hypotheses for blocks B1-B6` — `decision_register.csv`（含 prior_exposure）、`hypotheses.md`（B1–B6 与 P14、SESOI 判定规则）
+4. `chore(S6): lock hypotheses.md (prereg-lock)` + tag `prereg-lock` — 记录 SHA-256 与时间戳，notebook 首个单元打印；此后只追加并标注事后添加
 
 ### 时间
 D3（周二）约 6 小时，晚上完成 prereg-lock。
@@ -793,7 +924,7 @@ D3（周二）约 6 小时，晚上完成 prereg-lock。
 - Hanley & McNeil 1982 [待核实]；Saito & Rehmsmeier 2015 [待核实]。
 
 ### 产出物
-`src/evalkit.py`（B 实现的校正 t、配对 bootstrap、置换检验）、OOF 与指标文件；图：瀑布图（带区间）、leave-one-block-out 图、PR 与校准图、系数稳定性森林图、E-ALL vs E-SCREEN 对比。
+`src/evalkit.py`（校正 t、配对 bootstrap、置换检验）、OOF 与指标文件；图：瀑布图（带区间）、leave-one-block-out 图、PR 与校准图、系数稳定性森林图、E-ALL vs E-SCREEN 对比。
 
 ### 验收标准
 - 所有臂使用同一份折文件（哈希一致）。
@@ -805,8 +936,13 @@ D3（周二）约 6 小时，晚上完成 prereg-lock。
 ### 反馈回路
 向 L3 反馈：触发条件见 S9。退出条件：S9 的泄漏狩猎通过，已重跑的臂与假设更新一致。
 
-### 负责与审计
-负责：D。审计：C。
+### Git 提交点
+1. `feat(S7): add evalkit with corrected t, paired bootstrap, permutation test` — `src/evalkit.py`：Nadeau–Bengio 校正 t（`1/J + n2/n1`）、配对 bootstrap、置换检验、指标函数
+2. `data(S7): generate fold files and holdout split with fixed seeds` — SEED_MASTER=20261011、`RepeatedStratifiedKFold` 折索引存盘与哈希、留出集 ID 与哈希入库（20%，stratify=label×race）
+3. `feat(S7): add baselines BL0, BL-ADAlite and BL-ADAlite-LR` — 三个基线在 E-SCREEN 上的实现，BL0 的 AUC=0.500 断言
+4. `exp(S7): run FAST ablation on E-ALL and E-SCREEN` — FAST 模式（5×2，B=100，≤5 分钟）调通全部臂，Tier 1 与 Tier 2
+5. `exp(S7): run FINAL ablation M0 to S with leave-one-block-out` — FINAL（5×5，B=500）：M0 → M1 → S 累加路径、leave-one-block-out、T1-minus-care 与纯线性 LR 臂；`results/oof_predictions.parquet`、`results/final_metrics.json` 的 ablation、baselines 部分
+6. `analysis(S7): add waterfall, LOBO, PR, calibration and forest plots` — 瀑布图、leave-one-block-out 图、PR 与校准图、系数稳定性森林图、E-ALL vs E-SCREEN 对比，scoreboard 上的 verdict
 
 ### 时间
 D4（周三）约 8 小时，D5 上午收尾。
@@ -865,10 +1001,13 @@ D4（周三）约 8 小时，D5 上午收尾。
 - 未使用组特定阈值（并说明原因）。
 
 ### 反馈回路
-L4：WHtR 若引起新的准备步骤，回 S6 追加并标注。退出条件：追加后 S7 的相关臂复跑。时间盒 3 小时，最多 1 轮。
+L4：WHtR 若引起新的准备步骤，回 S6 追加并标注。退出条件：追加后 S7 的相关臂复跑，记入 decision_register 并重新冻结。时间盒 3 小时，最多 1 轮。
 
-### 负责与审计
-负责：C。审计：D。
+### Git 提交点
+1. `feat(S8): add group metrics with stratified bootstrap and permutation baseline` — 分组 TPR/FPR/选择率/PPV/AUC_g/O:E、EOD 阈值 0.05 与 0.10、组内分层 bootstrap（B=1000）、置换 200 次零分布、n<30 抑制
+2. `analysis(S8): evaluate 3x3 label matrix on E-ALL and E-SCREEN` — 9 个格子的估计与区间，对照预注册形态；访问代理审计臂；F8-2
+3. `exp(S8): run reweighing and WHtR mitigation arms (P14)` — 种族 reweighing（附 w 范围）、S+P14 的 Asian 与 White TPR@spec0.80 对比、S / S+race-reweigh / S+WHtR 的 \|EOD\|–ΔAUC 取舍；若新增准备步骤则回 S6 追加并标注
+4. `analysis(S8): add F8-1 to F8-4 figures and fairness metrics` — F8-1 至 F8-4、`results/final_metrics.json` 的 fairness 部分、Decision Register 的 S8 条目
 
 ### 时间
 D4 下午至 D5 上午，约 6 小时。
@@ -877,6 +1016,8 @@ D4 下午至 D5 上午，约 6 小时。
 - 小样本噪声：只给方向与区间，所有 Asian 结论标"探索性"。
 - 组指标易被过度解读：必须同时展示置换基准。
 - 种族若进入特征：仅作为 S9 的敏感性，披露。
+
+---
 
 ---
 
@@ -931,10 +1072,15 @@ S7 的 OOF 与指标、S8 的组指标、S4 的 DB516 复现（forest plot）、
 - 留出集只运行一次，时间与哈希有记录。
 
 ### 反馈回路
-L3：触发见上。退出条件：泄漏狩猎通过且置换检验通过；失败 2 轮后收窄主张并公开标注。
+L3：触发见上。退出条件：泄漏狩猎通过且置换检验通过；失败 2 轮后收窄主张并公开标注，记入 decision_register 并重新冻结。
 
-### 负责与审计
-负责：B。审计：A。
+### Git 提交点
+1. `feat(S9): add permutation and noise-feature negative controls` — 对 M1 与 S 的置换检验（100 次，FAST 20）与 N(0,1) 噪声列检验，零分布均值检查 [0.495, 0.505]
+2. `exp(S9): run 10-seed stability check on final configuration` — 仅改变 CV 与 bootstrap 的 10 个种子，S−M1 的 SESOI 判定一致性
+3. `analysis(S9): build 14-setting sensitivity table and forest plot` — ΔAUC(S−M1) 森林图，E-ALL 与 E-SCREEN 各一栏（F9-2）
+4. `analysis(S9): add DB516 comparison and L3 leakage hunt log` — V1/V2 对照（F9-4）、单特征 AUC 扫描、depth-1 树、is_missing AUC、T1-minus-care 对照与泄漏狩猎日志
+5. `chore(S9): freeze experiment config` + tag `exp-freeze` — Thu 15 18:00 固定管线配置、C0、阈值与折文件哈希，写入 Decision Register
+6. `exp(S9): run one-shot holdout evaluation after exp-freeze` — D5 周四 15 日 18:00 一次性留出集，写入 `results/final_metrics.json` 的 holdout 部分与 ID 哈希（F9-6）
 
 ### 时间
 D5（周四）约 6 小时，18:00 一次性留出集评估。
@@ -959,7 +1105,7 @@ D5（周四）约 6 小时，18:00 一次性留出集评估。
 - S3–S5 描述性结果；`hypotheses.md`（SHA-256 与时间戳）；Decision Register。
 
 ### 具体方案
-1. **claims.csv**（R7.5 schema）：`claim_id, statement(≤25 词), type, evidence_refs, effect_ci, grade(E1–E4), prereg, robustness, external_ref, scope, falsifier, owner, auditor, video_seg`。
+1. **claims.csv**（R7.5 schema）：`claim_id, statement(≤25 词), type, evidence_refs, effect_ci, grade(E1–E4), prereg, robustness, external_ref, scope, falsifier, video_seg`。
    - E1 确定性事实（计数）；E2 大效应且 CI 排除 0、跨 10 seeds 与敏感性稳定；E3 中等或对某选择敏感；E4 探索性。措辞随等级降级："确证 / 表明 / 与……一致 / 提示"。
    - `prereg` 如实填 prior_exposure：只有 S7/S8 的实验假设是真正预注册（none）。S3–S5 已看过结果的发现标 `descriptive_seen` / `analysis_seen`，WHtR 假设标 `descriptive_seen`，不称"预注册"。
 2. **假设记分牌**（SESOI 取 R2）：ΔROC-AUC 0.01、ΔPR-AUC 0.02、ΔBrier 0.005、系数 SD 比 ≥2×、分组 TPR gap 0.05（实质性 0.10）。
@@ -988,7 +1134,7 @@ D5（周四）约 6 小时，18:00 一次性留出集评估。
 6. **数字口径硬规则**：不用"2,350"和"18.0 vs 13.6"；保险效应称 Simpson 型年龄混杂**减弱**（+5.3→+0.7 pp，(−2.6, 3.9)），不称反转；Asian vs White 称"标准化后方向翻转但 CI 含 0"（粗 −0.8，标准化 +2.1）；未诊断称"诊断/沟通缺口"（152 人中 68% 三年内做过血糖检查，24% 被告知临界），不称单纯可及性问题。
 7. **Limitations register**（威胁 → 方向 → 界定 → 受影响 claim）：横断面且仅关联；复杂抽样；应答率 34.6%（访谈）/25.7%（MEC）；本周期无种族 / 收入过采样；多个子群估计不满足 NCHS 标准；E-SCREEN 仅 152 阳性；ADA-lite 缺 2 项（家族史、妊娠糖尿病）；标签定义（单次 HbA1c、自报、用药掩盖、不分 1 / 2 型）；MNAR 不可检验；top-coding；仅限美国非机构化人群。
 8. **Ethics**：NCHS DUA、最小化；视频公开，只展示聚合；种族作审计变量；接入类变量（HIQ011/HUQ030）不入模型，否则固化标签偏差；非临床工具；公平指标不宣称"公平"；GenAI 透明。
-9. **数字审计**：`numbers_on_slides.csv` 由 `final_metrics.json` 生成，D 脚本重算并 assert，覆盖视频全部数字。冻结后 claim 站不住只能降级、移入 limitation 或删除，不得重跑至满意。
+9. **数字审计**：`numbers_on_slides.csv` 由 `final_metrics.json` 生成，用自行运行的 assert 脚本重算并 assert，覆盖视频全部数字。冻结后 claim 站不住只能降级、移入 limitation 或删除，不得重跑至满意。
 
 ### 理论依据
 - Nadeau & Bengio 2003（*Mach Learn* 52:239）；实现说明 https://cran.hafro.is/web/packages/correctR/vignettes/correctR.html
@@ -1011,13 +1157,15 @@ D5（周四）约 6 小时，18:00 一次性留出集评估。
 
 ### 反馈回路
 - L3（接收）：仅当 M1 或 S 的 E-ALL T1 AUC >0.90 或单个可入模特征 AUC >0.75（年龄除外）时触发；冻结后不再触发，改走降级规则。
-- L5（发出）：审计发现无证据 claim → 降级或再切片已有结果；≤2 轮，每轮 ≤3 h。
+- L5（发出）：自查发现无证据 claim → 降级或再切片已有结果；≤2 轮，每轮 ≤3 h；结论变更记入 decision_register 并重新冻结。
 
-### 负责与审计
-负责 A，审计 D（重算数字与统计表述）；C 复核 bias 与 ethics 措辞；B 提供 CI 和加权方法咨询。
+### Git 提交点
+1. `data(S10): add claims.csv and hypothesis scoreboard` — R7.5 schema 的 claims.csv（含 E1–E4 等级、prereg、falsifier）与 supported / refuted / equivalent / inconclusive / mixed 记分牌
+2. `docs(S10): write interpretation, limitations and ethics sections` — 改善与恶化解释、"ML 告诉了数据什么"表、数字口径规则、`limitations.csv`、Ethics
+3. `feat(S10): add numbers_on_slides generator and assert audit script` — `numbers_on_slides.csv` 由 `final_metrics.json` 生成，自行运行的 assert 脚本重算并全部通过
 
 ### 时间
-D4 起 A 写占位符与 claim 模板；Thu 15 18:00 实验冻结并一次性跑 hold-out，当晚起草；Fri 16 定稿（A 约 8 h，D 3 h，C 2 h）。
+D4 起写占位符与 claim 模板；Thu 15 18:00 实验冻结并一次性跑 hold-out，当晚起草；Fri 16 定稿（写作约 8 h，数字与统计表述自查 3 h，bias 与 ethics 措辞复核 2 h）。
 
 ### 风险与应对
 - 把微小 ΔAUC 讲成故事 → 强制 equivalent 判定与 SESOI。
@@ -1029,47 +1177,45 @@ D4 起 A 写占位符与 claim 模板；Thu 15 18:00 实验冻结并一次性跑
 ## S11 交付物制作与质量保证
 
 ### 目标
-产出自包含、可复现的 `.ipynb`（带 FINAL 输出）和 ≤12 min、四人出镜、围绕 3 个 finding 的视频；用 rubric 追溯矩阵与 clean-room 测试保证质量，并使每位成员贡献可区分。
+产出自包含、可复现的 `.ipynb`（带 FINAL 输出）和 ≤12 min、全员出镜、围绕 3 个 finding 的视频；用 rubric 追溯矩阵与 clean-room 测试保证质量；贡献表与 GenAI 声明作为交付项备齐。
 
 ### 输入
-S10 的 claims、`numbers_on_slides.csv`；各阶段成员 notebook、`src/` helpers（`nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`）、`variable_spec.csv`、`hypotheses.md`；GenAI log。
+S10 的 claims、`numbers_on_slides.csv`；`notebooks/` 中各阶段 notebook、`src/` helpers（`nhanes_io.py`、`survey.py`、`prep.py`、`evalkit.py`）、`variable_spec.csv`、`hypotheses.md`；GenAI log。
 
 ### 具体方案
-1. **工程最低要求**（R7.6）：GitHub 仓库协作、helpers 内联、单一 spec CSV、notebook 内 assert。jupytext、nbstripout、papermill 非必需，仅在团队已熟练时使用。
-2. **装配**：D 从各成员 notebook 按序复制 cell，把 helpers 与 spec 内联到 §4 Setup（提交物只有 ipynb，评分者没有 `src/`）；每节顶部横幅"§n · Owner · Auditor"，节末"Audit note"；共享对象名固定为 `df_raw / df_min / df_sys / FOLDS / RESULTS`。
+1. **工程最低要求**（R7.6）：GitHub 仓库、helpers 内联、单一 spec CSV、notebook 内 assert。jupytext、nbstripout、papermill 非必需，仅在已熟练时使用。
+2. **装配**：开发者在本地把 `notebooks/` 中各节按序装配为一个最终 notebook，把 helpers 与 spec 内联到 §4 Setup（提交物只有 ipynb，评分者没有 `src/`）；每节顶部横幅"§n"，节末"Self-check note"；共享对象名固定为 `df_raw / df_min / df_sys / FOLDS / RESULTS`。
 3. **模式**：环境变量 `NB_MODE`，默认 FAST（5×2、B=100、≤5 min）；提交前以 `NB_MODE=FINAL` 执行并保存输出，开头单元打印 MODE，并说明"已保存输出来自 FINAL"。内嵌 `FINAL_REF`（头部数字字面量），FAST 运行时 assert 在宽容差内一致。
 4. **预注册证据**：§8 单元打印 `hypotheses.md` 的 SHA-256 与时间戳；全文放附录；记分牌显示 prior_exposure。
-5. **章节**：§0 标题、组号、视频链接、贡献表、GenAI 声明；§1 摘要与 3 个 finding；§2–§3 问题、治理、spec；§4 Setup；§5 profiling（B）；§6 EDA 与 fallacy（B/C）；§7 标签与偏差（C）；§8 准备设计与 DR（D）；§9 实验（D）；§10 公平性（C）；§11 稳健性（B）；§12–13 解释与限制（A）；§14 附录（完整 DR、预注册全文、GenAI 日志、参考文献）。每步骤 Why → What → So what。
-6. **贡献表模板**：Member｜Role｜负责节｜审计节｜视频段｜主要产出。**GenAI 声明模板**：Tool（版本、日期）｜使用者｜用途｜产出｜验证方式；加一句"流程中无 LLM 或复杂模型"，并如实列出本项目的 AI 规划与交叉审计；排练做 Q&A drill（每人讲解他人一节 2 min）。
+5. **章节**：§0 标题、组号、视频链接、贡献表、GenAI 声明；§1 摘要与 3 个 finding；§2–§3 问题、治理、spec；§4 Setup；§5 profiling；§6 EDA 与 fallacy；§7 标签与偏差；§8 准备设计与 DR；§9 实验；§10 公平性；§11 稳健性；§12–13 解释与限制；§14 附录（完整 DR、预注册全文、GenAI 日志、参考文献）。每步骤 Why → What → So what。
+6. **贡献表与 GenAI 声明**：贡献表放 §0，内容由团队另行确定，本文档只保证位置与材料就绪；模板：Member｜Role｜负责节｜视频段｜主要产出。**GenAI 声明模板**：Tool（版本、日期）｜使用者｜用途｜产出｜验证方式；加一句"流程中无 LLM 或复杂模型"，并如实列出本项目的 AI 规划与自查。
 7. **可复现清单**：requirements 固定版本（含 pyarrow、networkx）；`SEED_MASTER=20261011` + `SeedSequence`；相对路径，grep 无 `E:\`；数据读取单元优先读取仓库内 `data/nhanes_2021_2023/raw/`，文件缺失时从 CDC 下载，两种情况都校验 SHA-256（不一致仅警告；评分人只拿到 .ipynb，所以下载回退必须保留）；XPT 零值用 `x.mask((x.abs()<1e-10)&x.notna(), 0.0)` 并 assert 无 5.4e-79；全新环境 Restart & Run All 通过；FAST ≤5 min、FINAL 耗时记入 `runtime_log`；`execution_count` 连续；体积 ≤~20 MB [上限待核实]；`nbformat.validate` 通过。
-8. **视频 storyboard**（目标 11:20，上限 11:40；幻灯片一页一图，标题用简短概括，结论用图下一行说明和口播表达）：
+8. **视频 storyboard**（目标 11:20，上限 11:40；幻灯片一页一图，标题用简短概括，结论用图下一行说明和口播表达）。出镜分配由团队另定。
 
-   | 时间 | 主讲 | 幻灯片标题与要点 |
-   |---|---|---|
-   | 0:00–1:30 | A | 标题"Scope & Design"；谁被标记为糖尿病、ML 作为测量仪器；漏斗 11,933→5,730；availability rule；M0 / M1 / S 设计 |
-   | 1:30–2:15 | B | 标题"Cost of Naive Cleaning"；1,496 个有效值被毁，含 29 个 HbA1c 真阳性；冻结标签仅 6/971 翻转 |
-   | 2:15–3:30 | D | 标题"Leakage Gate"；跳问结构泄漏标签，AUC ≈0.96 → ≈0.86（终稿数字替换原型） |
-   | 3:30–4:30 | B | 三页各 20 s：VIF≈96–98；BMI 系数 SD 0.25→0.03；甘油三酯偏度 6.2（偏度不得砍） |
-   | 4:30–6:00 | C | 保险 +5.3→+0.7 年龄混杂减弱；Asian 标准化后翻转但 CI 含 0（诚实不确定）；DAG：BMI 是 mediator 而非 confounder |
-   | 6:00–8:30 | C | 治疗掩盖 30.5%；未诊断风险差（标"exploratory"）与 68% 做过血糖检查；3×3 标签矩阵；Asian BMI 0.573 vs WHtR 0.714 |
-   | 8:30–10:15 | D（B 30 s） | 算法选择页（spline-LR + 浅树，据 S4 诊断，15 s）；M1 vs S 配对森林图（30 s）；E-ALL vs E-SCREEN（25 s）；B：DB516 15.78 vs 15.8、permutation≈0.5、ADA-lite（30 s） |
-   | 10:15–11:20 | A | ML 告诉了数据什么；贡献页（谁做什么、谁审谁）；limitation 与 ethics；GenAI 一句 |
-
-   镜头平衡：A 约 2:35，B 约 2:15，C 4:00，D 约 2:30。若排练中 C 超过 4:00，把 Asian WHtR 页交给 D，并在 C 段保留一句过渡。
-9. **幻灯片规则**：一页一图；标题为简短概括（≤6 词，不用句子），结论写在图下一行；字号 ≥18 pt；直接标注、CI 可见；Okabe–Ito 色盘；每位成员一个角标色；页脚写 n、是否加权、来源节号；图由 notebook 同一代码导出；每页数字均在 `numbers_on_slides.csv`。
-10. **录制**：今天（Sun 11）向讲师确认拼接多段录制是否算"single continuous video"。获准则每人本地录制自己段后硬切拼接；否则改用一次 Zoom 小组录制（共享屏幕，所有人在画面），Mon 12 中午前定案。YouTube：Public；标题与描述含组号；处理完成、时长 ≤12:00；隐身窗口及另一设备验证；无版权音乐。
+   | 时间 | 幻灯片标题与要点 |
+   |---|---|
+   | 0:00–1:30 | 标题"Scope & Design"；谁被标记为糖尿病、ML 作为测量仪器；漏斗 11,933→5,730；availability rule；M0 / M1 / S 设计 |
+   | 1:30–2:15 | 标题"Cost of Naive Cleaning"；1,496 个有效值被毁，含 29 个 HbA1c 真阳性；冻结标签仅 6/971 翻转 |
+   | 2:15–3:30 | 标题"Leakage Gate"；跳问结构泄漏标签，AUC ≈0.96 → ≈0.86（终稿数字替换原型） |
+   | 3:30–4:30 | 三页各 20 s：VIF≈96–98；BMI 系数 SD 0.25→0.03；甘油三酯偏度 6.2（偏度不得砍） |
+   | 4:30–6:00 | 保险 +5.3→+0.7 年龄混杂减弱；Asian 标准化后翻转但 CI 含 0（诚实不确定）；DAG：BMI 是 mediator 而非 confounder |
+   | 6:00–8:30 | 治疗掩盖 30.5%；未诊断风险差（标"exploratory"）与 68% 做过血糖检查；3×3 标签矩阵；Asian BMI 0.573 vs WHtR 0.714 |
+   | 8:30–10:15 | 算法选择页（spline-LR + 浅树，据 S4 诊断，15 s）；M1 vs S 配对森林图（30 s）；E-ALL vs E-SCREEN（25 s）；DB516 15.78 vs 15.8、permutation≈0.5、ADA-lite（30 s） |
+   | 10:15–11:20 | ML 告诉了数据什么；贡献页；limitation 与 ethics；GenAI 一句 |
+9. **幻灯片规则**：一页一图；标题为简短概括（≤6 词，不用句子），结论写在图下一行；字号 ≥18 pt；直接标注、CI 可见；Okabe–Ito 色盘；页脚写 n、是否加权、来源节号；图由 notebook 同一代码导出；每页数字均在 `numbers_on_slides.csv`。
+10. **录制**：今天（Sun 11）向讲师确认拼接多段录制是否算"single continuous video"。获准则可分段录制后硬切拼接；否则改用一次连续录制（Zoom 小组录制，共享屏幕，全员在画面），Mon 12 中午前定案。YouTube：Public；标题与描述含组号；处理完成、时长 ≤12:00；隐身窗口及另一设备验证；无版权音乐。
 11. **排练 L6**：Fri 16 排练 1，Sat 17 上午排练 2；连续两次总长 11:00–11:40 且每段在预算 ±10% 内。砍内容顺序：Asian 标准化页缩至 15 s → 68% 注释 → ADA-lite → 治理细节；不可砍：泄漏闸门、偏度、M1 vs S、标签偏差、贡献页。
 12. **Rubric 追溯矩阵**（`rubric_matrix.md`，每格指向 notebook 节与视频时间戳）：
 
     | ID | 内容 | 证据位置 |
     |---|---|---|
     | RB1 | 技术与可视化合适 | §5–§11 各步 Why；各图 |
-    | RB2 | 正确清晰、贡献可区分 | §0 贡献表、节横幅、审计注记；视频字幕与贡献页 |
+    | RB2 | 正确清晰、贡献可区分 | §0 贡献表、自查注记；视频字幕与贡献页 |
     | RB3 | 冗余、共线、偏度、fallacy 解释 | §6；视频 3:30–6:00 |
     | RB4 | 新颖与深度 | §7、§9、§12；视频 6:00–10:15 |
     | HR1–HR8 | HR1 非显而易见模式；HR2 最小 vs 系统同一模型（M1 vs S）；HR3 仅基础模型；HR4 改善与恶化均解释；HR5 GenAI 声明；HR6 视频 ≤12 min 且全员出镜；HR7 公开 YouTube 加组号；HR8 仅 ipynb 且可复现 | §0、§9、§12；视频各段 |
 
-13. **Clean-room**：Sat 上午，由未写该节的成员在新环境运行；另做"5 分钟冷读"（只读 §0–§1 与标题，能否复述 3 个 finding）。缺陷分级：P0 数字错误、run-all 失败、claim 无证据；冻结后只修 P0。
+13. **Clean-room**：Sat 上午，由开发者在全新环境 / 全新 clone 中运行；另做"5 分钟冷读"自查（只读 §0–§1 与标题，能否复述 3 个 finding）。缺陷分级：P0 数字错误、run-all 失败、claim 无证据；冻结后只修 P0。
 
 ### 理论依据
 - Rule et al. 2019（讲故事、记录过程、依赖、可复现）https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007007
@@ -1082,18 +1228,23 @@ S10 的 claims、`numbers_on_slides.csv`；各阶段成员 notebook、`src/` hel
 
 ### 验收标准
 - Content freeze（Fri 16 22:00）：clean-room 一次通过；FAST ≤5 min；assert 全通过；无绝对路径；贡献表、GenAI 声明、预注册哈希齐全；矩阵无空格；标题测试通过。
-- 排练达标（见 L6）。成片 ≤11:40，四人均出镜并有字幕署名。
+- 排练达标（见 L6）。成片 ≤11:40，全员出镜并有字幕署名（出镜安排由团队另定）。
 - 公开链接在隐身窗口可播放；`nbformat.validate` 通过。对应 HR5–HR8。
 
 ### 反馈回路
-- L5：矩阵有缺口、冷读失败或审计发现问题；退出条件是矩阵全绿；≤2 轮，每轮 ≤3 h；冻结后只修 P0。
+- L5：矩阵有缺口、冷读失败或自查发现问题；退出条件是矩阵全绿；≤2 轮，每轮 ≤3 h；冻结后只修 P0，变更记入 decision_register 并重新冻结。
 - L6：超时或听不懂；退出条件是两次连续合格；≤2 轮，每轮 ≤90 min。
 
-### 负责与审计
-- notebook：D，审计 B。幻灯片与讲稿：A，审计 C。QA、录制与上传：B，审计 A。
+### Git 提交点
+1. `feat(S11): assemble final notebook from notebooks/ with inlined helpers` — 按 §0–§14 装配，helpers 与 spec 内联到 §4 Setup，共享对象名固定
+2. `feat(S11): add NB_MODE switch, FINAL_REF asserts and prereg hash cell` — FAST/FINAL 模式、`FINAL_REF` 容差 assert、§8 的 `hypotheses.md` SHA-256 与时间戳单元
+3. `docs(S11): add contribution table, GenAI declaration and rubric matrix` — §0 贡献表与 GenAI 声明模板、`rubric_matrix.md`（RB1–RB4、HR1–HR8）
+4. `docs(S11): add storyboard with timing and slide deck` — `storyboard.md`（含计时，目标 11:20）与幻灯片，图由 notebook 同一代码导出
+5. `chore(S11): freeze content after clean-room pass` + tag `content-freeze` — Fri 16 22:00，全新环境 / 全新 clone Restart & Run All 通过，`requirements.txt`、`runtime_log.md`，FINAL 输出已保存
+6. `docs(S11): record video link and final runtime log` — 成片与 YouTube 链接写入 §0（只改 markdown），`runtime_log.md` 终稿
 
 ### 时间
-D3 起 A 搭 notebook 骨架；D4 幻灯片模板；Fri 16 装配、审计、冻结与排练 1；Sat 17 clean-room、排练 2、录制，下午上传；Sun 18 缓冲。
+D3 起搭 notebook 骨架；D4 幻灯片模板；Fri 16 装配、自查、冻结与排练 1；Sat 17 clean-room、排练 2、录制，下午上传；Sun 18 缓冲。
 
 ### 风险与应对
 - 运行超时 → FAST/FINAL 开关，D4 实测。
@@ -1104,134 +1255,130 @@ D3 起 A 搭 notebook 骨架；D4 幻灯片模板；Fri 16 装配、审计、冻
 
 ---
 
-## S12 提交与同伴评价
+## S12 提交
 
 ### 目标
-截止前完成正确、可核实的提交（公开 YouTube 链接加纯 `.ipynb`），并保证每位成员按时、诚实地完成保密的同伴评价。
+截止前完成正确、可核实的提交（公开 YouTube 链接加纯 `.ipynb`）。
 
 ### 输入
-S11 的 release notebook、成片与公开链接、`rubric_matrix.md`、clean-room 记录；全程 contribution log（状态表、sync 记录、Decision Register 的 owner 列）。
+S11 的 release notebook、成片与公开链接、`rubric_matrix.md`、clean-room 记录；Decision Register。
 
 ### 具体方案
 1. **提交清单**：
    - YouTube 为 Public，标题与描述含组号；隐身窗口和另一设备可播放；时长 ≤12:00。
    - 只提交一个 `.ipynb`（不压缩，不附数据或 PDF），文件名含组号；带 FINAL 输出；`nbformat.validate` 通过；在全新 Jupyter 中能打开。
    - notebook §0 含组号、视频链接、贡献表、GenAI 声明；最后加视频链接时只改 markdown，并校验 code cell 哈希未变。
-   - 提交文本写组号、链接、成员姓名；保留 SHA-256 与提交确认截图。
-   - A 操作，B 在场核对；提交后用另一账号 / 设备再次点开链接。
+   - 提交文本写组号和视频链接；保留 SHA-256 与提交确认截图。
+   - 提交后用另一账号 / 设备再次点开链接。
 2. **次数策略**（最多 3 次，仅最后一次被评）：
    - v1：Sat 17 晚，全检通过后提交，当作保险。
    - v2：仅在有阻断问题时，Sun 18 10:00 前。
    - v3：紧急修复预留。
    - 内部硬截止 Sun 11:00，距 12:00 留 1 h 余量。
-3. **同伴评价**：Wed 21 Oct 12:00 前在 NTULearn 完成 [待核实：入口位置]，内部目标 Tue 20 晚。每人对每位队友就 Teamwork、Quantity、Quality 各给 1–5 分（5 最好，1 最差），共 9 个分数；评价保密，组内不讨论分数；未完成者该项记 0，与他人所给分无关。
-4. **锚定描述**（对照 contribution log 打分）：5 = 主动、按时、承担相当或更多份额、带来关键想法或在审计中修复实质问题；3 = 响应但被动、约一半份额、合格但无增益；1 = 难联系、明显少于份额、需他人返工。
-5. **过程管理**：D4（Wed 14）与 Fri 16 各做 5 min 中期 retro，及时给反馈，避免最终评价出现意外。
-6. **应急**：NTULearn 故障或链接异常，立即截图留时间戳，邮件联系讲师并附文件 [待核实：课程政策]。
+3. **同伴评价提醒**：Wed 21 Oct 12:00 前在 NTULearn 完成 [待核实：入口位置]，内部目标 Tue 20 晚。
+4. **应急**：NTULearn 故障或链接异常，立即截图留时间戳，邮件联系讲师并附文件 [待核实：课程政策]。
 
 ### 理论依据
-作业提交与同伴评价条款：公开 YouTube 链接加组号；仅 ipynb；最多 3 次提交，只评最后一次；三项标准、1–5 分、保密、未完成零分；截止 Wed 21 Oct 12:00。其余为团队实践。
+作业提交条款：公开 YouTube 链接加组号；仅 ipynb；最多 3 次提交，只评最后一次。其余为工程实践。
 
 ### 产出物
-提交确认截图；`submission/` 下的 SHA-256 与链接记录；每人"已完成同伴评价"自查（不含分数）。
+提交确认截图；`submission/` 下的 SHA-256 与链接记录。
 
 ### 验收标准
-- 提交清单全部勾选（A 操作，B 核对）；NTULearn 显示已提交，链接可再次打开。
-- Tue 20 晚前四人均确认已完成同伴评价。对应 HR6–HR8。
+- 提交清单全部勾选；NTULearn 显示已提交，链接可再次打开。
+- 对应 HR6–HR8。
 
 ### 反馈回路
 L5（后期）：提交前 clean-room 或链接检查失败，只修 P0 并重跑检查，Sun 10:00 前完成。视频有问题则回 S11 重剪或重录，Sun 08:00 前决定，时间盒 3 h。
 
-### 负责与审计
-负责 A，审计 B。同伴评价由每人各自完成，A 在 Sun 18 起提醒。
+### Git 提交点
+1. `docs(S12): add submission record with SHA-256 and video link` — `submission/` 下的 notebook SHA-256、YouTube 链接、提交清单勾选结果与确认截图索引
+2. `chore(S12): tag submitted notebook v1` + tag `submitted-v1` — Sat 17 晚 v1 提交对应的提交点（若有 v2 / v3，同样以 `submitted-v2` / `submitted-v3` 标记）
 
 ### 时间
-Sat 17 晚 v1（约 1 h，A + B）；Sun 18 上午复核及按需 v2；Mon 19–Tue 20 每人约 15 min 完成评价。
+Sat 17 晚 v1（约 1 h）；Sun 18 上午复核及按需 v2。
 
 ### 风险与应对
 - 视频仍在 processing 或被版权标记 → Sat 17 下午上传，晚上复核。
 - 链接为 Unlisted 或私有 → 隐身窗口测试。
-- 组长无法提交 → 任一成员可代提，B 为备份。
-- 遗忘同伴评价 → 日历提醒，群内只问"是否完成"，不问分数。
+
+---
+
 ---
 
 ## 附录 A 交叉审计记录
 
-三位审计员共提出约 60 条发现，下表列出影响设计的主要条目及处置结果。
+设计阶段共收到约 60 条审计发现。下表列出影响设计的主要条目及其处置。
 
 | # | 来源 | 级别 | 发现 | 处置 |
 |---|---|---|---|---|
-| 1 | 前段审计 | P0 | 用例是"筛查"，但 84% 的阳性已确诊，ADA-lite 的比较对象也不一致 | R7.1：设 E-ALL 与 E-SCREEN 两个并列主评估；ADA-lite 只在 E-SCREEN 上比较；两者的差距列为头条发现 |
-| 2 | 前段审计 | P0 | XPT 修复代码 `where(...)` 会把 NaN 变成 0 | 统一改为 `x.mask((x.abs()<1e-10) & x.notna(), 0.0)`，并加断言检查 |
-| 3 | 前段审计 | P0 | 四份草稿出现三套不同的角色分配 | 按 R1 统一，见第 6 节 |
-| 4 | 中段审计 | P0 | SESOI 有 0.005 和 0.01 两种口径；0.005 在 Nadeau–Bengio 校正下无法检验（试跑测得半宽约 0.0065） | 统一用 R2（ΔAUC 0.01），并报告最小可检测差 |
-| 5 | 中段审计 | P0 | 参照臂 M0 含泄漏，S 不可能"优于"M0 | 新增 M1（M0 加可采纳性筛选）；主要对比改为 M1 vs S |
-| 6 | 前段审计 | P1 | 保险差异被称为"反转"，实际是衰减（+5.3 → +0.7） | 改称"年龄混杂导致的衰减"；真正的符号翻转列为探索性结果，并报 bootstrap 翻转概率 |
-| 7 | 前段审计 | P1 | README 中亚裔"18.0 vs 13.6"无法复现 | 弃用；改用加权标准化后的 +2.1（−2.6, 6.8），作为"诚实报告不确定性"的例子 |
-| 8 | 前段审计 | P1 | "约 2,350 格"口径混乱；"29 个真阳性"只在 A1c 标签下成立 | 改为：1,496 个有效值；A1c 标签下 29/721；冻结标签下 6/971 |
-| 9 | 前段审计 | P1 | 未确诊比例的 CI 宽度 ≥ 0.30，不符合 NCHS 呈现标准 | 标为探索性；头条改用风险差 23.2pp（6.2, 40.1），CI 用 Korn–Graubard |
-| 10 | 前段审计 | P1 | BPQ020、BPQ080 与 DIQ160、DIQ180 同属就医痕迹，处理却相反 | 新增 T1-minus-care 消融臂 |
-| 11 | 前段审计 | P1 | 引用 Hsu 2015 支持 BMI ≥ 23，但该文给出的最优切点是 26 | 改引 Araneta 2015 和 ADA 2015 |
-| 12 | 前段审计 | P1 | 声称"预注册"的范围过大 | 用 `prior_exposure` 分级标注；只有 S7/S8 的实验假设算真正预注册 |
-| 13 | 中段审计 | P1 | `SplineTransformer` 生成的是 B 样条基，不是 RCS | 参数改为 quantile 结点、线性外推；文中如实描述 |
-| 14 | 中段审计 | P1 | label-swap 实验只差 152 个标签，统计功效边缘 | 改为 3×3 标签矩阵，评估层用全部样本 |
-| 15 | 中段审计 | P1 | 组特定阈值：亚裔训练集只有约 40 个阳性；按种族 reweighing 时权重 w ≈ 1 | 删去组阈值；种族 reweighing 只报一行零结果 |
-| 16 | 中段审计 | P1 | S9 又重做了一遍 DB516 复现，且部分措辞已过时 | 改为直接引用 S4；S9 只保留标签定义差距的解释（V2） |
-| 17 | 中段审计 | P1 | 14 个步骤逐一报告太重 | 合并为 6 个报告块 B1–B6，每块给出预注册假设 |
-| 18 | 端到端审计 | P1 | L3 用"AUC > 0.90"作触发条件，含泄漏的 M0 会一直触发；年龄单特征 AUC 0.785 也会误触发 | 只对可采纳臂触发，年龄豁免 |
-| 19 | 端到端审计 | P1 | 留出集评估时间与实验冻结点冲突 | 冻结 4 提前到周四 18:00，随即只跑一次留出集 |
-| 20 | 端到端审计 | P1 | 同一产物有多种命名（.csv/.yaml、lock/md 等） | 统一为第 7.2 节的规范产物 |
-| 21 | 端到端审计 | P1 | 工作量集中在 D3–D6 的 C、D、A 三人 | 按 R7.6 重新分配，见第 5 节 |
-| 22 | 端到端审计 | P1 | storyboard 用了未加权或已作废的数字，且缺"算法选择"页 | 已更新数字，并增加算法选择页和 E-ALL vs E-SCREEN 页 |
-| 23 | 端到端审计 | P2 | 视频"单一连续录制"是否允许拼接不明确 | 今天问讲师；备选方案是 Zoom 小组一次性录制 |
-| 24 | 前段审计 | P2 | Little 检验不适用于复杂调查数据，且 mcartest 还是 alpha 版 | 删除；结论措辞改为"无证据反对 MAR" |
-| 25 | 前段审计 | P2 | 交互项 p = 0.42 被写成"无交互" | 改为"检测不到（功效不足）" |
+| 1 | 前段审计 | P0 | 用例写的是"筛查"，但 84% 的阳性已经确诊；ADA-lite 的比较对象也不一致 | 改为 E-ALL 与 E-SCREEN 并列为主评估；ADA-lite 只在 E-SCREEN 上比较；两者的差距列为头条发现 |
+| 2 | 前段审计 | P0 | XPT 修复代码用 `where(...)`，会把 NaN 变成 0 | 改为 `x.mask((x.abs()<1e-10) & x.notna(), 0.0)`，并加断言 |
+| 3 | 前段审计 | P0 | 各草稿的分工口径不一致 | 先统一为一套；v1.1 改为本地单人开发后，分工内容全部删除 |
+| 4 | 中段审计 | P0 | SESOI 有 0.005 和 0.01 两种口径；0.005 在校正 t 下无法检验（试跑半宽约 0.0065） | 统一为 ΔAUC 0.01，并报告最小可检测差 |
+| 5 | 中段审计 | P0 | 参照臂 M0 含泄漏，S 不可能"优于"它 | 新增 M1；主比较改为 M1 vs S |
+| 6 | 前段审计 | P1 | 保险结果被称为"反转"，实际是衰减 | 改称年龄混杂导致的衰减；真正的符号翻转只作探索性报告 |
+| 7 | 前段审计 | P1 | README 中亚裔"18.0 vs 13.6"无法复现 | 弃用；改报加权标准化后的 +2.1（−2.6, 6.8） |
+| 8 | 前段审计 | P1 | "约 2,350 格"口径混乱 | 改为 1,496 个有效值；29/721（A1c 标签）；6/971（冻结标签） |
+| 9 | 前段审计 | P1 | 未确诊比例的 CI 不符合 NCHS 呈现标准 | 标为探索性；头条改用风险差 23.2pp（6.2, 40.1） |
+| 10 | 前段审计 | P1 | BPQ020/BPQ080 也属于就医痕迹 | 新增 T1-minus-care 消融臂 |
+| 11 | 前段审计 | P1 | 引用 Hsu 2015 支持 BMI ≥ 23 不当（该文最优切点为 26） | 改引 Araneta 2015 和 ADA 2015 |
+| 12 | 前段审计 | P1 | 预注册的说法夸大 | 用 `prior_exposure` 分级；只有 S7/S8 的实验假设算真正预注册 |
+| 13 | 中段审计 | P1 | `SplineTransformer` 是 B 样条，不是 RCS | 参数改为 quantile 结点 + 线性外推，并如实描述 |
+| 14 | 中段审计 | P1 | label-swap 统计功效不足 | 改为 3×3 标签矩阵 |
+| 15 | 中段审计 | P1 | 组特定阈值在亚裔组只有约 40 个阳性；种族 reweighing 后 w ≈ 1 | 删除组阈值；reweighing 只报一行零结果 |
+| 16 | 中段审计 | P1 | S9 重复做了 DB516 复现 | 改为引用 S4 的结果 |
+| 17 | 中段审计 | P1 | 14 个步骤逐一报告太重 | 合并为 6 个报告块 B1–B6 |
+| 18 | 端到端审计 | P1 | L3 会被含泄漏的 M0 和年龄误触发 | 只对可采纳臂触发；年龄豁免 |
+| 19 | 端到端审计 | P1 | 留出集的使用时间与冻结点冲突 | 冻结 4 定在周四 18:00，之后立即跑留出集 |
+| 20 | 端到端审计 | P1 | 产物命名不一致 | 统一按第 7.2 节 |
+| 21 | 端到端审计 | P1 | 叙事用了未加权或已作废的数字 | 已更新；新增算法选择页、E-ALL vs E-SCREEN 页 |
+| 22 | 前段审计 | P2 | Little 检验不适用于复杂抽样数据 | 删除；措辞改为"无证据反对 MAR" |
+| 23 | 前段审计 | P2 | 交互项 p = 0.42 被写成"无交互" | 改为"检测不到（功效不足）" |
 
 ---
 
-## 附录 B 最低可信清单与进阶清单
+## 附录 B 最低可信与进阶清单
 
 | 类别 | 最低可信（必做） | 进阶（有余力再做） |
 |---|---|---|
-| 工程 | GitHub 仓库（含原始数据）；`src/` helpers 内联进 Notebook；单一 spec CSV；Notebook 内 assert；FAST/FINAL 两种模式 | 按成员分支加 PR 审计、冻结点 git tag 自动化、jupytext、nbstripout、pytest、papermill、构建脚本 |
-| 数据质量 | 按变量逐个处理哨兵值并做审计表；XPT 修复；一致性检查；缺失机制 logit；异常值三层规则（不删数据） | 敏感性中加 IPW |
-| EDA | DB516 复现；年龄标准化；辛普森扫描（只报头条结论）；DAG；VIF；偏态；线性检验；DAJ 表 | 完整的 219 组合附录、6 段年龄标准化 |
+| 工程 | GitHub 仓库（含原始数据）；按第 6 节逐步提交；`src/` helpers 内联进 notebook；单一 spec CSV；notebook 内 `assert`；FAST/FINAL 两种模式 | `exp/*` 分支实验；jupytext、nbstripout、pytest、papermill；构建脚本 |
+| 数据质量 | 按变量处理哨兵值并出审计表；XPT 修复；一致性检查；缺失机制 logit；异常值三层规则（不删数据） | 敏感性分析中加 IPW |
+| EDA | DB516 复现；年龄标准化；辛普森扫描（只报头条结论）；DAG；VIF；偏态；线性检验；DAJ 表 | 完整的 219 组合附录；6 段年龄标准化 |
 | 实验 | M0/M1/S；B1–B6 累加与逐块去除；T1-minus-care；线性 LR 对照；BL0/ADA-lite；E-ALL 与 E-SCREEN | Shapley 顺序平均；Holm 校正；cluster bootstrap |
-| 公平性 | 分组 TPR 及 CI（含置换基准）；3×3 标签矩阵；WHtR 臂（含白人对照） | 对无医保人群 reweighing；公平性与性能的权衡图 |
+| 公平性 | 分组 TPR 及 CI（含置换基准）；3×3 标签矩阵；WHtR 臂（含白人对照） | 无医保 reweighing；公平与性能权衡图 |
 | 可信度 | 置换检验 100 次；10 个种子；≤ 16 个设定的敏感性表；泄漏排查；留出集只用一次 | 60 个设定的规格曲线；StratifiedGroupKFold；阳性对照 |
-| 交付 | 贡献表；GenAI 声明；预注册哈希；rubric 矩阵；两次排练；干净环境运行 | 数字审计脚本 `numbers_on_slides` 的全量 assert |
+| 交付 | GenAI 声明；预注册哈希；rubric 矩阵；排练计时；干净环境运行（从 GitHub 重新 clone） | `numbers_on_slides` 全量 assert 脚本 |
 
 ---
 
 ## 附录 C 待核实清单
 
-动手前或引用前需要确认。
-
-| 项 | 负责 | 截止 |
-|---|---|---|
-| 拼接多段录制是否算"single continuous video" | A | D1 |
-| 本组组号（Groupings.pdf） | A | D1 |
-| Bang 2009 原文中的 AUC（0.79 还是 0.83）及 BMI 计分表 | A | D3 |
-| NCHS 呈现标准（Parker 2017）的具体阈值 | B | D2 |
-| 新加坡 HPB 的 23/27.5 BMI 切点在官方网站上的出处 | C | D3 |
-| ADA 现行 Standards of Care 对亚裔 BMI ≥ 23 的表述 | C | D3 |
-| WTPH2YR 与 WTMEC2YR 的优先关系（以 codebook 为准） | B | D2 |
-| NTULearn 的文件大小上限和 peer review 入口 | A | D6 |
-| 文献信息：Sandve 2013、Wilson 2017、Nosek 2018、Groenwold 2012、Peduzzi 1996、Hanley–McNeil 1982、Simonsohn 2020、Chouldechova 2017、Obermeyer 2019、O'Brien 2007、Westreich & Greenland 2013 | 各引用人 | 写入 Notebook 前 |
+| 项 | 截止 |
+|---|---|
+| 拼接多段录制是否算"single continuous video"（向讲师确认） | D1 |
+| 本组组号（`course/groupings.pdf`） | D1 |
+| Bang 2009 原文中的 AUC（0.79 还是 0.83）及 BMI 计分表 | D3 |
+| NCHS 呈现标准（Parker 2017）的具体阈值 | D2 |
+| 新加坡 HPB 的 23/27.5 BMI 切点在官方网站上的出处 | D3 |
+| ADA 现行 Standards of Care 对亚裔 BMI ≥ 23 的表述 | D3 |
+| WTPH2YR 与 WTMEC2YR 的优先关系（以 codebook 为准） | D2 |
+| NTULearn 文件大小上限 | D6 |
+| 文献信息：Sandve 2013、Wilson 2017、Nosek 2018、Groenwold 2012、Peduzzi 1996、Hanley–McNeil 1982、Simonsohn 2020、Chouldechova 2017、Obermeyer 2019、O'Brien 2007、Westreich & Greenland 2013 | 写入 notebook 之前 |
 
 ---
 
 ## 附录 D 设计过程 GenAI 声明
 
-可直接放入 Notebook §0 或 §14。
+可直接放入 notebook 的 §0 或 §14。
 
 | 工具 | 用途 | 产出 | 人工验证方式 |
 |---|---|---|---|
-| Claude Opus（主导） | 制定流程框架、高层设计判断、两轮裁决、汇总与验收 | 本文档的第 1–8 节和附录 | 组员逐节阅读；关键数字在 S3–S5 中复现 |
-| Claude Sonnet（4 个作者代理） | 并行起草 S0–S12 各阶段方案，并在原始数据上做只读复算 | S0–S12 阶段方案 | 交叉审计，加组员在执行中复算 |
-| Claude Sonnet（3 个审计代理） | 交叉审计：文献核对、统计正确性、跨阶段一致性 | 附录 A 的审计记录 | 由 Opus 裁决；组员抽查 |
+| Claude Opus（主导） | 流程框架、高层设计判断、两轮裁决、汇总与验收 | 本文档第 1–8 节和附录 | 开发者逐节阅读；关键数字在 S3–S5 中复现 |
+| Claude Sonnet（4 个作者代理） | 并行起草 S0–S12，并对原始数据做只读复算 | S0–S12 阶段方案 | 交叉审计，并由开发者执行时复算 |
+| Claude Sonnet（3 个审计代理） | 文献核对、统计正确性、跨阶段一致性检查 | 附录 A | 由 Opus 裁决，开发者抽查 |
 
-需要说明：分析流程本身不使用 LLM 或复杂模型。上表中的数字只是规划阶段的参考值，最终报告中的数字必须在组员自己的 Notebook 中重新算出。组员要能解释并论证全部代码和结论。
+分析流程中不使用 LLM 或复杂模型。规划阶段给出的数字只作参考，最终数字必须在本地 notebook 中重新算出，并由 Git 提交历史留痕。开发者需要能够解释和论证所有代码与结论。
 
 ---
 
@@ -1239,10 +1386,9 @@ Sat 17 晚 v1（约 1 h，A + B）；Sun 18 上午复核及按需 v2；Mon 19–
 
 | 检查项 | 结果 |
 |---|---|
-| 13 个阶段都具备 10 个固定栏目（目标 / 输入 / 具体方案 / 理论依据 / 产出物 / 验收标准 / 反馈回路 / 负责与审计 / 时间 / 风险与应对） | 通过 |
-| 角色、参数、产物命名与第 5–7 节一致 | 通过（汇总时已统一个别时间盒和措辞） |
-| 已弃用的数字（约 2,350、18.0 vs 13.6、"反转"为 −1.4、ΔAUC 0.005）没有再出现 | 通过 |
+| 13 个阶段都有 10 个固定栏目，其中"负责与审计"已改为"Git 提交点" | 通过 |
+| 不含团队分工、互审、例会等协作内容；评分要求中的交付项（全员出镜、贡献表）只作为交付物列出 | 通过 |
+| 参数、产物命名与第 6–7 节一致；计划提交约 55 次，6 个冻结 tag 各有独立提交 | 通过 |
+| 已作废数字（约 2,350、18.0 vs 13.6、"反转"、ΔAUC 0.005）未再作为结论使用 | 通过 |
 | 硬性要求 HR1–HR8 都有对应的阶段产出 | 通过（见 S11 的 rubric 追溯矩阵） |
-| 团队额外的高分目标：范围清晰（第 1.4 节、S1）、问题新颖（第 1.2 节）、方法创新（第 1.5 节）、用数据支撑算法选择（第 1.6 节、S4 的 DAJ 表）、结果可信（第 1.7 节、S9） | 通过 |
-| 每个反馈回路都有触发条件、退出条件、时间盒和截止时间 | 通过（第 4 节） |
-| 剩余风险 | E-SCREEN 只有 152 个阳性，多数结论可能是 inconclusive；亚裔分析只能作探索；视频录制方式要等讲师答复 |
+| 剩余风险 | E-SCREEN 只有 152 个阳性，多数结论可能是 inconclusive；亚裔分析只能算探索性；视频录制方式待讲师答复 |
