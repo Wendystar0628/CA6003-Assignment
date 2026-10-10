@@ -538,6 +538,7 @@ print(f"NH Asian BMI bands failing the NCHS presentation standard: {n_flag_asian
 assert n_flag_asian >= 3
 close(B_.loc[("NH Asian", "<23"), "prev"], 0.121, 0.001, "Asian <23"); close(B_.loc[("NH White", "<23"), "prev"], 0.043, 0.001, "White <23")
 close(B_.loc[("NH Asian", "23–24.9"), "prev"], 0.175, 0.001, "Asian 23-25"); close(B_.loc[("NH White", "23–24.9"), "prev"], 0.033, 0.001, "White 23-25")
+close(B_.loc[("NH Asian", "25–29.9"), "prev"], 0.115, 0.001, "Asian 25-30"); close(B_.loc[("NH Asian", "25–29.9"), "w_prev"], 0.053, 0.001, "Asian 25-30 weighted")
 close(B_.loc[("NH Asian", "<23"), "w_prev"], 0.078, 0.001, "Asian <23 weighted"); close(B_.loc[("NH Asian", "23–24.9"), "w_prev"], 0.140, 0.001, "Asian 23-25 weighted")
 
 # %%
@@ -673,6 +674,8 @@ register("DR-S5-06", "measurement_bias",
 # 2.8 %). These band estimates rest on 44–107 Asian adults each and all four fail the NCHS presentation standard
 # (relative CI width > 130 % or absolute width ≥ 0.30, two with df < 8), so they are exploratory: they are
 # compatible with diabetes occurring at lower BMI in Asian adults but do not establish band-specific rates. The
+# Asian pattern is not even monotone: the 25–29.9 band is *lower* (11.5 % unweighted, 5.3 % weighted) than both
+# bands below 25, as expected from small cells. The
 # robust part of the evidence is the case-based BMI share above and the discrimination analysis below: BMI barely discriminates in Asian adults
 # (AUC 0.573), while waist (0.697) and WHtR (0.714) do. The paired WHtR − BMI gain is +0.137 in Asian adults
 # (bootstrap CI roughly 0.09–0.18) against +0.049 in White adults (CI roughly 0.04–0.06); the Asian-minus-White
@@ -711,6 +714,9 @@ RP = rep.set_index(["dimension", "level"])
 close(RP.loc[("age", "60+"), "sample_share"], 0.462, 0.001, "60+ sample"); close(RP.loc[("age", "60+"), "weighted_share"], 0.314, 0.001, "60+ weighted")
 close(RP.loc[("age", "20-39"), "sample_share"], 0.247, 0.001, "20-39 sample"); close(RP.loc[("age", "20-39"), "weighted_share"], 0.348, 0.001, "20-39 weighted")
 close(deff, 1.55, 0.01, "Kish deff")
+age_explained = R.load_section("S4")["prevalence"]["gap_explained_by_age"]   # S4: sample rates re-weighted to the population age mix
+print(f"S4: age structure explains {100 * age_explained:.0f}% of the {100 * (unw_prev - w_prev['est']):.1f} pp unweighted-weighted gap")
+close(age_explained, 0.84, 0.01, "share of gap explained by age (S4)")
 
 # Response rates are documented by NCHS, not derivable from public files (S2 provenance; NHANES 2021-2023
 # overview brief, https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewbrief.aspx?Cycle=2021-2023).
@@ -766,7 +772,9 @@ register("DR-S5-07", "representation",
 # %% [markdown]
 # **So what.** Adults aged 60+ make up 46.2 % of the sample but 31.4 % of the weighted population (20–39: 24.7 %
 # vs 34.8 %); race shares differ by at most about one percentage point because this cycle no longer oversamples by
-# race. That age skew alone explains why the unweighted `L_comb` prevalence (16.9 %) exceeds the weighted 14.0 %.
+# race. The age skew is the main reason why the unweighted `L_comb` prevalence (16.9 %) exceeds the weighted 14.0 %:
+# re-weighting the sample rates to the population age mix closes about 84 % of the 2.9 pp gap (S4); the rest
+# reflects other weighting factors.
 # Unequal weights cost precision (Kish design effect 1.55, effective n ≈ 3,700). With response rates of 34.6 %
 # (interview) and 25.7 % (exam), selection matters: interview-only adults report diabetes less often (8.8 %)
 # than adults with an HbA1c result (11.7 %). Weights correct for known covariates such as age, not for
@@ -961,7 +969,7 @@ register("DR-S5-10", "sensitivity_labels",
          "results/S5/sensitivity_labels.csv; governance/label_freeze.md",
          "SL1 721, SL2 819, SL3 1,148, SL4 886, SL5 " + f"{int(SLT.loc['SL5', 'positives'])}/{int(SLT.loc['SL5', 'n'])} (weighted {pct(SLT.loc['SL5', 'w_prev'])})",
          "Freeze SL1-SL7 as executable definitions (src/labels.py); SL4 uses only the DIQ070 universe and excludes pills of non-diagnosed respondents; S9 reports results under SL1-SL5, S8 runs SL6, S9 runs SL7",
-         "Ad-hoc relabelling after seeing model results; DIQ070 pills as diabetes for all respondents (would count metformin for prediabetes)")
+         "Ad-hoc relabelling after seeing model results; DIQ070 pills as diabetes for all respondents (would count pills plausibly taken for prediabetes, e.g. metformin)")
 
 # %% [markdown]
 # **So what.** All four gate criteria pass; we state explicitly that this is a post-hoc judgement made after

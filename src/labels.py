@@ -25,8 +25,8 @@ Sensitivity labels (`sensitivity_labels`)
     SL3  L_comb with borderline counted positive
     SL4  treatment-aware: L_A1c or (L_self and on insulin/pills). Medication answers are
          used only inside the true DIQ070 universe (DIQ010 = 1, or 3, or 2 with DIQ160 = 1);
-         pills reported by borderline / prediabetic respondents (probably metformin for
-         prediabetes) do NOT make a case.
+         pills reported by borderline / prediabetic respondents (plausibly metformin
+         for prediabetes) do NOT make a case.
     SL5  NCHS DB516 definition on the fasting subsample: L_self or LBXGH >= 6.5 or
          LBXGLU >= 126 mg/dL; NaN outside the fasting subsample (WTSAF2YR > 0 & LBXGLU
          observed). Analyse with WTSAF2YR.
