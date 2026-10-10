@@ -1,1 +1,1 @@
-F9-1. Mean per-fold ROC-AUC of M1 and S refitted on permuted training labels (20 permutations, same folds; grey) against the observed value (red). Blue band = acceptance range [0.495, 0.505] for the null mean; dotted line = null mean. Training part, Tier 1, E-ALL.
+F9-1. Mean per-fold ROC-AUC of M1 and S refitted on permuted training labels (100 permutations, same folds; grey) against the observed value (red). Blue band = acceptance range [0.495, 0.505] for the null mean; dotted line = null mean. Training part, Tier 1, E-ALL.
