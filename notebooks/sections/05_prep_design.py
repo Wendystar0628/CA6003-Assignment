@@ -74,21 +74,41 @@ S6["inputs"] = dict(n_cohort=len(raw), n_train=len(train_idx), n_holdout=len(tes
 # (then it is fitted in-fold) and whether it could ever see the label (none may).
 
 # %%
+S4dir = C.RESULTS_DIR / "S4"
+vif4 = pd.read_csv(S4dir / "vif_table.csv")
+lin4 = pd.read_csv(S4dir / "linearity_tests.csv").set_index("variable")
+sk4 = pd.read_csv(S4dir / "skew_table.csv")
+auc5 = R.load_section("S5")["asian_bmi"]["auc"]
+vraw = vif4[vif4["set"] == "raw_anthropometry"].set_index("variable")["vif"]
+vbp, vbm = vif4.loc[vif4["set"] == "bp_readings", "vif"], vif4.loc[vif4["set"] == "bp_means", "vif"]
+sk_bmi = sk4.query("variable == 'BMXBMI' and subsample == 'cohort'")["skew_raw"].iloc[0]
+sk_tg = sk4[(sk4["variable"] == "LBXTLG") & sk4["subsample"].str.startswith("fasting")]["skew_raw"].iloc[0]
+gain = {g: auc5[f"NH {g}|WHtR \u2212 BMI (paired)"]["auc"] for g in ("Asian", "White")}
+ev = {
+    "P04": f"S4: 6 BP readings VIF {vbp.min():.1f}-{vbp.max():.1f} vs means {vbm.max():.1f}; PA skip pattern",
+    "P05": f"S4: weight VIF {vraw['BMXWT']:.1f}, BMI {vraw['BMXBMI']:.1f}; keep BMI + waist",
+    "P06": f"cohort: PIR missing {raw['INDFMPIR'].isna().mean():.1%}; MNAR-suspect list",
+    "P08": f"S4: |skew| > 1 (BMI {sk_bmi:.2f}, TG {sk_tg:.2f} fasting)",
+    "P11": f"prevalence {clean['L_comb'].mean():.1%}; balanced weights",
+    "P13": "S4: RCS LR chi2 " + ", ".join(f"{lab} {lin4.loc[v, 'chi2']:.1f}" for v, lab in
+                                           (("RIDAGEYR", "age"), ("BMXBMI", "BMI"), ("LBDHDD", "HDL"), ("LBXTC", "TC"))),
+    "P14": f"S5: WHtR-BMI AUC gain Asian {gain['Asian']:+.3f} vs White {gain['White']:+.3f}",
+}
 catalogue = pd.DataFrame([
     ("P01", "xpt_zero_fix", "B1", "stateless", "S3: zero stored as 5.4e-79; mask() keeps NaN"),
     ("P02", "sentinel_by_var", "B1", "stateless", "S3: blanket recode wipes valid values; off = blanket (M0)"),
     ("P03", "admissibility", "B2", "stateless", "S1 availability rule; spec column `admissible`"),
-    ("P04", "aggregate", "B3", "stateless", "S4: 6 BP readings VIF 8.8-11.7 vs means 1.6; PA skip pattern"),
-    ("P05", "prune", "B3", "fitted in-fold (X)", "S4: weight VIF 95.7, BMI 97.6; keep BMI + waist"),
-    ("P06", "missing_indicator", "B4", "stateless", "S3: PIR missing 12.8 %; MNAR-suspect list"),
+    ("P04", "aggregate", "B3", "stateless", ev["P04"]),
+    ("P05", "prune", "B3", "fitted in-fold (X)", ev["P05"]),
+    ("P06", "missing_indicator", "B4", "stateless", ev["P06"]),
     ("P07", "topcode_flag", "B4", "stateless", "S2/S3: age top-coded 80, PIR 5"),
-    ("P08", "yeo_johnson", "B5", "fitted in-fold (X)", "S4: |skew| > 1 (BMI 1.22, TG 6.2)"),
-    ("P09", "scale", "B5", "fitted in-fold (X)", "L2 penalty is scale dependent; M0 fails to converge"),
+    ("P08", "yeo_johnson", "B5", "fitted in-fold (X)", ev["P08"]),
+    ("P09", "scale", "B5", "fitted in-fold (X)", "L2 penalty is scale dependent; unscaled fits fail to converge"),
     ("P10", "rare_categories", "B5", "fitted in-fold (X)", "levels < 2 % grouped as infrequent"),
-    ("P11", "class_weight", "B6a", "estimator", "prevalence 16.9 %; balanced weights"),
+    ("P11", "class_weight", "B6a", "estimator", ev["P11"]),
     ("P12", "survey_weight", "B6b", "estimator", "S4: WTPH2YR for HbA1c cohort; mean 1"),
-    ("P13", "splines", "B5", "fitted in-fold (X)", "S4: RCS LR test age 57.6, BMI 11.6, HDL 18.5, TC 41.8"),
-    ("P14", "whtr", "(arm)", "stateless", "S5: Asian WHtR-BMI AUC gain +0.136 vs White +0.048"),
+    ("P13", "splines", "B5", "fitted in-fold (X)", ev["P13"]),
+    ("P14", "whtr", "(arm)", "stateless", ev["P14"]),
 ], columns=["step", "name", "block", "learns from", "evidence"])
 assert list(catalogue["step"]) == list(P.STEPS)
 assert all(P.STEP_BLOCK[s] == b or b == "(arm)" for s, b in zip(catalogue["step"], catalogue["block"]))
@@ -140,9 +160,9 @@ S6["B1"] = dict(n_artefact_cells_train_t1=n_artefact, artefact_by_column=art[art
 # ("0 sessions → 0 minutes") silently turns the non-exercisers printed above into missing values. P01 is a
 # fidelity fix whose cost only shows downstream. The blanket recode is not harmless: it deletes valid
 # answers (e.g. 7 sessions of activity per week, 77-year-olds, a diastolic pressure of 77) and costs the
-# naive label 29 HbA1c-based positives, of which 6 are not rescued by self-report. These numbers
-# reproduce §8 (1,496 wiped cells were counted on 20 continuous candidates in S3; here the count refers to the
-# model's feature frame in the training part). Expected model effect: small (hypothesis B1).
+# naive label 29 HbA1c-based positives, of which 6 are not rescued by self-report. These numbers agree with the
+# profiling in §3 (1,496 wiped cells were counted there on 20 continuous candidates in the whole cohort; here the count
+# refers to the model's feature frame in the training part). Expected model effect: small (hypothesis B1).
 
 # %% [markdown]
 # ## 4 B2 admissibility (availability rule)
@@ -258,7 +278,7 @@ S6["B4"] = dict(mnar=mnar.set_index("column").to_dict("index"), n_age_top=n_age8
 # only on columns with |skew| > 1 that are not already splined.
 
 # %%
-pre_s = Pipeline(P.preprocessor_steps(P.make_cfg(["P01", "P02", "P03", "P04", "P05", "P06", "P07"]), 2)).fit_transform(X2_tr)
+pre_s = Pipeline(P.preprocessor_steps(P.make_cfg(["P01", "P02", "P03", "P04", "P05", "P06", "P07"]), 2)[:-1]).fit_transform(X2_tr)   # before encoding
 yj = P.YeoJohnson(exclude=P.SPLINE_COLS[2]).fit(pre_s)
 skew = pd.Series(yj.skew_).round(2).sort_values(key=abs, ascending=False)
 after = P.YeoJohnson(exclude=P.SPLINE_COLS[2]).fit(pre_s).transform(pre_s)
@@ -266,19 +286,25 @@ skew_after = {c: float(pd.Series(after[c]).skew()) for c in yj.cols_}
 cat_cols = [c for c in pre_s.columns if P._is_cat(pre_s, c)]
 rare = {c: [str(k) for k, v in pre_s[c].value_counts(normalize=True).items() if v < P.RARE_MIN_FREQ] for c in cat_cols}
 rare = {c: v for c, v in rare.items() if v}
+pre_nop4 = Pipeline(P.preprocessor_steps(P.make_cfg(["P01", "P02", "P03", "P05", "P06", "P07"]), 2)[:-1]).fit_transform(X2_tr)
+rare_nop4 = {c: [f"{k} ({v:.1%})" for k, v in pre_nop4[c].value_counts(normalize=True).items() if v < P.RARE_MIN_FREQ]
+             for c in pre_nop4.columns if P._is_cat(pre_nop4, c)}
+rare_nop4 = {c: v for c, v in rare_nop4.items() if v}
 print("training-fold skewness (Tier 2, before P08):"); print(skew.to_string())
 print(f"P08 transforms {yj.cols_}; skewness after: { {k: round(v, 2) for k, v in skew_after.items()} }")
 print(f"P13 splines: {dict(P.SPLINE_COLS)} with {C.SPLINE_KW}")
-print(f"P10 levels below {P.RARE_MIN_FREQ:.0%}: {rare}")
+print(f"P10 levels below {P.RARE_MIN_FREQ:.0%} with P04 on: {rare}; with P04 off: {rare_nop4}")
 S6["B5"] = dict(skew=skew.to_dict(), yj_columns=yj.cols_, skew_after_yj=skew_after,
-                spline_cols={k: list(v) for k, v in P.SPLINE_COLS.items()}, spline_kw=C.SPLINE_KW, rare_levels=rare)
+                spline_cols={k: list(v) for k, v in P.SPLINE_COLS.items()}, spline_kw=C.SPLINE_KW, rare_levels=rare, rare_levels_without_p04=rare_nop4)
 
 # %% [markdown]
 # **So what.** Only the activity minutes and hip circumference exceed |skew| = 1 once BMI is splined; Yeo-Johnson
 # brings them close to symmetric. Note that in the *S-linear* arm BMI is not splined and is therefore
 # Yeo-Johnson transformed (skew 1.22 in S4). Splines add 5 basis columns per variable (B-spline basis, not a
-# restricted cubic spline). No admissible category falls below 2 % in the training part, so P10 is expected to be
-# inert here and acts only as a guard against unseen levels in small folds. For trees P08/P09 are monotone per column and must leave predictions unchanged (section 10).
+# restricted cubic spline). With P04 on, no admissible category falls below 2 % in the training part, so P10 is
+# inert in S and acts only as a guard against unseen levels in small folds. This depends on P04: without it the
+# activity *unit* columns (day / week / month / year) stay in the model and their rare levels (printed) are grouped by
+# P10 – so P10 matters only in arms that switch P04 off. For trees P08/P09 are monotone per column and must leave predictions unchanged (section 10).
 
 # %% [markdown]
 # ## 8 B6 class and survey weights
@@ -336,7 +362,7 @@ plt.show()
 
 # %% [markdown]
 # ## 10 Pipeline assertions
-# **Why.** The ablation is only meaningful if the switches do what they claim. Four checks (process doc S6.7):
+# **Why.** The ablation is only meaningful if the switches do what they claim. Four checks:
 # (a) all switches off reproduces an independently written naive M0; (b) P08/P09 do not change a tree's
 # predictions; (c) no preparation step reads the label; (d) a disabled Toggle is exactly the identity.
 
@@ -443,7 +469,7 @@ S6["hypotheses"] = dict(n_total=len(hyp), block_ids=list(blocks_h["hyp_id"]), sh
 
 # %% [markdown]
 # **So what.** Nine block-level hypotheses join the eight scope hypotheses. Only B2t, B6a and B6b are genuine
-# pre-registrations (`none`); B1 rests on damage counted in S3/S6, B2 and B3 on the design prototype, B4 on the
+# pre-registrations (`none`); B1 rests on damage counted in S3/S6, B2 and B3 on an earlier pilot analysis, B4 on the
 # missingness table of section 6, B5 on the S4 linearity tests and P14 on the S5 single-feature AUCs – all
 # disclosed. The lock commit, its timestamp and the SHA-256 recomputed from that commit are printed above;
 # S7 results are committed only after it.

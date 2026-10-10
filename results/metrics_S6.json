@@ -3,7 +3,7 @@
     "section": "S6",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:49:49+00:00"
+    "written_utc": "2026-10-10T19:07:51+00:00"
   },
   "inputs": {
     "n_cohort": 5730,
@@ -197,7 +197,15 @@
       "extrapolation": "linear",
       "include_bias": false
     },
-    "rare_levels": {}
+    "rare_levels": {},
+    "rare_levels_without_p04": {
+      "PAD790U": [
+        "Y (1.0%)"
+      ],
+      "PAD810U": [
+        "Y (1.9%)"
+      ]
+    }
   },
   "B6": {
     "train_prevalence": 0.1695026178010471,

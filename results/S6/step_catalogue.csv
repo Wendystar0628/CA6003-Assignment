@@ -4,12 +4,12 @@ P02,sentinel_by_var,B1,stateless,S3: blanket recode wipes valid values; off = bl
 P03,admissibility,B2,stateless,S1 availability rule; spec column `admissible`
 P04,aggregate,B3,stateless,S4: 6 BP readings VIF 8.8-11.7 vs means 1.6; PA skip pattern
 P05,prune,B3,fitted in-fold (X),"S4: weight VIF 95.7, BMI 97.6; keep BMI + waist"
-P06,missing_indicator,B4,stateless,S3: PIR missing 12.8 %; MNAR-suspect list
+P06,missing_indicator,B4,stateless,cohort: PIR missing 12.8%; MNAR-suspect list
 P07,topcode_flag,B4,stateless,"S2/S3: age top-coded 80, PIR 5"
-P08,yeo_johnson,B5,fitted in-fold (X),"S4: |skew| > 1 (BMI 1.22, TG 6.2)"
-P09,scale,B5,fitted in-fold (X),L2 penalty is scale dependent; M0 fails to converge
+P08,yeo_johnson,B5,fitted in-fold (X),"S4: |skew| > 1 (BMI 1.22, TG 6.62 fasting)"
+P09,scale,B5,fitted in-fold (X),L2 penalty is scale dependent; unscaled fits fail to converge
 P10,rare_categories,B5,fitted in-fold (X),levels < 2 % grouped as infrequent
-P11,class_weight,B6a,estimator,prevalence 16.9 %; balanced weights
+P11,class_weight,B6a,estimator,prevalence 16.9%; balanced weights
 P12,survey_weight,B6b,estimator,S4: WTPH2YR for HbA1c cohort; mean 1
-P13,splines,B5,fitted in-fold (X),"S4: RCS LR test age 57.6, BMI 11.6, HDL 18.5, TC 41.8"
-P14,whtr,(arm),stateless,S5: Asian WHtR-BMI AUC gain +0.136 vs White +0.048
+P13,splines,B5,fitted in-fold (X),"S4: RCS LR chi2 age 57.6, BMI 11.6, HDL 18.5, TC 41.8"
+P14,whtr,(arm),stateless,S5: WHtR-BMI AUC gain Asian +0.137 vs White +0.049
