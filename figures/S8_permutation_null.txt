@@ -1,0 +1,1 @@
+F8-1b. Null distribution of max |TPR_g - TPR_ref| over the reportable groups when group labels are permuted 200 times (threshold fixed), with the observed value (red) and the null 95th percentile (dotted). E-ALL, arm S, Tier 1.

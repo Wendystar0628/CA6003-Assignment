@@ -1,0 +1,1 @@
+F8-1. TPR at specificity 0.80 by audit group for arm S (Tier 1) on E-ALL and E-SCREEN, stratified bootstrap 95 % CI with the threshold re-estimated per replicate; dashed line = overall TPR; hollow grey markers are suppressed cells (n < 30 or fewer than 30 positives).

@@ -1,0 +1,22 @@
+attribute,group,ref,n,pos_eall,n_escreen,pos_escreen,status_eall,status_escreen
+race,NH White,True,2727,398.0,2392.0,63.0,present,present
+race,NH Black,False,540,131.0,433.0,24.0,present,suppress
+race,NH Asian,False,252,40.0,223.0,11.0,present,suppress
+race,Mexican American,False,309,69.0,256.0,16.0,present,suppress
+race,Other Hispanic,False,465,82.0,394.0,11.0,present,suppress
+race,Other/Multi,False,291,57.0,236.0,2.0,present,suppress
+race,(unknown),,0,,,,,
+insurance,insured,True,4186,725.0,3571.0,110.0,present,present
+insurance,uninsured,False,390,51.0,356.0,17.0,present,suppress
+insurance,(unknown),,8,,,,,
+low_access,usual access,True,3838,701.0,3240.0,103.0,present,present
+low_access,low access,False,742,75.0,691.0,24.0,present,suppress
+low_access,(unknown),,4,,,,,
+income,PIR >= 3.5,True,1615,195.0,1448.0,28.0,present,suppress
+income,PIR 1.3-3.49,False,1520,299.0,1282.0,61.0,present,present
+income,PIR < 1.3,False,850,179.0,694.0,23.0,present,suppress
+income,PIR missing,False,599,104.0,510.0,15.0,present,suppress
+income,(unknown),,0,,,,,
+sex,Male,True,2076,384.0,1757.0,65.0,present,present
+sex,Female,False,2508,393.0,2177.0,62.0,present,present
+sex,(unknown),,0,,,,,
