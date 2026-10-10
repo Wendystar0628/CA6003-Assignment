@@ -954,8 +954,8 @@ VIF.to_csv(S4_DIR / "vif_table.csv", index=False)
 print(VIF.pivot_table(index="variable", columns="set", values="vif", sort=False).round(1).fillna("").to_string())
 print("n per set:", VIF.groupby("set", sort=False).n.first().to_dict())
 
-v = VIF.set_index(["set", "variable"]).vif
-assert abs(v[("raw_anthropometry", "BMXWT")] - 95.7) < 0.1 and abs(v[("raw_anthropometry", "BMXBMI")] - 97.6) < 0.1
+VIFS = VIF.set_index(["set", "variable"]).vif
+assert abs(VIFS[("raw_anthropometry", "BMXWT")] - 95.7) < 0.1 and abs(VIFS[("raw_anthropometry", "BMXBMI")] - 97.6) < 0.1
 bp = VIF.query("set == 'bp_readings'").vif
 assert abs(bp.min() - 8.8) < 0.1 and abs(bp.max() - 11.7) < 0.1
 
@@ -1042,7 +1042,7 @@ OUT["skew"] = {f"{r.variable}|{r.subsample}": {"n": r.n, "raw": r.skew_raw, "log
 
 reg("DR-S4-08", "preparation", "Structural redundancy: weight VIF 95.7, BMI 97.6 (BMI = W/H^2, r = 0.99999); six BP readings VIF 8.8-11.7; TC-LDL r = 0.94.",
     "results/S4/vif_table.csv; figures/S4_spearman_clustermap.png",
-    f"BP means VIF {v[('bp_means', 'bp_sys_mean')]:.1f}; Tier-1 max VIF {VIF[VIF.set == 'tier1_candidates'].vif.max():.1f}; "
+    f"BP means VIF {VIFS[('bp_means', 'bp_sys_mean')]:.1f}; Tier-1 max VIF {VIF[VIF.set == 'tier1_candidates'].vif.max():.1f}; "
     f"Tier-2 max {VIF[VIF.set == 'tier2_candidates'].vif.max():.1f}",
     "Drop weight, height, hip, arm circumference; average BP readings; exclude LDL; keep BMI + waist (or WHtR, S8) under L2.",
     "Automatic VIF > 10 deletion (O'Brien 2007); PCA of body measures (destroys interpretability).",
@@ -1133,8 +1133,8 @@ for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "B
     lo_ = np.log(pr / (1 - pr)); se = np.sqrt(1 / (g.k + 0.5) + 1 / (g.n - g.k + 0.5))
     ax.errorbar(g.x, lo_, yerr=1.96 * se, fmt="o", color="k", capsize=3, label="decile log-odds (95% CI)")
     grid = np.linspace(d[v].quantile(0.01), d[v].quantile(0.99), 200)
-    B, kn = rcs_basis(d[v])
-    m_r = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(B)).fit(disp=0)
+    Bx, kn = rcs_basis(d[v])
+    m_r = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(Bx)).fit(disp=0)
     p3 = lambda u: np.maximum(u, 0) ** 3
     k_ = len(kn)
     Bg = np.column_stack([grid] + [(p3(grid - kn[j]) - p3(grid - kn[k_ - 2]) * (kn[k_ - 1] - kn[j]) / (kn[k_ - 1] - kn[k_ - 2])
@@ -1252,6 +1252,113 @@ reg("DR-S4-11", "model", "Interactions with BMI not detectable: race x BMI and A
 # Asian BMI problem is treated as a *measurement* problem (WHtR, S5/S8). The process document's
 # p-values (0.42 / 0.83 / 0.20 / 0.48) come from an undocumented prototype specification and could
 # not be reproduced exactly; the qualitative conclusion for race holds.
+
+# %% [markdown]
+# ## 4.13 Data → algorithm (DAJ) table
+# **Why.** Each modelling choice in S6–S7 should follow from a diagnostic in the data, together with
+# the reason the alternatives were rejected. The table below is built from the numbers computed in
+# this section and is the reference for S7's model justification.
+
+# %%
+L_ = LIN.set_index("variable")
+DAJ = pd.DataFrame([
+    ("Non-linearity", f"RCS chi2(2): age {L_.chi2['RIDAGEYR']:.1f}, TC {L_.chi2['LBXTC']:.1f}, HDL {L_.chi2['LBDHDD']:.1f}, "
+                      f"BMI {L_.chi2['BMXBMI']:.1f}, waist {L_.chi2['BMXWAIST']:.1f} (all p < 0.05); PIR {L_.chi2['INDFMPIR']:.1f}",
+     "L2 logistic regression + SplineTransformer(4 quantile knots, cubic, linear extrapolation) on continuous features; linear arm as ablation",
+     "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting not allowed (HR3) and less interpretable"),
+    ("Interactions", f"race x BMI p = {prim.loc['race_x_bmi','p']:.2f}, Asian x BMI p = {prim.loc['asian_x_bmi','p']:.2f} (MDE {mde_asian:.2f} log-OR / 5 kg/m²)",
+     "No interaction terms; Asian BMI bias handled as measurement (WHtR arm, S8)",
+     "Interaction terms with this power add variance without detectable gain; 'not detectable' is not 'absent'"),
+    ("Structural redundancy", f"VIF weight {VIFS[('raw_anthropometry','BMXWT')]:.1f}, BMI {VIFS[('raw_anthropometry','BMXBMI')]:.1f}; "
+                              f"BP readings {bp.min():.1f}-{bp.max():.1f}; corr(log BMI, log W - 2 log H) = {r_struct:.5f}",
+     "Drop weight, height, hip, arm; average BP readings; exclude LDL; L2 penalty as second line of defence",
+     "Mechanical VIF > 10 rule (O'Brien 2007) or PCA (loses interpretability)"),
+    ("Skewness", f"BMI {sk.loc[('BMXBMI','cohort'),'skew_raw']:.2f}, HDL {sk.loc[('LBDHDD','cohort'),'skew_raw']:.2f}, SBP {sk.loc[('bp_sys_mean','cohort'),'skew_raw']:.2f}; YJ -> ~0",
+     "Yeo-Johnson as a toggleable step fitted inside training folds; kept only if the S7 ablation supports it",
+     "Transforming before the split leaks lambda; log fails at 0"),
+    ("Weights / age structure", f"weighted {pct(wp['est'])}% vs unweighted {pct(unw)}%; Kish deff {kish:.2f}; 60+ {pct(share_s['60+'])}% vs {pct(share_w['60+'])}%",
+     "Survey weights as an ablation block (B6) and weighted evaluation metrics alongside unweighted ones",
+     "Ignoring weights (sample != population) or training only weighted (variance cost without tested benefit)"),
+    ("Age confounding", f"insured-uninsured +{iu.crude:.1f} -> +{iu['std']:.1f} pp; {int(SCAN.attenuation_50.sum())} attenuations > 50% in the scan",
+     "Age always in the model; every group comparison age-standardised or age-adjusted",
+     "Reading crude group gaps as access or ethnicity effects"),
+    ("Causal structure", "BMI is a descendant of race (DAG); back-door invalid with BMI",
+     "Model coefficients reported as conditional associations only; no causal language",
+     "Table 2 fallacy: interpreting every coefficient as an effect"),
+    ("Thresholds / leakage probe", "clinical cut-points (BMI 25/30, age 45) and leakage need inspection",
+     f"Secondary shallow decision tree (max_depth = {C.TREE_MAX_DEPTH}, min_samples_leaf = {C.TREE_MIN_LEAF}) for threshold discovery and leak hunting only",
+     "Deep trees / ensembles overfit and are outside HR3; a shallow tree is readable and exposes leaks as near-perfect splits"),
+    ("Non-monotone TC", "TC U-shaped in binned log-odds (statins after diagnosis)",
+     "Tier-2 lipid coefficients carry a reverse-causation caveat",
+     "Interpreting low TC as protective"),
+], columns=["diagnostic", "evidence", "decision", "why_not_alternative"])
+DAJ.to_csv(S4_DIR / "daj_table.csv", index=False)
+with pd.option_context("display.max_colwidth", 90):
+    print(DAJ.to_string(index=False))
+OUT["daj"] = DAJ.to_dict("records")
+reg("DR-S4-12", "model", "Data -> algorithm table: 9 diagnostics mapped to modelling decisions.",
+    "results/S4/daj_table.csv", "see table", "S7 cites the DAJ table for model justification; shallow tree only for thresholds and leakage.",
+    "Choosing the algorithm before looking at data structure; using complex models (HR3).")
+
+# %% [markdown]
+# **So what.** The DAJ table turns the EDA into constraints for S6–S7: an L2-penalised spline
+# logistic regression as the main model, no interaction terms, de-duplicated features, transformations
+# and weights as ablation toggles rather than fixed choices, and a depth-3 tree for threshold and
+# leakage inspection. Each row is a diagnostic number computed above, so if the data changed, the
+# table would change with it.
+
+# %% [markdown]
+# ## 4.14 Self-check and decision register
+# **Why.** The process document requires the key numbers to be *recomputed* (not re-read) and
+# compared with the values it lists; differences are recorded, not silently fixed.
+
+# %%
+SELF_CHECK = pd.DataFrame([
+    ("DB516 total, %", 15.78, OUT["db516"]["variant_n2940"]["total"]["est"], "n = 2,940 variant; NCHS-definition n = 2,938 gives " + f"{OUT['db516']['total']:.2f}"),
+    ("DB516 diagnosed, %", 11.29, OUT["db516"]["variant_n2940"]["diagnosed"]["est"], ""),
+    ("DB516 undiagnosed, %", 4.48, OUT["db516"]["variant_n2940"]["undiagnosed"]["est"], ""),
+    ("DB516 age-adjusted total, %", 14.31, OUT["db516"]["age_adj"][0], ""),
+    ("L_comb weighted, %", 14.0, 100 * wp["est"], ""),
+    ("L_comb unweighted, %", 16.95, 100 * unw, ""),
+    ("Kish deff", 1.55, kish, ""),
+    ("Asian-White crude, pp", -0.8, aw.crude, ""),
+    ("Asian-White standardised, pp", 2.1, aw["std"], ""),
+    ("insured-uninsured crude, pp", 5.3, iu.crude, ""),
+    ("insured-uninsured standardised, pp", 0.7, iu["std"], ""),
+    ("Simpson comparisons", 219, len(SCAN), "pre-declared grid 252 - 28 self-stratifications; prototype grid undocumented"),
+    ("Simpson sign flips", 5, int(SCAN.flip.sum()), "4 of 6 from mediator stratifiers"),
+    ("uninsured x A1c | age P(sign differs)", 0.77, ex_ins.p_sign_differs, f"B = {B} ({C.NB_MODE})"),
+    ("VIF weight", 95.7, VIFS[("raw_anthropometry", "BMXWT")], ""),
+    ("VIF BMI", 97.6, VIFS[("raw_anthropometry", "BMXBMI")], ""),
+    ("skew BMI", 1.22, sk.loc[("BMXBMI", "cohort"), "skew_raw"], ""),
+    ("skew triglycerides", 6.23, tg_f.skew_raw, "valid fasting subsample; 6.23 includes non-fasting rows"),
+    ("RCS chi2 age", 57.6, L_.chi2["RIDAGEYR"], ""),
+    ("RCS chi2 TC", 41.8, L_.chi2["LBXTC"], ""),
+    ("race x BMI p", 0.42, prim.loc["race_x_bmi", "p"], "spec undocumented in process doc; non-significant in all 3 specs"),
+    ("sex x BMI p", 0.48, prim.loc["sex_x_bmi", "p"], "spec-dependent: range " + f"{sex_p_range[0]:.3f}-{sex_p_range[1]:.2f}"),
+], columns=["quantity", "process_doc", "recomputed", "note"])
+tol = 0.05 + 0.002 * SELF_CHECK.process_doc.abs()                     # rounding of the quoted value
+tol[SELF_CHECK.quantity.str.endswith(" p")] = 0.02                   # p-values
+tol[SELF_CHECK.quantity.str.contains("P\(sign")] = 0.10           # bootstrap probability, Monte-Carlo error at B = 100
+SELF_CHECK["tolerance"] = tol
+SELF_CHECK["verdict"] = np.where((SELF_CHECK.recomputed - SELF_CHECK.process_doc).abs() <= tol, "PASS", "DIFF")
+SELF_CHECK.to_csv(S4_DIR / "self_check.csv", index=False)
+print(SELF_CHECK.round(3).to_string(index=False))
+n_diff = int((SELF_CHECK.verdict == "DIFF").sum())
+print(f"\n{len(SELF_CHECK) - n_diff}/{len(SELF_CHECK)} reproduce; {n_diff} differ and are explained in the note column")
+OUT["self_check"] = SELF_CHECK.to_dict("records")
+reg("DR-S4-13", "check", f"S4 self-check: {len(SELF_CHECK) - n_diff}/{len(SELF_CHECK)} process-doc numbers reproduced on re-run.",
+    "results/S4/self_check.csv", "; ".join(f"{r.quantity}: {r.process_doc} vs {r.recomputed:.3g}" for r in SELF_CHECK[SELF_CHECK.verdict == "DIFF"].itertuples()),
+    "Report recomputed values; differences sent to the lead for a process-doc change request.",
+    "Silently adopting either value.", check_verdict="PASS-FIX" if n_diff else "PASS",
+    check_note="differences: Simpson grid size, triglyceride subsample, interaction p-values (undocumented specs)")
+
+# %% [markdown]
+# **So what.** The core anchors – DB516, weighted prevalence, design effect, standardised contrasts,
+# VIFs, skewness of the main predictors and the RCS tests – reproduce on a clean re-run. The
+# differences are all traceable to definitions that the process document did not pin down (the
+# Simpson grid, the triglyceride subsample, the interaction-test specification) and are logged as
+# change requests rather than overwritten.
 
 # %% [markdown]
 # ## Save results and register

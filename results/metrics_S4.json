@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:15:48+00:00"
+    "written_utc": "2026-10-10T18:17:16+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -813,6 +813,240 @@
       "p": 0.071806265047568,
       "mde": 0.17767288937832632,
       "verdict": "not detected"
+    }
+  ],
+  "daj": [
+    {
+      "diagnostic": "Non-linearity",
+      "evidence": "RCS chi2(2): age 57.6, TC 41.8, HDL 18.5, BMI 11.6, waist 7.1 (all p < 0.05); PIR 0.8",
+      "decision": "L2 logistic regression + SplineTransformer(4 quantile knots, cubic, linear extrapolation) on continuous features; linear arm as ablation",
+      "why_not_alternative": "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting not allowed (HR3) and less interpretable"
+    },
+    {
+      "diagnostic": "Interactions",
+      "evidence": "race x BMI p = 0.39, Asian x BMI p = 0.93 (MDE 0.70 log-OR / 5 kg/m²)",
+      "decision": "No interaction terms; Asian BMI bias handled as measurement (WHtR arm, S8)",
+      "why_not_alternative": "Interaction terms with this power add variance without detectable gain; 'not detectable' is not 'absent'"
+    },
+    {
+      "diagnostic": "Structural redundancy",
+      "evidence": "VIF weight 95.7, BMI 97.6; BP readings 8.8-11.7; corr(log BMI, log W - 2 log H) = 0.99999",
+      "decision": "Drop weight, height, hip, arm; average BP readings; exclude LDL; L2 penalty as second line of defence",
+      "why_not_alternative": "Mechanical VIF > 10 rule (O'Brien 2007) or PCA (loses interpretability)"
+    },
+    {
+      "diagnostic": "Skewness",
+      "evidence": "BMI 1.22, HDL 1.08, SBP 0.93; YJ -> ~0",
+      "decision": "Yeo-Johnson as a toggleable step fitted inside training folds; kept only if the S7 ablation supports it",
+      "why_not_alternative": "Transforming before the split leaks lambda; log fails at 0"
+    },
+    {
+      "diagnostic": "Weights / age structure",
+      "evidence": "weighted 14.0% vs unweighted 16.9%; Kish deff 1.55; 60+ 46.2% vs 31.4%",
+      "decision": "Survey weights as an ablation block (B6) and weighted evaluation metrics alongside unweighted ones",
+      "why_not_alternative": "Ignoring weights (sample != population) or training only weighted (variance cost without tested benefit)"
+    },
+    {
+      "diagnostic": "Age confounding",
+      "evidence": "insured-uninsured +5.3 -> +0.7 pp; 10 attenuations > 50% in the scan",
+      "decision": "Age always in the model; every group comparison age-standardised or age-adjusted",
+      "why_not_alternative": "Reading crude group gaps as access or ethnicity effects"
+    },
+    {
+      "diagnostic": "Causal structure",
+      "evidence": "BMI is a descendant of race (DAG); back-door invalid with BMI",
+      "decision": "Model coefficients reported as conditional associations only; no causal language",
+      "why_not_alternative": "Table 2 fallacy: interpreting every coefficient as an effect"
+    },
+    {
+      "diagnostic": "Thresholds / leakage probe",
+      "evidence": "clinical cut-points (BMI 25/30, age 45) and leakage need inspection",
+      "decision": "Secondary shallow decision tree (max_depth = 3, min_samples_leaf = 50) for threshold discovery and leak hunting only",
+      "why_not_alternative": "Deep trees / ensembles overfit and are outside HR3; a shallow tree is readable and exposes leaks as near-perfect splits"
+    },
+    {
+      "diagnostic": "Non-monotone TC",
+      "evidence": "TC U-shaped in binned log-odds (statins after diagnosis)",
+      "decision": "Tier-2 lipid coefficients carry a reverse-causation caveat",
+      "why_not_alternative": "Interpreting low TC as protective"
+    }
+  ],
+  "self_check": [
+    {
+      "quantity": "DB516 total, %",
+      "process_doc": 15.78,
+      "recomputed": 15.776416999889983,
+      "note": "n = 2,940 variant; NCHS-definition n = 2,938 gives 15.79",
+      "tolerance": 0.08156,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "DB516 diagnosed, %",
+      "process_doc": 11.29,
+      "recomputed": 11.292145668471585,
+      "note": "",
+      "tolerance": 0.07258,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "DB516 undiagnosed, %",
+      "process_doc": 4.48,
+      "recomputed": 4.4842713314183955,
+      "note": "",
+      "tolerance": 0.058960000000000005,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "DB516 age-adjusted total, %",
+      "process_doc": 14.31,
+      "recomputed": 14.309480169847081,
+      "note": "",
+      "tolerance": 0.07862000000000001,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "L_comb weighted, %",
+      "process_doc": 14.0,
+      "recomputed": 14.035739528195537,
+      "note": "",
+      "tolerance": 0.078,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "L_comb unweighted, %",
+      "process_doc": 16.95,
+      "recomputed": 16.94589877835951,
+      "note": "",
+      "tolerance": 0.0839,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "Kish deff",
+      "process_doc": 1.55,
+      "recomputed": 1.5459276715354544,
+      "note": "",
+      "tolerance": 0.0531,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "Asian-White crude, pp",
+      "process_doc": -0.8,
+      "recomputed": -0.8140647186259911,
+      "note": "",
+      "tolerance": 0.0516,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "Asian-White standardised, pp",
+      "process_doc": 2.1,
+      "recomputed": 2.130679332511101,
+      "note": "",
+      "tolerance": 0.054200000000000005,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "insured-uninsured crude, pp",
+      "process_doc": 5.3,
+      "recomputed": 5.305529853010037,
+      "note": "",
+      "tolerance": 0.0606,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "insured-uninsured standardised, pp",
+      "process_doc": 0.7,
+      "recomputed": 0.6854571595387438,
+      "note": "",
+      "tolerance": 0.0514,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "Simpson comparisons",
+      "process_doc": 219.0,
+      "recomputed": 224.0,
+      "note": "pre-declared grid 252 - 28 self-stratifications; prototype grid undocumented",
+      "tolerance": 0.488,
+      "verdict": "DIFF"
+    },
+    {
+      "quantity": "Simpson sign flips",
+      "process_doc": 5.0,
+      "recomputed": 6.0,
+      "note": "4 of 6 from mediator stratifiers",
+      "tolerance": 0.060000000000000005,
+      "verdict": "DIFF"
+    },
+    {
+      "quantity": "uninsured x A1c | age P(sign differs)",
+      "process_doc": 0.77,
+      "recomputed": 0.72,
+      "note": "B = 100 (FAST)",
+      "tolerance": 0.1,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "VIF weight",
+      "process_doc": 95.7,
+      "recomputed": 95.6797633660612,
+      "note": "",
+      "tolerance": 0.2414,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "VIF BMI",
+      "process_doc": 97.6,
+      "recomputed": 97.64211874350215,
+      "note": "",
+      "tolerance": 0.24519999999999997,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "skew BMI",
+      "process_doc": 1.22,
+      "recomputed": 1.2225907632940765,
+      "note": "",
+      "tolerance": 0.05244,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "skew triglycerides",
+      "process_doc": 6.23,
+      "recomputed": 6.622983965691647,
+      "note": "valid fasting subsample; 6.23 includes non-fasting rows",
+      "tolerance": 0.06246,
+      "verdict": "DIFF"
+    },
+    {
+      "quantity": "RCS chi2 age",
+      "process_doc": 57.6,
+      "recomputed": 57.607475637224525,
+      "note": "",
+      "tolerance": 0.1652,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "RCS chi2 TC",
+      "process_doc": 41.8,
+      "recomputed": 41.76730623406729,
+      "note": "",
+      "tolerance": 0.1336,
+      "verdict": "PASS"
+    },
+    {
+      "quantity": "race x BMI p",
+      "process_doc": 0.42,
+      "recomputed": 0.39325501120153494,
+      "note": "spec undocumented in process doc; non-significant in all 3 specs",
+      "tolerance": 0.02,
+      "verdict": "DIFF"
+    },
+    {
+      "quantity": "sex x BMI p",
+      "process_doc": 0.48,
+      "recomputed": 0.008173127172408673,
+      "note": "spec-dependent: range 0.008-0.83",
+      "tolerance": 0.02,
+      "verdict": "DIFF"
     }
   ]
 }
