@@ -308,11 +308,10 @@ assert preg_known["RIDAGEYR"].between(20, 44).all()
 # %% [markdown]
 # ## Data minimisation
 #
-# **Why.** Collecting or keeping more than the purpose needs is a governance risk even with public data (purpose limitation and data minimisation, e.g. GDPR Art. 5(1)(b)–(c); the Singapore PDPA has a purpose-limitation obligation). The loader keeps only columns that the variable specification marks `include` and writes a report of what was kept and dropped per file.
+# **Why.** Collecting or keeping more than the purpose needs is a governance risk even with public data (purpose limitation and data minimisation, e.g. GDPR Art. 5(1)(b)–(c); the Singapore PDPA has a purpose-limitation obligation). The loader keeps only columns that the variable specification keeps (`use_tier` other than `excluded`); `nhanes_io.minimisation_report` lists what was kept and dropped per file and per column.
 
 # %%
-mrep = pd.read_csv(C.RESULTS_DIR / "S2" / "minimisation_report.csv")
-mcols = pd.read_csv(C.RESULTS_DIR / "S2" / "minimisation_columns.csv")
+mrep, mcols = nhanes_io.minimisation_report(spec)
 display(mrep[["file", "use_tier", "cols_raw", "cols_kept", "cols_dropped"]])
 tot_raw, tot_kept, tot_drop = (int(mrep[k].sum()) for k in ["cols_raw", "cols_kept", "cols_dropped"])
 assert tot_raw == tot_kept + tot_drop
