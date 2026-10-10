@@ -1,0 +1,1 @@
+F9-5. Univariate ROC-AUC of the 22 strongest columns of the naive M0 frame (plus derived S columns), training part, E-ALL (bars) and E-SCREEN (ticks). Categorical items use out-of-fold target encoding. Red = removed by the availability rule; blue = admissible; dashed = L3 trigger 0.75 (age exempt).

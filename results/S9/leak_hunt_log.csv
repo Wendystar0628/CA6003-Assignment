@@ -1,0 +1,9 @@
+check,value,triggered,action
+"T1 E-ALL AUC > 0.90 (M1, S)","M1 0.828, S 0.835",False,none
+admissible single feature AUC > 0.75 (age exempt),max 0.706 (BMXWAIST),False,none
+admissible is_missing indicator AUC > 0.75,max 0.617,False,none
+depth-1 tree root of M1 / S admissible,"M1 BPQ020, S BPQ020",False,none
+"permutation null mean in [0.495, 0.505] (M1, S)","M1 0.5001, S 0.5007",False,none
+"coefficient instability (CI excludes 0 and > 10 % sign flips, S)",0 coefficients,False,none
+"top-10 features of S (T1, T2) pass the availability proof",20/20 PASS,False,none
+"T1-minus-care vs S (informative, no trigger)",E-ALL -0.015; E-SCREEN +0.019,False,none

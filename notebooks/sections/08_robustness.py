@@ -689,3 +689,292 @@ S9["mnar"] = dict(n_examined=int(len(ex)), n_missing=int(miss.sum()), n_missing_
 #   one of the undetermined people diabetic, a prevalence far beyond any plausible MNAR mechanism – moves it noticeably
 #   (to about +0.004 on E-ALL and about −0.004 on E-SCREEN, printed), still inside ±0.01. MNAR remains untestable from
 #   these data; what is shown is that no plausible MNAR mechanism of this size changes the conclusions.
+
+# %% [markdown]
+# ## 8 External validity
+# ### 8.1 V1: NCHS Data Brief 516
+# **Why.** An external anchor tests the whole data path (loading, XPT repair, sentinels, weights, jackknife) against a
+# number we did not produce. S4 reproduced the official diabetes prevalence of NCHS Data Brief 516 (Aug 2021–Aug 2023,
+# fasting subsample, WTSAF2YR) for 27 published estimates. That replication is **cited, not re-run** here.
+
+# %%
+db = pd.read_csv(C.RESULTS_DIR / "S4" / "db516_replication.csv")
+S4m = R.load_section("S4")["db516"]
+db["label"] = db["measure"] + " · " + db["group"] + np.where(db["kind"] == "age-adj", " (age-adj.)", "")
+print(f"{len(db)} published estimates; max |ours - NCHS| = {db['diff_pp'].abs().max():.3f} pp; "
+      f"our KG interval matches the published one (to 0.1 pp) in {int(db['kg_matches_nchs_ci'].sum())}/{len(db)}; "
+      f"intervals overlap in {int(db['ci_overlap'].sum())}/{len(db)}")
+print(f"headline: total {S4m['total']:.2f} % (NCHS 15.8), diagnosed {S4m['diagnosed']:.2f} % (11.3), undiagnosed {S4m['undiagnosed']:.2f} % (4.5); n = {S4m['n']:,}")
+assert abs(S4m["total"] - 15.8) < 0.05 and abs(S4m["diagnosed"] - 11.3) < 0.05 and abs(S4m["undiagnosed"] - 4.5) < 0.05
+
+fig, ax = plt.subplots(figsize=(8.5, 8))
+yy_ = np.arange(len(db))
+ax.errorbar(db["nchs"], yy_ - 0.15, xerr=[db["nchs"] - db["nchs_low"], db["nchs_high"] - db["nchs"]], fmt="s", color=OI["grey"],
+            capsize=2, ms=4, label="NCHS DB516 (published, 95 % CI)")
+ax.errorbar(db["est"], yy_ + 0.15, xerr=[db["est"] - db["kg_low"], db["kg_high"] - db["est"]], fmt="o", color=OI["blue"],
+            capsize=2, ms=4, label="this project, S4 (Korn-Graubard 95 % CI)")
+ax.set_yticks(yy_, db["label"], fontsize=7)
+ax.invert_yaxis()
+ax.set_xlabel("diabetes prevalence (%), adults >= 20, fasting subsample, WTSAF2YR")
+ax.legend(fontsize=8, loc="lower right")
+ax.set_title(f"V1: 27 published estimates reproduced (max |difference| {db['diff_pp'].abs().max():.2f} pp)", fontsize=11)
+plots.savefig(fig, "S9_db516_forest", caption="F9-4. NCHS Data Brief 516 prevalence estimates (grey, published) and the S4 replication (blue, delete-one-PSU "
+              "jackknife with Korn-Graubard intervals) for total, diagnosed and undiagnosed diabetes by sex and age, crude and age-adjusted. "
+              "Source: results/S4/db516_replication.csv (not re-run in S9).")
+plt.show()
+
+# %% [markdown]
+# **So what.** Every published estimate is reproduced to within 0.05 percentage points and every pair of intervals
+# overlaps (counts printed). The data path from raw XPT files to survey-weighted estimates is therefore externally
+# validated; differences elsewhere cannot be blamed on loading or weighting errors.
+
+# %% [markdown]
+# ### 8.2 V2: why our prevalence is 14.0 % and not 15.8 %
+# **Why.** The training target `L_comb` has a weighted prevalence of 14.0 % (WTPH2YR), below DB516's 15.8 %. Before
+# S9 the pre-registered explanation was: our label has no fasting-glucose criterion, and our sample is the HbA1c
+# sample, not the fasting subsample. That explanation is now **decomposed** with jackknife intervals on the same
+# replicate structure: (A) `L_comb` in the cohort with WTPH2YR → (B) `L_comb` in the fasting subsample with WTSAF2YR
+# (sample effect) → (C) the DB516 definition, `L_comb` or fasting glucose ≥ 126 mg/dL (definition effect).
+
+# %%
+cohort_all = ctx.clean.copy()
+fm = L.fasting_mask(cohort_all).to_numpy()
+sl_all = L.sensitivity_labels(cohort_all)
+yA = cohort_all["L_comb"].to_numpy(float)
+yC = sl_all["SL5"].fillna(0).to_numpy(float)
+Wph, fac = sv.replicate_weights(cohort_all, C.WEIGHT_PHLEB)
+Wsa, fac2 = sv.replicate_weights(cohort_all, cohort_all[C.WEIGHT_FASTING].fillna(0).to_numpy() * fm)
+assert np.allclose(fac, fac2)
+
+def _prev(y_, w_, m_=None):
+    m_ = np.ones(len(y_), bool) if m_ is None else m_
+    return (w_[m_] * y_[m_]).sum() / w_[m_].sum()
+
+def _abc(wph, wsa):
+    a = _prev(yA, wph)
+    b = _prev(yA, wsa, fm)
+    c = _prev(yC, wsa, fm)
+    return np.array([a, b, c, b - a, c - b, c - a])
+
+w_ph = np.nan_to_num(cohort_all[C.WEIGHT_PHLEB].to_numpy(float))
+w_sa = np.nan_to_num(cohort_all[C.WEIGHT_FASTING].to_numpy(float)) * fm
+est_ = _abc(w_ph, w_sa)
+reps_ = np.array([_abc(Wph[:, r], Wsa[:, r]) for r in range(Wph.shape[1])])
+se_ = np.sqrt(np.tensordot(fac, (reps_ - est_) ** 2, axes=(0, 0)))
+tcrit = stats.t.ppf(0.975, sv.design_df(cohort_all))
+v2 = pd.DataFrame({"quantity": ["A L_comb, cohort, WTPH2YR", "B L_comb, fasting subsample, WTSAF2YR",
+                                "C DB516 definition (+ FPG >= 126), fasting subsample", "sample effect B - A",
+                                "definition effect C - B", "total C - A"],
+                   "est_pct": est_ * 100, "ci_low": (est_ - tcrit * se_) * 100, "ci_high": (est_ + tcrit * se_) * 100})
+fpg_only = int(((sl_all["SL5"] == 1) & (cohort_all["L_comb"] == 0)).sum())
+v2.to_csv(OUT / "v2_prevalence_gap.csv", index=False)
+print(v2.round(2).to_string(index=False))
+print(f"fasting subsample n = {int(fm.sum()):,}; people positive only through fasting glucose: {fpg_only}")
+assert abs(est_[0] - 0.140) < 0.0015 and abs(est_[2] * 100 - S4m["total"]) < 0.01
+
+# %% [markdown]
+# **So what.** The gap is almost entirely a **definition** effect: in the fasting subsample our `L_comb` gives about
+# the same prevalence as in the full cohort (the sample effect is small, interval printed), while adding the
+# fasting-glucose criterion lifts it to the DB516 value (the people positive *only* through fasting glucose are counted
+# above). The 14.0 % is therefore not a failed replication but a narrower label: `L_comb` misses people whose only
+# abnormal test is fasting glucose. This is exactly why SL5 is one of the sensitivity labels (section 4), and section 7
+# showed that missing HbA1c cannot explain the gap either.
+
+# %% [markdown]
+# ### 8.3 ADA-lite vs Bang et al. 2009 (qualitative)
+# **Why.** The reduced ADA risk score is the clinical comparator on E-SCREEN. Its published performance is a natural
+# yardstick, but only a qualitative one: our version lacks two of the seven items (family history, gestational
+# diabetes), our outcome is HbA1c ≥ 6.5 % among people not told they have diabetes, and the population is 2021–23.
+# What the Bang et al. (2009) abstract reports (verified): cut-off ≥ 5 points, sensitivity 79 %, specificity 67 %. AUC
+# values of 0.79 / 0.83 that circulate for development / validation data are **not verified** against the full text
+# and are not used.
+
+# %%
+ada_tr = P.ada_lite_items(ctx.cl)
+sc_esc = ada_tr["ada_score"].to_numpy()[ctx.esc]
+ye = ctx.y_esc[ctx.esc]
+ada_rows = []
+for cut in (3, 4, 5):
+    call = sc_esc >= cut
+    ada_rows.append(dict(cutoff=f">= {cut}", sensitivity=call[ye == 1].mean(), specificity=(~call[ye == 0]).mean(),
+                         share_flagged=call.mean()))
+ada_tab = pd.DataFrame(ada_rows)
+bl = S7m["baselines"]["BL-ADAlite (points)"]
+print(f"ADA-lite (5 of 7 items, max 9 of 11 points) on training-part E-SCREEN: AUC {bl['escr_auc']:.3f} "
+      f"[{bl['lo']:.3f}, {bl['hi']:.3f}], recall at specificity 0.80 {bl['escr_recall_spec80']:.3f} (S7)")
+print(ada_tab.round(3).to_string(index=False))
+print("Bang et al. 2009 (abstract): cut-off >= 5 of 11 points, sensitivity 0.79, specificity 0.67; AUC: not verified")
+S9["external"] = dict(db516=dict(n_estimates=len(db), max_abs_diff_pp=float(db["diff_pp"].abs().max()),
+                                 kg_matches=int(db["kg_matches_nchs_ci"].sum()), ci_overlap=int(db["ci_overlap"].sum())),
+                      v2=v2.round(4).to_dict("records"), fpg_only_positives=fpg_only,
+                      ada_lite=dict(escr_auc=bl["escr_auc"], lo=bl["lo"], hi=bl["hi"], cutoffs=ada_tab.round(4).to_dict("records"),
+                                    bang_2009_abstract="cut-off >= 5: sensitivity 0.79, specificity 0.67; AUC unverified"))
+
+# %% [markdown]
+# **So what.** At the published cut-off (≥ 5) the reduced score reaches a sensitivity of about 0.70 at a specificity of
+# about 0.62 on our E-SCREEN rows (table above) – below Bang's 0.79 / 0.67, as expected when two items worth up to two
+# points are missing (lowering the cut-off to ≥ 4 buys sensitivity at a large cost in specificity). With a different
+# outcome definition, a missing-item score and an unverified published AUC, the honest statement is qualitative:
+# ADA-lite behaves like a plausibly weakened version of the published test, which makes it a fair but conservative
+# comparator; S beats it on E-SCREEN by about 0.05 AUC (§7, H2c-iii).
+
+# %% [markdown]
+# ## 9 Leak hunt (loop L3)
+# **Why.** The permutation test cannot see feature leakage, and the availability rule was applied from the
+# specification, not from the data. Loop L3 asks the data directly whether an *admissible* feature behaves like a
+# disguised label. Pre-registered triggers (admissible arms M1 and S only; age exempt as a known strong risk factor):
+# T1 E-ALL AUC > 0.90; any single admissible feature with AUC > 0.75; permutation failure; unstable coefficients. Exit
+# condition: all top-10 features of S pass the availability proof and the permutation test passes; at most two rounds.
+#
+# Steps: (1) single-feature AUC scan, (2) depth-1 trees, (3) `is_missing`-indicator AUCs (skip-pattern leakage),
+# (4) availability proof for the ten most important features of S, (5) T1-minus-care contrast. The non-admissible M0
+# columns are scanned too, as a built-in check that the scans *can* find leakage.
+
+# %%
+spec_v = P._spec_by_var()
+adm1, adm2 = set(P.admissible_columns(1)), set(P.admissible_columns(2))
+cats = set(P.categorical_columns())
+# scan frame: per-variable-clean values of every M0 column + the derived S columns (BP means, weekly activity minutes)
+raw_cols = [c for c in P.raw_feature_frame(ctx.raw_tr, 2).columns]
+scan_df = ctx.cl[[c for c in raw_cols if c in ctx.cl.columns]].copy()
+for c in ("bp_sys_mean", "bp_dia_mean", "pulse_mean", "pa_mod_min_wk", "pa_vig_min_wk"):
+    scan_df[c] = pre_frame[c].to_numpy()
+
+def status(v):
+    src = RB.DERIVED_SOURCES.get(v, (v,))
+    if all(s in adm1 for s in src):
+        return "admissible T1"
+    if all(s in adm2 for s in src):
+        return "admissible T2"
+    return f"not admissible ({spec_v['role'].get(src[0], 'derived')})"
+
+single = RB.single_feature_scan(scan_df, ctx.y, ctx.folds, cat_cols=cats)
+single_e = RB.single_feature_scan(scan_df, ctx.y_esc, ctx.folds, cat_cols=cats, mask=ctx.esc)
+single = single.merge(single_e[["variable", "auc_oriented"]].rename(columns={"auc_oriented": "auc_escreen"}), on="variable")
+single["status"] = single["variable"].map(status)
+single["admissible"] = single["status"].str.startswith("admissible")
+single["trigger"] = single["admissible"] & (single["auc_oriented"] > RB.L3_SINGLE_FEATURE_AUC) & ~single["variable"].isin(RB.AGE_EXEMPT)
+single.to_csv(OUT / "leak_single_feature_auc.csv", index=False)
+print(single.head(25)[["variable", "status", "kind", "coverage", "auc_oriented", "auc_escreen", "trigger"]].round(3).to_string(index=False))
+print(f"admissible features above {RB.L3_SINGLE_FEATURE_AUC} (age exempt): {single.loc[single['trigger'], 'variable'].tolist()}")
+print(f"non-admissible M0 columns above {RB.L3_SINGLE_FEATURE_AUC}: "
+      f"{single.loc[~single['admissible'] & (single['auc_oriented'] > RB.L3_SINGLE_FEATURE_AUC), 'variable'].tolist()}")
+best_adm = single[single["admissible"]].iloc[0]
+print(f"strongest admissible feature: {best_adm['variable']} AUC {best_adm['auc_oriented']:.3f}")
+
+# %%
+miss_scan = RB.missing_indicator_scan(scan_df, ctx.y)
+miss_scan["status"] = miss_scan["variable"].map(status)
+miss_scan["admissible"] = miss_scan["status"].str.startswith("admissible")
+miss_scan["trigger"] = miss_scan["admissible"] & (miss_scan["auc_oriented"] > RB.L3_SINGLE_FEATURE_AUC)
+miss_scan.to_csv(OUT / "leak_missing_indicator_auc.csv", index=False)
+print(miss_scan.head(12)[["variable", "status", "n_missing", "prev_if_missing", "prev_if_present", "auc_oriented", "trigger"]].round(3).to_string(index=False))
+print(f"admissible is_missing indicators above {RB.L3_SINGLE_FEATURE_AUC}: {miss_scan.loc[miss_scan['trigger'], 'variable'].tolist()}; "
+      f"largest admissible: {miss_scan[miss_scan['admissible']].iloc[0]['variable']} "
+      f"{miss_scan[miss_scan['admissible']].iloc[0]['auc_oriented']:.3f}")
+
+# %%
+d1 = {}
+for arm in ("M0", "M1", "S"):
+    sp = Spec(arm, model="tree", depth=1)
+    tf = RB.tree_features_used(ctx, sp, ctx.folds, "__none__")
+    oof1 = RB.run_many(ctx, {"t": sp}, n_jobs=N_JOBS, cache=RUNS)["t"]
+    d1[arm] = dict(root_full_fit=tf.loc[tf["fold"] == -1, "root"].iloc[0], roots_in_folds=tf.loc[tf["fold"] >= 0, "root"].value_counts().to_dict(),
+                   oof_auc_eall=roc_auc_score(ctx.y, ek.mean_oof(oof1, ctx.n)),
+                   oof_auc_escreen=roc_auc_score(ctx.y_esc[ctx.esc], ek.mean_oof(oof1, ctx.n)[ctx.esc]))
+d1_tab = pd.DataFrame(d1).T
+d1_tab["root_variable"] = d1_tab["root_full_fit"].map(RB.base_variable)
+d1_tab["root_status"] = d1_tab["root_variable"].map(status)
+d1_tab.to_csv(OUT / "leak_depth1_tree.csv")
+print(d1_tab.to_string())
+
+# %% [markdown]
+# **So what (scans).** The scans work – among the *non-admissible* M0 columns they flag the treatment and
+# diagnosis-history items far above 0.75 and a depth-1 tree on M0 splits on one of them – and they find nothing
+# among the admissible ones: the strongest admissible single feature (printed) stays below the 0.75 trigger, the
+# `is_missing` indicators of admissible items are close to 0.5 (no skip-pattern leakage), and the depth-1 trees of M1
+# and S split on an admissible item with a stump AUC far below the full model. Age is exempt by design but is reported.
+
+# %%
+pipe_S = {t: RB.fit_full(ctx, Spec("S", tier=t)) for t in (1, 2)}
+imp = {t: RB.contribution_importance(pipe_S[t], ctx.X[t]) for t in (1, 2)}
+proof = []
+for t in (1, 2):
+    top = imp[t].head(10).copy()
+    pf = RB.availability_proof(top["variable"], tier=t)
+    proof.append(top.merge(pf, on="variable").assign(tier=t))
+proof = pd.concat(proof, ignore_index=True)
+proof.to_csv(OUT / "leak_top10_availability.csv", index=False)
+print(proof[["tier", "variable", "sd_contribution", "sources", "instrument", "admissible", "care_contact", "verdict"]].round(3).to_string(index=False))
+top_pass = bool((proof["verdict"] == "PASS").all())
+print(f"top-10 availability proof: {'all PASS' if top_pass else 'FAIL: ' + str(proof.loc[proof['verdict'] != 'PASS', 'variable'].tolist())}")
+
+care = pair(Spec("T1-minus-care"), Spec("S"), tag="minus-care")
+care_items = single.set_index("variable").loc[list(P.CARE_ITEMS), ["auc_oriented", "auc_escreen"]]
+print("T1-minus-care - S: " + "; ".join(f"{r['pop']} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}]" for r in care))
+print("care-contact items, single-feature AUC (E-ALL vs E-SCREEN):"); print(care_items.round(3).to_string())
+
+cbS = NOISE_CB["S"].summary.drop(index="noise_n01")
+unstable = cbS[(cbS["ci_excludes_0"]) & (cbS["sign_flip_rate"] > 0.10)]
+print(f"coefficients of S whose CI excludes 0 but flip sign in > 10 % of {C.N_BOOT_COEF} refits: {len(unstable)}; "
+      f"max flip rate among CI-excluding-0 coefficients {cbS.loc[cbS['ci_excludes_0'], 'sign_flip_rate'].max():.3f}")
+
+# %%
+t1_auc = {a: S9["reference"]["E-ALL"]["auc_a" if a == "S" else "auc_b"] for a in ("S", "M1")}
+log = pd.DataFrame([
+    dict(check="T1 E-ALL AUC > 0.90 (M1, S)", value=f"M1 {t1_auc['M1']:.3f}, S {t1_auc['S']:.3f}", triggered=max(t1_auc.values()) > RB.L3_T1_EALL_AUC),
+    dict(check="admissible single feature AUC > 0.75 (age exempt)", value=f"max {single.loc[single['admissible'] & ~single['variable'].isin(RB.AGE_EXEMPT), 'auc_oriented'].max():.3f} "
+         f"({single.loc[single['admissible'] & ~single['variable'].isin(RB.AGE_EXEMPT)].iloc[0]['variable']})", triggered=bool(single["trigger"].any())),
+    dict(check="admissible is_missing indicator AUC > 0.75", value=f"max {miss_scan.loc[miss_scan['admissible'], 'auc_oriented'].max():.3f}",
+         triggered=bool(miss_scan["trigger"].any())),
+    dict(check="depth-1 tree root of M1 / S admissible", value=f"M1 {d1_tab.loc['M1', 'root_variable']}, S {d1_tab.loc['S', 'root_variable']}",
+         triggered=not (d1_tab.loc[["M1", "S"], "root_status"].str.startswith("admissible").all())),
+    dict(check="permutation null mean in [0.495, 0.505] (M1, S)", value=", ".join(f"{a} {d['null_mean']:.4f}" for a, d in PERM.items()),
+         triggered=not perm_tab["in_band"].all()),
+    dict(check="coefficient instability (CI excludes 0 and > 10 % sign flips, S)", value=f"{len(unstable)} coefficients", triggered=len(unstable) > 0),
+    dict(check="top-10 features of S (T1, T2) pass the availability proof", value=f"{int((proof['verdict'] == 'PASS').sum())}/{len(proof)} PASS",
+         triggered=not top_pass),
+    dict(check="T1-minus-care vs S (informative, no trigger)", value="; ".join(f"{r['pop']} {r['est']:+.3f}" for r in care), triggered=False),
+])
+log["action"] = np.where(log["triggered"], "L3 round: re-examine feature, back to S7/S6", "none")
+log.to_csv(OUT / "leak_hunt_log.csv", index=False)
+print(log.to_string(index=False))
+L3_TRIGGERED = bool(log["triggered"].any())
+print(f"L3 loop triggered: {L3_TRIGGERED} -> {'rounds needed' if L3_TRIGGERED else 'exit condition met in round 0 (no re-run of S7)'}")
+S9["leak_hunt"] = dict(triggered=L3_TRIGGERED, log=log.to_dict("records"), top10=proof[["tier", "variable", "sd_contribution", "verdict"]].round(5).to_dict("records"),
+                       depth1=d1_tab[["root_full_fit", "root_variable", "oof_auc_eall", "oof_auc_escreen"]].to_dict("index"),
+                       strongest_admissible=dict(variable=best_adm["variable"], auc=best_adm["auc_oriented"]),
+                       minus_care={r["pop"]: {k: r[k] for k in ("est", "lo", "hi")} for r in care})
+
+# %%
+top_scan = single.head(22).iloc[::-1]
+fig, ax = plt.subplots(figsize=(8.5, 6.5))
+cols_ = [OI["vermillion"] if not a else (OI["orange"] if v in RB.AGE_EXEMPT else OI["blue"]) for a, v in zip(top_scan["admissible"], top_scan["variable"])]
+ax.barh(range(len(top_scan)), top_scan["auc_oriented"], color=cols_, alpha=0.85)
+ax.scatter(top_scan["auc_escreen"], range(len(top_scan)), marker="|", s=120, color="k", label="same feature on E-SCREEN", zorder=3)
+ax.axvline(RB.L3_SINGLE_FEATURE_AUC, color="k", ls="--", lw=1, label="L3 trigger 0.75")
+ax.set_yticks(range(len(top_scan)), [f"{v} ({s.split(' (')[0]})" for v, s in zip(top_scan["variable"], top_scan["status"])], fontsize=7)
+ax.set_xlim(0.5, 1.0)
+ax.set_xlabel("single-feature ROC-AUC (oriented), training part, E-ALL")
+ax.legend(handles=[Line2D([], [], color=OI["blue"], lw=6, label="admissible"), Line2D([], [], color=OI["orange"], lw=6, label="admissible, exempt (age)"),
+                   Line2D([], [], color=OI["vermillion"], lw=6, label="not admissible (removed by P03)"),
+                   Line2D([], [], color="k", marker="|", ls="", ms=10, label="E-SCREEN"),
+                   Line2D([], [], color="k", ls="--", label="trigger 0.75")], fontsize=7, loc="lower right")
+ax.set_title("Leak hunt: only removed columns cross the trigger", fontsize=11)
+plots.savefig(fig, "S9_single_feature_auc", caption="F9-5. Univariate ROC-AUC of the 22 strongest columns of the naive M0 frame (plus derived S columns), "
+              "training part, E-ALL (bars) and E-SCREEN (ticks). Categorical items use out-of-fold target encoding. Red = removed by the "
+              "availability rule; blue = admissible; dashed = L3 trigger 0.75 (age exempt).")
+plt.show()
+
+# %% [markdown]
+# **So what.** Loop L3 is **not triggered** (log above): the admissible arms stay far below an E-ALL AUC of 0.90, no
+# admissible feature other than the exempt age exceeds 0.75, the permutation test passed, and each of the ten most
+# important features of S – in Tier 1 and Tier 2 – passes the point-of-care availability proof (questionnaire, body
+# measures, blood pressure, and in Tier 2 the same-visit lipid panel; none is a glycaemic test, a consequence of
+# diagnosis or a component of the label). The exit condition is met in round 0, so S7 is not re-run.
+#
+# One honest caveat survives the hunt. Two admissible items, "told high blood pressure" (BPQ020) and "told high
+# cholesterol" (BPQ080), are **care-contact traces**: they are legitimately available before a glucose test, but
+# they are more informative for people already in care. The T1-minus-care contrast (printed) shows the consequence –
+# removing them costs AUC on E-ALL but not on E-SCREEN. This is not leakage under the availability rule; it is the
+# mechanism behind the E-ALL vs E-SCREEN gap (H2c) and is reported as such.

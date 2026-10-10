@@ -1,0 +1,1 @@
+F9-4. NCHS Data Brief 516 prevalence estimates (grey, published) and the S4 replication (blue, delete-one-PSU jackknife with Korn-Graubard intervals) for total, diagnosed and undiagnosed diabetes by sex and age, crude and age-adjusted. Source: results/S4/db516_replication.csv (not re-run in S9).
