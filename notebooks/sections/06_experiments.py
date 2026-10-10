@@ -366,6 +366,16 @@ for arm in ("M0", "M1", "S"):
                       level2=[names[tree.tree_.feature[c]] for c in (tree.tree_.children_left[0], tree.tree_.children_right[0])
                               if tree.tree_.feature[c] >= 0])
 print(pd.DataFrame(roots).T.to_string())
+from sklearn.tree import export_text
+m0_pipe = P.build_pipeline(P.ARMS["M0"], 1, model="tree").fit(X[1], P.training_label(raw_tr, P.ARMS["M0"]))
+did040_fill = m0_pipe.named_steps["impute"].fill_["DID040"]
+did040_miss = float(raw_tr["DID040"].isna().mean())
+print(export_text(trees["M0"][0], feature_names=[P.plain_label(c) for c in trees["M0"][1]], show_weights=True))
+print(f"DID040 (age at diagnosis) is asked only of diagnosed people: missing for {did040_miss:.0%} of the training part, "
+      f"median-imputed to {did040_fill:.0f} in M0")
+tree_escr = arm_metrics[(arm_metrics["tier"] == 1) & (arm_metrics["model"] == "tree")].set_index("arm")["escr_auc"]
+print(f"tree E-SCREEN AUC: M0 {tree_escr['M0']:.3f}, M1 {tree_escr['M1']:.3f}, S {tree_escr['S']:.3f}")
+S7["tree_m0"] = dict(did040_fill=did040_fill, did040_missing_share=did040_miss, escreen_auc=tree_escr.to_dict())
 b2t = "supported" if roots["M0"]["role"] == "leak" and P._spec_by_var()["admissible"].get(roots["M1"]["variable"], "T1") != "N" else "refuted"
 print(f"B2t verdict: {b2t}")
 S7["leak_gate"] = {f"T{t}_{pop}": {k: gate[(t, pop)][k] for k in ("est", "lo", "hi", "interval", "mdd")} for (t, pop) in gate}
@@ -394,20 +404,27 @@ plt.show()
 
 fig, ax = plt.subplots(figsize=(13, 5.5))
 tree, names = trees["M0"]
-plot_tree(tree, feature_names=names, class_names=["no", "L_comb"], filled=True, impurity=False, proportion=True,
-          rounded=True, fontsize=7, ax=ax)
-ax.set_title(f"Depth-3 tree on the naive M0 frame: first split on {roots['M0']['root_feature']} (spec role: {roots['M0']['role']})")
+plot_tree(tree, feature_names=[P.plain_label(c) for c in names], class_names=["no diabetes", "diabetes (L_comb)"],
+          filled=True, impurity=False, proportion=True, rounded=True, fontsize=7, ax=ax)
+ax.set_title(f"Depth-3 tree on the naive M0 frame: first split on '{P.plain_label(roots['M0']['root_feature'])}' "
+             f"(a leakage item)\n'age at diagnosis' is split around its imputed value {did040_fill:.0f}", fontsize=10)
 plots.savefig(fig, "S7_tree_m0", caption="Decision tree (depth 3, min leaf 50) fitted on the naive M0 feature frame (Tier 1, training part). "
-              "The root split uses a variable that the availability rule removes.")
+              "The root split uses a treatment item that the availability rule removes; the splits at 49.5 / 50.5 on age at diagnosis "
+              "isolate the median imputation of an item that is only asked of diagnosed people.")
 plt.show()
 
 # %% [markdown]
 # **So what.** The availability rule removes the "too-good-to-be-true" signal: on E-ALL the AUC falls by about 0.13 –
 # the largest effect in the study – with an interval far beyond the 0.05 magnitude locked for B2/H2a. This
 # **deterioration is the correct outcome**: what M0 exploited is treatment and diagnosis history, i.e. the label leaking
-# back in. The tree makes this concrete: its root split is a *treatment* item (printed above: DIQ070, "taking diabetic
-# pills"), followed by prior glucose testing and age at diagnosis – not a single risk factor. On the M1 and S frames the
-# root becomes "told high blood pressure" (BPQ020), an admissible but care-contact item, followed by waist circumference.
+# back in. The tree makes this concrete: its root split is a *treatment* item ("taking diabetic pills"), followed by prior
+# glucose testing and age at diagnosis – not a single risk factor. The age-at-diagnosis splits are the most instructive:
+# the item is asked only of people already diagnosed, the naive median imputation fills everyone else with the value
+# printed above, and the tree simply separates "exactly the imputed value" (= never diagnosed) from any real age
+# (thresholds just below and above it). **Imputation has turned skip-pattern missingness into a code for the label.**
+# The leaked tree is also *worse* for screening than the honest one: its E-SCREEN AUC is below that of the M1 tree
+# (printed above), because diagnosis traces say nothing about the undiagnosed. On the M1 and S frames the root becomes
+# "told high blood pressure" (BPQ020), an admissible but care-contact item, followed by waist circumference.
 # The drop is smaller on E-SCREEN because people who know they have diabetes (where treatment items are most
 # telling) are not in E-SCREEN; what remains there comes from prediabetes counselling, glucose-test history and fasting
 # glucose (DIQ160, DIQ180, LBXGLU) – exactly the care traces the screening use case cannot have.
