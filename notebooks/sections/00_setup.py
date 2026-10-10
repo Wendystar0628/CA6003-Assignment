@@ -7,7 +7,7 @@
 # |---|---|
 # | Environment table | Library versions change results (solver defaults, spline code). Recording them makes a deviation explainable. |
 # | Run mode | FAST lets a grader re-run in minutes; FINAL is the protocol whose outputs are stored in the submitted notebook. |
-# | Seed derivation | One master seed, independent child streams: re-running a block never shifts the random numbers of another block. |
+# | Seed derivation | One master seed, one named stream per random consumer: re-running a block never shifts the random numbers of another block. |
 # | Data integrity | The raw files are the provenance anchor. A hash check proves that no file was edited, truncated or re-encoded. |
 # | Repository layout | Shows where every artefact lives and which governance files exist. |
 
@@ -88,31 +88,33 @@ print(f"NB_MODE = {C.NB_MODE}; holdout fraction {C.HOLDOUT_FRAC:.0%}; SESOI ROC-
 # %% [markdown]
 # ## Seed derivation
 #
-# **Why.** A single integer seed shared by every random step would couple them: adding one bootstrap call would change the cross-validation folds. `numpy.random.SeedSequence(SEED_MASTER).spawn(k)` produces statistically independent child streams from one master value. Names are bound to fixed positions, so a stream never moves when another is added at the end. Robustness checks (Stage S9) vary only the CV and bootstrap streams; the 20% hold-out is generated once and stored.
+# **Why.** A single integer seed shared by every random step would couple them: adding one bootstrap call would change the cross-validation folds. Instead, every random consumer gets its own seed from `evalkit.derive_seed(SEED_MASTER, *tags)`, which builds `numpy.random.SeedSequence([SEED_MASTER, crc32(tag), ...])` and takes one 32-bit word. The tags (section, purpose, arm, population) name the consumer, so its stream depends only on the master seed and its own name: it does not move when another consumer is added or removed, and it is identical on every machine because `crc32` is a fixed function (unlike Python's salted `hash`). Robustness checks (Stage S9) vary only the CV and bootstrap tags; the 20% hold-out is generated once and stored.
 
 # %%
-STREAMS = ["split", "cv", "bootstrap", "permutation", "robustness_base"]
-root_ss = np.random.SeedSequence(C.SEED_MASTER)
-children = root_ss.spawn(len(STREAMS))
+from src import evalkit as ek
+
+# Tags exactly as the later sections use them (section, purpose, ...).
+TAGS = [("S5", "auc_bootstrap"), ("S6", "random_y"), ("S7", "C0"), ("S7", "H2c-i"), ("S7", "coef", "M1")]
 seed_table = pd.DataFrame({
-    "stream": STREAMS,
-    "spawn_index": range(len(STREAMS)),
-    "integer_seed": [int(c.generate_state(1)[0]) for c in children],
+    "consumer tags": [" / ".join(t) for t in TAGS],
+    "integer_seed": [ek.derive_seed(C.SEED_MASTER, *t) for t in TAGS],
 })
 display(seed_table)
 
-# Reproducibility: re-deriving gives identical draws; different streams give different draws.
-again = np.random.SeedSequence(C.SEED_MASTER).spawn(len(STREAMS))
-draws_a = [np.random.default_rng(c).random(3) for c in children]
-draws_b = [np.random.default_rng(c).random(3) for c in again]
-assert all(np.array_equal(a, b) for a, b in zip(draws_a, draws_b))
-assert len({tuple(d) for d in draws_a}) == len(STREAMS)
-robust_seeds = [int(s.generate_state(1)[0]) for s in children[-1].spawn(C.N_ROBUSTNESS_SEEDS)]
-assert len(set(robust_seeds)) == C.N_ROBUSTNESS_SEEDS
-print(f"SEED_MASTER = {C.SEED_MASTER}; {len(STREAMS)} named streams; {len(robust_seeds)} robustness seeds, first three {robust_seeds[:3]}")
+# Properties the design relies on.
+again = [ek.derive_seed(C.SEED_MASTER, *t) for t in TAGS]
+assert again == seed_table["integer_seed"].tolist(), "derivation is not deterministic"
+assert seed_table["integer_seed"].nunique() == len(TAGS), "two consumers share a seed"
+assert ek.derive_seed(C.SEED_MASTER, "S7", "C0") != ek.derive_seed(C.SEED_MASTER + 1, "S7", "C0"), "master seed has no effect"
+assert ek.derive_seed(C.SEED_MASTER, "S7", "a", "b") != ek.derive_seed(C.SEED_MASTER, "S7", "b", "a"), "tag order must matter"
+# Ten tags of the same form give ten distinct robustness seeds (illustrative tags; Stage S9 defines its own).
+seeds_k = [ek.derive_seed(C.SEED_MASTER, "S9", "seed", k) for k in range(C.N_ROBUSTNESS_SEEDS)]
+assert len(set(seeds_k)) == C.N_ROBUSTNESS_SEEDS
+print(f"SEED_MASTER = {C.SEED_MASTER}; {len(TAGS)} example consumers, all distinct; "
+      f"{C.N_ROBUSTNESS_SEEDS} illustrative robustness seeds, first three {seeds_k[:3]}")
 
 # %% [markdown]
-# **So what.** The master seed is `20261011`. Re-deriving it reproduces identical draws (asserted) and the five streams are mutually distinct. The ten robustness seeds are children of one stream, so they are reproducible without being typed in by hand.
+# **So what.** The master seed is `20261011`. Re-deriving gives identical seeds, different consumers get different seeds, and changing either the master seed or the order of the tags changes the result (all asserted). Because every stream is named, any figure or table can be regenerated on its own without replaying the others.
 
 # %% [markdown]
 # ## Data integrity
@@ -231,8 +233,9 @@ display(FREEZES)
 payload = {
     "mode": C.NB_MODE,
     "seed_master": C.SEED_MASTER,
-    "streams": dict(zip(seed_table["stream"], seed_table["integer_seed"])),
-    "robustness_seeds": robust_seeds,
+    "seed_mechanism": "evalkit.derive_seed: SeedSequence([SEED_MASTER, crc32(tag), ...])",
+    "example_seeds": dict(zip(seed_table["consumer tags"], seed_table["integer_seed"])),
+    "robustness_seeds": seeds_k,
     "n_raw_files_verified": int(integrity["match"].sum()),
     "raw_total_mb": round(float(integrity["size_kb"].sum() / 1024), 2),
     "n_package_differs": n_diff,

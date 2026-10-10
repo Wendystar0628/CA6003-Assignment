@@ -3,28 +3,29 @@
     "section": "S0",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:32:17+00:00"
+    "written_utc": "2026-10-10T18:33:01+00:00"
   },
   "mode": "FAST",
   "seed_master": 20261011,
-  "streams": {
-    "split": 1095125285,
-    "cv": 975503932,
-    "bootstrap": 3647788826,
-    "permutation": 2081790035,
-    "robustness_base": 3547934149
+  "seed_mechanism": "evalkit.derive_seed: SeedSequence([SEED_MASTER, crc32(tag), ...])",
+  "example_seeds": {
+    "S5 / auc_bootstrap": 3902792087,
+    "S6 / random_y": 2297715870,
+    "S7 / C0": 1989223283,
+    "S7 / H2c-i": 2216191582,
+    "S7 / coef / M1": 80540337
   },
   "robustness_seeds": [
-    2612742270,
-    527626176,
-    2524347206,
-    3950828303,
-    2013704338,
-    3344754403,
-    3338017984,
-    739752638,
-    2593613233,
-    4256241365
+    2271519173,
+    4064898561,
+    410056368,
+    1078218294,
+    1762510969,
+    1521170404,
+    1726288709,
+    1612502151,
+    1013128735,
+    589711722
   ],
   "n_raw_files_verified": 16,
   "raw_total_mb": 12.22,
