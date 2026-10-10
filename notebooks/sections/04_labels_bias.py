@@ -492,7 +492,9 @@ register("DR-S5-05", "label_bias",
 # exposure), lacking insurance stays associated with being undiagnosed after adjusting for age, sex and income
 # (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1). For lacking a usual place of care the two fits disagree:
 # the unweighted CI excludes 1 (OR 2.8), the design-based weighted CI does not (OR 2.5, 0.9–7.1), so this
-# association is suggestive only. The Asian–White OR (age- and sex-adjusted) is imprecise in both fits. The
+# association is suggestive only. The Asian–White OR is imprecise in both fits; it is deliberately adjusted for
+# age and sex only, because in the S4 DAG income (SES) lies on the path from race to diagnosis, so adjusting for it
+# would remove part of the association being described. The
 # headline therefore remains the crude risk difference for insurance. Consequence for the label: `L_self`
 # systematically under-counts disease in groups with
 # poorer access, which is why the target is the union `L_comb` and why S8 compares training labels.
