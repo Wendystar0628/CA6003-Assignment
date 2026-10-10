@@ -50,40 +50,16 @@ def md_table(text, heading=None):
 # %% [markdown]
 # ## Analysis cohort
 #
-# **Why.** Every count below must come from the same cohort that later sections model. The shared loader `nhanes_io.build_cohort()` builds it (adults aged 20 or older, examined, HbA1c observed, not pregnant). Until that module is available this section rebuilds the cohort inline from the three raw files it needs, applying exactly the same inclusion steps; both routes must give 5,730 rows.
+# **Why.** Every count below must come from the same cohort that later sections model. The shared loader `nhanes_io.build_cohort()` builds it: adults aged 20 or older, examined, HbA1c observed, not pregnant. The funnel is asserted step by step.
 
 # %%
-def _fix_xpt_zeros(df):
-    """pandas reads SAS zeros as ~5.4e-79; restore exact zeros but keep NaN (mask, never where)."""
-    num = df.select_dtypes("number")
-    return df.assign(**{c: num[c].mask((num[c].abs() < C.XPT_ZERO_EPS) & num[c].notna(), 0.0) for c in num})
+from src import nhanes_io
 
-
-def _inline_cohort():
-    rd = lambda n: pd.read_sas(C.RAW_DIR / f"{n}.xpt", format="xport")
-    m = _fix_xpt_zeros(rd("DEMO_L")).merge(rd("GHB_L"), on="SEQN", how="left").merge(rd("DIQ_L"), on="SEQN", how="left")
-    steps = [("participants in DEMO_L", len(m))]
-    m = m[m["RIDAGEYR"] >= C.ADULT_MIN_AGE];  steps.append(("adults aged 20 or older", len(m)))
-    m = m[m["RIDSTATR"] == 2];                steps.append(("examined (RIDSTATR = 2)", len(m)))
-    m = m[m["LBXGH"].notna()];                steps.append(("HbA1c observed", len(m)))
-    m = m[m["RIDEXPRG"] != 1];                steps.append(("not pregnant (RIDEXPRG != 1)", len(m)))
-    return m.reset_index(drop=True), pd.DataFrame(steps, columns=["step", "n"])
-
-
-try:
-    from src import nhanes_io
-    cohort = nhanes_io.build_cohort()
-    funnel = nhanes_io.funnel()
-    LOADER = "src.nhanes_io"
-except (ImportError, AttributeError):
-    cohort, funnel = _inline_cohort()
-    LOADER = "inline fallback (nhanes_io not available)"
-
-print("cohort built by:", LOADER)
+cohort = nhanes_io.build_cohort()
+funnel = nhanes_io.funnel()
 display(funnel)
 assert len(cohort) == 5730
-if len(funnel) == 5:
-    assert funnel["n"].tolist() == [11933, 7809, 6064, 5767, 5730]
+assert funnel["n"].tolist() == [11933, 7809, 6064, 5767, 5730]
 
 # %% [markdown]
 # **So what.** The cohort has 5,730 adults, reached through the funnel 11,933 → 7,809 → 6,064 → 5,767 → 5,730 that the process document fixes. Everything that follows is computed on these rows.
@@ -102,10 +78,10 @@ if len(funnel) == 5:
 #
 # **Why.** "Leakage" is easy to assert and hard to defend variable by variable. One rule decides all cases: a feature is admissible only if it can be obtained **at the screening moment** by questionnaire, basic physical measurement or (Tier 2) a lipid panel from the same visit, **and** it is not a diagnostic criterion, not a consequence of diagnosis, and not derived from the target. Applied to the data, the rule also exposes a quieter problem: BPQ020 and BPQ080 ("told you have high blood pressure / cholesterol") are legitimate questionnaire items but are traces of earlier contact with health care, as DIQ160 and DIQ180 are. They stay admissible and get their own ablation arm (T1-minus-care).
 #
-# The table is read from the draft in `governance/S1_scope.md`. Once `config/variable_spec.csv` exists, the two are compared and must agree on every shared variable.
+# The table is read from `governance/S1_scope.md` and compared with `config/variable_spec.csv`, which is built from the CDC codebooks; the two must agree on every shared variable.
 
 # %%
-rule = md_table(SCOPE_MD, "Variable availability (draft)")
+rule = md_table(SCOPE_MD, "Variable availability")
 rule["tier"] = rule["admissible"]
 display(rule.drop(columns="tier"))
 
@@ -123,28 +99,25 @@ counts = rule["admissible"].value_counts().reindex(["N", "T1", "T2"]).rename("va
 display(counts.to_frame())
 assert counts.tolist() == [14, 13, 2], counts.tolist()
 
-# Cross-check with the variable specification once it exists.
-if C.VARIABLE_SPEC.exists():
-    spec = pd.read_csv(C.VARIABLE_SPEC)
-    spec_adm = spec.set_index("var")["admissible"].astype(str)
-    shared = [v for v in rule["variable"] if v in spec_adm.index]
-    diff = [(v, adm[v], spec_adm[v]) for v in shared if adm[v] != spec_adm[v]]
-    print(f"variable_spec.csv: {len(spec)} variables; {len(shared)} shared with the S1 draft; disagreements: {diff if diff else 'none'}")
-    SPEC_STATUS = {"n_spec": len(spec), "n_shared": len(shared), "disagreements": len(diff)}
-    display(pd.crosstab(spec["role"], spec["admissible"]).rename_axis(index="role (spec)", columns="admissible"))
-    leak = spec[spec["role"] == "leak"][["var", "file", "admiss_reason"]]
-    display(leak)
-    assert (spec.loc[spec["role"].isin(["leak", "label"]), "admissible"] == "N").all(), "leak or label variable admitted"
-    assert set(spec.loc[spec["role"] == "audit", "var"]) == {"RIDRETH3", "HIQ011", "HUQ030"}
-    care = spec[(spec["admissible"] != "N") & spec["admiss_reason"].astype(str).str.contains("care-contact")]["var"].tolist()
-    print("admissible but flagged as care-contact traces (T1-minus-care arm):", care)
-    assert set(care) == {"BPQ020", "BPQ080"}
-else:
-    print("config/variable_spec.csv not built yet: the S1 draft table is authoritative for now")
-    SPEC_STATUS = {"n_spec": None, "n_shared": None, "disagreements": None}
+# Cross-check with the variable specification.
+spec = pd.read_csv(C.VARIABLE_SPEC)
+spec_adm = spec.set_index("var")["admissible"].astype(str)
+shared = [v for v in rule["variable"] if v in spec_adm.index]
+diff = [(v, adm[v], spec_adm[v]) for v in shared if adm[v] != spec_adm[v]]
+print(f"variable_spec.csv: {len(spec)} variables; {len(shared)} shared with the rule table; disagreements: {diff if diff else 'none'}")
+assert not diff
+SPEC_STATUS = {"n_spec": len(spec), "n_shared": len(shared), "disagreements": len(diff)}
+display(pd.crosstab(spec["role"], spec["admissible"]).rename_axis(index="role (spec)", columns="admissible"))
+leak = spec[spec["role"] == "leak"][["var", "file", "admiss_reason"]]
+display(leak)
+assert (spec.loc[spec["role"].isin(["leak", "label"]), "admissible"] == "N").all(), "leak or label variable admitted"
+assert set(spec.loc[spec["role"] == "audit", "var"]) == {"RIDRETH3", "HIQ011", "HUQ030"}
+care = spec[(spec["admissible"] != "N") & spec["admiss_reason"].astype(str).str.contains("care-contact")]["var"].tolist()
+print("admissible but flagged as care-contact traces (T1-minus-care arm):", care)
+assert set(care) == {"BPQ020", "BPQ080"}
 
 # %% [markdown]
-# **So what.** The rule rejects 14 variables: nine glycaemic or diagnosis-related ones (HbA1c, fasting glucose, the diagnosis item itself, insulin and pill use, age at diagnosis, insulin duration, "told prediabetes", "glucose tested in the past three years"), two fasting-subsample lipids (triglycerides, LDL), and race, insurance and usual place of care, which are kept as audit variables only. It admits 13 Tier-1 inputs and 2 Tier-2 lipids. The variable specification built from the codebooks (Stage S2) agrees with this draft on every shared variable; it marks eight further variables with role `leak` (the diagnosis consequences and the fasting glucose) and flags exactly BPQ020 and BPQ080 as care-contact traces. Because the decision is made by rule and not per variable, any later reviewer can re-derive it.
+# **So what.** The rule rejects 14 variables: nine glycaemic or diagnosis-related ones (HbA1c, fasting glucose, the diagnosis item itself, insulin and pill use, age at diagnosis, insulin duration, "told prediabetes", "glucose tested in the past three years"), two fasting-subsample lipids (triglycerides, LDL), and race, insurance and usual place of care, which are kept as audit variables only. It admits 13 Tier-1 inputs and 2 Tier-2 lipids. The variable specification built from the codebooks (Stage S2) agrees with this table on every shared variable; it marks eight further variables with role `leak` (the diagnosis consequences and the fasting glucose) and flags exactly BPQ020 and BPQ080 as care-contact traces. Because the decision is made by rule and not per variable, any later reviewer can re-derive it.
 
 # %% [markdown]
 # ## Evaluation populations
@@ -218,7 +191,7 @@ plt.show(); print("saved", f_comp)
 # %% [markdown]
 # ## Research questions and hypotheses
 #
-# **Why.** Four questions organise the whole project, and each hypothesis has a metric, a direction, a magnitude, a smallest effect of interest (SESOI), a falsifier and an honest record of whether the data had been seen. The hypotheses are read from `governance/hypotheses.md` (a draft here; ownership passes to Stage S6, which locks it with a SHA-256 before any ablation is run).
+# **Why.** Four questions organise the whole project, and each hypothesis has a metric, a direction, a magnitude, a smallest effect of interest (SESOI), a falsifier and an honest record of whether the data had been seen. The hypotheses are read from `governance/hypotheses.md`, which Stage S6 locks with a SHA-256 before any ablation is run.
 #
 # | RQ | Question |
 # |---|---|
@@ -282,7 +255,7 @@ assert ev.query("`search term` in ['family history','blood relative','gestationa
 # %% [markdown]
 # ## Novelty statement
 #
-# **Why.** Marking rewards depth, but overclaiming is penalised in review. The statement below says what is *combined*, not what is "first". It is read from `governance/S1_scope.md`, and the cell asserts that it contains no priority or superlative words.
+# **Why.** A contribution should be stated at the strength the evidence supports. The statement below says what is *combined*, not what is "first". It is read from `governance/S1_scope.md`, and the cell asserts that it contains no priority or superlative words.
 
 # %%
 novelty = md_section(SCOPE_MD, "Novelty statement")
@@ -338,30 +311,17 @@ assert preg_known["RIDAGEYR"].between(20, 44).all()
 # **Why.** Collecting or keeping more than the purpose needs is a governance risk even with public data (purpose limitation and data minimisation, e.g. GDPR Art. 5(1)(b)–(c); the Singapore PDPA has a purpose-limitation obligation). The loader keeps only columns that the variable specification marks `include` and writes a report of what was kept and dropped per file.
 
 # %%
-min_path = C.RESULTS_DIR / "S2" / "minimisation_report.csv"
-cols_path = C.RESULTS_DIR / "S2" / "minimisation_columns.csv"
-if min_path.exists():
-    mrep = pd.read_csv(min_path)
-    display(mrep[["file", "use_tier", "cols_raw", "cols_kept", "cols_dropped"]])
-    tot_raw, tot_kept, tot_drop = (int(mrep[k].sum()) for k in ["cols_raw", "cols_kept", "cols_dropped"])
-    assert tot_raw == tot_kept + tot_drop
-    assert (tot_raw, tot_kept, tot_drop) == (175, 78, 97), 'text of the so-what cell must be updated'
-    print(f"{tot_raw} raw columns in 16 files: {tot_kept} kept ({tot_kept / tot_raw:.0%}), {tot_drop} dropped ({tot_drop / tot_raw:.0%})")
-    if cols_path.exists():
-        mcols = pd.read_csv(cols_path)
-        examples = ["DMDBORN4", "DMDYRUSR", "DMQMILIZ", "DMDHHSIZ", "MCQ010"]
-        display(mcols[mcols["var"].isin(examples)][["file", "var", "decision", "reason"]])
-        assert (mcols["decision"] == "drop").sum() == tot_drop
-    MIN_STATUS = {"raw_columns": tot_raw, "kept": tot_kept, "dropped": tot_drop}
-else:
-    raw_dims = []
-    for stem in C.NHANES_FILES:
-        df = pd.read_sas(C.RAW_DIR / f"{stem}.xpt", format="xport")
-        raw_dims.append({"file": stem, "rows": len(df), "columns in raw file": df.shape[1]})
-    mrep = pd.DataFrame(raw_dims)
-    display(mrep)
-    print("results/S2/minimisation_report.csv not produced yet: raw dimensions shown")
-    MIN_STATUS = "raw dimensions only (minimisation report pending)"
+mrep = pd.read_csv(C.RESULTS_DIR / "S2" / "minimisation_report.csv")
+mcols = pd.read_csv(C.RESULTS_DIR / "S2" / "minimisation_columns.csv")
+display(mrep[["file", "use_tier", "cols_raw", "cols_kept", "cols_dropped"]])
+tot_raw, tot_kept, tot_drop = (int(mrep[k].sum()) for k in ["cols_raw", "cols_kept", "cols_dropped"])
+assert tot_raw == tot_kept + tot_drop
+assert (tot_raw, tot_kept, tot_drop) == (175, 78, 97), "text of the so-what cell must be updated"
+print(f"{tot_raw} raw columns in 16 files: {tot_kept} kept ({tot_kept / tot_raw:.0%}), {tot_drop} dropped ({tot_drop / tot_raw:.0%})")
+examples = ["DMDBORN4", "DMDYRUSR", "DMQMILIZ", "DMDHHSIZ", "MCQ010"]
+display(mcols[mcols["var"].isin(examples)][["file", "var", "decision", "reason"]])
+assert (mcols["decision"] == "drop").sum() == tot_drop
+MIN_STATUS = {"raw_columns": tot_raw, "kept": tot_kept, "dropped": tot_drop}
 
 # %% [markdown]
 # **So what.** Of 175 raw columns in the 16 files, 78 are kept and 97 are dropped (55 %) because the specification gives them no analytic role: quasi-identifiers such as country of birth and years of residence, military service, household-size details, measurement-comment codes and unrelated MCQ items. Every dropped column has a stated reason in `minimisation_columns.csv`, and the loader discards them immediately after reading, so downstream code cannot use them by accident.
@@ -414,15 +374,11 @@ plt.show(); print("saved", f_age)
 
 # %%
 reg_path = GOV / "register" / "S1.csv"
-if reg_path.exists():
-    reg = pd.read_csv(reg_path)
-    display(reg[["dr_id", "type", "decision", "hyp_id", "check_verdict"]])
-    assert reg["check_verdict"].isin(["PASS", "PASS-FIX"]).all()
-else:
-    print("register/S1.csv not written yet")
+reg = pd.read_csv(reg_path)
+display(reg[["dr_id", "type", "decision", "hyp_id", "check_verdict"]])
+assert reg["check_verdict"].isin(["PASS", "PASS-FIX"]).all()
 
 payload = {
-    "loader": LOADER,
     "n_cohort": n,
     "funnel": dict(zip(funnel["step"], funnel["n"])),
     "labels": {"L_self": n_self, "L_A1c": n_a1c, "L_comb": n_comb, "known_share_of_comb": share_known},
@@ -442,6 +398,6 @@ payload = {
 }
 R.save_section("S1", payload)
 (C.RESULTS_DIR / "S1").mkdir(exist_ok=True)
-rule.drop(columns="tier").to_csv(C.RESULTS_DIR / "S1" / "availability_rule_draft.csv", index=False)
+rule.drop(columns="tier").to_csv(C.RESULTS_DIR / "S1" / "availability_rule.csv", index=False)
 pop.to_csv(C.RESULTS_DIR / "S1" / "evaluation_populations.csv", index=False)
 print("saved results/metrics_S1.json; S1 OK")

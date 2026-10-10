@@ -38,9 +38,9 @@ A feature is admissible only if all hold: (1) it can be obtained at the screenin
 * Race is **not** a model input by default; insurance (HIQ011) and usual place of care (HUQ030) are audit variables only.
 * BPQ020 (told hypertension) and BPQ080 (told high cholesterol) are admissible but are, like DIQ160 and DIQ180, traces of earlier contact with health care; a separate **T1-minus-care** ablation arm removes both and is reported on E-ALL and E-SCREEN.
 
-### Variable availability (draft)
+### Variable availability
 
-This draft is replaced by `config/variable_spec.csv` (S2); section 1 compares the two and asserts that they agree.
+The authoritative per-variable record is `config/variable_spec.csv` (Stage S2); section 1 compares the two and asserts that they agree.
 
 | variable | file | meaning | admissible | reason |
 |---|---|---|---|---|
