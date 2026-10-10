@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:07:35+00:00"
+    "written_utc": "2026-10-10T18:07:52+00:00"
   },
   "labels": {
     "confusion": {
@@ -398,5 +398,171 @@
       }
     },
     "n_boot": 100
+  },
+  "representation": {
+    "shares": {
+      "age|20-39": {
+        "n": 1414,
+        "sample_share": 0.24677137870855148,
+        "weighted_share": 0.3483857950271099
+      },
+      "age|40-59": {
+        "n": 1671,
+        "sample_share": 0.2916230366492147,
+        "weighted_share": 0.3379451427477256
+      },
+      "age|60+": {
+        "n": 2645,
+        "sample_share": 0.46160558464223383,
+        "weighted_share": 0.3136690622251645
+      },
+      "race|Mexican American": {
+        "n": 386,
+        "sample_share": 0.06736474694589878,
+        "weighted_share": 0.07097491830174142
+      },
+      "race|NH Asian": {
+        "n": 315,
+        "sample_share": 0.0549738219895288,
+        "weighted_share": 0.06117902879611636
+      },
+      "race|NH Black": {
+        "n": 676,
+        "sample_share": 0.11797556719022688,
+        "weighted_share": 0.11006244132688799
+      },
+      "race|NH White": {
+        "n": 3408,
+        "sample_share": 0.5947643979057592,
+        "weighted_share": 0.6020728618428676
+      },
+      "race|Other Hispanic": {
+        "n": 582,
+        "sample_share": 0.10157068062827225,
+        "weighted_share": 0.09556383995375026
+      },
+      "race|Other/multi": {
+        "n": 363,
+        "sample_share": 0.06335078534031413,
+        "weighted_share": 0.06014690977863645
+      }
+    },
+    "kish_deff": 1.5459276715354544,
+    "n_eff_kish": 3706.51234563181,
+    "L_comb_unweighted": 0.1694589877835951,
+    "response_rates_documented": {
+      "interview_unweighted": 0.346,
+      "exam_unweighted": 0.257
+    },
+    "self_dm_interview_only": {
+      "est": 0.08814580945490016,
+      "kg_low": 0.07049748991796133,
+      "kg_high": 0.1085233854930103,
+      "n": 1742
+    },
+    "self_dm_with_a1c": {
+      "est": 0.11725210329574579,
+      "kg_low": 0.10161287041631635,
+      "kg_high": 0.1343643649285987,
+      "n": 5767
+    },
+    "selection_rd": {
+      "est": 0.02910629384084562,
+      "ci_low": 0.010473122076566102,
+      "ci_high": 0.04773946560512514
+    }
+  },
+  "missingness": {
+    "by_race": {
+      "Mexican American": {
+        "missing_share": 0.03950617283950617,
+        "examined": 405,
+        "missing": 16.0,
+        "w_missing_share": 0.04445397370320158
+      },
+      "NH Asian": {
+        "missing_share": 0.05970149253731343,
+        "examined": 335,
+        "missing": 20.0,
+        "w_missing_share": 0.05750447640249161
+      },
+      "NH Black": {
+        "missing_share": 0.09296148738379814,
+        "examined": 753,
+        "missing": 70.0,
+        "w_missing_share": 0.08879338548758435
+      },
+      "NH White": {
+        "missing_share": 0.039787055197534324,
+        "examined": 3569,
+        "missing": 142.0,
+        "w_missing_share": 0.039852409230286885
+      },
+      "Other Hispanic": {
+        "missing_share": 0.04234527687296417,
+        "examined": 614,
+        "missing": 26.0,
+        "w_missing_share": 0.044087433588406416
+      },
+      "Other/multi": {
+        "missing_share": 0.059278350515463915,
+        "examined": 388,
+        "missing": 23.0,
+        "w_missing_share": 0.07271913506695735
+      }
+    },
+    "prev_mec": 0.13926950730520654,
+    "prev_ph": 0.14035739528195537,
+    "manski": {
+      "all": {
+        "observed_prev": 0.13926950730520654,
+        "lower": 0.13949211408431,
+        "upper": 0.18109588273290164,
+        "width": 0.041603768648591645,
+        "naive_width_m": 0.048594043992497775
+      },
+      "Mexican American": {
+        "observed_prev": 0.17021224835014476,
+        "lower": 0.16914144680594356,
+        "upper": 0.20682469741539317,
+        "width": 0.03768325060944959,
+        "naive_width_m": 0.044122667504373755
+      },
+      "NH Asian": {
+        "observed_prev": 0.11366270822602915,
+        "lower": 0.12116124664917413,
+        "upper": 0.16463107010549377,
+        "width": 0.04346982345631963,
+        "naive_width_m": 0.05750447640249161
+      },
+      "NH Black": {
+        "observed_prev": 0.21999925412119445,
+        "lower": 0.215026729863548,
+        "upper": 0.28445360130924424,
+        "width": 0.06942687144569622,
+        "naive_width_m": 0.08263369942733942
+      },
+      "NH White": {
+        "observed_prev": 0.12340475728861983,
+        "lower": 0.12378939953142906,
+        "upper": 0.15861145962426254,
+        "width": 0.03482206009283348,
+        "naive_width_m": 0.04016300867290301
+      },
+      "Other Hispanic": {
+        "observed_prev": 0.1275656851725898,
+        "lower": 0.12599055026587236,
+        "upper": 0.16651807902002191,
+        "width": 0.04052752875414956,
+        "naive_width_m": 0.04464793874497924
+      },
+      "Other/multi": {
+        "observed_prev": 0.16590743236797587,
+        "lower": 0.16391272101853804,
+        "upper": 0.22678544720033866,
+        "width": 0.06287272618180063,
+        "naive_width_m": 0.07298712060844104
+      }
+    }
   }
 }

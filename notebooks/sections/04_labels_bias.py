@@ -623,6 +623,156 @@ register("DR-S5-06", "measurement_bias",
 # this is a measurement *signal*, not a definitive estimate: it motivates the pre-registered WHtR arm (P14) in S8,
 # where WHtR replaces waist rather than being added.
 
+# %% [markdown]
+# ## 6 Representation and response
+#
+# **Why.** A model trained on 5,730 examined adults describes the people who agreed to be examined and gave
+# blood. Three checks: (i) sample versus WTPH2YR-weighted composition, (ii) the cycle's response rates and the
+# variance cost of unequal weights (Kish design effect), (iii) whether exam participation is related to health,
+# comparing self-reported diabetes (interview weight WTINT2YR) between interview-only adults and adults with an
+# HbA1c result.
+
+# %%
+band_s = S.age_band(d["RIDAGEYR"]).to_numpy()
+rep_rows = []
+for dim, vals in [("age", band_s), ("race", d["race3"].to_numpy())]:
+    for lev in pd.unique(vals):
+        m = vals == lev
+        rep_rows.append({"dimension": dim, "level": lev, "n": int(m.sum()), "sample_share": m.mean(),
+                         "weighted_share": d.loc[m, WT].sum() / d[WT].sum()})
+rep = pd.DataFrame(rep_rows).sort_values(["dimension", "level"]).reset_index(drop=True)
+rep["diff_pp"] = 100 * (rep["sample_share"] - rep["weighted_share"])
+print(rep.round(3).to_string(index=False))
+deff = S.kish_deff(d[WT])
+unw_prev = d["L_comb"].mean()
+print(f"\nKish design effect of WTPH2YR: {deff:.2f} (effective n ≈ {len(d) / deff:,.0f}); "
+      f"L_comb unweighted {pct(unw_prev)} vs weighted {pct(w_prev['est'])}")
+RP = rep.set_index(["dimension", "level"])
+close(RP.loc[("age", "60+"), "sample_share"], 0.462, 0.001, "60+ sample"); close(RP.loc[("age", "60+"), "weighted_share"], 0.314, 0.001, "60+ weighted")
+close(RP.loc[("age", "20-39"), "sample_share"], 0.247, 0.001, "20-39 sample"); close(RP.loc[("age", "20-39"), "weighted_share"], 0.348, 0.001, "20-39 weighted")
+close(deff, 1.55, 0.01, "Kish deff")
+
+# Response rates are documented by NCHS, not derivable from public files (S2 provenance; NHANES 2021-2023
+# overview brief, https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewbrief.aspx?Cycle=2021-2023).
+RESPONSE = {"interview_unweighted": 0.346, "exam_unweighted": 0.257}
+print(f"documented response rates: interview {pct(RESPONSE['interview_unweighted'])}, exam {pct(RESPONSE['exam_unweighted'])}")
+
+merged = NIO.load_merged()
+merged.attrs = {}
+adults = merged[merged["RIDAGEYR"] >= C.ADULT_MIN_AGE].copy()
+adults["self_dm"] = adults["DIQ010"].eq(1).astype(float).where(adults["DIQ010"].notna())
+io_mask = adults["RIDSTATR"].eq(1).to_numpy()
+a1c_mask = (adults["RIDSTATR"].eq(2) & adults["LBXGH"].notna()).to_numpy()
+p_io = S.weighted_prop(adults, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=io_mask)
+p_a1c = S.weighted_prop(adults, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=a1c_mask)
+rd_sel = risk_difference(adults, "self_dm", a1c_mask, io_mask, weight=C.WEIGHT_INTERVIEW)
+print(f"self-reported diabetes (WTINT2YR): interview-only adults {kg_text(p_io)}")
+print(f"                                   adults with HbA1c   {kg_text(p_a1c)}")
+print(f"difference with HbA1c - interview-only: {100 * rd_sel['est']:+.1f} pp ({100 * rd_sel['ci_low']:.1f}, {100 * rd_sel['ci_high']:.1f})")
+close(p_io["est"], 0.088, 0.0015, "interview-only self-report"); close(p_a1c["est"], 0.117, 0.0015, "with-A1c self-report")
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 3.8), gridspec_kw={"width_ratios": [1, 1.6]})
+for ax, dim in zip(axes, ["age", "race"]):
+    rr = rep[rep["dimension"] == dim]
+    x = np.arange(len(rr))
+    ax.bar(x - 0.2, rr["sample_share"] * 100, 0.4, label="sample (unweighted)", color=plots.PALETTE[0])
+    ax.bar(x + 0.2, rr["weighted_share"] * 100, 0.4, label="population (WTPH2YR)", color=plots.PALETTE[4])
+    ax.set_xticks(x, rr["level"], rotation=0 if dim == "age" else 20, ha="center" if dim == "age" else "right")
+    ax.set(ylabel="share of cohort (%)", title=f"{dim.capitalize()} composition")
+axes[0].legend()
+fig.suptitle("Older adults are over-represented in the examined cohort; weights restore the population mix", y=1.02)
+fig.tight_layout()
+plots.savefig(fig, "S5_representation",
+              caption="Sample versus WTPH2YR-weighted composition of the 5,730-adult cohort by age band and race/ethnicity.")
+plt.show()
+
+rep.to_csv(OUT / "representation.csv", index=False)
+RES["representation"] = {
+    "shares": {f"{a}|{b}": v for (a, b), v in RP[["n", "sample_share", "weighted_share"]].to_dict("index").items()},
+    "kish_deff": deff, "n_eff_kish": len(d) / deff, "L_comb_unweighted": unw_prev,
+    "response_rates_documented": RESPONSE,
+    "self_dm_interview_only": {k: p_io[k] for k in ("est", "kg_low", "kg_high", "n")},
+    "self_dm_with_a1c": {k: p_a1c[k] for k in ("est", "kg_low", "kg_high", "n")},
+    "selection_rd": {"est": rd_sel["est"], "ci_low": rd_sel["ci_low"], "ci_high": rd_sel["ci_high"]},
+}
+register("DR-S5-07", "representation",
+         "Cohort over-represents older adults; exam participants report more diabetes than interview-only adults",
+         "results/S5/representation.csv; figures/S5_representation.png",
+         f"60+: sample {pct(RP.loc[('age', '60+'), 'sample_share'])} vs weighted {pct(RP.loc[('age', '60+'), 'weighted_share'])}; "
+         f"Kish deff {deff:.2f}; self-report interview-only {pct(p_io['est'])} vs with HbA1c {pct(p_a1c['est'])}; response 34.6%/25.7%",
+         "Descriptive population estimates use WTPH2YR with PSU jackknife; survey-weighted training only as ablation B6b; claims scoped to the examined population",
+         "Treat the unweighted sample as the population; claim national representativeness of model metrics")
+
+# %% [markdown]
+# **So what.** Adults aged 60+ make up 46.2 % of the sample but 31.4 % of the weighted population (20–39: 24.7 %
+# vs 34.8 %); race shares differ by at most about one percentage point because this cycle no longer oversamples by
+# race. That age skew alone explains why the unweighted `L_comb` prevalence (16.9 %) exceeds the weighted 14.0 %.
+# Unequal weights cost precision (Kish design effect 1.55, effective n ≈ 3,700). With response rates of 34.6 %
+# (interview) and 25.7 % (exam), selection matters: interview-only adults report diabetes less often (8.8 %)
+# than adults with an HbA1c result (11.7 %). Weights correct for known covariates such as age, not for
+# health-related participation, so model metrics describe the examined population.
+
+# %% [markdown]
+# ## 7 HbA1c missingness bias
+#
+# **Why.** The cohort requires an HbA1c result. If HbA1c is missing more often in some groups and for health
+# reasons, the label is missing not at random. We compare missingness among examined adults by race, compare MEC- and phlebotomy-weighted prevalence (WTPH2YR already contains a blood-draw non-response
+# adjustment), and bound the `L_comb` prevalence without any assumption on the missing values (Manski bounds).
+# Self-report is observed for most adults without HbA1c, so the bounds are sharper than the naive width m.
+
+# %%
+# Missingness by race on all examined adults (the S3 definition); Manski bounds below on the cohort universe
+# (examined, non-pregnant adults).
+exa = adults[adults["RIDSTATR"].eq(2)].copy()
+exa["a1c_missing"] = exa["LBXGH"].isna().astype(float)
+exa["race3"] = exa["RIDRETH3"].map(RACE)
+miss = (exa.groupby("race3")["a1c_missing"].agg(["mean", "size", "sum"])
+        .rename(columns={"mean": "missing_share", "size": "examined", "sum": "missing"}))
+miss["w_missing_share"] = [np.average(g["a1c_missing"], weights=g[C.WEIGHT_MEC]) for _, g in exa.groupby("race3")]
+ex = exa[~exa["RIDEXPRG"].eq(1)].copy()
+print(miss.round(3))
+close(miss.loc["NH Black", "missing_share"], 0.093, 0.0015, "Black missing"); close(miss.loc["NH White", "missing_share"], 0.040, 0.0015, "White missing")
+
+prev_mec = np.average(d["L_comb"], weights=d[C.WEIGHT_MEC])
+print(f"\nL_comb prevalence: WTMEC2YR-weighted {pct(prev_mec)} vs WTPH2YR-weighted {pct(w_prev['est'])}")
+close(prev_mec, 0.139, 0.0015, "MEC-weighted prevalence")
+
+# Manski bounds on L_comb prevalence among examined adults (WTMEC2YR): missing HbA1c rows with self-reported
+# diabetes are known positives; the rest could be anything.
+ex["known_pos"] = (ex["LBXGH"].ge(C.HBA1C_DIABETES) | ex["DIQ010"].eq(1)).astype(float)
+ex["unknown"] = (ex["LBXGH"].isna() & ~ex["DIQ010"].eq(1)).astype(float)
+man = []
+for g, gg in [("all", ex), *ex.groupby("race3")]:
+    w = gg[C.WEIGHT_MEC].to_numpy()
+    lo = np.average(gg["known_pos"], weights=w)
+    unk = np.average(gg["unknown"], weights=w)
+    obs = gg["LBXGH"].notna().to_numpy()
+    man.append({"group": g, "observed_prev": np.average(gg.loc[obs, "known_pos"], weights=w[obs]),
+                "lower": lo, "upper": lo + unk, "width": unk, "naive_width_m": np.average(gg["a1c_missing"], weights=w)})
+manski = pd.DataFrame(man).set_index("group")
+print("\nManski bounds for L_comb prevalence (WTMEC2YR, examined non-pregnant adults)")
+print(manski.round(3))
+miss.to_csv(OUT / "a1c_missingness.csv")
+manski.to_csv(OUT / "manski_bounds.csv")
+RES["missingness"] = {"by_race": miss.to_dict("index"), "prev_mec": prev_mec, "prev_ph": w_prev["est"],
+                      "manski": manski.to_dict("index")}
+register("DR-S5-08", "missingness",
+         "HbA1c is missing more often for NH Black adults; WTPH2YR adjustment changes prevalence by 0.1 pp",
+         "results/S5/a1c_missingness.csv; results/S5/manski_bounds.csv",
+         f"missing HbA1c: Black {pct(miss.loc['NH Black', 'missing_share'])} vs White {pct(miss.loc['NH White', 'missing_share'])}; "
+         f"prevalence MEC {pct(prev_mec)} vs PH {pct(w_prev['est'])}; Manski width overall {manski.loc['all', 'width']:.3f}",
+         "Keep complete-case cohort with WTPH2YR; report Manski bounds; IPW sensitivity deferred to S9",
+         "Impute HbA1c (would impute the label); ignore missingness")
+
+# %% [markdown]
+# **So what.** HbA1c is missing for 9.3 % of examined NH Black adults versus 4.0 % of NH White adults, so the
+# label is less often observed in one group. The phlebotomy weights already adjust for blood-draw non-response:
+# prevalence moves from 13.9 % (MEC weight) to 14.0 % (WTPH2YR). Without any assumption on the missing values the
+# overall `L_comb` prevalence among examined non-pregnant adults lies between 13.9 % and 18.1 % (width 0.042,
+# narrower than the naive 0.049 because missing-HbA1c adults who self-report diabetes are known positives); for
+# NH Black adults the bounds are 21.5–28.4 % (width 0.069) against 12.4–15.9 % for NH White adults. The cohort stays complete-case
+# with WTPH2YR; an inverse-probability-weighting sensitivity check is assigned to S9.
+
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"
