@@ -1,2 +1,3 @@
 *.xpt binary
 *.pdf binary
+*.sha256 text eol=lf
