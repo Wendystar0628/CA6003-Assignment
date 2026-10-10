@@ -3,7 +3,7 @@
     "section": "S6",
     "nb_mode": "FAST",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:16:59+00:00"
+    "written_utc": "2026-10-10T18:17:47+00:00"
   },
   "inputs": {
     "n_cohort": 5730,
@@ -589,7 +589,13 @@
       "B6b",
       "P14"
     ],
-    "sha256_now": "dfda7511958c77fcfe48a5b160cb665065591c44d736561fca98d24726e52c70",
-    "lock": null
+    "sha256_now": "de032f4d200fa1ff9e51affd75d35183bf351714374cb35acf261b66b611610c",
+    "lock": {
+      "commit": "9fb6aefd8a15457c4398b9bf6deb8fec8961d375",
+      "timestamp": "2026-10-11T02:17:18+08:00",
+      "sha256": "de032f4d200fa1ff9e51affd75d35183bf351714374cb35acf261b66b611610c",
+      "first_exp_commit": null,
+      "first_exp_timestamp": null
+    }
   }
 }
