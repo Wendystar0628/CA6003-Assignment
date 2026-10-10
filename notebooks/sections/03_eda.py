@@ -721,6 +721,9 @@ print(SCAN[SCAN.attenuation_50].assign(ratio=lambda d: d["std"] / d.crude).sort_
 
 ex_ins = SCAN.query("exposure == 'uninsured' and outcome == 'L_A1c' and stratifier == 'age'").iloc[0]
 ex_as = SCAN.query("exposure == 'asian' and outcome == 'L_comb' and stratifier == 'age'").iloc[0]
+_aw_int = OUT["standardisation"]["asian_white"]["internal"]
+print(f"Asian - White L_comb, three age standards: US 2000 {aw['std']:+.2f} pp; whole-cohort weighted age mix "
+      f"{_aw_int:+.2f} pp; scan standard (pooled Asian + White age mix) {ex_as['std']:+.2f} pp")
 OUT["simpson"] = {"n_comparisons": len(SCAN), "grid": [len(EXPOSURES), len(OUTCOMES), len(STRATIFIERS)],
                   "n_flips": int(SCAN.flip.sum()), "n_any_sign_change": int(SCAN.any_flip.sum()),
                   "n_attenuation_50": int(SCAN.attenuation_50.sum()), "n_boot": B, "bootstrap": "Rao-Wu rescaled, m_h = n_h - 1",
@@ -783,6 +786,12 @@ reg("DR-S4-06", "interpretation",
 #   Asian and White adults "at the same BMI" answers a different question – and because BMI
 #   under-states adiposity in Asian adults (S5), equal-BMI strata are not equal-risk strata. This is
 #   the measurement-bias finding of S5 seen from another angle, not de-confounding.
+#
+# The Asian–White standardised difference appears with three values in this section because three
+# age standards are used: the US 2000 population (+2.1 pp, §4.5), the weighted age mix of the whole
+# cohort (+2.9 pp, §4.5 sensitivity) and, in the scan, the pooled age mix of the Asian and White
+# adults being compared (+3.3 pp). The older the standard population, the larger the gap, because
+# the Asian excess is concentrated in the older bands; all three intervals include zero.
 #
 # Attenuations of more than half outnumber the flips. The largest is uninsured × `L_comb` | age
 # (about −5.3 → −0.1 pp): the same age-confounding mechanism as §4.6, now visible because uninsured
