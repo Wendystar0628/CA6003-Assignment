@@ -13,7 +13,7 @@
 # 8. Outliers: a three-layer rule
 # 9. Data-quality dimension matrix
 #
-# Each item follows the same pattern: *why* the check is needed, the code that computes it, and *so what*, giving the computed numbers and the decision they support. Numbers that the process document fixes (§8) are asserted with a tolerance. Every number is stored in `results/metrics_S2.json` / `results/metrics_S3.json`, tables in `results/S3/`, and the decisions in `governance/register/S2.csv` and `S3.csv`.
+# Each item follows the same pattern: *why* the check is needed, the code that computes it, and *so what*, giving the computed numbers and the decision they support. Key numbers are asserted against reference values from an independent earlier computation, with a tolerance, so any drift fails loudly. Every number is stored in `results/metrics_S2.json` / `results/metrics_S3.json`, tables in `results/S3/`, and the decisions in `governance/register/S2.csv` and `S3.csv`.
 
 # %%
 import sys, pathlib
@@ -216,7 +216,7 @@ f_funnel = plots.savefig(fig, "S3_funnel", caption="Sample funnel: DEMO_L partic
 plt.show(); print("saved", f_funnel)
 
 # %% [markdown]
-# **So what.** `SEQN` is unique in all 16 files, and each file is a subset of `DEMO_L`, so the left join neither duplicates nor drops anyone. The funnel reproduces the specification exactly: 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (pregnant women removed). The largest selective step is the examination (1,745 adults lost). Together with the 25.7 % examination response rate it limits representativeness, which is why the quality matrix in item 9 rates credibility separately. The 297 examined adults without HbA1c are studied in item 7. The 21 women whose pregnancy status could not be ascertained are kept and flagged (`preg_unknown`), so a sensitivity analysis can drop them.
+# **So what.** `SEQN` is unique in all 16 files, and each file is a subset of `DEMO_L`, so the left join neither duplicates nor drops anyone. The funnel matches the cohort definition step by step: 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (pregnant women removed). The largest selective step is the examination (1,745 adults lost). Together with the 25.7 % examination response rate it limits representativeness, which is why the quality matrix in item 9 rates credibility separately. The 297 examined adults without HbA1c are studied in item 7. The 21 women whose pregnancy status could not be ascertained are kept and flagged (`preg_unknown`), so a sensitivity analysis can drop them.
 
 # %%
 M3["funnel"] = dict(zip(fun["step"], fun["n"].astype(int)))
@@ -448,10 +448,10 @@ assert univ.loc[1, ["DIQ010=1", "DIQ010=3", "DIQ010=2 & DIQ160=1", "other"]].tol
 #
 # - BMI recomputed from weight and height matches the published value for all 8,471 valid triples (largest difference 0.050, which is rounding; none above 0.1).
 # - No reading has systolic ≤ diastolic pressure.
-# - Implausible pulse pressures are rare: below 20 mmHg in 5/2/3 cohort readings and 12/8/11 file readings; above 100 mmHg in 34/39/29 cohort readings. They are flagged, not changed, because a wide pulse pressure is plausible in older adults with stiff arteries.
+# - Implausible pulse pressures are rare: below 20 mmHg in 5/2/3 cohort readings and 12/8/11 file readings; above 100 mmHg in 34/39/29 cohort readings. They are flagged, not changed: a wide pulse pressure is physiologically plausible in older adults (arterial stiffness).
 # - Four cohort members have a waist-to-height ratio above 1. They are flagged.
 #
-# The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people who report diabetes, so it is a pure proxy of the label. `DIQ070` (oral medication) is also asked of 282 borderline respondents and of 918 non-diabetic respondents who were told they have prediabetes. Within the cohort, 41 non-diabetic and 44 borderline adults take glucose-lowering medication (metformin for prediabetes). **Decision (DR-S3-06):** `DIQ050`/`DIQ070` are inadmissible as features (`admissible = N`). The treatment-aware sensitivity label in S5 may use them only inside this documented universe, and it must exclude prediabetes medication.
+# The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people who report diabetes, so it is effectively a proxy of the label. `DIQ070` (oral medication) is also asked of 282 borderline respondents and of 918 non-diabetic respondents who were told they have prediabetes. Within the cohort, 41 non-diabetic and 44 borderline adults take glucose-lowering medication, plausibly metformin prescribed for prediabetes (the files do not name the drug). **Decision (DR-S3-06):** `DIQ050`/`DIQ070` are inadmissible as features (`admissible = N`). The treatment-aware sensitivity label in S5 may use them only inside this documented universe, and it must exclude prediabetes medication.
 
 # %%
 M3["consistency"] = {"bmi_triples": len(v), "bmi_max_abs_diff": float(bmi_diff.max()), "bmi_diff_gt_0_1": int((bmi_diff > 0.1).sum()),
@@ -690,7 +690,7 @@ dq = pd.DataFrame([
      "Aug 2021 - Aug 2023, one cycle; no drift test possible (no pooling)", "not assessable"],
     ["Validity", "values outside codebook range after per-variable recode; sentinel codes traceable", "0 out of range; 100 % traceable",
      f"{viol} of {checked:,} values out of range; {int(sent['traceable'].sum())}/{len(sent)} sentinel variables traceable; XPT artefact repaired ({n_art:,} cells)", "pass"],
-    ["Accuracy", "BMI recomputation; external anchor; label agreement", "|diff| <= 0.1; DB516 within 0.1 pp (S4)",
+    ["Accuracy", "BMI recomputation; external anchor; label agreement", "|diff| <= 0.1; NCHS Data Brief 516 replication within 0.1 pp (§3)",
      f"max BMI diff {bmi_diff.max():.3f}; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)", "pass for measures, limited for label"],
     ["Consistency", "SBP > DBP; skip-pattern universes; duplicate weight columns identical", "0 violations",
      f"SBP <= DBP: {int(pp_tab['SBP <= DBP'].sum())}; WHtR > 1: {whtr_gt1} flagged; DIQ050/DIQ070 universes as documented", "pass"],
@@ -756,7 +756,7 @@ reg2 = write_register("S2", [
     dict(dr_id="DR-S2-04", stage="S2", date=TODAY, type="specification", finding="Sentinel codes differ by variable and continuous measures have none; a single spec avoids drift between code and documentation",
          evidence_ref="config/variable_spec.csv; nhanes_io.verify_spec",
          evidence_value=f"{len(spec)} spec rows; {n_sentinel_vars} included variables with codebook sentinels; verify_spec problems: {len(problems)}",
-         decision="variable_spec.csv (15 columns, process doc §7.2) is the single source; sentinel_codes parsed from the CDC codebooks (Refused / Don't know only); roles and admissibility from the S1 availability rule",
+         decision="variable_spec.csv (15 documented columns) is the single source; sentinel_codes parsed from the CDC codebooks (Refused / Don't know only); roles and admissibility from the S1 availability rule",
          alternatives_rejected="Hand-written sentinel list; global 7/9/77/99 list", status="decided", check_verdict="PASS",
          check_note="verify_spec re-parses all 16 codebooks and the XPT headers in this run: 0 problems"),
     dict(dr_id="DR-S2-05", stage="S2", date=TODAY, type="provenance", finding="Numbers are only reproducible if the raw files are byte-identical to the CDC release",
@@ -793,7 +793,7 @@ reg3 = write_register("S3", [
          evidence_value=f"{int(y_miss.sum())}/{len(ex)} missing; LLR p={fit.llr_pvalue:.1e}; AUC {auc_miss:.2f}; NH Black OR {or_tab.loc['NH Black', 'OR']:.2f} ({or_tab.loc['NH Black', 'ci_low']:.2f}, {or_tab.loc['NH Black', 'ci_high']:.2f}); self-report OR {or_tab.loc['self-reported diabetes', 'OR']:.2f}",
          decision="Wording: not MCAR; no evidence against MAR given covariates; MNAR untestable. Complete-case cohort with WTPH2YR (includes blood non-response adjustment); MNAR sensitivity (delta / IPW) in S9",
          alternatives_rejected="Little's MCAR test (normality, only rejects MCAR); multiple imputation of the label", status="decided", check_verdict="PASS",
-         check_note="Logit refitted in this run; ORs asserted against the S3 plan", loop_ref="S9 MNAR sensitivity"),
+         check_note="Logit refitted in this run; ORs asserted against the reference values", loop_ref="S9 MNAR sensitivity"),
     dict(dr_id="DR-S3-05", stage="S3", date=TODAY, type="top_coding", finding="Age capped at 80 and PIR at 5; PIR also missing",
          evidence_ref="item 6", evidence_value=f"age_top {age_top}; pir_top {pir_top} ({pir_top / len(coh):.1%}); pir_miss {pir_miss} ({pir_miss / len(coh):.1%}); L_comb 80: {prev_80:.1%} vs 70-79: {prev_7079:.1%}",
          decision="Keep values and carry flags age_top, pir_top, pir_miss; their model value tested in S6 block B4 (P06/P07)",
