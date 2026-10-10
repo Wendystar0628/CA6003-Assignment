@@ -1,3 +1,7 @@
+* text=auto eol=lf
 *.xpt binary
 *.pdf binary
+*.png binary
+*.parquet binary
+*.npz binary
 *.sha256 text eol=lf
