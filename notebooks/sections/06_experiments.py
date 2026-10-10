@@ -486,27 +486,38 @@ cum = pd.DataFrame(cum_rows)
 cum.to_csv(OUT / "cumulative_path.csv", index=False)
 print(cum[cum["tier"] == 1][["pop", "step", "est", "lo", "hi", "interval", "mdd"]].round(4).to_string(index=False))
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 4.4))
+fig, axes = plt.subplots(2, 2, figsize=(12, 8.2), gridspec_kw={"height_ratios": [1, 0.9]})
 labels_ = ["M0", "+B2 (=M1)", "+B1", "+B3", "+B4", "+B5", "+B6a", "+B6b (=S)"]
-for ax, pop, tag in zip(axes, ("E-ALL", "E-SCREEN"), ("eall", "escr")):
-    sub = arm_metrics[(arm_metrics["tier"] == 1) & (arm_metrics["model"] == "lr")].set_index("arm")
-    level = sub.loc[path[0], f"{tag}_auc"]
-    ax.bar(0, level, color=C.OKABE_ITO["grey"])
+sub = arm_metrics[(arm_metrics["tier"] == 1) & (arm_metrics["model"] == "lr")].set_index("arm")
+for col, (pop, lev_col) in enumerate((("E-ALL", "eall_auc_foldmean"), ("E-SCREEN", "escr_auc"))):
     c = cum[(cum["tier"] == 1) & (cum["pop"] == pop)].reset_index(drop=True)
-    for i, r in c.iterrows():
-        d = r["diff_pooled"]
-        ax.bar(i + 1, d, bottom=level, color=C.OKABE_ITO["vermillion"] if d < 0 else C.OKABE_ITO["green"])
-        ax.errorbar(i + 1, level + d, yerr=[[max(d - r["lo"], 0)], [max(r["hi"] - d, 0)]], color="k", capsize=3, lw=1)
-        level += d
-    ax.axhline(sub.loc["S", f"{tag}_auc"], color=C.OKABE_ITO["blue"], ls=":", lw=1)
-    ax.set_xticks(range(len(labels_)), labels_, rotation=30)
-    ax.set_ylim(min(sub.loc[path, f"{tag}_auc"]) - 0.06, max(sub.loc[path, f"{tag}_auc"]) + 0.03)
-    ax.set_title(f"{pop}, Tier 1")
-    ax.set_ylabel("ROC-AUC")
-fig.suptitle("Cumulative path: one large correct drop (B2), then small steps (95 % CI per step)", fontsize=11)
-plots.savefig(fig, "S7_waterfall", caption="Waterfall of the pooled-OOF ROC-AUC along the cumulative path M0 -> +B2 -> +B1 -> +B3 -> +B4 -> +B5 -> +B6a -> +B6b (= S), "
-              "Tier 1; bars are step increments with the conservative 95 % CI of the paired difference (E-ALL: wider of corrected t and "
-              "bootstrap; E-SCREEN: bootstrap). Red = decrease, green = increase; dotted line = S.")
+    levels = [sub.loc[path[0], lev_col]]
+    for _, r in c.iterrows():
+        levels.append(levels[-1] + r["est"])     # E-ALL: fold-mean steps; E-SCREEN: pooled steps
+    for row, start in ((0, 0), (1, 1)):          # row 1 = zoom on M1 -> S
+        ax = axes[row, col]
+        ax.bar(start, levels[start], color=C.OKABE_ITO["grey"] if start == 0 else C.OKABE_ITO["blue"])
+        for i in range(start, len(c)):
+            r, d = c.loc[i], c.loc[i, "est"]
+            ax.bar(i + 1, d, bottom=levels[i], color=C.OKABE_ITO["vermillion"] if d < 0 else C.OKABE_ITO["green"])
+            ax.errorbar(i + 1, levels[i] + d, yerr=[[max(d - r["lo"], 0)], [max(r["hi"] - d, 0)]], color="k", capsize=3, lw=1)
+        ax.axhline(levels[-1], color=C.OKABE_ITO["blue"], ls=":", lw=1)
+        ax.set_xticks(range(start, len(labels_)), labels_[start:], rotation=30)
+        span = [levels[k] + dlt for k in range(start, len(c)) for dlt in (0, c.loc[k, "lo"], c.loc[k, "hi"])]
+        if row == 0:
+            ax.set_ylim(min(levels) - 0.06, max(levels) + 0.03)
+            ax.set_title(f"{pop}, Tier 1 ({'fold-mean' if pop == 'E-ALL' else 'pooled'} AUC)")
+        else:
+            ax.set_ylim(min(span) - 0.005, max(span) + 0.005)
+            ax.set_xlim(start - 0.6, len(labels_) - 0.4)
+            ax.set_title(f"{pop}: zoom on M1 → S")
+        ax.set_ylabel("ROC-AUC")
+fig.suptitle("Cumulative path: one large correct drop (B2), then steps below 0.01 (95 % CI per step)", fontsize=11)
+fig.tight_layout()
+plots.savefig(fig, "S7_waterfall", caption="Waterfall of the ROC-AUC along the cumulative path M0 -> +B2 -> +B1 -> +B3 -> +B4 -> +B5 -> +B6a -> +B6b (= S), "
+              "Tier 1. E-ALL: fold-mean AUC and fold-mean paired differences with the conservative 95 % CI (wider of corrected t and "
+              "bootstrap); E-SCREEN: pooled-OOF AUC and bootstrap CI. Bottom row: zoom on the steps after the leak gate. "
+              "Red = decrease, green = increase; dotted line = S.")
 plt.show()
 
 # %% [markdown]
@@ -522,7 +533,7 @@ plt.show()
 
 # %%
 lobo_pairs = [("S", f"S-{b}", b) for b in P.BLOCKS] + [("S", "S-linear", "splines"), ("S+WHtR", "S", "P14 WHtR"),
-                                                       ("T1-minus-care", "S", "minus care")]
+                                                       ("S", "T1-minus-care", "care items")]
 lobo_rows = []
 for t in (1, 2):
     for pop in ("E-ALL", "E-SCREEN"):
@@ -552,16 +563,16 @@ axes[0].invert_yaxis()
 axes[0].legend(loc="lower left", fontsize=8)
 fig.suptitle("Leave-one-block-out from S (B2: adding the rule removes leakage)", fontsize=11)
 plots.savefig(fig, "S7_lobo", caption="Leave-one-block-out ΔROC-AUC = AUC(arm with the block) − AUC(arm without it) with conservative 95 % CIs, Tier 1 (blue) and "
-              "Tier 2 (orange), E-ALL and E-SCREEN; grey band = ±SESOI 0.01. For B2 the sign is negative because adding the rule removes leakage; "
-              "'minus care' = T1-minus-care − S.")
+              "Tier 2 (orange), E-ALL and E-SCREEN; grey band = ±SESOI 0.01. Every row is 'with − without': B2 is negative because adding the "
+              "rule removes leakage; 'care items' = S − T1-minus-care (S keeps BPQ020/BPQ080); 'P14 WHtR' = S+WHtR − S.")
 plt.show()
 
 # %% [markdown]
 # **So what.** Apart from B2 (whose negative sign is the leakage being removed), the block effects on discrimination
 # are small; their intervals decide between "equivalent" (inside the grey band) and "inconclusive" (crossing it).
-# The striking line is **minus care**: removing BPQ020/BPQ080 costs AUC on E-ALL but not on E-SCREEN, where the
-# point estimate even rises. The care-contact items help to recognise people the health system already knows,
-# which is not the screening task.
+# The striking line is **care items** (S, which keeps "told high blood pressure / high cholesterol", minus the arm
+# without them): keeping them helps on E-ALL but *hurts* on E-SCREEN. The care-contact items help to recognise people
+# the health system already knows, which is not the screening task.
 
 # %% [markdown]
 # ## 9 E-ALL vs E-SCREEN
@@ -611,7 +622,7 @@ ax.set_yticks(range(len(dumb)), dumb["arm"])
 ax.invert_yaxis()
 ax.set_xlim(0.6, 1.06)
 ax.set_xlabel("ROC-AUC (pooled OOF, 95 % bootstrap CI)")
-ax.legend(loc="lower left", fontsize=8)
+ax.legend(loc="upper center", bbox_to_anchor=(0.45, -0.13), ncol=2, fontsize=8, frameon=False)
 ax.set_title("Screening value is lower than whole-sample AUC suggests")
 plots.savefig(fig, "S7_eall_vs_escreen", caption="ROC-AUC on E-ALL (blue, L_comb, 84 % already diagnosed) and E-SCREEN (red, people not told they have "
               "diabetes, positive = HbA1c >= 6.5 %) for the main arms and baselines, Tier 1 unless marked, with 95 % bootstrap CIs.")
@@ -738,20 +749,25 @@ ax.invert_yaxis()
 ax.set_xlabel("BMI coefficient per SD (log-odds), 95 % bootstrap interval")
 ax.set_title("BMI coefficient across arms")
 cbS, _ = CB["S-linear"]
-s = cbS.summary.reindex(cbS.summary["coef"].abs().sort_values(ascending=False).index)[:22]
+ref_levels = {f"{v}_{float(cl[v].mode().iloc[0]) if pd.api.types.is_numeric_dtype(cl[v]) else cl[v].mode().iloc[0]}"
+              for v in P.categorical_columns() if v in cl.columns and cl[v].notna().any()}
+disp = cbS.summary.drop(index=[c for c in cbS.summary.index if c in ref_levels])   # reference level of each category dropped
+s = disp.reindex(disp["coef"].abs().sort_values(ascending=False).index)[:22]
 ax = axes[1]
 for i, (nm, r) in enumerate(s.iterrows()):
     colr = C.OKABE_ITO["vermillion"] if r["sign_flip_rate"] > 0.10 else C.OKABE_ITO["green"]
     ax.errorbar(r["coef"], i, xerr=[[r["coef"] - r["q_low"]], [r["q_high"] - r["coef"]]], fmt="o", color=colr, capsize=2, ms=4)
 ax.axvline(0, color="k", lw=0.8)
-ax.set_yticks(range(len(s)), s.index, fontsize=7)
+ax.set_yticks(range(len(s)), [P.plain_label(c) for c in s.index], fontsize=7)
 ax.invert_yaxis()
 ax.set_xlabel("coefficient (scaled design), 95 % bootstrap interval")
 ax.set_title("S-linear: 22 largest coefficients (red = sign flips > 10 %)")
-fig.suptitle("Pruning structural redundancy stabilises the BMI coefficient", fontsize=11)
+fig.suptitle(f"Pruning stabilises BMI only in unscaled fits (×{ratio_cum['ratio']:.1f}); inside the scaled L2 pipeline "
+             f"×{ratio_b3['ratio']:.1f} (B3-b {v_ratio(ratio_b3)})", fontsize=11)
 fig.tight_layout()
 plots.savefig(fig, "S7_coef_forest", caption="Left: bootstrap distribution (point = full-data fit, bar = 2.5-97.5 percentile) of the BMI coefficient per SD in the arms "
-              "where BMI enters linearly, with the anthropometric columns present in each arm. Right: the 22 largest coefficients of S-linear; "
+              "where BMI enters linearly, with the anthropometric columns present in each arm. Right: the 22 largest coefficients of S-linear "
+              "(most frequent level of each category omitted for display); "
               f"red = sign flips in more than 10 % of the {C.N_BOOT_COEF} bootstrap refits. Tier 1, training part.")
 plt.show()
 S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ratio_B3=ratio_b3, ratio_H2b=ratio_h2b, ratio_cumulative=ratio_cum)

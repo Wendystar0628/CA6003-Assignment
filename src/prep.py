@@ -712,3 +712,54 @@ def ada_lr_pipeline(C_: float = 1.0) -> Pipeline:
     ct = ColumnTransformer([("items", OneHotEncoder(handle_unknown="ignore", sparse_output=False, drop="first"),
                              list(ADA_ITEMS))])
     return Pipeline([("ct", ct), ("model", LogisticRegression(C=C_, max_iter=C.LR_MAX_ITER))])
+
+
+# =============================================================================
+# display labels (figures and tables for non-specialist readers)
+# =============================================================================
+_YN = {1: "yes", 2: "no"}
+PLAIN = {
+    "RIAGENDR": ("sex", {1: "male", 2: "female"}), "RIDAGEYR": ("age (years)", None),
+    "DMDEDUC2": ("education", {1: "< 9th grade", 2: "9-11th grade", 3: "high school", 4: "some college", 5: "college graduate"}),
+    "DMDMARTZ": ("marital status", {1: "married/partner", 2: "widowed/divorced/separated", 3: "never married"}),
+    "INDFMPIR": ("income-to-poverty ratio", None), "BMXWT": ("weight (kg)", None), "BMXHT": ("height (cm)", None),
+    "BMXBMI": ("BMI (kg/m2)", None), "BMXARMC": ("arm circumference (cm)", None), "BMXWAIST": ("waist (cm)", None),
+    "BMXHIP": ("hip circumference (cm)", None), "whtr": ("waist-to-height ratio", None),
+    "bp_sys_mean": ("systolic BP (mean of 3)", None), "bp_dia_mean": ("diastolic BP (mean of 3)", None),
+    "pulse_mean": ("pulse (mean of 3)", None), "BPQ020": ("told high blood pressure", _YN),
+    "BPQ080": ("told high cholesterol", _YN), "SMQ020": ("smoked 100+ cigarettes", _YN),
+    "PAD680": ("sedentary minutes per day", None), "pa_mod_min_wk": ("moderate leisure activity (min/week)", None),
+    "pa_vig_min_wk": ("vigorous leisure activity (min/week)", None),
+    "PAD790U": ("moderate-activity frequency unit", {"D": "day", "W": "week", "M": "month", "Y": "year"}),
+    "PAD810U": ("vigorous-activity frequency unit", {"D": "day", "W": "week", "M": "month", "Y": "year"}),
+    "age_top": ("age 80+ (top-coded)", None), "pir_top": ("income ratio 5+ (top-coded)", None),
+    "LBXTC": ("total cholesterol", None), "LBDHDD": ("HDL cholesterol", None),
+    "DIQ070": ("taking diabetic pills", _YN), "DIQ050": ("taking insulin", _YN),
+    "DIQ180": ("blood-glucose test in past 3 years", _YN), "DIQ160": ("told prediabetes", _YN),
+    "DID040": ("age at diabetes diagnosis", None), "DID060": ("insulin duration", None),
+    "LBXGLU": ("fasting glucose (mg/dL)", None), "LBDLDL": ("LDL cholesterol (mg/dL)", None),
+    "LBXTLG": ("triglycerides (mg/dL)", None), "HIQ011": ("has health insurance", _YN),
+    "HUQ030": ("usual place of care", {1: "yes", 2: "none", 3: "more than one"}),
+}
+
+
+def plain_label(name: str) -> str:
+    """Readable label for a design-matrix column (dummy, spline basis, indicator or raw variable)."""
+    for suffix, txt in (("_missing", " missing"), ("_infrequent_sklearn", ": rare levels")):
+        if name.endswith(suffix):
+            return plain_label(name[: -len(suffix)]) + txt
+    if "_sp" in name and name.rsplit("_sp", 1)[1].isdigit():
+        base, k = name.rsplit("_sp", 1)
+        return f"{plain_label(base)} spline {k}"
+    for var in sorted(PLAIN, key=len, reverse=True):
+        if name == var:
+            return PLAIN[var][0]
+        if name.startswith(var + "_"):
+            lev = name[len(var) + 1:]
+            lab, codes = PLAIN[var]
+            try:
+                key = int(float(lev))
+            except ValueError:
+                key = lev
+            return f"{lab}: {codes.get(key, lev) if codes else lev}"
+    return name
