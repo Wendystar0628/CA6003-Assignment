@@ -1,0 +1,45 @@
+tier,column,role,admissible,reason
+1,RIDSTATR,cohort_filter,N,cohort filter (interview + MEC exam)
+1,RIDRETH3,audit,N,excluded from models by design (S1 §3): stratification / fairness vari
+1,RIDEXPRG,cohort_filter,N,cohort filter (pregnancy)
+1,LBXGLU,leak,N,diagnostic criterion (fasting plasma glucose >= 126 mg/dL)
+1,LBXTLG,side,N,fasting subsample only (about half the cohort missing by design); not 
+1,LBDLDL,side,N,"fasting subsample only; Friedewald-derived from TC, HDL and TG (struct"
+1,DID040,leak,N,consequence of diagnosis (age at diagnosis)
+1,DIQ160,leak,N,result of a prior glycaemic test (told prediabetes)
+1,DIQ180,leak,N,prior blood-glucose testing in last 3 years: care-contact trace of gly
+1,DIQ050,leak,N,treatment = consequence of diagnosis (insulin)
+1,DID060,leak,N,consequence of diagnosis (insulin duration)
+1,DIQ060U,leak,N,consequence of diagnosis (unit of DID060)
+1,DIQ070,leak,N,treatment = consequence of diagnosis or prediabetes (oral medication)
+1,MCQ160B,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+1,MCQ160C,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+1,MCQ160D,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+1,MCQ160E,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+1,MCQ160F,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+1,INDFMMPI,redundancy,N,redundant with INDFMPIR (monthly vs annual poverty ratio); redundancy 
+1,INDFMMPC,redundancy,N,categorised version of INDFMMPI; redundancy demo only
+1,HIQ011,audit,N,excluded from models by design (S1 §3): access-to-care audit / stratif
+1,HUQ030,audit,N,excluded from models by design (S1 §3): access-to-care audit / stratif
+2,RIDSTATR,cohort_filter,N,cohort filter (interview + MEC exam)
+2,RIDRETH3,audit,N,excluded from models by design (S1 §3): stratification / fairness vari
+2,RIDEXPRG,cohort_filter,N,cohort filter (pregnancy)
+2,LBXGLU,leak,N,diagnostic criterion (fasting plasma glucose >= 126 mg/dL)
+2,LBXTLG,side,N,fasting subsample only (about half the cohort missing by design); not 
+2,LBDLDL,side,N,"fasting subsample only; Friedewald-derived from TC, HDL and TG (struct"
+2,DID040,leak,N,consequence of diagnosis (age at diagnosis)
+2,DIQ160,leak,N,result of a prior glycaemic test (told prediabetes)
+2,DIQ180,leak,N,prior blood-glucose testing in last 3 years: care-contact trace of gly
+2,DIQ050,leak,N,treatment = consequence of diagnosis (insulin)
+2,DID060,leak,N,consequence of diagnosis (insulin duration)
+2,DIQ060U,leak,N,consequence of diagnosis (unit of DID060)
+2,DIQ070,leak,N,treatment = consequence of diagnosis or prediabetes (oral medication)
+2,MCQ160B,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+2,MCQ160C,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+2,MCQ160D,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+2,MCQ160E,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+2,MCQ160F,optional,N,passes the timing rule but outside the frozen T1 list; prior-diagnosis
+2,INDFMMPI,redundancy,N,redundant with INDFMPIR (monthly vs annual poverty ratio); redundancy 
+2,INDFMMPC,redundancy,N,categorised version of INDFMMPI; redundancy demo only
+2,HIQ011,audit,N,excluded from models by design (S1 §3): access-to-care audit / stratif
+2,HUQ030,audit,N,excluded from models by design (S1 §3): access-to-care audit / stratif

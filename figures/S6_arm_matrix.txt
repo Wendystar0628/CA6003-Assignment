@@ -1,0 +1,1 @@
+Which preparation steps are switched on in each experimental arm (blue). M0 = naive with leakage, M1 = availability rule only, S = all steps; S-Bk = leave-one-block-out.
