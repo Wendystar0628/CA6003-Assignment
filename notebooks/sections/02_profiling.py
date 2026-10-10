@@ -223,3 +223,61 @@ M3["funnel"] = dict(zip(fun["step"], fun["n"].astype(int)))
 M3["uniqueness"] = {"files_seqn_unique": int(uniq["seqn_unique"].sum()), "files_subset_of_demo": int(uniq["subset_of_DEMO"].sum())}
 M3["preg_unknown_kept"] = preg3
 
+# %% [markdown]
+# ## 3 Per-variable sentinel map
+#
+# **Why.** NHANES codes "Refused" and "Don't know" differently in each variable: 7/9, 77/99, 777/999 or 7777/9999. Continuous laboratory and examination measures have no such codes at all; their codebook lists only a range of values and "Missing". The sentinel map is therefore taken from each variable's codebook entry, never from a global list. Two kinds of check make it auditable:
+#
+# - Every recoded code is traceable to the codebook: for each variable, the number of rows recoded in the raw file must equal the frequency the CDC codebook prints for that code.
+# - Codes that look like sentinels but are real categories are kept. Examples are `DIQ010 = 3` (borderline) and `HUQ030 = 3` (more than one place of care).
+
+# %%
+cb = io.codebook_table()
+rows = []
+for f in C.NHANES_FILES:
+    part = io.load_file(f, spec=spec)[0]
+    _, aud = io.apply_sentinels(part, spec, mode="per_variable")
+    for _, a in aud.iterrows():
+        codes = io._codes(a["codes"])
+        cbv = cb[(cb["file"] == f) & (cb["var"] == a["var"])]
+        cb_rows = cbv[cbv["code"].isin([str(c) for c in codes])]
+        rows.append({"var": a["var"], "file": f, "codes": a["codes"],
+                     "codebook_desc": " / ".join(cb_rows["desc"]),
+                     "codebook_count": int(cb_rows["count"].sum()),
+                     "recoded_file": int(a["n_recoded"])})
+sent = pd.DataFrame(rows)
+_, aud_coh = io.apply_sentinels(io.build_cohort(sentinels="none"), spec, mode="per_variable")
+sent = sent.merge(aud_coh[["var", "n_recoded"]].rename(columns={"n_recoded": "recoded_cohort"}), on="var", how="left")
+sent["traceable"] = sent["codebook_count"] == sent["recoded_file"]
+display(sent)
+sent.to_csv(OUT / "sentinel_audit.csv", index=False, lineterminator="\n")
+assert sent["traceable"].all(), sent[~sent["traceable"]]
+assert len(sent) == 25 and int(sent["recoded_file"].sum()) == 1047
+assert sent["codebook_desc"].str.split(" / ").map(lambda d: all(x in ("Refused", "Don't know") for x in d)).all()
+
+legit = pd.DataFrame([
+    ["DIQ010 = 3", "Borderline", int((coh["DIQ010"] == 3).sum()), int((io.read_xpt("DIQ_L")["DIQ010"] == 3).sum())],
+    ["HUQ030 = 3", "There is more than one place", int((coh["HUQ030"] == 3).sum()), int((io.read_xpt("HUQ_L")["HUQ030"] == 3).sum())],
+    ["RIDRETH3 = 7", "Other race, including multi-racial", int((coh["RIDRETH3"] == 7).sum()), int((demo["RIDRETH3"] == 7).sum())],
+], columns=["code", "meaning", "cohort", "file"])
+display(legit)
+assert legit.loc[0, "cohort"] == 213 and legit.loc[0, "file"] == 284
+n_sent_coh = int(sent["recoded_cohort"].fillna(0).sum())
+print(f"variables with codebook sentinels: {len(sent)}; cells recoded in the files: {int(sent['recoded_file'].sum()):,}; in the cohort: {n_sent_coh:,}")
+
+# %% [markdown]
+# **So what.** For each of the 25 variables with codebook sentinels, the number of recoded rows equals the frequency the codebook prints, so each recode is traceable to its CDC source. The map recodes 1,047 cells across the files and 562 in the cohort. The largest single item is `DIQ180` (prior blood test, 173 "don't know"), a label-audit variable rather than a predictor.
+#
+# The codes that look like sentinels but are categories stay untouched:
+#
+# - 213 borderline answers (`DIQ010 = 3`; 284 in the file);
+# - 34 people with more than one usual place of care (`HUQ030 = 3`);
+# - the 363 "Other race / multiracial" adults (`RIDRETH3 = 7`).
+#
+# **Decision (DR-S3-02):** recode refusal and don't-know codes per variable from the codebook (`apply_sentinels(mode="per_variable")`). There is no global list, and continuous measures are never recoded.
+
+# %%
+M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sent["recoded_file"].sum()),
+                        "cells_recoded_cohort": n_sent_coh, "all_traceable": bool(sent["traceable"].all()),
+                        "legit_codes_cohort": dict(zip(legit["code"], legit["cohort"].astype(int)))}
+
