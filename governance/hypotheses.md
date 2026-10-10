@@ -1,6 +1,6 @@
 # Hypotheses
 
-**Status: DRAFT (S6) – not yet locked.**
+**Status: LOCKED (prereg-lock) at 2026-10-10T18:17:17Z by `modeling` (S6). Later changes only under "Post-lock amendments".**
 
 > **Drafted by `scope-gov` (S1, H1a-H4b); finalised by `modeling` (S6), which added the block hypotheses B1-B6, B2t and P14 and the operational verdict rules.** The lock is the SHA-256 of this file plus the timestamp of the dedicated commit `chore(S6): lock hypotheses.md (prereg-lock)` (tag `prereg-lock`), which precedes the first ablation-result commit. After the lock the file is only appended to, under "Post-lock amendments", each amendment marked post hoc and logged in the decision register.
 
