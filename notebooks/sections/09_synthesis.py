@@ -579,6 +579,9 @@ for a, b in HEAD_LINES:
 S10["headline"] = dict(finding="Whole-sample AUC measures recognition of known diabetes, not screening",
                        n_evidence_lines=len(HEAD_LINES), lines=[f"{a}: {b}" for a, b in HEAD_LINES])
 S10["findings"] = F
+HF = pd.DataFrame([dict(finding=k, order=i + 1, evidence=line) for k, v in F.items() for i, line in enumerate(v)]
+                  + [dict(finding="HEADLINE " + S10["headline"]["finding"], order=i + 1, evidence=f"{x}: {y}") for i, (x, y) in enumerate(HEAD_LINES)])
+HF.to_csv(OUT / "headline_findings.csv", index=False)   # slide material for the three video findings
 
 # %% [markdown]
 # **So what – choice of the headline.** The single non-obvious finding is **"a whole-sample AUC measures
