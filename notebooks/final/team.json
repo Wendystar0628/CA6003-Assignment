@@ -16,7 +16,7 @@
    "matric": "[TEAM TO FILL: matric no.]",
    "role": "Data quality and preparation (owner of the 14 preparation steps)",
    "sections_led": "§3, §6, §9 (reviews §1, §2)",
-   "decisions": "DR-S3-01–07; DR-S4-08–09; DR-S6-01–10; DR-S7-12; DR-S9-01–09, DR-S9-12–13 (leak hunt with D)",
+   "decisions": "DR-S3-01–07; DR-S4-08–09; DR-S6-01–10; DR-S7-12; DR-S9-01–09, DR-S9-12–13 (leak hunt with D); post-audit DR-S9-16, DR-S9-21",
    "video_segment": "2:40–5:00, plus opening and closing"
   },
   {
@@ -24,7 +24,7 @@
    "matric": "[TEAM TO FILL: matric no.]",
    "role": "Exploratory analysis, labels and bias",
    "sections_led": "§4, §5, §8 (reviews §7, §9)",
-   "decisions": "DR-S4-01–07, DR-S4-13; DR-S5-01–10; DR-S8-01–12; DR-S10-02–03",
+   "decisions": "DR-S4-01–07, DR-S4-13; DR-S5-01–10; DR-S8-01–12; DR-S10-02–03; post-audit DR-S9-19",
    "video_segment": "5:00–7:30, plus opening and closing"
   },
   {
@@ -32,7 +32,7 @@
    "matric": "[TEAM TO FILL: matric no.]",
    "role": "Modelling, evaluation and conclusions (owner of the hold-out and the claims ledger)",
    "sections_led": "§7, §10 (reviews §0, §4, §6, §8)",
-   "decisions": "DR-S4-10–12; DR-S6-11–12; DR-S7-01–11, DR-S7-13–16; DR-S9-14–15; DR-S10-01, DR-S10-04–10, DR-S10-12–13",
+   "decisions": "DR-S4-10–12; DR-S6-11–12; DR-S7-01–11, DR-S7-13–16; DR-S9-14–15; DR-S10-01, DR-S10-04–10, DR-S10-12–13; post-audit DR-S9-17–18, DR-S9-20, DR-S10-14",
    "video_segment": "7:30–10:15, plus opening and closing"
   }
  ],
