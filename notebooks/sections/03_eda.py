@@ -1,36 +1,17 @@
 # %% [markdown]
-# # §4 Exploratory Analysis and Analytical Fallacies (Stage S4)
+# # §4 Exploratory analysis and analytical fallacies
 #
-# This section answers three questions before any model is fitted:
+# Three questions are answered before any model is fitted:
 #
-# 1. **Which weight and which variance method give population numbers we can trust?** We validate
-#    our survey toolkit (`src/survey.py`) against an official NCHS publication (Data Brief 516).
-# 2. **Which descriptive contrasts are artefacts?** Unweighted vs weighted prevalence, crude vs
-#    age-standardised group differences, a systematic Simpson scan and a DAG that says which
-#    variables may be adjusted for and which must not be.
-# 3. **What does the data structure imply for the algorithm?** Redundancy, collinearity, skewness,
-#    non-linearity and interactions are quantified and turned into a "data → algorithm" (DAJ) table
-#    that S6–S7 cite.
+# 1. **Which weight and variance method give trustworthy population numbers?** The survey toolkit
+#    (`src/survey.py`) is validated against NCHS Data Brief 516 (§4.1–§4.3).
+# 2. **Which descriptive contrasts are artefacts?** Weighting, age standardisation, a systematic
+#    Simpson scan and a DAG that says what may and may not be adjusted for (§4.4–§4.8).
+# 3. **What does the data structure imply for the algorithm?** Redundancy, skewness, non-linearity
+#    and interactions, summarised in a "data → algorithm" (DAJ) table that §6–§7 cite (§4.9–§4.13).
 #
-# | § | Item | Artefact |
-# |---|---|---|
-# | 4.1 | Survey design and weights map | `results/S4/weights_map.md` |
-# | 4.2 | Variance engine check | – |
-# | 4.3 | External anchor: NCHS Data Brief 516 | `results/S4/db516_replication.csv`, `figures/S4_db516_forest.png` |
-# | 4.4 | Weighted vs unweighted prevalence | `figures/S4_age_structure.png` |
-# | 4.5 | Age standardisation | `results/S4/std_prev_table.csv` |
-# | 4.6 | Insurance: attenuation, not reversal | `figures/S4_crude_vs_std.png` |
-# | 4.7 | Simpson scan | `results/S4/simpson_scan.csv` |
-# | 4.8 | Causal structure (DAG) | `figures/S4_dag.png` |
-# | 4.9 | Redundancy and collinearity | `results/S4/vif_table.csv`, `figures/S4_spearman_clustermap.png` |
-# | 4.10 | Skewness | `results/S4/skew_table.csv` |
-# | 4.11 | Linearity | `results/S4/linearity_tests.csv`, `figures/S4_binned_logodds.png` |
-# | 4.12 | Interactions and power | `results/S4/interaction_tests.csv` |
-# | 4.13 | Data → algorithm (DAJ) table | `results/S4/daj_table.csv` |
-# | 4.14 | Self-check and decision register | `governance/register/S4.csv` |
-#
-# All population estimates use the delete-one-PSU jackknife; every proportion carries its
-# domain degrees of freedom, a Korn–Graubard interval and the NCHS presentation flags.
+# All population estimates use the delete-one-PSU jackknife; every proportion carries its domain
+# degrees of freedom, a Korn–Graubard interval and the NCHS presentation flags.
 
 # %%
 import sys, pathlib
@@ -44,6 +25,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
+from IPython.display import Markdown, display
 
 from src import nhanes_io as io, survey as S, labels as L
 
@@ -97,7 +79,7 @@ WEIGHTS_MAP = pd.DataFrame([
     ("Fasting analytes (GLU, TRIGLY/LDL)", C.WEIGHT_FASTING, "morning fasting subsample, 8–24 h fast", "**DB516 replication, triglycerides, LDL**"),
 ], columns=["component", "weight", "subsample", "used here for"])
 WEIGHTS_MAP["positive in cohort"] = [int((coh[w].fillna(0) > 0).sum()) for w in WEIGHTS_MAP.weight]
-print(WEIGHTS_MAP.to_string(index=False))
+display(WEIGHTS_MAP)
 
 design = coh.groupby(C.STRATA)[C.PSU].nunique()
 n_strata, n_psu = design.size, int(design.sum())
@@ -120,21 +102,17 @@ OUT["design"] = {"n_strata": n_strata, "n_psu": n_psu, "df": DF_DESIGN,
                  "n_fasting_pos": int((coh.WTSAF2YR.fillna(0) > 0).sum())}
 
 # %% [markdown]
-# **So what.** Every cohort row has a phlebotomy weight (`WTPH2YR` > 0), so it is the weight for all
-# cohort descriptives and for the weighted ablation arm; the fasting weight `WTSAF2YR` is reserved
-# for analyses that involve fasting glucose, triglycerides or LDL. Note that fasting participants who
-# did not meet the 8–24 h criterion carry `WTSAF2YR = 0` and must be excluded from fasting analyses
-# even though their glucose value is present (see §4.10 for the consequence). With 15 design df, a
-# t-quantile of 2.13 (not 1.96) applies to every full-sample interval.
+# **So what.** Every cohort row has a positive phlebotomy weight (`WTPH2YR`), the weight for all cohort
+# descriptives and the weighted ablation arm; `WTSAF2YR` is reserved for fasting glucose, triglycerides
+# and LDL. Fasting participants outside the 8–24 h window carry `WTSAF2YR = 0` and must be excluded
+# even though their glucose value is present (§4.10). With 15 design df, every full-sample interval
+# uses a t-quantile of 2.13, not 1.96.
 
 # %% [markdown]
 # ## 4.2 Variance engine check
-# **Why.** The jackknife is the backbone of every interval in the project, so it is checked twice
-# before use: (a) against an independent variance method – Taylor linearisation of the ratio
-# estimator – and (b) on domains, where the correct approach is to zero the weights outside the
-# domain rather than drop rows, and where the degrees of freedom shrink to the number of PSUs minus
-# the number of strata
-# that contain the domain.
+# **Why.** Every interval in the project rests on the jackknife, so it is checked against Taylor
+# linearisation, including on small domains (weights zeroed outside the domain; df = PSUs − strata
+# containing the domain).
 
 # %%
 def taylor_se_ratio(df, y, weight, domain=None):
@@ -179,14 +157,10 @@ OUT["variance_check"] = checks.drop(columns=["flags"]).to_dict("records")
 OUT["asian_undx_domain_df"] = S.domain_df(coh, undx_dom & asian)
 
 # %% [markdown]
-# **So what.** The jackknife and Taylor standard errors agree to within 2 % on the full sample and on
-# small domains (the ratio column), so the jackknife can be trusted for non-linear statistics where no
-# Taylor formula is at hand (standardised differences, κ, AUC). The Asian-undiagnosed domain (40
-# adults) touches 8 strata but only 12 PSUs, so in four strata it occupies a single PSU, which carries
-# no variance information. Its degrees of freedom are 12 − 8 = 4, below the NCHS threshold of 8:
-# the estimate is flagged for review, and its t-based and Korn–Graubard intervals widen accordingly.
-# Dropping the rows would have given the same point estimate but hidden which parts of the design
-# the domain actually occupies.
+# **So what.** Jackknife and Taylor standard errors agree within 2 % on the full sample and on small
+# domains, so the jackknife can be trusted where no Taylor formula exists (standardised differences,
+# κ, AUC). The Asian-undiagnosed domain (40 adults) spans 8 strata but 12 PSUs, so its df is
+# 12 − 8 = 4, below the NCHS minimum of 8: it is flagged and its intervals widen accordingly.
 
 # %% [markdown]
 # ## 4.3 External anchor: NCHS Data Brief 516
@@ -333,11 +307,9 @@ reg("DR-S4-02", "validation", "Survey toolkit reproduces NCHS Data Brief 516 on 
 
 # %% [markdown]
 # **So what.** All 27 published DB516 estimates (overall, by sex, by age; crude and age-adjusted) are
-# reproduced within 0.1 pp, with exactly NCHS's sample size of 2,938, and our Korn–Graubard intervals
-# coincide with the published asymmetric intervals – evidence that NCHS itself uses the KG interval
-# and that our cohort filter, fasting weight, jackknife and standardisation are right. The symmetric
-# jackknife-*t* interval for the total (13.53, 18.03) is the Wald version of the same uncertainty.
-# This is the external anchor for every weighted number later in the project.
+# reproduced within 0.1 pp with NCHS's exact sample size of 2,938, and our Korn–Graubard intervals
+# coincide with the published asymmetric ones, so the cohort filter, fasting weight, jackknife and
+# standardisation are right. This is the external anchor for every weighted number that follows.
 
 # %% [markdown]
 # ## 4.4 Weighted vs unweighted prevalence
@@ -397,15 +369,13 @@ plots.savefig(fig, "S4_age_structure",
 plt.show()
 
 # %% [markdown]
-# **So what.** 46 % of the cohort is 60+ against 31 % of the population, and prevalence in that band
-# is about seven times that of 20–39-year-olds, so the unweighted 16.95 % overstates the population
-# prevalence of 14.0 % (12.4–15.6). Re-weighting the sample's own age-specific rates to the population
-# age mix closes most of the gap, i.e. the bias is mainly an age-structure effect. The remaining
-# difference to DB516's 15.8 % is definitional (our cohort label has no fasting-glucose criterion,
-# and uses the phlebotomy not the fasting sample) – not an error. The Kish design effect of 1.55 means
-# 5,730 unequally weighted adults carry the information of about 3,700 equally weighted ones; the full
-# design effect including clustering is larger still, which is why all CIs use the jackknife. For
-# modelling, this motivates the weighted ablation arm (block B6) rather than silently ignoring weights.
+# **So what.** 46 % of the cohort is 60+ against 31 % of the population, and prevalence there is about
+# seven times that of 20–39-year-olds, so the unweighted 16.95 % overstates the weighted 14.0 %
+# (12.4–15.6). Re-weighting the sample's age-specific rates to the population age mix closes most of
+# the gap: the bias is mainly age structure. The remaining difference to DB516's 15.8 % is definitional
+# (no fasting-glucose criterion, phlebotomy not fasting sample). The Kish design effect of 1.55 leaves
+# the information of about 3,700 equally weighted adults, which motivates the weighted ablation arm
+# (block B6) instead of ignoring weights.
 
 # %% [markdown]
 # ## 4.5 Age standardisation
@@ -474,8 +444,9 @@ assert abs(aw.crude - (-0.8)) < 0.1 and abs(aw["std"] - 2.1) < 0.1 and abs(aw.cr
 assert abs(iu.crude - 5.3) < 0.1 and abs(iu["std"] - 0.7) < 0.1 and abs(iu.crude_low - 1.8) < 0.1 and abs(iu.std_high - 3.9) < 0.1
 asian_std = STD_TAB.query("group == 'NH Asian'").iloc[0]; white_std = STD_TAB.query("group == 'NH White'").iloc[0]
 print(f"\nNH Asian vs NH White: crude {aw.crude:+.1f} ({aw.crude_low:.1f}, {aw.crude_high:.1f}) -> "
-      f"standardised {aw['std']:+.1f} ({aw.std_low:.1f}, {aw.std_high:.1f}) pp; standardised rates "
-      f"{pct(asian_std['std'])}% vs {pct(white_std['std'])}% (design-phase estimate 18.0% vs 13.6% not reproducible)")
+      f"standardised {aw['std']:+.1f} ({aw.std_low:.1f}, {aw.std_high:.1f}) pp")
+print(f"standardised rates {pct(asian_std['std'])}% vs {pct(white_std['std'])}% "
+      f"(an earlier pilot estimate of 18.0% vs 13.6% is not reproducible)")
 OUT["standardisation"] = {
     "std3": STD3, "std6": STD6,
     "asian_white": {"crude": aw.crude, "crude_ci": [aw.crude_low, aw.crude_high], "std": aw["std"], "std_ci": [aw.std_low, aw.std_high],
@@ -485,14 +456,12 @@ OUT["standardisation"] = {
     "insured_uninsured": {"crude": iu.crude, "crude_ci": [iu.crude_low, iu.crude_high], "std": iu["std"], "std_ci": [iu.std_low, iu.std_high]}}
 
 # %% [markdown]
-# **So what.** The derived band weights match 0.3966 / 0.3718 / 0.2316 exactly, so the 3-band
-# standard rests on the published standard million rather than on a quoted value. NH Asian adults have a slightly *lower* crude
-# prevalence than NH White adults (−0.8 pp, −5.1 to 3.5) but, being much younger, a *higher*
-# age-standardised one (+2.1 pp, −2.6 to 6.8). Both intervals include zero and the 6-band and
-# internal standards tell the same story, so the honest statement is "direction flips after age
-# standardisation, magnitude unknown" – a demonstration of honest uncertainty, not a headline. A
-# design-phase estimate of 18.0 % vs 13.6 % cannot be reproduced with any of the three standards and
-# is withdrawn.
+# **So what.** The derived band weights match 0.3966 / 0.3718 / 0.2316, so the standard rests on the
+# published standard million. NH Asian adults have a slightly *lower* crude prevalence than NH White
+# adults (−0.8 pp, −5.1 to 3.5) but, being younger, a *higher* age-standardised one (+2.1 pp, −2.6 to
+# 6.8). Both intervals include zero and the 6-band and internal standards agree, so the honest
+# statement is "direction changes after age standardisation, magnitude unknown". An earlier pilot
+# estimate of 18.0 % vs 13.6 % cannot be reproduced with any standard and is withdrawn.
 
 # %% [markdown]
 # ## 4.6 Insurance: attenuation, not reversal
@@ -543,12 +512,12 @@ reg("DR-S4-03", "method", "US 2000 standard collapsed to 20-39/40-59/60+ = 0.396
     "Direct age standardisation (3-band US 2000) for every between-group prevalence comparison; 6-band and internal standards as sensitivity.",
     "Crude comparisons (confounded by age); internal-only standard (not comparable with NCHS).",
     check_note="re-derived in-notebook; also validated indirectly by the DB516 age-adjusted replication")
-reg("DR-S4-04", "claim_change", "NH Asian vs NH White L_comb: crude -0.8 pp (-5.1, 3.5) -> standardised +2.1 pp (-2.6, 6.8); design-phase estimate 18.0% vs 13.6% not reproducible.",
+reg("DR-S4-04", "claim_change", "NH Asian vs NH White L_comb: crude -0.8 pp (-5.1, 3.5) -> standardised +2.1 pp (-2.6, 6.8); pilot estimate 18.0% vs 13.6% not reproducible.",
     "results/S4/std_differences.csv; figures/S4_crude_vs_std.png",
     f"crude {aw.crude:+.1f} ({aw.crude_low:.1f}, {aw.crude_high:.1f}); std {aw['std']:+.1f} ({aw.std_low:.1f}, {aw.std_high:.1f}); std rates {pct(asian_std['std'])} vs {pct(white_std['std'])}%",
-    "Withdraw the design-phase 18.0/13.6 estimate; report the Asian-White contrast only as an example of honest uncertainty (both CIs include 0).",
+    "Withdraw the pilot 18.0/13.6 estimate; report the Asian-White contrast only as an example of honest uncertainty (both CIs include 0).",
     "Headline 'Asians have higher diabetes prevalence' (not supported by the CI).",
-    check_verdict="PASS-FIX", check_note="design-phase figure withdrawn; numbers re-computed with three standards")
+    check_verdict="PASS-FIX", check_note="pilot figure withdrawn; numbers re-computed with three standards")
 reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.8, 8.8) -> age-standardised +0.7 pp (-2.6, 3.9).",
     "results/S4/std_differences.csv; §4.6",
     f"crude {iu.crude:+.1f} ({iu.crude_low:.1f}, {iu.crude_high:.1f}); std {iu['std']:+.1f} ({iu.std_low:.1f}, {iu.std_high:.1f}); uninsured 60+ share {ins_age.loc['uninsured','60+']:.1f}% vs insured {ins_age.loc['insured','60+']:.1f}%",
@@ -557,17 +526,13 @@ reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.
     check_verdict="PASS-FIX", check_note="wording corrected from 'reversal' to 'attenuation'")
 
 # %% [markdown]
-# **So what.** Only 10 % of uninsured adults are 60+, against a third of insured adults, because
-# Medicare covers almost everyone over 65. Standardising to the US 2000 age mix shrinks the gap from
-# +5.3 pp (1.8–8.8) to +0.7 pp (−2.6–3.9), an attenuation of almost 90 % with the **same sign**: this
-# is age confounding, not a Simpson reversal. The age-specific differences are heterogeneous
-# (about −1, +6 and −5 pp in the three bands, only the 40–59 one excluding zero), so no single
-# "insurance effect" summarises them; the 6-band standard gives a very wide interval because few
-# uninsured adults are 70+. By contrast, the *usual place of care* gap survives standardisation
-# (+9.4 → +5.3 pp, CI excluding zero) – consistent with a detection pathway (care → diagnosis →
-# self-reported diabetes) that S5 examines through the undiagnosed share. For modelling, access
-# features must be read conditional on age, and fairness comparisons across insurance groups (S8)
-# must control for age before attributing differences to access to care.
+# **So what.** Only 10 % of uninsured adults are 60+, against a third of insured adults (Medicare).
+# Standardising to the US 2000 age mix shrinks the gap from +5.3 pp (1.8–8.8) to +0.7 pp (−2.6–3.9),
+# an attenuation of almost 90 % with the **same sign**: age confounding, not a Simpson reversal. The
+# age-specific differences are heterogeneous (about −1, +6 and −5 pp; only 40–59 excludes zero). The
+# *usual place of care* gap, by contrast, survives standardisation (+9.4 → +5.3 pp, CI excluding
+# zero), consistent with a detection pathway (care → diagnosis) that §5.4 examines. Access comparisons,
+# including the fairness audit (§8), must therefore be read conditional on age.
 
 # %% [markdown]
 # ## 4.7 Simpson scan
@@ -721,6 +686,8 @@ print(SCAN[SCAN.attenuation_50].assign(ratio=lambda d: d["std"] / d.crude).sort_
 
 ex_ins = SCAN.query("exposure == 'uninsured' and outcome == 'L_A1c' and stratifier == 'age'").iloc[0]
 ex_as = SCAN.query("exposure == 'asian' and outcome == 'L_comb' and stratifier == 'age'").iloc[0]
+print(f"headline example uninsured x L_A1c | age: crude {ex_ins.crude:+.2f} -> standardised {ex_ins['std']:+.2f} pp; "
+      f"P(signs differ) = {ex_ins.p_sign_differs:.3f} (B = {B})")
 _aw_int = OUT["standardisation"]["asian_white"]["internal"]
 print(f"Asian - White L_comb, three age standards: US 2000 {aw['std']:+.2f} pp; whole-cohort weighted age mix "
       f"{_aw_int:+.2f} pp; scan standard (pooled Asian + White age mix) {ex_as['std']:+.2f} pp")
@@ -773,40 +740,22 @@ reg("DR-S4-06", "interpretation",
     check_note=f"grid fixed before the scan: 9 x 4 x 7 = 252 minus 28 self-stratifications = {len(SCAN)} comparisons")
 
 # %% [markdown]
-# **So what.** Sign flips are rare (a handful out of more than two hundred comparisons) and small:
-# every flipped standardised difference has a jackknife CI that includes zero, and the bootstrap
-# puts the probability that crude and standardised signs really differ well short of certainty. Two
-# kinds of flips must be read differently:
-#
-# * **Age-stratified flips** (uninsured × `L_A1c`, Asian × `L_self`) are DAG-supported – age is a
-#   confounder – and repeat the §4.5–4.6 message: younger groups look healthier until age is
-#   removed. They remain exploratory because their intervals cover zero.
-# * **BMI- and education-stratified flips** (Asian × `L_comb`/`L_A1c` | BMI, Hispanic | education)
-#   are *mediator artefacts*. BMI sits on the path race → adiposity → BMI → diabetes, so comparing
-#   Asian and White adults "at the same BMI" answers a different question – and because BMI
-#   under-states adiposity in Asian adults (S5), equal-BMI strata are not equal-risk strata. This is
-#   the measurement-bias finding of S5 seen from another angle, not de-confounding.
-#
-# The Asian–White standardised difference appears with three values in this section because three
-# age standards are used: the US 2000 population (+2.1 pp, §4.5), the weighted age mix of the whole
-# cohort (+2.9 pp, §4.5 sensitivity) and, in the scan, the pooled age mix of the Asian and White
-# adults being compared (+3.3 pp). The older the standard population, the larger the gap, because
-# the Asian excess is concentrated in the older bands; all three intervals include zero.
-#
-# Attenuations of more than half outnumber the flips. The largest is uninsured × `L_comb` | age
-# (about −5.3 → −0.1 pp): the same age-confounding mechanism as §4.6, now visible because uninsured
-# adults are younger. Most other attenuations involve SES "siblings" (income, education), which
-# partly measure the same construct and therefore also absorb each other. Because the grid was fixed
-# before the scan was run, the counts (224 comparisons, 6 flips) are reported as they are; with
-# 1,000 bootstrap replicates the headline example, uninsured × `L_A1c` | age (about −2.8 → +1.1 pp),
-# has a sign-change probability of about 0.77, and Asian × `L_comb` | age is close to a coin flip.
+# **So what.** Of 224 comparisons (grid fixed in advance), 6 show a sign flip and 10 an attenuation
+# above 50 %; every flipped standardised difference has a CI that includes zero. Two kinds of flip
+# must be read differently. **Age-stratified flips** (uninsured × `L_A1c`, Asian × `L_self`) are
+# DAG-supported (age is a confounder) but exploratory: the headline example, uninsured × `L_A1c` | age
+# (−2.8 → +1.1 pp), has a sign-change probability of 0.775 (B = 1,000). **BMI- and
+# education-stratified flips** are *mediator artefacts*: BMI lies on race → adiposity → BMI → diabetes
+# and under-states adiposity in Asian adults (§5.5), so equal-BMI strata are not equal-risk strata.
+# The Asian–White gap takes three values (+2.1, +2.9, +3.3 pp) because three age standards are used;
+# all intervals include zero.
 
 # %% [markdown]
 # ## 4.8 Causal structure (DAG)
 # **Why.** Whether stratifying on a variable removes bias (confounder) or creates it (mediator,
 # collider) is not a statistical property of the data – it follows from assumptions about how the
 # variables are generated. Writing those assumptions down as a DAG makes them checkable: the
-# adjustment sets used in §4.5–4.7 and in S5 are verified with the back-door criterion
+# adjustment sets used in §4.5–§4.7 and in §5.4 are verified with the back-door criterion
 # (d-separation in networkx) instead of being asserted.
 
 # %%
@@ -849,7 +798,7 @@ def minimal_sets(g, x, y, max_size=3):
 
 
 queries = [
-    ("Insurance", "Diagnosis", ["Age", "SES"], "Insurance → undiagnosed (S5)"),
+    ("Insurance", "Diagnosis", ["Age", "SES"], "Insurance → undiagnosed (§5.4)"),
     ("Insurance", "Diagnosis", ["Age"], "… age only"),
     ("Insurance", "Diagnosis", [], "… crude"),
     ("Race/ancestry", "Diabetes", ["Age", "Sex"], "Race → diabetes (§4.5)"),
@@ -872,8 +821,9 @@ print("minimal sufficient sets  Race -> Diabetes:", ms_race)
 g_noses = G.copy(); g_noses.remove_edge("SES", "Diabetes"); g_noses.remove_edge("SES", "Adiposity")
 indep_without = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age"})
 indep_given_sel = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age", "ExamSelection"})
-print(f"\ncollider check (SES->diabetes edges removed): SES ⟂ Diabetes | Race, Age: {indep_without}; "
-      f"after also conditioning on ExamSelection: {indep_given_sel}  -> selection into the exam opens a path")
+print("\ncollider check (SES->diabetes edges removed):")
+print(f"  SES ⟂ Diabetes | Race, Age: {indep_without}; also conditioning on ExamSelection: {indep_given_sel}")
+print("  -> selection into the examination opens a path")
 assert DAG_TAB.loc[0, "valid (back-door)"] and DAG_TAB.loc[3, "valid (back-door)"] and not DAG_TAB.loc[6, "valid (back-door)"]
 DAG_TAB.to_csv(S4_DIR / "dag_adjustment_sets.csv", index=False)
 OUT["dag"] = {"n_nodes": G.number_of_nodes(), "n_edges": G.number_of_edges(),
@@ -891,28 +841,29 @@ KIND = {n: "latent" for n in LATENT} | {"BMI (measured)": "measure", "HbA1c (mea
                                         "UsualCare": "process"}
 KCOL = {"latent": C.OKABE_ITO["grey"], "measure": C.OKABE_ITO["orange"], "selection": C.OKABE_ITO["vermillion"],
         "process": C.OKABE_ITO["green"], "observed": C.OKABE_ITO["sky"]}
-fig, ax = plt.subplots(figsize=(13, 7.5))
+fig, ax = plt.subplots(figsize=(14, 8.5))
 cols_ = [KCOL[KIND.get(n, "observed")] for n in G.nodes]
-nx.draw_networkx_nodes(G, POS, ax=ax, node_color=cols_, node_size=2600, alpha=0.9,
+nx.draw_networkx_nodes(G, POS, ax=ax, node_color=cols_, node_size=4400, alpha=0.9,
                        node_shape="o", linewidths=1, edgecolors="k")
 mediator_edges = [("Race/ancestry", "Adiposity"), ("Adiposity", "BMI (measured)"), ("Race/ancestry", "BMI (measured)")]
 EDGE_RAD = {("Race/ancestry", "BMI (measured)"): 0.35, ("Age", "UsualCare"): -0.12, ("Age", "Diabetes"): -0.08,
             ("Age", "ExamSelection"): -0.28, ("Age", "Adiposity"): 0.12, ("SES", "ExamSelection"): 0.10}
 for e in G.edges:                                   # draw edge by edge so overlapping paths can be curved apart
     med = e in mediator_edges
-    nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e], arrows=True, arrowsize=16 if med else 13, node_size=2600,
-                           width=2.2 if med else 1.0, style="dashed" if med else "solid",
+    nx.draw_networkx_edges(G, POS, ax=ax, edgelist=[e], arrows=True, arrowsize=20 if med else 16, node_size=4400,
+                           width=2.6 if med else 1.3, style="dashed" if med else "solid",
                            edge_color=C.OKABE_ITO["vermillion"] if med else "0.35",
                            connectionstyle=f"arc3,rad={EDGE_RAD.get(e, 0.04)}")
 nx.draw_networkx_labels(G, POS, ax=ax, labels={n: n.replace(" (measured)", "\n(measured)").replace(": ", ":\n").replace(" / ", "/\n").replace("/ancestry", "/\nancestry").replace("ExamSelection", "Exam\nSelection") for n in G},
-                        font_size=8)
+                        font_size=10.5)
 from matplotlib.patches import Patch
 ax.legend(handles=[Patch(color=KCOL[k], label=lab) for k, lab in
                    [("observed", "observed cause"), ("latent", "latent / unobserved"), ("measure", "measurement"),
                     ("process", "care process"), ("selection", "selection (collider)")]] +
           [plt.Line2D([], [], color=C.OKABE_ITO["vermillion"], ls="--", lw=2, label="race → adiposity → BMI (mediator path)")],
-          loc="upper right", fontsize=8, ncol=2)
-ax.set_title("Assumed causal structure: adjust race comparisons for {Age, Sex}, never for BMI; insurance → undiagnosed for {Age, SES}")
+          loc="upper right", fontsize=11, ncol=2)
+ax.set_title("Assumed causal structure: adjust race for {Age, Sex}, never for BMI;\ninsurance → undiagnosed for {Age, SES}",
+             fontsize=14)
 ax.axis("off")
 fig.tight_layout()
 plots.savefig(fig, "S4_dag", caption="Directed acyclic graph of the assumed data-generating process (networkx); "
@@ -928,17 +879,13 @@ reg("DR-S4-07", "method", "In the DAG, BMI is a descendant of race (race -> adip
     check_note="adjustment sets verified with networkx d-separation")
 
 # %% [markdown]
-# **So what.** Under the stated assumptions, {Age, SES} is a sufficient adjustment set for the
-# insurance → undiagnosed question of S5 (age alone is not, because SES drives both insurance and
-# care), and {Age} or {Age, Sex} suffices for race → diabetes. Adding BMI breaks the back-door
-# criterion: BMI is a descendant of race through adiposity, so "BMI-adjusted" race contrasts – and the
-# BMI-stratified flips of §4.7 – estimate something other than the total association. The graph also
-# makes two structural biases explicit: the cohort exists only for people who attended the exam
-# (conditioning on the collider *ExamSelection* opens SES ↔ diabetes paths, only partly repaired by
-# the weights), and the HbA1c-based label is a descendant of *Treatment*, so conditioning on
-# HbA1c ≥ 6.5 (as the undiagnosed domain does) inherits the treatment-masking problem quantified in
-# S5. The prediction models of S7 are not causal: their coefficients are associations conditional on
-# everything else in the model (Westreich & Greenland's "Table 2 fallacy").
+# **So what.** Under the stated assumptions, {Age, SES} suffices for insurance → undiagnosed (§5.4;
+# age alone does not) and {Age} or {Age, Sex} for race → diabetes. Adding BMI breaks the back-door
+# criterion, because BMI descends from race through adiposity, so BMI-adjusted race contrasts (and the
+# BMI-stratified flips of §4.7) estimate something other than the total association. Two structural
+# biases become explicit: the cohort conditions on the collider *ExamSelection*, and the HbA1c label
+# descends from *Treatment*, which carries the treatment masking of §5.2. Model coefficients in §7 are
+# conditional associations, not effects (Westreich & Greenland 2013, "Table 2 fallacy").
 
 # %% [markdown]
 # ## 4.9 Redundancy and collinearity
@@ -971,7 +918,8 @@ for set_name, cols in VIF_SETS.items():
 VIF = pd.DataFrame(vif_rows)
 VIF.to_csv(S4_DIR / "vif_table.csv", index=False)
 print(VIF.pivot_table(index="variable", columns="set", values="vif", sort=False).round(1).fillna("").to_string())
-print("n per set:", VIF.groupby("set", sort=False).n.first().to_dict())
+print("complete cases per set:")
+print("  " + ", ".join(f"{k} {v:,}" for k, v in VIF.groupby("set", sort=False).n.first().items()))
 
 VIFS = VIF.set_index(["set", "variable"]).vif
 assert abs(VIFS[("raw_anthropometry", "BMXWT")] - 95.7) < 0.1 and abs(VIFS[("raw_anthropometry", "BMXBMI")] - 97.6) < 0.1
@@ -1021,33 +969,33 @@ sp.loc[~fast_ok, ["LBDLDL", "LBXTLG"]] = np.nan                     # fasting an
 rho = sp.rename(columns=SPEAR_VARS).corr(method="spearman")          # pairwise complete
 dist = 1 - rho.abs()
 link = hierarchy.linkage(squareform(dist.to_numpy(), checks=False), method="average")
+annot_txt = rho.map(lambda v: f"{v:.1f}".replace("-0.0", "0.0"))
 cg = sns.clustermap(rho, row_linkage=link, col_linkage=link, cmap="RdBu_r", vmin=-1, vmax=1, center=0,
-                    annot=True, fmt=".2f", annot_kws={"fontsize": 6}, figsize=(11, 10),
-                    cbar_kws={"label": "Spearman ρ"}, dendrogram_ratio=0.12)
-cg.fig.suptitle("Redundancy clusters (distance 1 − |ρ|, average linkage): body size, BP readings, lipids", y=1.01)
+                    annot=annot_txt, fmt="", annot_kws={"fontsize": 9}, figsize=(13, 12),
+                    cbar_pos=(0.02, 0.86, 0.025, 0.11), dendrogram_ratio=0.12, linewidths=0.4, linecolor="white")
+cg.ax_heatmap.tick_params(labelsize=12)
+cg.ax_heatmap.set_xlabel(""); cg.ax_heatmap.set_ylabel("")
+cg.ax_cbar.tick_params(labelsize=10); cg.ax_cbar.set_title("Spearman ρ", fontsize=11, loc="left")
+cg.fig.suptitle("Redundancy clusters: body size, BP readings, lipids (distance 1 − |ρ|, average linkage)", y=1.01, fontsize=15)
 plots.savefig(cg.fig, "S4_spearman_clustermap",
               caption="Clustered Spearman correlation heatmap of candidate predictors (pairwise complete; *LDL and "
                       "triglycerides on the valid fasting subsample only).")
 plt.show()
 clusters = pd.Series(hierarchy.fcluster(link, t=1 - 0.7, criterion="distance"), index=rho.index)
 groups = [list(g.index) for _, g in clusters.groupby(clusters) if len(g) > 1]
-print("clusters with |rho| >= 0.7 (average linkage):", groups)
+print("clusters with |rho| >= 0.7 (average linkage):")
+for g_ in groups:
+    print("  ", ", ".join(g_))
 OUT["redundancy"]["clusters_rho07"] = groups
 
 # %% [markdown]
 # **So what.** Weight (VIF 95.7) and BMI (97.6) are almost perfectly predictable from the other body
-# measurements, and the reason is structural, not statistical: log BMI is an exact linear function of
-# log weight and log height (correlation 0.99999). Height and BMI on their own are unrelated (VIF 1.0),
-# BMI and waist share variance (5.1) but measure different things (total vs central adiposity), and
-# the six blood-pressure readings (8.8–11.7) collapse to VIF 1.6 once replaced by their means. The
-# candidate Tier-1 set [age, BMI, waist, SBP, PIR] stays below 6 and the Tier-2 set [age, BMI, SBP,
-# TC, HDL] below 1.2. TC and LDL correlate at 0.94 because LDL is calculated from TC. Decision: use
-# mean SBP/DBP, exclude LDL (fasting-only and derived from TC), and remove the structural duplicates
-# of BMI by iterative VIF > 10 pruning inside each training fold with BMI and waist protected (on the
-# full anthropometry set this removes only weight, the arithmetic twin of BMI, as printed above). The
-# protected BMI then still has a VIF above 20 because hip and arm circumference stay in that set,
-# which is why L2 penalisation is the second line of defence. The clustered heatmap shows the same three redundancy blocks (body size,
-# blood pressure, lipids) visually.
+# measures, for a structural reason: log BMI is an exact linear function of log weight and log height
+# (r = 0.99999). BMI and waist share variance (5.1) but measure different things, and the six
+# blood-pressure readings (8.8–11.7) collapse to VIF 1.6 as means. TC and LDL correlate at 0.94 because
+# LDL is calculated from TC. Decision: mean SBP/DBP, no LDL, and in-fold iterative VIF > 10 pruning with
+# BMI and waist protected (removes only weight); L2 penalisation is the second line of defence. The
+# heatmap shows the three blocks (body size, blood pressure, lipids).
 
 # %% [markdown]
 # ## 4.10 Skewness
@@ -1083,6 +1031,25 @@ OUT["skew_tg_unfixed_zero_weights"] = {"n": len(_tiny), "value": float(_tiny.max
 OUT["skew"] = {f"{r.variable}|{r.subsample}": {"n": r.n, "raw": r.skew_raw, "log": r.skew_log, "yj": r.skew_yj,
                                                "lambda": r.yj_lambda} for r in SKEW.itertuples()}
 
+# Triglycerides on the valid fasting subsample: raw vs log scale (same rows as the skew table).
+tg = coh.loc[fast_ok, "LBXTLG"].dropna().astype(float)
+assert len(tg) == tg_f.n and abs(stats.skew(tg) - tg_f.skew_raw) < 1e-9 and abs(stats.skew(np.log(tg)) - tg_f.skew_log) < 1e-9
+fig, (t1, t2) = plt.subplots(1, 2, figsize=(11, 4))
+t1.hist(tg, bins=np.arange(0, tg.max() + 25, 25), color=C.OKABE_ITO["orange"], edgecolor="white", lw=0.3)
+t1.axvline(tg.median(), color="k", ls="--", lw=1); t1.text(tg.median() * 1.08, t1.get_ylim()[1] * 0.9, f"median {tg.median():.0f}", fontsize=10)
+t1.set_xlabel("Triglycerides, mg/dL"); t1.set_ylabel("Adults")
+t1.set_title(f"Raw scale: skewness {tg_f.skew_raw:.2f}", loc="left")
+t2.hist(np.log(tg), bins=40, color=C.OKABE_ITO["blue"], edgecolor="white", lw=0.3)
+t2.set_xlabel("log(triglycerides)"); t2.set_ylabel("Adults")
+t2.set_title(f"Log scale: skewness {tg_f.skew_log:.2f}", loc="left")
+fig.suptitle(f"Triglycerides are strongly right-skewed (valid fasting subsample, WTSAF2YR > 0, n = {len(tg):,})", fontsize=12)
+fig.tight_layout()
+plots.savefig(fig, "S4_triglyceride_skew",
+              caption=f"Distribution of triglycerides on the {len(tg):,} adults of the valid fasting subsample (WTSAF2YR > 0), raw "
+                      f"(skewness {tg_f.skew_raw:.2f}) and log-transformed (skewness {tg_f.skew_log:.2f}). Including the "
+                      f"{tg_all.n - tg_f.n} rows with WTSAF2YR = 0 would give a raw skewness of {tg_all.skew_raw:.2f}.")
+plt.show()
+
 reg("DR-S4-08", "preparation", "Structural redundancy: weight VIF 95.7, BMI 97.6 (BMI = W/H^2, r = 0.99999); six BP readings VIF 8.8-11.7; TC-LDL r = 0.94.",
     "results/S4/vif_table.csv; figures/S4_spearman_clustermap.png",
     f"BP means VIF {VIFS[('bp_means', 'bp_sys_mean')]:.1f}; Tier-1 max VIF {VIF[VIF.set == 'tier1_candidates'].vif.max():.1f}; "
@@ -1096,19 +1063,16 @@ reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; trigly
     f"BMI 1.22 -> log {sk.loc[('BMXBMI','cohort'),'skew_log']:.2f} -> YJ {sk.loc[('BMXBMI','cohort'),'skew_yj']:.2f}; TG {tg_f.skew_raw:.2f} (n {tg_f.n}) vs {tg_all.skew_raw:.2f} incl. non-fasting",
     "Offer Yeo-Johnson as a toggleable step fitted inside training folds only; the S7 ablation decides; triglycerides are not a T1/T2 feature.",
     "Transform on the full data before splitting (leakage of lambda); log for variables that can be 0 (PIR).",
-    check_verdict="PASS-FIX", check_note="valid fasting value 6.62; including the 235 rows with WTSAF2YR = 0 would give 6.23")
+    check_verdict="PASS-FIX", check_note="valid fasting value 6.62; including the 235 rows with WTSAF2YR = 0 would give 6.23; figure S4_triglyceride_skew")
 
 # %% [markdown]
-# **So what.** BMI, SBP and HDL are moderately right-skewed (≈ 0.9–1.2); a log transform removes most
-# of it and Yeo–Johnson removes all of it (BMI λ ≈ −0.65). Total cholesterol and waist are nearly
-# symmetric. Triglycerides are extremely skewed (≈ 6.6 on the 2,820 valid fasting adults). Without
-# the fasting-weight restriction the value would be 6.23: in the cohort that restriction removes 235
-# people whose fast fell outside 8–24 h (`WTSAF2YR = 0`), and their values are not valid fasting
-# measurements. The trap is easy to fall into because of the transport-file artefact shown above: in
-# an unfixed read, a fasting weight stored as 0 appears as a tiny positive number and passes a `> 0`
-# filter. Because logistic regression is not distributional, skewness
-# matters only through leverage; the transform is therefore a toggleable preparation step whose λ is
-# fitted inside the training folds, and whether it helps is decided by the S7 ablation, not here.
+# **So what.** BMI, SBP and HDL are moderately right-skewed (0.9–1.2); Yeo–Johnson removes it (BMI
+# λ ≈ −0.65). Triglycerides are extremely skewed: 6.62 on the 2,820 valid fasting adults, 0.60 after
+# a log transform (figure). Including the 235 rows with `WTSAF2YR = 0` (fast outside 8–24 h)
+# would give 6.23, and the trap is easy to fall into because an unfixed XPT read turns those zero
+# weights into tiny positive numbers that pass a `> 0` filter (§3.1). Logistic regression makes no
+# distributional assumption, so skew matters only through leverage: the transform is a toggleable,
+# in-fold step whose value the §7 ablation decides.
 
 # %% [markdown]
 # ## 4.11 Linearity
@@ -1166,7 +1130,7 @@ OUT["linearity_n"] = {"n": len(lin), "events": int(y_lin.sum())}
 # linear and RCS logistic fits.
 
 # %%
-fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+fig, axes = plt.subplots(2, 2, figsize=(12, 9))
 binned = {}
 for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "BMI, kg/m²"),
                                        ("LBDHDD", "HDL cholesterol, mg/dL"), ("LBXTC", "Total cholesterol, mg/dL")]):
@@ -1175,7 +1139,7 @@ for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "B
     g = d.groupby("bin", observed=True).agg(x=(v, "median"), n=("L_comb", "size"), k=("L_comb", "sum"))
     pr = (g.k + 0.5) / (g.n + 1)
     lo_ = np.log(pr / (1 - pr)); se = np.sqrt(1 / (g.k + 0.5) + 1 / (g.n - g.k + 0.5))
-    ax.errorbar(g.x, lo_, yerr=1.96 * se, fmt="o", color="k", capsize=3, label="decile log-odds (95% CI)")
+    ax.errorbar(g.x, lo_, yerr=1.96 * se, fmt="o", ms=6, color="k", capsize=3, label="decile log-odds (95% CI)")
     grid = np.linspace(d[v].quantile(0.01), d[v].quantile(0.99), 200)
     Bx, kn = rcs_basis(d[v])
     m_r = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(Bx)).fit(disp=0)
@@ -1185,40 +1149,38 @@ for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "B
                                     + p3(grid - kn[k_ - 1]) * (kn[k_ - 2] - kn[j]) / (kn[k_ - 1] - kn[k_ - 2])) / (kn[k_ - 1] - kn[0]) ** 2
                                    for j in range(k_ - 2)])
     m_l = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(d[[v]].to_numpy(float))).fit(disp=0)
-    ax.plot(grid, m_l.params[0] + m_l.params[1] * grid, color=C.OKABE_ITO["orange"], lw=2, ls="--", label="linear fit")
-    ax.plot(grid, sm.add_constant(Bg) @ m_r.params, color=C.OKABE_ITO["blue"], lw=2, label="RCS fit (4 knots)")
+    ax.plot(grid, m_l.params[0] + m_l.params[1] * grid, color=C.OKABE_ITO["orange"], lw=2.5, ls="--", label="linear fit")
+    ax.plot(grid, sm.add_constant(Bg) @ m_r.params, color=C.OKABE_ITO["blue"], lw=2.5, label="RCS fit (4 knots)")
     for kv in kn:
         ax.axvline(kv, color="0.8", lw=0.8, zorder=0)
-    ax.set_xlabel(lab); ax.set_ylabel("log-odds of L_comb")
-    ax.set_title(f"{lab.split(',')[0]}: RCS χ²(2) = {LIN.set_index('variable').chi2[v]:.1f} (adjusted)")
+    ax.set_xlabel(lab, fontsize=13); ax.set_ylabel("log-odds of L_comb", fontsize=13)
+    ax.tick_params(labelsize=12)
+    ax.set_title(f"{lab.split(',')[0]}: RCS χ²(2) = {LIN.set_index('variable').chi2[v]:.1f} (adjusted)", fontsize=13, loc="left")
     binned[v] = pd.DataFrame({"median": g.x.to_numpy(), "logodds": lo_.to_numpy(), "n": g.n.to_numpy()})
-axes[0, 0].legend(fontsize=8)
-fig.suptitle("Observed log-odds bend: age flattens after 60, BMI is flat below ~25, TC is U-shaped", fontsize=11)
+axes[0, 0].legend(fontsize=11)
+fig.suptitle("Observed log-odds bend: age flattens after 60, BMI is flat below ~25, TC is U-shaped", fontsize=14)
 fig.tight_layout()
 plots.savefig(fig, "S4_binned_logodds", caption="Decile-binned empirical log-odds of L_comb (unweighted, 95% CI) with "
                                                 "univariable linear and 4-knot restricted cubic spline fits; grey lines = knots.")
 plt.show()
 bmi_b = binned["BMXBMI"]; age_b = binned["RIDAGEYR"]
-print("BMI deciles (median, log-odds):", [(round(a, 1), round(b, 2)) for a, b in zip(bmi_b["median"], bmi_b.logodds)])
-print("age deciles (median, log-odds):", [(round(a, 0), round(b, 2)) for a, b in zip(age_b["median"], age_b.logodds)])
+display(pd.DataFrame({"decile": range(1, len(bmi_b) + 1), "BMI median": bmi_b["median"].round(1), "BMI log-odds": bmi_b.logodds.round(2),
+                      "age median": age_b["median"].round(0), "age log-odds": age_b.logodds.round(2)}).set_index("decile").T)
 OUT["binned_logodds"] = {lab: df_.to_dict("list") for lab, df_ in binned.items()}
 
 # %% [markdown]
-# **So what.** Five of the seven continuous predictors depart from linearity on the log-odds scale:
-# age (χ² ≈ 57.6), total cholesterol (≈ 41.8), HDL (≈ 18.5), BMI (≈ 11.6) and waist (≈ 7.1); SBP is
-# borderline (p ≈ 0.05) and PIR is linear (p ≈ 0.7). The shapes are monotone-but-curved for age (risk
-# rises steeply to about 60, then flattens) and BMI (log-odds about −2.6 in the two lowest deciles,
-# i.e. flat below about 24, then rising and levelling off above about 35), while
-# total cholesterol is U-shaped – the low end most plausibly reflects statin treatment *after*
-# diagnosis (reverse causation), a warning for interpreting any Tier-2 coefficient. Consequence: the
-# main model is an L2 logistic regression with cubic B-splines (`SplineTransformer`, 4 quantile knots,
-# linear extrapolation – the `C.SPLINE_KW` configuration) on continuous predictors, with a linear arm
-# kept as an ablation.
+# **So what.** Five of seven continuous predictors depart from linearity on the log-odds scale: age
+# (χ² 57.6), total cholesterol (41.8), HDL (18.5), BMI (11.6) and waist (7.1); SBP is borderline
+# (p ≈ 0.05) and PIR linear. Age rises steeply to about 60 and then flattens; BMI is flat below about
+# 24 (log-odds about −2.6 in the two lowest deciles) and levels off above about 35; total cholesterol
+# is U-shaped, most plausibly because statins lower it *after* diagnosis (reverse causation), a caveat
+# for any Tier-2 coefficient. Consequence: L2 logistic regression with cubic B-splines (4 quantile
+# knots, linear extrapolation) on continuous predictors, with a linear arm kept as an ablation.
 
 # %% [markdown]
 # ## 4.12 Interactions and power
-# **Why.** If the BMI–diabetes slope differed by race (as the S5 measurement-bias finding suggests it
-# might for Asian adults), the model would need an interaction term. A non-significant test is only
+# **Why.** If the BMI–diabetes slope differed by race (as the measurement-bias finding of §5.5 suggests
+# it might for Asian adults), the model would need an interaction term. A non-significant test is only
 # informative together with its power, so we also report the minimum detectable effect (MDE, 80 %
 # power, two-sided α = 0.05) and repeat the tests under three model specifications (`C(...)` is avoided
 # in the formulas because `C` is the project config module here; race is an unordered categorical with
@@ -1276,7 +1238,7 @@ reg("DR-S4-10", "model", "Non-linearity: RCS LR chi2(2) age 57.6, TC 41.8, HDL 1
     "results/S4/linearity_tests.csv; figures/S4_binned_logodds.png",
     f"n = {len(lin):,}, events {int(y_lin.sum())}",
     "Main model: L2 logistic regression with SplineTransformer(n_knots=4, degree=3, knots='quantile', extrapolation='linear') on continuous features; linear arm as ablation.",
-    "Plain linear logit (misses curvature); fixed-cut categorisation (loses information, arbitrary cut-points); GAM/boosting (outside HR3).")
+    "Plain linear logit (misses curvature); fixed-cut categorisation (loses information, arbitrary cut-points); GAM/boosting (outside the basic-model rule).")
 reg("DR-S4-11", "model", "Interactions with BMI not detectable: race x BMI and Asian x BMI non-significant under all three specifications.",
     "results/S4/interaction_tests.csv",
     f"primary: race x BMI p = {prim.loc['race_x_bmi','p']:.2f}, Asian x BMI p = {prim.loc['asian_x_bmi','p']:.2f}; MDE Asian x BMI {mde_asian:.2f} log-OR per 5 kg/m²; "
@@ -1286,20 +1248,16 @@ reg("DR-S4-11", "model", "Interactions with BMI not detectable: race x BMI and A
     check_note="three specifications compared; conclusions for race terms hold in every one, sex x BMI is specification-dependent")
 
 # %% [markdown]
-# **So what.** Race × BMI and Asian × BMI are not detectable in any specification (p well above 0.05
-# throughout). With only about 300 Asian adults, the MDE printed above corresponds to a large slope
-# difference, so the correct wording is "not detectable (underpowered)", not "no interaction".
-# Age × BMI is non-significant in the primary specification. Sex × BMI is specification-dependent:
-# it becomes significant only when waist circumference is in the same model, which reflects the
-# different BMI–waist relationship of women and men (collinearity between two adiposity measures)
-# rather than a robust effect modification. Decision: no interaction terms in the main model; the
-# Asian BMI problem is treated as a *measurement* problem (WHtR, S5/S8).
+# **So what.** Race × BMI and Asian × BMI are not detectable in any specification (p well above 0.05).
+# With about 300 Asian adults the minimum detectable effect is a large slope difference, so the wording
+# is "not detectable (underpowered)", not "no interaction". Sex × BMI is specification-dependent
+# (significant only with waist in the model, i.e. collinearity of two adiposity measures). Decision:
+# no interaction terms; the Asian BMI problem is treated as *measurement* (WHtR, §5.5 and §8.9).
 
 # %% [markdown]
 # ## 4.13 Data → algorithm (DAJ) table
-# **Why.** Each modelling choice in S6–S7 should follow from a diagnostic in the data, together with
-# the reason the alternatives were rejected. The table below is built from the numbers computed in
-# this section and is the reference for S7's model justification.
+# **Why.** Each modelling choice in §6–§7 should follow from a diagnostic in the data, with the reason
+# the alternatives were rejected. The table is built from the numbers computed above.
 
 # %%
 L_ = LIN.set_index("variable")
@@ -1307,7 +1265,7 @@ DAJ = pd.DataFrame([
     ("Non-linearity", f"RCS chi2(2): age {L_.chi2['RIDAGEYR']:.1f}, TC {L_.chi2['LBXTC']:.1f}, HDL {L_.chi2['LBDHDD']:.1f}, "
                       f"BMI {L_.chi2['BMXBMI']:.1f}, waist {L_.chi2['BMXWAIST']:.1f} (all p < 0.05); PIR {L_.chi2['INDFMPIR']:.1f}",
      "L2 logistic regression + SplineTransformer(4 quantile knots, cubic, linear extrapolation) on continuous features; linear arm as ablation",
-     "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting not allowed (HR3) and less interpretable"),
+     "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting outside the basic-model rule and less interpretable"),
     ("Interactions", f"race x BMI p = {prim.loc['race_x_bmi','p']:.2f}, Asian x BMI p = {prim.loc['asian_x_bmi','p']:.2f} (MDE {mde_asian:.2f} log-OR / 5 kg/m²)",
      "No interaction terms; Asian BMI bias handled as measurement (WHtR arm, S8)",
      "Interaction terms with this power add variance without detectable gain; 'not detectable' is not 'absent'"),
@@ -1331,31 +1289,29 @@ DAJ = pd.DataFrame([
      "Table 2 fallacy: interpreting every coefficient as an effect"),
     ("Thresholds / leakage probe", "clinical cut-points (BMI 25/30, age 45) and leakage need inspection",
      f"Secondary shallow decision tree (max_depth = {C.TREE_MAX_DEPTH}, min_samples_leaf = {C.TREE_MIN_LEAF}) for threshold discovery and leak hunting only",
-     "Deep trees / ensembles overfit and are outside HR3; a shallow tree is readable and exposes leaks as near-perfect splits"),
+     "Deep trees / ensembles overfit and are outside the basic-model rule; a shallow tree is readable and exposes leaks as near-perfect splits"),
     ("Non-monotone TC", "TC U-shaped in binned log-odds (statins after diagnosis)",
      "Tier-2 lipid coefficients carry a reverse-causation caveat",
      "Interpreting low TC as protective"),
 ], columns=["diagnostic", "evidence", "decision", "why_not_alternative"])
 DAJ.to_csv(S4_DIR / "daj_table.csv", index=False)
-with pd.option_context("display.max_colwidth", 90):
-    print(DAJ.to_string(index=False))
+display(Markdown(md_table(DAJ)))
 OUT["daj"] = DAJ.to_dict("records")
 reg("DR-S4-12", "model", "Data -> algorithm table: 9 diagnostics mapped to modelling decisions.",
     "results/S4/daj_table.csv", "see table", "S7 cites the DAJ table for model justification; shallow tree only for thresholds and leakage.",
-    "Choosing the algorithm before looking at data structure; using complex models (HR3).")
+    "Choosing the algorithm before looking at data structure; using complex models (basic-model rule).")
 
 # %% [markdown]
-# **So what.** The DAJ table turns the EDA into constraints for S6–S7: an L2-penalised spline
-# logistic regression as the main model, no interaction terms, de-duplicated features, transformations
-# and weights as ablation toggles rather than fixed choices, and a depth-3 tree for threshold and
-# leakage inspection. Each row is a diagnostic number computed above, so if the data changed, the
-# table would change with it.
+# **So what.** The EDA becomes constraints for §6–§7: an L2-penalised spline logistic regression as
+# the main model, no interaction terms, de-duplicated features, transformations and weights as
+# ablation toggles, and a depth-3 tree for thresholds and leakage. Every row is computed above, so the
+# table changes if the data change.
 
 # %% [markdown]
-# ## 4.14 Self-check and decision register
-# **Why.** A self-check that only re-reads numbers proves nothing. The key numbers of this section
-# are recomputed from scratch and compared with the verified reference values fixed for the
-# project; any difference is recorded, not silently fixed.
+# ## 4.14 Outputs
+# **Self-check.** The key numbers are recomputed from scratch and compared with the reference values
+# fixed for the project; any difference is recorded, not silently fixed. The decision register
+# (`governance/register/S4.csv`) and `results/metrics_S4.json` are then written.
 
 # %%
 pa = prim.loc["asian_x_bmi", "p"]
@@ -1374,7 +1330,7 @@ SELF_CHECK = pd.DataFrame([
     ("insured-uninsured standardised, pp", 0.7, iu["std"], ""),
     ("Simpson comparisons", 224, len(SCAN), "9 x 4 x 7 - 28 self-stratifications"),
     ("Simpson sign flips", 6, int(SCAN.flip.sum()), "4 of 6 from mediator stratifiers"),
-    ("uninsured x A1c | age P(sign differs)", 0.77, ex_ins.p_sign_differs, f"reference at B = 1000; here B = {B} ({C.NB_MODE})"),
+    ("uninsured x A1c | age P(sign differs)", 0.775, ex_ins.p_sign_differs, f"reference at B = 1000; here B = {B} ({C.NB_MODE})"),
     ("VIF weight", 95.7, VIFS[("raw_anthropometry", "BMXWT")], ""),
     ("VIF BMI", 97.6, VIFS[("raw_anthropometry", "BMXBMI")], ""),
     ("skew BMI", 1.22, sk.loc[("BMXBMI", "cohort"), "skew_raw"], ""),
@@ -1402,19 +1358,14 @@ reg("DR-S4-13", "check", f"S4 self-check: {len(SELF_CHECK) - n_diff}/{len(SELF_C
     check_note="recomputed from the raw files in a fresh kernel")
 
 # %% [markdown]
-# **So what.** All anchors – DB516, weighted prevalence, design effect, standardised contrasts, the
-# Simpson counts, VIFs, skewness, the RCS tests and the interaction tests – reproduce on a clean
-# re-run within rounding (the bootstrap probability within Monte-Carlo error when B = 100). Three
-# definitional choices matter and are stated where they arise: the DB516 denominator (§4.3), the
-# valid fasting subsample for triglycerides (§4.10) and the model specification for interaction
-# tests (§4.12).
-
-# %% [markdown]
-# ## Save results and register
+# **So what.** All anchors (DB516, prevalence, design effect, standardised contrasts, Simpson counts,
+# VIFs, skewness, RCS and interaction tests) reproduce on a clean re-run within rounding. Three
+# definitional choices matter and are stated where they arise: the DB516 denominator (§4.3), the valid
+# fasting subsample for triglycerides (§4.10) and the interaction-test specification (§4.12).
 
 # %%
 reg_df = pd.DataFrame(REG)
 (C.GOVERNANCE_DIR / "register").mkdir(parents=True, exist_ok=True)
 reg_df.to_csv(C.GOVERNANCE_DIR / "register" / "S4.csv", index=False)
 R.save_section("S4", OUT)
-print(f"register rows: {len(reg_df)}; metrics keys: {sorted(OUT)}")
+print(f"register rows: {len(reg_df)}; {len(OUT)} metric groups saved to results/metrics_S4.json")

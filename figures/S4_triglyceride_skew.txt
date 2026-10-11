@@ -1,0 +1,1 @@
+Distribution of triglycerides on the 2,820 adults of the valid fasting subsample (WTSAF2YR > 0), raw (skewness 6.62) and log-transformed (skewness 0.60). Including the 235 rows with WTSAF2YR = 0 would give a raw skewness of 6.23.

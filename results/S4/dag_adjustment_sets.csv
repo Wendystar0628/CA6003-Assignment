@@ -1,5 +1,5 @@
 question,exposure,outcome,adjustment set,valid (back-door),contains descendant of exposure
-Insurance → undiagnosed (S5),Insurance,Diagnosis,"{Age, SES}",True,False
+Insurance → undiagnosed (§5.4),Insurance,Diagnosis,"{Age, SES}",True,False
 … age only,Insurance,Diagnosis,{Age},False,False
 … crude,Insurance,Diagnosis,{},False,False
 Race → diabetes (§4.5),Race/ancestry,Diabetes,"{Age, Sex}",True,False

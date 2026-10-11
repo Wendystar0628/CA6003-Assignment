@@ -3,7 +3,7 @@
     "section": "S4",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T06:53:33+00:00"
+    "written_utc": "2026-10-11T08:21:54+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -840,7 +840,7 @@
       "diagnostic": "Non-linearity",
       "evidence": "RCS chi2(2): age 57.6, TC 41.8, HDL 18.5, BMI 11.6, waist 7.1 (all p < 0.05); PIR 0.8",
       "decision": "L2 logistic regression + SplineTransformer(4 quantile knots, cubic, linear extrapolation) on continuous features; linear arm as ablation",
-      "why_not_alternative": "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting not allowed (HR3) and less interpretable"
+      "why_not_alternative": "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting outside the basic-model rule and less interpretable"
     },
     {
       "diagnostic": "Interactions",
@@ -882,7 +882,7 @@
       "diagnostic": "Thresholds / leakage probe",
       "evidence": "clinical cut-points (BMI 25/30, age 45) and leakage need inspection",
       "decision": "Secondary shallow decision tree (max_depth = 3, min_samples_leaf = 50) for threshold discovery and leak hunting only",
-      "why_not_alternative": "Deep trees / ensembles overfit and are outside HR3; a shallow tree is readable and exposes leaks as near-perfect splits"
+      "why_not_alternative": "Deep trees / ensembles overfit and are outside the basic-model rule; a shallow tree is readable and exposes leaks as near-perfect splits"
     },
     {
       "diagnostic": "Non-monotone TC",
@@ -1006,7 +1006,7 @@
     },
     {
       "quantity": "uninsured x A1c | age P(sign differs)",
-      "reference": 0.77,
+      "reference": 0.775,
       "recomputed": 0.775,
       "note": "reference at B = 1000; here B = 1000 (FINAL)",
       "tolerance": 0.1,

@@ -13,7 +13,7 @@ Kish deff,1.55,1.5459276715354544,,0.0531,PASS
 "insured-uninsured standardised, pp",0.7,0.6854571595387438,,0.0514,PASS
 Simpson comparisons,224.0,224.0,9 x 4 x 7 - 28 self-stratifications,0.498,PASS
 Simpson sign flips,6.0,6.0,4 of 6 from mediator stratifiers,0.062,PASS
-uninsured x A1c | age P(sign differs),0.77,0.775,reference at B = 1000; here B = 1000 (FINAL),0.1,PASS
+uninsured x A1c | age P(sign differs),0.775,0.775,reference at B = 1000; here B = 1000 (FINAL),0.1,PASS
 VIF weight,95.7,95.6797633660612,,0.2414,PASS
 VIF BMI,97.6,97.64211874350215,,0.24519999999999997,PASS
 skew BMI,1.22,1.2225907632940765,,0.05244,PASS
