@@ -12030,7 +12030,7 @@
       "section": "S10",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T08:55:30+00:00"
+      "written_utc": "2026-10-11T09:37:26+00:00"
     },
     "mode": "FINAL",
     "h2b": {
@@ -12246,7 +12246,7 @@
         "§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52",
         "§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}",
         "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072",
-        "one-shot hold-out: same gap for arm S: E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060)"
+        "one-shot hold-out: same direction and size for arm S (not separately testable with 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"
       ]
     },
     "findings": {
@@ -12277,6 +12277,8 @@
       "available": true,
       "n_rows": 20,
       "n_flag_2se": 0,
+      "gap_S_eall_minus_escreen": 0.06033999999999995,
+      "gap_S_eall_minus_escreen_cv": 0.05518253895983283,
       "max_abs_gap_in_se": 1.54656,
       "pairs_same_sign": 6,
       "n_pairs_with_cv": 7,
@@ -12624,8 +12626,8 @@
     "claims": {
       "n": 26,
       "grades": {
-        "E3": 11,
-        "E2": 7,
+        "E3": 12,
+        "E2": 6,
         "E1": 6,
         "E4": 2
       },
@@ -12692,6 +12694,6 @@
       "DR-S10-13",
       "DR-S10-11"
     ],
-    "runtime_seconds": 0.9096932411193848
+    "runtime_seconds": 0.9207425117492676
   }
 }

@@ -312,7 +312,8 @@ S10["h2b"] = dict(subs={k: dict(est=r["est"], lo=r["lo"], hi=r["hi"], verdict=r[
 # none is refuted overall – but refuted *sub-claims* (H2b-Brier, B3 stability) stay visible. "Supported" is dominated by
 # `analysis_seen` hypotheses; among the six genuine pre-registrations only B6a, B6b and the tree probe B2t are
 # supported, while H2b, H2c and H3 are inconclusive. H2b by its parts: (a) AUC +0.008 [0.000, 0.016], MDD 0.011 > SESOI
-# – underpowered, not null; (b) Brier refuted (+0.074), entirely from class weights (S−B6a vs M1: −0.002); (c) SD ratio
+# – underpowered, not null; (b) Brier refuted (S − M1 +0.074; a different contrast from the B6a block effect S − S−B6a,
+# +0.076), entirely from class weights (S−B6a vs M1: −0.002); (c) SD ratio
 # ≈ 2.0 straddles 2. Post lock, a converged or scaled M1 leaves (a) unchanged. Systematic preparation buys fidelity and
 # some stability, not discrimination.
 
@@ -443,7 +444,7 @@ IMPDET = pd.DataFrame([
     dict(change="Removing care traces (T1-minus-care vs S)", direction="deterioration on E-ALL, improvement on E-SCREEN", metric="ΔAUC E-ALL / E-SCREEN",
          effect=f"{ci3(hl['minus_care_eall']['est'], hl['minus_care_eall']['lo'], hl['minus_care_eall']['hi'])} / {ci3(hl['minus_care_escreen']['est'], hl['minus_care_escreen']['lo'], hl['minus_care_escreen']['hi'])}",
          mechanism="told-high-blood-pressure and told-high-cholesterol items mark people already in care, who are mostly the diagnosed; among the not-yet-diagnosed they add noise",
-         test="pre-registered ablation H2c(ii)", verdict="E-ALL supported; E-SCREEN 'unchanged' not supported (opposite sign)"),
+         test="pre-registered ablation H2c(ii)", verdict="E-ALL supported; E-SCREEN rose (+0.019) instead of staying unchanged; its CI crosses the ±0.01 band (inconclusive)"),
     dict(change="ADA-lite items refitted by logistic regression (vs points)", direction="deterioration on E-SCREEN", metric="ΔAUC E-SCREEN",
          effect=ci3(ada['est'], ada['lo'], ada['hi']),
          mechanism="the refit learns L_comb, 84 % of whose positives are diagnosed: it optimises recognition, not screening",
@@ -455,7 +456,7 @@ IMPDET = pd.DataFrame([
          verdict=f"B6b {S7V['B6b']['verdict']}"),
     dict(change="Race reweighing (fairness mitigation)", direction="deterioration (NH Black gap widens)", metric="ΔEOD NH Black / NH Asian",
          effect=f"{ci3(blk['d_eod'], blk['d_eod_lo'], blk['d_eod_hi'])} / {ci3(asn['d_eod'], asn['d_eod_lo'], asn['d_eod_hi'])}",
-         mechanism=f"race weights are near 1 (range {get('S8:reweighing.weight_range.race')[0]:.2f}–{get('S8:reweighing.weight_range.race')[1]:.2f}); "
+         mechanism=f"race weights range {get('S8:reweighing.weight_range.race')[0]:.2f}–{get('S8:reweighing.weight_range.race')[1]:.2f} (NH Black cases down-weighted most); "
                    "rebalancing prevalence moves the shared threshold away from the Black positives",
          test="paired bootstrap of EOD change", verdict="not adopted"),
 ])
@@ -465,7 +466,8 @@ IMPDET.to_csv(OUT / "improvements_deteriorations.csv", index=False)
 # %% [markdown]
 # **So what.** The biggest change is a *correct deterioration*: the availability rule costs 0.13 AUC because that AUC
 # was leakage. The biggest *improvement* (balanced accuracy +0.14) is a class-weight artefact that worsens Brier by
-# 0.076; without class weights, systematic preparation gains 0.007 AUC and no calibration cost. Dropping care traces
+# 0.076 (B6a block, S − S−B6a; the S − M1 Brier gap is +0.074); without class weights, systematic preparation gains
+# 0.007 AUC and no calibration cost. Dropping care traces
 # lowers whole-sample AUC but raises screening AUC, and refitting ADA items on our label lowers screening AUC – both say
 # the label rewards *recognising the diagnosed*. Race reweighing widens the NH Black gap and was not adopted.
 
@@ -599,7 +601,8 @@ HEAD_LINES = [
 ]
 if HO_OK:
     s_all, s_scr = HOM.loc[("S", 1, "E-ALL"), "roc_auc"], HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"]
-    HEAD_LINES.append(("one-shot hold-out: same gap for arm S", f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f})"))
+    HEAD_LINES.append(("one-shot hold-out: same direction and size for arm S (not separately testable with 25 screening positives)",
+                       f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)"))
 print("\nHEADLINE – whole-sample AUC measures recognition of known diabetes, not screening; distinct evidence lines:")
 for a, b in HEAD_LINES:
     print(f"   - {a}: {b}")
@@ -614,9 +617,10 @@ HF.to_csv(OUT / "headline_findings.csv", index=False)   # slide material for the
 # **So what – choice of the headline.** The modelling headline is **"a whole-sample AUC measures recognition of known
 # diabetes, not screening"** – spectrum bias (Ransohoff & Feinstein 1978) created by the label's composition (84 % of
 # positives already diagnosed), not by the model. It is non-obvious (one whole-sample AUC hides it), carried by six
-# evidence lines from §7–§8 plus the hold-out, and actionable (report E-SCREEN; keep care traces out of screening
-# models). Its pre-registered core H2c(i) is supported; H2c as a whole is inconclusive because the care-trace sub-claim
-# reversed sign.
+# evidence lines from §7–§8 (the hold-out shows the same direction and size, +0.060 vs +0.055, but is not separately
+# testable with 25 screening positives), and actionable (report E-SCREEN; keep care traces out of screening models).
+# Its pre-registered core H2c(i) is supported; H2c as a whole is inconclusive because the care-trace sub-claim (ii) on
+# E-SCREEN rose (+0.019) instead of staying unchanged, with a CI that crosses the ±0.01 band.
 #
 # **Non-obvious pattern found through systematic profiling and EDA** (the brief's requirement): the sentinel profiling
 # of §3 found that a blanket 7/9/77/99 recode deletes valid HbA1c values of exactly 7.0 % and 9.0 % – 29 HbA1c-defined positives –
@@ -721,7 +725,7 @@ top10_pass = sum(r["verdict"] == "PASS" for r in M["S9"]["leak_hunt"]["top10"])
 
 CL = [
     dict(cid="C01", vs="V3", head=True, grade="E2", type="leakage", subj="The leak gate",
-         prop=f"removing skip-logic and treatment items lowers E-ALL AUC by {-lg['T1_E-ALL']['est']:.2f}, and the excess was leakage",
+         prop=f"removing inadmissible items (treatment, diagnosis history, glucose testing) lowers E-ALL AUC by {-lg['T1_E-ALL']['est']:.2f}, and the excess was leakage",
          ev=["§7 paired CV leak gate (H2a/B2)", "§7 depth-3 tree root on a treatment item (B2t)", "§9 leak hunt on admissible arms", "§9 permutation null"]
             + (["§9 one-shot hold-out M1 − M0"] if HO_OK else []),
          eff=f"ΔAUC M1 − M0 E-ALL {sw(lg['T1_E-ALL'])}; E-SCREEN {sw(lg['T1_E-SCREEN'])}", prereg=pe("H2a"),
@@ -748,12 +752,15 @@ CL = [
          prereg=pe("H2b"), rob=ROB_H2B + (f"; hold-out {sw(HOP.loc[('S T1 - M1 T1', 'E-ALL')])} ({HOP.loc[('S T1 - M1 T1', 'E-ALL'), 'verdict']})" if HO_OK else ""), ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
     dict(cid="C06", vs="V7", head=False, grade="E2", type="deterioration", subj="Paired cross-validation",
          prop=f"balanced class weights worsen the Brier score by {b6.loc['(b) Brier', 'est']:.3f} at unchanged AUC; without them preparation costs no calibration",
-         ev=["§7 paired CV B6a(b)", "§7 pure-preparation contrast S−B6a vs M1"], eff=f"ΔBrier {sw(b6.loc['(b) Brier'])}; without weights {pp_.loc[('E-ALL', 'brier'), 'diff']:+.4f}",
+         ev=["§7 paired CV B6a(b)", "§7 pure-preparation contrast S−B6a vs M1"],
+         eff=f"ΔBrier S − S−B6a (B6a block) {sw(b6.loc['(b) Brier'])}; S − M1 {h2b.loc['(b) Brier', 'est']:+.3f} is a different contrast (H2b-b); "
+             f"S−B6a − M1 {pp_.loc[('E-ALL', 'brier'), 'diff']:+.4f}",
          prereg=pe("B6a"), rob="E-SCREEN and Tier 2 same direction", ext="none", scope="training part", fals="Brier CI including 0", hyp="B6a;H2b"),
     dict(cid="C07", vs="V7", head=True, grade="E2", type="spectrum", subj="Scoring arm S on E-SCREEN",
          prop=f"whole-sample AUC overstates screening discrimination by {hl['eall_minus_escreen_S_T1']['est']:.3f}; most positives were already diagnosed",
          ev=[a for a, _ in HEAD_LINES], eff=f"AUC {hl['auc_S_eall_T1']:.3f} vs {hl['auc_S_escreen_T1']:.3f}; gap {sw(hl['eall_minus_escreen_S_T1'])}",
-         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + (f"; hold-out gap {s_all - s_scr:+.3f}" if HO_OK else ""), ext="none",
+         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + (f"; hold-out: same direction and size ({s_all - s_scr:+.3f} vs "
+                                                              f"{hl['eall_minus_escreen_S_T1']['est']:+.3f}), not separately testable with 25 screening positives" if HO_OK else ""), ext="none",
          scope="US adults 2021-23; screening = not yet diagnosed", fals="gap CI including 0 in a new sample", hyp="H2c"),
     dict(cid="C08", vs="V7", head=True, grade="E3", type="care_traces", subj="The care-trace ablation",
          prop=f"removing the two told-by-doctor items lowers E-ALL AUC by {-hl['minus_care_eall']['est']:.3f} yet raises E-SCREEN by {hl['minus_care_escreen']['est']:.3f}",
@@ -800,7 +807,7 @@ CL = [
          ev=["§5 jackknife risk difference", "§5 adjusted logit (age, sex, income)"], eff=f"RD {rd['rd_pp']:+.1f} pp [{rd['ci_low_pp']:.1f}, {rd['ci_high_pp']:.1f}]",
          prereg=pe("H1a"), rob=f"adjusted OR {adj_u['OR']:.1f} [{adj_u['ci_low']:.1f}, {adj_u['ci_high']:.1f}] (age, sex, income)", ext="none", scope=f"adults with diabetes, weighted; uninsured n = {uninsured_n}", fals="RD CI including 0", hyp="H1a"),
     dict(cid="C16", vs="V6", head=False, grade="E1", type="label_semantics", subj="The care-contact audit",
-         prop=f"{und['n']} of {M['S5']['undiagnosed_meaning']['undiagnosed']} undiagnosed adults ({und['share']:.0%}) had a blood test within three years: a diagnosis gap, not only access",
+         prop=f"{und['n']} of {M['S5']['undiagnosed_meaning']['undiagnosed']} undiagnosed adults ({und['share']:.0%} unweighted, {und['w_est']:.1%} weighted) had a blood test within three years: a diagnosis gap",
          ev=["§5 DIQ180 among the undiagnosed", f"§5 told borderline {told_bl['share']:.0%}"], eff=f"{und['n']}/{M['S5']['undiagnosed_meaning']['undiagnosed']}; weighted {und['w_est']:.0%} [{und['kg_low']:.0%}, {und['kg_high']:.0%}]",
          prereg="analysis_seen", rob="deterministic count", ext="none", scope="undiagnosed, cohort", fals="a recount giving a different number", hyp=""),
     dict(cid="C17", vs="V6", head=True, grade="E3", type="label_matrix", subj="The label matrix",
@@ -845,12 +852,14 @@ CL = [
 if HO_OK:
     nflag = int(HO.get("n_flag_2se", 0))
     hS = HOM.loc[("S", 1)]
-    CL.append(dict(cid="C25", vs="V7", head=False, grade="E2" if nflag == 0 else "E3", type="holdout", subj="The one-shot hold-out",
-                   prop=f"cross-validated AUCs carry over: arm S {hS.loc['E-ALL', 'roc_auc']:.3f} on E-ALL and {hS.loc['E-SCREEN', 'roc_auc']:.3f} on E-SCREEN",
+    ho_gap = hS.loc["E-ALL", "roc_auc"] - hS.loc["E-SCREEN", "roc_auc"]          # from the stored hold-out AUCs only
+    CL.append(dict(cid="C25", vs="V7", head=False, grade="E3", type="holdout", subj="The one-shot hold-out",
+                   prop=f"arm S keeps the recognition gap: same direction and size ({ho_gap:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)",
                    ev=["§9 hold-out after exp-freeze", "§7 cross-validation"],
                    eff=f"E-ALL {hS.loc['E-ALL', 'roc_auc']:.3f} [{hS.loc['E-ALL', 'auc_lo']:.3f}, {hS.loc['E-ALL', 'auc_hi']:.3f}]; E-SCREEN {hS.loc['E-SCREEN', 'roc_auc']:.3f} "
                        f"[{hS.loc['E-SCREEN', 'auc_lo']:.3f}, {hS.loc['E-SCREEN', 'auc_hi']:.3f}]; {nflag} rows > 2 SE below CV",
-                   prereg="none (one shot)", rob="evaluated once; SHA-256 of test IDs logged", ext="none", scope="20 % hold-out (1,146 adults)",
+                   prereg="none (one shot)", rob=f"evaluated once; {nflag} of 20 AUCs > 2 SE below CV; the gap itself is not separately testable "
+                                                   "with 25 screening positives (no CI)", ext="none", scope="20 % hold-out (1,146 adults)",
                    fals="hold-out AUC > 2 SE below CV", hyp="H2a;H2b;H2c"))
 
 vif_raw = get("S4:vif.raw_anthropometry")
@@ -895,7 +904,7 @@ CL_COLS = ["claim_id", "statement", "type", "evidence_refs", "effect_ci", "grade
 CLAIMS.to_csv(OUT / "claims_full.csv", index=False)
 if C.IS_FINAL:
     CLAIMS[CL_COLS].to_csv(C.GOVERNANCE_DIR / "claims.csv", index=False)
-    print("wrote governance/claims.csv (schema of the process document §7.2)")
+    print("wrote governance/claims.csv (claims schema)")
 else:
     print("FAST run: governance/claims.csv not written (the committed ledger comes from the FINAL run)")
 
@@ -929,7 +938,11 @@ if HO_OK:
     show(hp[["comparison", "pop", "rule", "cv", "holdout", "verdict", "same_sign_as_cv"]])
     HOT.to_csv(OUT / "holdout_vs_cv.csv", index=False)
     hp.to_csv(OUT / "holdout_pairs_vs_cv.csv", index=False)
+    gap_ho = float(HOM.loc[("S", 1, "E-ALL"), "roc_auc"] - HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"])   # stored AUCs, nothing new estimated
+    print(f"arm S, E-ALL minus E-SCREEN: hold-out {gap_ho:+.3f} vs CV {hl['eall_minus_escreen_S_T1']['est']:+.3f} "
+          f"(same direction and size; not separately testable with {int(HOM.loc[('S', 1, 'E-SCREEN'), 'n_pos'])} screening positives)")
     S10["holdout"] = dict(available=True, n_rows=len(HOT), n_flag_2se=int(HOT["flag_2se_below_cv"].sum()),
+                          gap_S_eall_minus_escreen=gap_ho, gap_S_eall_minus_escreen_cv=float(hl["eall_minus_escreen_S_T1"]["est"]),
                           max_abs_gap_in_se=float(HOT["gap_in_se"].abs().max()), pairs_same_sign=int(np.nansum(hp["same_sign_as_cv"])),
                           n_pairs_with_cv=int(hp["same_sign_as_cv"].notna().sum()), first_run_utc=HO["log"]["first_run_utc"])
     print(f"\n{S10['holdout']['n_flag_2se']} of {len(HOT)} arm x population rows lie > 2 SE below CV; largest |gap| {S10['holdout']['max_abs_gap_in_se']:.1f} SE; "
@@ -939,11 +952,12 @@ else:
     print(f"hold-out not available in this run: {S10['holdout']['status']}. The claims above are graded on cross-validation only.")
 
 # %% [markdown]
-# **So what.** No arm falls more than 2 SE below its CV AUC (hold-out AUCs are, if anything, slightly higher). The two
-# robust results replicate: the leak gate on E-ALL (−0.117 [−0.144, −0.092], supported) and the recognition-versus-
-# screening gap of S (0.851 vs 0.791, +0.060 against +0.055 in CV). The small contrasts behave as their CV intervals
-# predicted: S − M1 is +0.004 [−0.007, +0.014] on E-ALL and −0.005 on E-SCREEN. S − ADA-lite (+0.029 [−0.037, +0.098])
-# keeps its sign but **does not replicate** its CV margin, so C09 is held at E3. The hold-out upgrades no claim.
+# **So what.** No arm falls more than 2 SE below its CV AUC (hold-out AUCs are, if anything, slightly higher). The leak
+# gate replicates on E-ALL (−0.117 [−0.144, −0.092], supported). The recognition-versus-screening gap of S has the same
+# direction and size (0.851 vs 0.791, +0.060 against +0.055 in CV) but is not separately testable with 25 screening
+# positives. S − M1 is +0.004 [−0.007, +0.014] on E-ALL and −0.005 on E-SCREEN, as the CV intervals predicted.
+# S − ADA-lite (+0.029 [−0.037, +0.098]) keeps its sign but **does not replicate** its CV margin, so C09 is held at E3.
+# The hold-out upgrades no claim; C25 is graded E3.
 
 # %% [markdown]
 # ## 9 Limitations register
@@ -1003,7 +1017,8 @@ LIM = pd.DataFrame([
     dict(lim_id="L07", threat="Label definition: one HbA1c measurement, self-report, treatment masking, no type 1 / type 2 split, no FPG",
          bias_direction="misclassification both ways; L_comb is below the NCHS definition by " + f"{v2d['est_pct']:.1f} pp (FPG cases)",
          how_bounded=f"union label; SL1-SL5 sensitivity labels in the {N_SENS}-spec table (verdict unchanged); 3 × 3 matrix", claims_affected="C07, C14, C17, C23"),
-    dict(lim_id="L08", threat=f"HbA1c missing for {mnar['n_missing']} of {mnar['n_examined']} examined adults; MNAR untestable",
+    dict(lim_id="L08", threat=f"HbA1c missing for {mnar['n_missing']} of {mnar['n_examined']:,} examined non-pregnant adults (§3.7 counts all examined adults, "
+                             f"pregnant women included: {get('S3:missingness.a1c_missing')} of {get('S3:missingness.examined_adults'):,}); MNAR untestable",
          bias_direction="if non-responders are sicker, prevalence understated",
          how_bounded=f"IPW and delta scenarios ({dp.loc[1.0, 'prevalence']:.1%}–{dp.iloc[-1]['prevalence']:.1%}); Manski bounds [{mnar['manski'][0]:.1%}, {mnar['manski'][1]:.1%}]",
          claims_affected="C23, C24"),
@@ -1152,6 +1167,8 @@ NUM = [  # slide, label, source key, format
     ("V6", "undiagnosed RD CI low (pp)", "S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_low_pp", "{:.1f}"),
     ("V6", "undiagnosed RD CI high (pp)", "S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_high_pp", "{:.1f}"),
     ("V6", "undiagnosed with blood test in 3 years", "S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).share", "{:.0%}"),
+    ("V6", "undiagnosed with blood test in 3 years (unweighted)", "S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).share", "{:.0%}"),
+    ("V6", "undiagnosed with blood test in 3 years (weighted, WTPH2YR)", "S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).w_est", "{:.1%}"),
     ("V6", "recall Undiagnosed, trained on L_self", "S8:label_matrix.recall.Undiagnosed.L_self", "{:.2f}"),
     ("V6", "recall Undiagnosed, trained on L_A1c", "S8:label_matrix.recall.Undiagnosed.L_A1c", "{:.2f}"),
     ("V6", "recall Undiagnosed, trained on L_comb", "S8:label_matrix.recall.Undiagnosed.L_comb", "{:.2f}"),
@@ -1177,6 +1194,8 @@ NUM = [  # slide, label, source key, format
     ("V7", "minus care traces E-SCREEN", "S7:headline.minus_care_escreen.est", "{:+.3f}"),
     ("V7", "S - ADA-lite E-SCREEN", "S7:headline.S_minus_ADAlite_escreen.est", "{:+.3f}"),
     ("V7", "class weights dBrier", "S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est", "{:+.3f}"),
+    ("V7", "B6a Brier, S - S-B6a (class weights alone)", "S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est", "{:+.3f}"),
+    ("V7", "H2b Brier, S - M1 (different contrast)", "S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].est", "{:+.3f}"),
     ("V7", "S-B6a vs M1 dAUC", "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff", "{:+.3f}"),
     ("V7", "S-B6a vs M1 dAUC CI low", "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].lo", "{:+.3f}"),
     ("V7", "S-B6a vs M1 dAUC CI high", "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].hi", "{:+.3f}"),
@@ -1198,6 +1217,7 @@ if HO_OK:
             ("V7", "hold-out AUC M0 E-ALL", "S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc", "{:.3f}"),
             ("V7", "hold-out AUC M1 E-ALL", "S9:holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc", "{:.3f}"),
             ("V7", "hold-out n", "S9:holdout.log.n_test", "{:,.0f}"),
+            ("V7", "hold-out gap E-ALL minus E-SCREEN (arm S)", "S10:holdout.gap_S_eall_minus_escreen", "{:+.3f}"),
             ("V7", "hold-out S - ADA-lite E-SCREEN", "S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].est", "{:+.3f}"),
             ("V7", "hold-out S - ADA-lite CI low", "S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].lo", "{:+.3f}"),
             ("V7", "hold-out S - ADA-lite CI high", "S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].hi", "{:+.3f}")]
@@ -1270,6 +1290,10 @@ RECOMP = [("AUC M0 E-ALL", auc_from_oof("M0", "E-ALL"), 1e-6), ("AUC M1 E-ALL", 
           ("L_comb label flips", get("S6:B1.label_flips"), 0),
           ("treatment masking share", get("S5:masking.below_6_5") / get("S5:masking.self_reported"), 1e-12),
           ("E-ALL minus E-SCREEN gap", get("S7:headline.auc_S_eall_T1") - get("S7:headline.auc_S_escreen_T1"), 1e-9),
+          ("B6a Brier, S - S-B6a (class weights alone)", float(pd.read_csv(C.RESULTS_DIR / "S7" / "comparisons.csv").query(
+              "a == 'S' and b == 'S-B6a' and metric == 'brier' and pop == 'E-ALL' and tier == 1 and label == 'verdict'")["est"].iloc[0]), 1e-5),
+          ("H2b Brier, S - M1 (different contrast)", float(pd.read_csv(C.RESULTS_DIR / "S7" / "comparisons.csv").query(
+              "a == 'S' and b == 'M1' and metric == 'brier' and pop == 'E-ALL' and tier == 1 and label == 'verdict'")["est"].iloc[0]), 1e-5),
           ("self-reported diabetes (L_self)", get("S5:masking.self_reported"), 0),
           ("E-SCREEN cohort (not diagnosed)", get("S5:freeze.escreen.n"), 0),
           ("S-B6a vs M1 dBrier", float(pd.read_csv(C.RESULTS_DIR / "S7" / "comparisons.csv").query(
@@ -1278,7 +1302,10 @@ RECOMP = [("AUC M0 E-ALL", auc_from_oof("M0", "E-ALL"), 1e-6), ("AUC M1 E-ALL", 
               "variant == 'M1 exact optimum (newton-cholesky)' and a == 'S' and pop == 'E-ALL' and metric == 'roc_auc'")["est"].iloc[0]), 1e-6)]   # metrics store 6 decimals
 if HO_OK:
     ho_pairs = pd.read_csv(C.RESULTS_DIR / "S9" / "holdout_pairs.csv").set_index(["comparison", "pop"])
+    ho_m = pd.read_csv(C.RESULTS_DIR / "S9" / "holdout_metrics.csv").set_index(["arm", "tier", "pop"])
     RECOMP += [("hold-out n", len(json.loads((C.RESULTS_DIR / "splits" / "holdout.json").read_text(encoding="utf-8"))["test_seqn"]), 0),
+               ("hold-out gap E-ALL minus E-SCREEN (arm S)",
+                float(ho_m.loc[("S", 1, "E-ALL"), "roc_auc"] - ho_m.loc[("S", 1, "E-SCREEN"), "roc_auc"]), 1e-4),
                ("hold-out S - ADA-lite E-SCREEN", float(ho_pairs.loc[("S T1 - BL-ADAlite T1", "E-SCREEN"), "est"]), 1e-5)]   # metrics store 5 decimals
 for lab, val, tol in RECOMP:
     assert abs(nv[lab] - val) <= tol, (lab, nv[lab], val)

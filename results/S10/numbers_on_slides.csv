@@ -46,6 +46,8 @@ V6,undiagnosed RD uninsured - insured (pp),+23.2,23.157835907921932,S5:undiagnos
 V6,undiagnosed RD CI low (pp),6.2,6.235010286422246,S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_low_pp
 V6,undiagnosed RD CI high (pp),40.1,40.08066152942161,S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_high_pp
 V6,undiagnosed with blood test in 3 years,68%,0.6842105263157895,S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).share
+V6,undiagnosed with blood test in 3 years (unweighted),68%,0.6842105263157895,S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).share
+V6,"undiagnosed with blood test in 3 years (weighted, WTPH2YR)",62.5%,0.6249383141176801,S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1).w_est
 V6,"recall Undiagnosed, trained on L_self",0.50,0.50394,S8:label_matrix.recall.Undiagnosed.L_self
 V6,"recall Undiagnosed, trained on L_A1c",0.56,0.55906,S8:label_matrix.recall.Undiagnosed.L_A1c
 V6,"recall Undiagnosed, trained on L_comb",0.52,0.51969,S8:label_matrix.recall.Undiagnosed.L_comb
@@ -71,6 +73,8 @@ V7,minus care traces E-ALL,-0.016,-0.01587600396805298,S7:headline.minus_care_ea
 V7,minus care traces E-SCREEN,+0.019,0.019231047655686062,S7:headline.minus_care_escreen.est
 V7,S - ADA-lite E-SCREEN,+0.055,0.05469410886286974,S7:headline.S_minus_ADAlite_escreen.est
 V7,class weights dBrier,+0.076,0.07575,S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est
+V7,"B6a Brier, S - S-B6a (class weights alone)",+0.076,0.07575,S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est
+V7,"H2b Brier, S - M1 (different contrast)",+0.074,0.07392,S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].est
 V7,S-B6a vs M1 dAUC,+0.007,0.007332867558757137,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff
 V7,S-B6a vs M1 dAUC CI low,+0.000,5.7283367045601365e-05,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].lo
 V7,S-B6a vs M1 dAUC CI high,+0.015,0.014608451750468671,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].hi
@@ -90,6 +94,7 @@ V7,hold-out AUC S E-SCREEN,0.791,0.79076,S9:holdout.metrics[arm=S&tier=1&pop=E-S
 V7,hold-out AUC M0 E-ALL,0.964,0.96437,S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc
 V7,hold-out AUC M1 E-ALL,0.848,0.84758,S9:holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc
 V7,hold-out n,"1,146",1146.0,S9:holdout.log.n_test
+V7,hold-out gap E-ALL minus E-SCREEN (arm S),+0.060,0.06033999999999995,S10:holdout.gap_S_eall_minus_escreen
 V7,hold-out S - ADA-lite E-SCREEN,+0.029,0.02857,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].est
 V7,hold-out S - ADA-lite CI low,-0.037,-0.03702,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].lo
 V7,hold-out S - ADA-lite CI high,+0.098,0.09832,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].hi
