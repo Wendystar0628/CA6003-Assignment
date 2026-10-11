@@ -627,19 +627,50 @@ REF_SPECS = [
     ("S7_auc_S_escreen_T1", "S7", "headline.auc_S_escreen_T1", 0.04, 0.01),
     ("S7_leak_gate_est", "S7", "headline.leak_gate_T1_eall.est", 0.03, 0.01),
     ("S7_S_minus_M1_est", "S7", "headline.S_minus_M1_T1_eall.est", 0.015, 0.005),
+    # S8 fairness: counts exact; group TPRs and calibration within Monte-Carlo / fold error
+    ("S8_escreen_positives_train", "S8", "setup.n_pos_escreen", 0, 0),
+    ("S8_tpr_eall_T1", "S8", "overall_tpr_eall_t1", 0.03, 0.005),
+    ("S8_tpr_undiagnosed", "S8", "gap_decomposition.tpr_undiagnosed", 0.05, 0.01),
+    ("S8_worst_cell_gap_Lcomb", "S8", "label_matrix.worst_gap.L_comb", 0.03, 0.005),
+    ("S8_calibration_slope", "S8", "calibration.overall.slope", 0.05, 0.01),
+    # S9 robustness: deterministic checks exact; the one-shot hold-out is stored (FAST) or reproduced exactly (FINAL)
+    ("S9_permutation_null_mean_S", "S9", "permutation.S.null_mean", 0.005, 0.005),
+    ("S9_sensitivity_same_verdict", "S9", "sensitivity.eall_same_verdict", 1, 0),
+    ("S9_db516_max_abs_diff_pp", "S9", "external.db516.max_abs_diff_pp", 1e-6, 1e-6),
+    ("S9_prevalence_ipw", "S9", "mnar.prevalence[weighting=WTMEC2YR x IPW].est", 1e-5, 1e-5),
+    ("S9_strongest_admissible_auc", "S9", "leak_hunt.strongest_admissible.auc", 0.01, 0.001),
+    ("S9_holdout_auc_S_eall", "S9", "holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc", 0, 0),
+    ("S9_holdout_auc_S_escreen", "S9", "holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc", 0, 0),
+    ("S9_holdout_auc_M1_eall", "S9", "holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc", 0, 0),
+    ("S9_holdout_auc_M0_eall", "S9", "holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc", 0, 0),
+    ("S9_holdout_S_minus_M1_eall", "S9", "holdout.pairs[comparison=S T1 - M1 T1&pop=E-ALL].est", 0, 0),
+    ("S9_holdout_rows_2se_below_cv", "S9", "holdout.n_flag_2se", 0, 0),
+    # S10 synthesis: ledger sizes and the verdict count
+    ("S10_claims", "S10", "claims.n", 0, 0),
+    ("S10_headline_claims", "S10", "claims.n_headline", 0, 0),
+    ("S10_limitations", "S10", "limitations.n", 0, 0),
+    ("S10_verdicts_supported", "S10", "verdict_counts.supported", 1, 0),
+    ("S10_holdout_rows_2se_below_cv", "S10", "holdout.n_flag_2se", 0, 0),
 ]
 FINAL_REF_FILE = FINAL_DIR / "final_ref.json"
 
 REFCHECK_CODE = '''new_section()
-import json
+import json, re
 import pandas as pd
 from IPython.display import display
 
 FINAL_REF = @@REF@@
 
 def dig(d, path):
-    for k in path.split("."):
-        d = d[k]
+    """Value at a dotted path; a list element is selected with key[field=value&field=value] (values compared as text)."""
+    for part in re.findall(r"[^.\\[]+(?:\\[[^\\]]*\\])?", path):
+        key, _, sel = part.partition("[")
+        d = d[key]
+        if sel:
+            conds = [c.split("=", 1) for c in sel.rstrip("]").split("&")]
+            hits = [x for x in d if all(str(x.get(f)) == v for f, v in conds)]
+            assert len(hits) == 1, f"{path}: {len(hits)} matches for [{sel}"
+            d = hits[0]
     return d
 
 rows = []
@@ -649,7 +680,7 @@ for r in FINAL_REF:
         continue
     try:
         val = float(dig(met, r["path"]))
-    except (KeyError, TypeError):
+    except (KeyError, TypeError, AssertionError):
         val = float("nan")
     tol = r["tol_final"] if C.IS_FINAL else r["tol_fast"]
     ok = abs(val - r["value"]) <= tol + 1e-12
@@ -669,10 +700,24 @@ def refcheck_cells() -> list:
     return [md("## A.5 Reference check (FINAL_REF)\n"
                "**Why.** The stored outputs come from the FINAL protocol. A reader who re-runs the faster FAST mode should obtain the same "
                "headline numbers up to Monte-Carlo error. The reference values below are the FINAL numbers; each run is compared with them "
-               "within a tolerance chosen far below the effect sizes interpreted in the text (counts must match exactly)."),
+               "within a tolerance chosen far below the effect sizes interpreted in the text (counts must match exactly). The hold-out values "
+               "(§9.11) have tolerance 0 in both modes: FAST displays the stored one-shot results and FINAL must reproduce them exactly."),
             code(REFCHECK_CODE.replace("@@REF@@", literal)),
             md("**So what.** If the table shows every quantity inside its tolerance, the notebook reproduces the numbers reported in the text and "
                "the video; a failure here means that a package version or the data changed the analysis and the narrative must be re-checked.")]
+
+
+def dig_path(d, path: str):
+    """Same path syntax as `dig` in the notebook cell: dotted keys, list element by key[field=value&field=value]."""
+    for part in re.findall(r"[^.\[]+(?:\[[^\]]*\])?", path):
+        key, _, sel = part.partition("[")
+        d = d[key]
+        if sel:
+            conds = [c.split("=", 1) for c in sel.rstrip("]").split("&")]
+            hits = [x for x in d if all(str(x.get(f)) == v for f, v in conds)]
+            assert len(hits) == 1, f"{path}: {len(hits)} matches for [{sel}"
+            d = hits[0]
+    return d
 
 
 def make_final_ref() -> int:
@@ -682,9 +727,7 @@ def make_final_ref() -> int:
         if not f.exists():
             print(f"skip {id_}: {f.name} missing")
             continue
-        d = json.loads(f.read_text(encoding="utf-8"))
-        for k in path.split("."):
-            d = d[k]
+        d = dig_path(json.loads(f.read_text(encoding="utf-8")), path)
         meta = json.loads(f.read_text(encoding="utf-8"))["_meta"]["nb_mode"]
         if tf > 1e-3 and meta != "FINAL":
             print(f"WARN {id_}: stored value comes from a {meta} run, not FINAL")
