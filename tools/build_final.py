@@ -468,8 +468,6 @@ MEMBER_FIELDS = {
     "sections_led": "[TEAM TO FILL: § list]",
     "decisions": "[TEAM TO FILL: DR ids]",
     "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
-    "verified": "[TEAM TO FILL: what this member re-ran and checked]",
-    "genai_verified": "[TEAM TO FILL: what was checked, how]",
 }
 LEAD_LINE = "**Section lead:** "
 LEAD_RE = re.compile(r"^\*\*Section lead:\*\* .*$", re.M)
@@ -490,7 +488,6 @@ def load_team() -> dict:
             if str(v).strip():
                 team["section_leads"][str(n)] = str(v).strip()
         team["collaboration"] = [str(x).strip() for x in user.get("collaboration") or [] if str(x).strip()]
-        team["verification_note"] = str(user.get("verification_note", "")).strip()
         team["genai_workflow"] = [str(x).strip() for x in user.get("genai_workflow") or [] if str(x).strip()]
     return team
 
@@ -528,15 +525,13 @@ def team_md(team: dict) -> str:
     return ("## Team and contributions\n\n" + note
             + team_table([[m["name"], m["matric"], m["role"], m["sections_led"], m["video_segment"]] for m in team["members"]],
                          ["Member", "Matric no.", "Role", "Leads (reviews)", "Video"])
-            + "\n\n" + team_table([[m["name"], m["decisions"], m["verified"]] for m in team["members"]],
-                                    ["Member", "Decisions (register, Appendix A.1)", "Verified"])
-            + ("\n\n" + team["verification_note"] if team.get("verification_note") else "")
+            + "\n\n" + team_table([[m["name"], m["decisions"]] for m in team["members"]],
+                                    ["Member", "Decisions (register, Appendix A.1)"])
             + ("\n\n**How the work was shared.**\n\n" + "\n".join(f"- {x}" for x in team["collaboration"])
                if team.get("collaboration") else ""))
 
 
 def genai_md(team: dict) -> str:
-    lines = "\n".join(f"- {em(m['name'])} verified {em(m['genai_verified'])}" for m in team["members"])
     workflow = ("\n\n" + " ".join(team["genai_workflow"])) if team.get("genai_workflow") else ""
     return ("## Generative-AI declaration\n\n"
             "No LLM or other complex model is part of the analysis pipeline; generative AI was a development aid only.\n\n"
@@ -551,7 +546,7 @@ def genai_md(team: dict) -> str:
                          "(`governance/team_verification.json`)"]],
                        ["Tool", "Purpose", "How verified"])
             + workflow
-            + "\n\nNo participant-level record was entered into any prompt. Each member's own check:\n\n" + lines
+            + "\n\nNo participant-level record was entered into any prompt."
             + "\n\nDated log with tool versions and the data shared: @@A:A.7 Generative-AI use log~Appendix A.7@@.")
 
 

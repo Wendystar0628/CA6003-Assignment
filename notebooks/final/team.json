@@ -9,9 +9,7 @@
    "role": "Data governance and integration (builds the notebook, checks the numbers, coordinates the video)",
    "sections_led": "§0, §1, §2 (reviews §3, §5, §10)",
    "decisions": "DR-S0-01–08; DR-S1-01–14 (scope workshop with all); DR-S2-01–06; DR-S9-10–11; DR-S10-11",
-   "video_segment": "0:30–2:40, plus opening and closing",
-   "verified": "16/16 raw-file hashes; cohort N = 5,730; NCHS Data Brief 516 rates 15.79/11.30/4.49 % (n = 2,938); FAST/FINAL build records; §10 number sources",
-   "genai_verified": "[TEAM TO FILL: what A personally checked in the AI-drafted loader, governance text and build, and how]"
+   "video_segment": "0:30–2:40, plus opening and closing"
   },
   {
    "name": "B",
@@ -19,9 +17,7 @@
    "role": "Data quality and preparation (owner of the 14 preparation steps)",
    "sections_led": "§3, §6, §9 (reviews §1, §2)",
    "decisions": "DR-S3-01–07; DR-S4-08–09; DR-S6-01–10; DR-S7-12; DR-S9-01–09, DR-S9-12–13 (leak hunt with D)",
-   "video_segment": "2:40–5:00, plus opening and closing",
-   "verified": "1,496 valid cells lost by blanket recoding; 13,676 XPT artefact cells; HbA1c fence 542 flagged, 519 positive; preparation-step asserts; §9 sensitivity results",
-   "genai_verified": "[TEAM TO FILL: what B personally checked in the AI-drafted preparation code, and how]"
+   "video_segment": "2:40–5:00, plus opening and closing"
   },
   {
    "name": "C",
@@ -29,9 +25,7 @@
    "role": "Exploratory analysis, labels and bias",
    "sections_led": "§4, §5, §8 (reviews §7, §9)",
    "decisions": "DR-S4-01–07, DR-S4-13; DR-S5-01–10; DR-S8-01–12; DR-S10-02–03",
-   "video_segment": "5:00–7:30, plus opening and closing",
-   "verified": "Label counts 819/721/971; κ 0.699 unweighted, 0.709 weighted; 250/819 below 6.5 % (165 on medication); risk difference +23.2 pp; WHtR and reweighing results",
-   "genai_verified": "[TEAM TO FILL: what C personally checked in the AI-drafted label and fairness code, and how]"
+   "video_segment": "5:00–7:30, plus opening and closing"
   },
   {
    "name": "D",
@@ -39,9 +33,7 @@
    "role": "Modelling, evaluation and conclusions (owner of the hold-out and the claims ledger)",
    "sections_led": "§7, §10 (reviews §0, §4, §6, §8)",
    "decisions": "DR-S4-10–12; DR-S6-11–12; DR-S7-01–11, DR-S7-13–16; DR-S9-14–15; DR-S10-01, DR-S10-04–10, DR-S10-12–13",
-   "video_segment": "7:30–10:15, plus opening and closing",
-   "verified": "Pre-registration and freeze hashes; H2b +0.0079, inconclusive; one-shot hold-out (n = 1,146, 25 screening positives); 26 claims and 15 limitations",
-   "genai_verified": "[TEAM TO FILL: what D personally checked in the AI-drafted evaluation code and claims, and how]"
+   "video_segment": "7:30–10:15, plus opening and closing"
   }
  ],
  "section_leads": {
@@ -63,7 +55,6 @@
   "**Shared work.** Scope and pre-registration (all four); preparation, bias and experiments as a chain (C finds, B implements, D evaluates, C interprets); conclusions and video (D merges the claims, A checks every number).",
   "**Feedback.** Later findings changed earlier work before each freeze: redundancy and skewness led to new preparation steps; label disagreement led to the union label and the screening population; the leakage pilot led to the availability rule."
  ],
- "verification_note": "The *Verified* column lists each member's checklist; the values were cross-checked automatically on 12 October 2026 (28 checks, `governance/team_verification.json`). [TEAM TO FILL: each member confirms they performed their own checks, then delete this bracket]",
  "genai_workflow": [
   "**How AI was used.** The topic, research direction and the choice at each decision point were made by people; the detailed analysis design, the code and most of the text were drafted by AI, then reviewed, checked against the data and revised under the team's direction. Every member can explain the sections they lead."
  ]
