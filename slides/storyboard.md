@@ -189,8 +189,8 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **time**: 35 s (6:30–7:05)
 - **figure**: `figures/S5_undiagnosed_inequality.png`
 - **takeaway**: Uninsured minus insured undiagnosed share: +23.2 pp [6.2, 40.1], exploratory.
-- **notes**: Among adults with diabetes, uninsured adults are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1. The uninsured group is small, so this is exploratory. And 68% of the undiagnosed had a blood test within three years. That is a diagnosis gap, not only access.
-- **numbers used**: V6 · undiagnosed RD uninsured - insured (pp) = +23.2 | V6 · undiagnosed RD CI low (pp) = 6.2 | V6 · undiagnosed RD CI high (pp) = 40.1 | V6 · undiagnosed with blood test in 3 years = 68% | V2 · HbA1c positives = 721
+- **notes**: Among adults with diabetes, uninsured adults are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1. The uninsured group is small, so this is exploratory. And 68% of the undiagnosed, unweighted, had a blood test within three years. That is a diagnosis gap, not only access.
+- **numbers used**: V6 · undiagnosed RD uninsured - insured (pp) = +23.2 | V6 · undiagnosed RD CI low (pp) = 6.2 | V6 · undiagnosed RD CI high (pp) = 40.1 | V6 · undiagnosed with blood test in 3 years (unweighted) = 68% | V2 · HbA1c positives = 721
 - **footer**: n = 721 adults with HbA1c ≥ 6.5 · weighted, jackknife CI · §5.4
 - **claims**: C15, C16
 
@@ -239,8 +239,8 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **time**: 40 s (8:40–9:20)
 - **figure**: `slides/figures/S10_scoreboard_forest.png`
 - **takeaway**: S minus M1 ΔAUC +0.008 [+0.000, +0.016]; without class weights +0.007, Brier -0.002; inconclusive.
-- **notes**: Minimal M1 against systematic S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, so inconclusive. Class weights alone worsen Brier by 0.076. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
-- **numbers used**: V7 · S - M1 dAUC = +0.008 | V7 · S - M1 CI low = +0.000 | V7 · S - M1 CI high = +0.016 | V7 · S - M1 MDD = 0.011 | V7 · class weights dBrier = +0.076 | V7 · S-B6a vs M1 dAUC = +0.007 | V7 · S-B6a vs M1 dBrier = -0.002 | V7 · post-lock: M1 folds at the iteration limit (stored fit) = 25 | V7 · training part adults = 4,584 | V7 · training part E-SCREEN positives = 127
+- **notes**: M1 against S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, inconclusive. Brier worsens by 0.074, while class weights alone cost 0.076, a different contrast. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
+- **numbers used**: V7 · S - M1 dAUC = +0.008 | V7 · S - M1 CI low = +0.000 | V7 · S - M1 CI high = +0.016 | V7 · S - M1 MDD = 0.011 | V7 · B6a Brier, S - S-B6a (class weights alone) = +0.076 | V7 · H2b Brier, S - M1 (different contrast) = +0.074 | V7 · S-B6a vs M1 dAUC = +0.007 | V7 · S-B6a vs M1 dBrier = -0.002 | V7 · post-lock: M1 folds at the iteration limit (stored fit) = 25 | V7 · training part adults = 4,584 | V7 · training part E-SCREEN positives = 127
 - **footer**: n = 4,584 (E-ALL), 127 positives (E-SCREEN) · paired CV, unweighted · §7.7, §10.2.1
 - **claims**: C05, C06
 
@@ -258,9 +258,9 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **type**: figure
 - **time**: 20 s (9:55–10:15)
 - **figure**: `figures/S9_holdout_vs_cv.png`
-- **takeaway**: Hold-out matches cross-validation, arm S 0.851 and 0.791; robustness checks leave S minus M1 unchanged.
-- **notes**: One shot, evaluated once. Arm S scores 0.851 and 0.791, close to cross-validation, but the screening hold-out has few positives. Seeds, specifications, grouped cross-validation and weights leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
-- **numbers used**: V7 · hold-out AUC S E-ALL = 0.851 | V7 · hold-out AUC S E-SCREEN = 0.791 | V7 · permutation null mean (S) = 0.501 | V7 · hold-out n = 1,146 | V7 · training part adults = 4,584
+- **takeaway**: Hold-out stays close to cross-validation (arm S 0.851, 0.791); S minus M1 verdict unchanged.
+- **notes**: One shot, evaluated once. Arm S scores 0.851 and 0.791. The recognition gap has the same direction and size, plus 0.060 against plus 0.055, but is not separately testable with 25 screening positives. Robustness leaves S minus M1 inconclusive. Permuted labels give AUC 0.501.
+- **numbers used**: V7 · hold-out AUC S E-ALL = 0.851 | V7 · hold-out AUC S E-SCREEN = 0.791 | V7 · hold-out gap E-ALL minus E-SCREEN (arm S) = +0.060 | V7 · E-ALL minus E-SCREEN gap = +0.055 | V7 · hold-out E-SCREEN positives = 25 | V7 · permutation null mean (S) = 0.501 | V7 · hold-out n = 1,146 | V7 · training part adults = 4,584
 - **footer**: hold-out n = 1,146 · robustness on training part, n = 4,584 · unweighted · §9.10, §9.11
 - **claims**: C22, C25
 

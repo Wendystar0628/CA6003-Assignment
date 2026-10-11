@@ -66,6 +66,7 @@ JSON_ROWS = [
     ("V7", "training part adults", "results/metrics_S7.json", "splits.n_train", "{:,.0f}"),
     ("V7", "training part E-SCREEN positives", "results/metrics_S7.json", "splits.n_pos_escreen", "{:,.0f}"),
     ("V1", "DB516 fasting subsample n", "results/metrics_S4.json", "design.n_fasting_pos", "{:,.0f}"),
+    ("V7", "hold-out E-SCREEN positives", "results/metrics_S9.json", "holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos", "{:,.0f}"),
 ]
 
 CAP_SECONDS = 11 * 60 + 40
@@ -106,7 +107,13 @@ def load_numbers():
     for sid, label, rel, key, fmt in JSON_ROWS:
         node = json.loads((ROOT / rel).read_text(encoding="utf-8"))
         for k in key.split("."):
-            node = node[k]
+            m = re.match(r"(\w+)\[(.+)\]$", k)          # list lookup: name[field=value&field=value]
+            if m:
+                node = node[m.group(1)]
+                want = dict(kv.split("=") for kv in m.group(2).split("&"))
+                node = next(r for r in node if all(str(r[f]) == v for f, v in want.items()))
+            else:
+                node = node[k]
         rows[(sid, label)] = dict(slide_id=sid, label=label, value=fmt.format(float(node)), value_raw=str(float(node)),
                                   source_key=f"{rel}:{key}")
     return rows, sorted(set(definitional))

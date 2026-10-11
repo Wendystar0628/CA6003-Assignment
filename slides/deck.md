@@ -254,7 +254,7 @@ Among 819 self-reported diabetics, 250, or 30.5%, have HbA1c below 6.5, most of 
 Uninsured minus insured undiagnosed share: +23.2 pp [6.2, 40.1], exploratory.
 
 <!--
-Among adults with diabetes, uninsured adults are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1. The uninsured group is small, so this is exploratory. And 68% of the undiagnosed had a blood test within three years. That is a diagnosis gap, not only access.
+Among adults with diabetes, uninsured adults are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1. The uninsured group is small, so this is exploratory. And 68% of the undiagnosed, unweighted, had a blood test within three years. That is a diagnosis gap, not only access.
 -->
 
 ---
@@ -329,7 +329,7 @@ The EDA justifies the algorithms. Log-odds bend, so spline logistic regression, 
 S minus M1 ΔAUC +0.008 [+0.000, +0.016]; without class weights +0.007, Brier -0.002; inconclusive.
 
 <!--
-Minimal M1 against systematic S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, so inconclusive. Class weights alone worsen Brier by 0.076. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
+M1 against S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, inconclusive. Brier worsens by 0.074, while class weights alone cost 0.076, a different contrast. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
 -->
 
 ---
@@ -356,10 +356,10 @@ Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on
 
 ![fig h:455](../figures/S9_holdout_vs_cv.png)
 
-Hold-out matches cross-validation, arm S 0.851 and 0.791; robustness checks leave S minus M1 unchanged.
+Hold-out stays close to cross-validation (arm S 0.851, 0.791); S minus M1 verdict unchanged.
 
 <!--
-One shot, evaluated once. Arm S scores 0.851 and 0.791, close to cross-validation, but the screening hold-out has few positives. Seeds, specifications, grouped cross-validation and weights leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
+One shot, evaluated once. Arm S scores 0.851 and 0.791. The recognition gap has the same direction and size, plus 0.060 against plus 0.055, but is not separately testable with 25 screening positives. Robustness leaves S minus M1 inconclusive. Permuted labels give AUC 0.501.
 -->
 
 ---
