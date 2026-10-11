@@ -13,7 +13,7 @@ F3 Label and measurement bias,1,treatment masking 250/819 = 30.5% (165 on medica
 F3 Label and measurement bias,2,"undiagnosed risk difference uninsured − insured +23.2 pp [6.2, 40.1]"
 F3 Label and measurement bias,3,3 × 3 matrix: H3 inconclusive; Undiagnosed is the lowest-recall stratum for every training label
 F3 Label and measurement bias,4,"NH Asian TPR gap -0.184 [-0.343, -0.014], race permutation p 0.035"
-F3 Label and measurement bias,5,"WHtR − BMI single-feature gain difference Asian − White +0.088 [+0.038, +0.111]"
+F3 Label and measurement bias,5,"WHtR − BMI single-feature gain difference Asian − White +0.088 [+0.035, +0.116]"
 F3 Label and measurement bias,6,"calibration O:E by race NH White 0.88, NH Black 1.30, NH Asian 1.35, Mexican American 1.39"
 "HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",1,"pre-registered spectrum gap (H2c-i, supported): +0.055 [+0.028, +0.086]"
 "HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",2,care-trace ablation changes sign between populations (H2c-ii): E-ALL -0.016 vs E-SCREEN +0.019
