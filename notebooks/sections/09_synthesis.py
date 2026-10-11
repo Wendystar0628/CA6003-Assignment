@@ -314,11 +314,16 @@ for (h, sub), rule in CHECK.items():
     n_ok += 1
 print(f"locked rules re-applied to {n_ok} stored S7 sub-claims: all reproduce the stored verdict")
 # Withdrawing the two SD-ratio sub-verdicts must not change a hypothesis-level verdict (locked combination rule).
+_changed = []
 for h in sorted({h for h, _ in WITHDRAWN}):
     kept = prim[(prim["hyp_id"] == h) & ~prim["sub"].isin([s_ for h_, s_ in WITHDRAWN if h_ == h])]["verdict"].tolist()
-    assert ek.combine_verdicts(kept) == S7V[h]["verdict"], (h, kept, S7V[h]["verdict"])
+    if ek.combine_verdicts(kept) != S7V[h]["verdict"]:
+        _changed.append(f"{h} {S7V[h]['verdict']} -> {ek.combine_verdicts(kept)}")
+# FINAL: the text below states that no hypothesis-level verdict changes. FAST (small resamples) may differ; it is reported.
+assert not (C.IS_FINAL and _changed), _changed
 _hv = ", ".join(f"{h} {S7V[h]['verdict']}" for h in sorted({h for h, _ in WITHDRAWN}))
-print(f"post-audit: SD-ratio sub-verdicts withdrawn for {sorted(WITHDRAWN)}; hypothesis verdicts unchanged ({_hv})")
+print(f"post-audit: SD-ratio sub-verdicts withdrawn for {sorted(WITHDRAWN)}; "
+      + (f"hypothesis verdicts unchanged ({_hv})" if not _changed else f"FAST run, verdict would change: {_changed}"))
 # Locked rule, locked verdict and post-audit status of the two sub-claims, side by side.
 PA_SUBS = pd.DataFrame([dict(hyp_id=h, sub=sub, estimate=r["est"], interval=f"[{r['lo']:.2f}, {r['hi']:.2f}] (Monte Carlo)",
                              locked_rule="supported if ratio ≥ 2 and CI low > 1; refuted if CI high < 2",

@@ -1,13 +1,13 @@
 {
   "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
   "stored_outputs_mode": "FINAL",
-  "source_commit": "a30e857",
-  "built_utc": "2026-10-11T18:33:50+00:00",
+  "source_commit": "06b7e5a",
+  "built_utc": "2026-10-11T18:43:44+00:00",
   "procedure": "assembled",
   "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
   "base": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-    "sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a"
+    "sha256": "4732b12ed8d4d206bad76c485435eef353bd580f3c89b9ef701662a3ddf6e379"
   },
   "sections": {
     "00_setup.py": {
@@ -61,11 +61,11 @@
     "09_synthesis.py": {
       "from": "notebooks/executed/09_synthesis.ipynb",
       "mode": "FINAL",
-      "seconds": 4.1,
-      "run_utc": "2026-10-11T18:22:10+00:00",
-      "executed_sha256": "1bc16afd08e1a4750925697e7aeb7368aec5550afb9e2be55c4a36ade2befcb5",
-      "section_sha256_at_run": "f01f2af27f4f8fcacc929470e80acad56fc1744fe3457b6b4c9e853adfb00d25",
-      "section_sha256_now": "f01f2af27f4f8fcacc929470e80acad56fc1744fe3457b6b4c9e853adfb00d25",
+      "seconds": 4.0,
+      "run_utc": "2026-10-11T18:43:31+00:00",
+      "executed_sha256": "a5300edbe651064e6732625595051275347a296c23de552493cbc058d841b434",
+      "section_sha256_at_run": "4e148a163927080af264a5558598f49f62975446613535e14ca0fa993511448a",
+      "section_sha256_now": "4e148a163927080af264a5558598f49f62975446613535e14ca0fa993511448a",
       "note": "section source unchanged since the run"
     }
   },
@@ -89,7 +89,7 @@
       "mode": "FINAL",
       "file": "09_synthesis.py",
       "date": "2026-10-12",
-      "seconds": 4.1
+      "seconds": 4.0
     },
     "§2": {
       "commit": "18a4909",
@@ -153,13 +153,13 @@
     "synthesised": []
   },
   "appendix": {
-    "executed_seconds": 2.4,
+    "executed_seconds": 2.5,
     "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
   },
   "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)",
-  "section_runtime_seconds_sum": 1468.4,
-  "code_cell_sha256": "c1d2460051498c410cd8a50a35166ace98d0c188eed20a98ad3c3bfeaa3dec37",
-  "notebook_sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a (LF line endings)",
+  "section_runtime_seconds_sum": 1468.3,
+  "code_cell_sha256": "cfd4420c8d98898bb137d5554427bf0dbb146841d1a0611de6aa27045dee189b",
+  "notebook_sha256": "4732b12ed8d4d206bad76c485435eef353bd580f3c89b9ef701662a3ddf6e379 (LF line endings)",
   "front_matter_words": {
     "title": 158,
     "summary": 250,
@@ -224,13 +224,13 @@
   "previous_record": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
     "stored_outputs_mode": "FINAL",
-    "source_commit": "deba914",
-    "built_utc": "2026-10-11T18:23:59+00:00",
+    "source_commit": "a30e857",
+    "built_utc": "2026-10-11T18:33:50+00:00",
     "procedure": "assembled",
     "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
     "base": {
       "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-      "sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4"
+      "sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a"
     },
     "sections": {
       "00_setup.py": {
@@ -276,10 +276,10 @@
         "mode": "FINAL",
         "seconds": 1321.4,
         "run_utc": "2026-10-11T18:20:39+00:00",
-        "executed_sha256": "0aa1d8fef5aca9d6b514e5c7aa74f63e1e5241323ee07e2ae988eb8e31172e23",
-        "section_sha256_at_run": "860f9fc0ca9b0f03f7644b72e31c6988aad40ceee1ff7f4278d621caa6ea5607",
-        "section_sha256_now": "19805091ff9a1ac09b85840c27c492f490da2a2862dce95f08cf4795bbad94ff",
-        "note": "section source changed after the run in comments/markdown only (code tokens verified)"
+        "executed_sha256": "de9bdb2c6251de9fb33e89f3f7bbb8f2f29e4c4d1908ef2c25b835c6acc7265e",
+        "section_sha256_at_run": "30c89d1ab0f39dd7824987ca43052c8b06b87bddd50a4489e6f989fd82e0e7d1",
+        "section_sha256_now": "30c89d1ab0f39dd7824987ca43052c8b06b87bddd50a4489e6f989fd82e0e7d1",
+        "note": "section source unchanged since the run"
       },
       "09_synthesis.py": {
         "from": "notebooks/executed/09_synthesis.ipynb",
@@ -294,53 +294,60 @@
     },
     "section_provenance": {
       "§0": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 2.3
+        "mode": "FINAL",
+        "seconds": 2.3,
+        "source": "full run"
       },
       "§1": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 0.8
+        "mode": "FINAL",
+        "seconds": 0.8,
+        "source": "full run"
+      },
+      "§10": {
+        "source": "section run",
+        "mode": "FINAL",
+        "file": "09_synthesis.py",
+        "date": "2026-10-12",
+        "seconds": 4.1
       },
       "§2": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 1.0
+        "mode": "FINAL",
+        "seconds": 1.0,
+        "source": "full run"
       },
       "§3": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 3.2
+        "mode": "FINAL",
+        "seconds": 3.2,
+        "source": "full run"
       },
       "§4": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 4.4
+        "mode": "FINAL",
+        "seconds": 4.4,
+        "source": "full run"
       },
       "§5": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 20.1
+        "mode": "FINAL",
+        "seconds": 20.1,
+        "source": "full run"
       },
       "§6": {
-        "source": "full run",
-        "mode": "FINAL",
         "commit": "18a4909",
         "date": "2026-10-11",
-        "seconds": 15.3
+        "mode": "FINAL",
+        "seconds": 15.3,
+        "source": "full run"
       },
       "§7": {
         "source": "section run",
@@ -362,33 +369,20 @@
         "file": "08_robustness.py",
         "date": "2026-10-12",
         "seconds": 1321.4
-      },
-      "§10": {
-        "source": "section run",
-        "mode": "FINAL",
-        "file": "09_synthesis.py",
-        "date": "2026-10-12",
-        "seconds": 4.1
       }
     },
     "generated_cells": {
-      "reused_from_base": 47,
-      "synthesised": [
-        "src/fairness.py",
-        "src/postaudit.py (new)",
-        "governance/register/S8.csv",
-        "governance/register/S9.csv",
-        "governance/register/S10.csv"
-      ]
+      "reused_from_base": 52,
+      "synthesised": []
     },
     "appendix": {
-      "executed_seconds": 2.8,
+      "executed_seconds": 2.4,
       "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
     },
     "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)",
     "section_runtime_seconds_sum": 1468.4,
-    "code_cell_sha256": "dc292cd6927ae5daa2873e23408837a1a68481810c2417f4f152fb7ea4687f13",
-    "notebook_sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4 (LF line endings)",
+    "code_cell_sha256": "c1d2460051498c410cd8a50a35166ace98d0c188eed20a98ad3c3bfeaa3dec37",
+    "notebook_sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a (LF line endings)",
     "front_matter_words": {
       "title": 158,
       "summary": 250,

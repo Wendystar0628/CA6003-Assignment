@@ -13114,7 +13114,7 @@
       "section": "S10",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T18:22:10+00:00"
+      "written_utc": "2026-10-11T18:43:30+00:00"
     },
     "mode": "FINAL",
     "subclaim_verdict_counts": {
@@ -13857,6 +13857,6 @@
       "DR-S10-14",
       "DR-S10-11"
     ],
-    "runtime_seconds": 1.2099251747131348
+    "runtime_seconds": 1.120267391204834
   }
 }
