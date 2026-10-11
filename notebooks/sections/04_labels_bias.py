@@ -101,18 +101,25 @@ print(f"cohort: {len(d):,} adults; columns: {d.shape[1]}")
 # prevalence.
 
 # %%
+# Cross-tabulate self-report against HbA1c >= 6.5, then compute kappa, PA/NA, sensitivity and PPV (§5.1).
+# Reads the cohort `d`; asserts each statistic against its verified reference value; writes the label CSVs.
 tab = L.confusion(d)
 print("Self-report (rows) x HbA1c >= 6.5 (columns), unweighted counts")
 print(tab, "\n")
+# Unweighted agreement first; the weighted version below uses the delete-one-PSU jackknife on WTPH2YR.
 unw = L.agreement(d)
 jk_agree = S.jackknife(d, L.agreement_vector, weight=WT)
+# Table: unweighted estimate next to the weighted estimate and its jackknife 95% CI.
 agree = pd.DataFrame({
     "unweighted": [unw[k] for k in L.AGREEMENT_KEYS],
     "weighted": jk_agree["est"], "w_ci_low": jk_agree["ci_low"], "w_ci_high": jk_agree["ci_high"],
 }, index=list(L.AGREEMENT_KEYS)).round(3)
 print(agree)
 
+# Guard: the frozen cohort and label counts must still hold before any single value is checked.
 L.check_frozen_counts(d)
+# Each close() compares a recomputed value with its 3-decimal reference (tolerance ~ rounding of the
+# reference).
 close(unw["kappa"], 0.699, 0.0015, "kappa unweighted")
 close(unw["pa"], 0.739, 0.0015, "PA")
 close(unw["na"], 0.959, 0.0015, "NA")
@@ -122,14 +129,18 @@ close(jk_agree["est"][0], 0.709, 0.0015, "kappa weighted")
 close(jk_agree["ci_low"][0], 0.665, 0.002, "kappa weighted CI low")
 close(jk_agree["ci_high"][0], 0.752, 0.002, "kappa weighted CI high")
 
+# Share of the union L_comb that each single instrument misses (the two off-diagonal cells of the table).
 n_comb = int(d["L_comb"].sum())
 miss_self, miss_a1c = int(tab.loc[0, 1]), int(tab.loc[1, 0])
+# Weighted L_comb prevalence with a Korn-Graubard interval (kg_text); WTPH2YR is the HbA1c-sample weight.
 w_prev = S.weighted_prop(d, "L_comb", weight=WT)
 print(f"\nL_comb positives {n_comb} ({pct(n_comb / len(d))} unweighted; weighted {kg_text(w_prev)})")
 print(f"L_self misses {miss_self}/{n_comb} = {pct(miss_self / n_comb)} of L_comb positives; "
       f"L_A1c misses {miss_a1c}/{n_comb} = {pct(miss_a1c / n_comb)}")
 close(w_prev["est"], 0.140, 0.0015, "weighted L_comb prevalence")
 
+# Per-label audit table: positives, unweighted prevalence and weighted estimate with KG interval for every
+# label.
 label_audit = pd.DataFrame([
     {"label": lab, "positives": int(d[lab].sum()), "prev_unweighted": d[lab].mean(),
      **{f"w_{k}": v for k, v in S.weighted_prop(d, lab, weight=WT).items()
@@ -137,6 +148,7 @@ label_audit = pd.DataFrame([
     for lab in L.LABEL_COLS])
 label_audit.to_csv(OUT / "label_audit.csv", index=False)
 agree.to_csv(OUT / "label_agreement.csv")
+# Collect results for the section's metrics JSON; the register row below documents the decision.
 RES["labels"] = {
     "confusion": {f"self{i}_a1c{j}": int(tab.loc[i, j]) for i in (0, 1) for j in (0, 1)},
     "agreement_unweighted": {k: unw[k] for k in L.AGREEMENT_KEYS},
@@ -172,10 +184,14 @@ register("DR-S5-02", "label_audit",
 # never as a feature.
 
 # %%
+# Treatment masking (§5.2): how many HbA1c-negative self-reported diabetics are on insulin or pills?
+# Reads d (on_med, L_self, L_A1c, LBXGH); medication is used for this audit only, never as a feature.
 sr = d[d["L_self"] == 1]
+# Controlled-looking group: reports diabetes, but HbA1c is below the 6.5 % label threshold.
 ctrl = sr[sr["L_A1c"] == 0]
 n_ctrl, n_ctrl_med = len(ctrl), int(ctrl["on_med"].sum())
 unmed = ctrl[ctrl["on_med"] == 0]
+# 5.7-6.49 % is the prediabetes range: untreated cases there suggest early or lifestyle-controlled disease.
 n_unmed_pre = int(unmed["LBXGH"].between(5.7, 6.49).sum())
 on_med = sr[sr["on_med"] == 1]
 share_med_below = float((on_med["L_A1c"] == 0).mean())
@@ -186,11 +202,15 @@ print(f"treated self-reported diabetics: {len(on_med)}; HbA1c < 6.5 among them: 
 print("\nHbA1c (%) of self-reported diabetics by treatment")
 print(sr.groupby(sr["on_med"].map({1: "insulin or pills", 0: "no medication"}))["LBXGH"]
       .describe(percentiles=[.25, .5, .75]).round(2))
+# Guard: masking counts (below 6.5, treated among them, untreated, prediabetes range, all treated) match the
+# reference.
 assert (n_ctrl, n_ctrl_med, len(unmed), n_unmed_pre, len(on_med)) == (250, 165, 85, 50, 694)
 close(n_ctrl / len(sr), 0.305, 0.001, "masking share")
 close(share_med_below, 0.238, 0.001, "treated with HbA1c < 6.5")
 
+# Figure: HbA1c histograms of self-reported diabetics by treatment; shaded area = below the label threshold.
 fig, ax = plt.subplots(figsize=(8, 4))
+# 0.25 % bins from 4 to 12; values above 12 are clipped into the last bin (see the axis label).
 bins = np.arange(4.0, 12.01, 0.25)
 ax.axvspan(4.0, C.HBA1C_DIABETES, color="0.92", zorder=0)
 for flag, lab, col in [(1, "insulin or pills", plots.PALETTE[4]), (0, "no medication", plots.PALETTE[0])]:
@@ -207,6 +227,7 @@ plots.savefig(fig, "S5_a1c_by_medication",
                       f"{n_ctrl} ({pct(n_ctrl / len(sr))}) are below 6.5 %, {n_ctrl_med} of them treated.")
 plt.show()
 
+# Store the results and register the finding.
 RES["masking"] = {"self_reported": len(sr), "below_6_5": n_ctrl, "below_6_5_share": n_ctrl / len(sr),
                   "below_6_5_on_med": n_ctrl_med, "below_6_5_untreated": len(unmed),
                   "untreated_5_7_to_6_4": n_unmed_pre, "treated": len(on_med),
@@ -236,13 +257,22 @@ register("DR-S5-03", "label_bias",
 # Korn–Graubard intervals.
 
 # %%
+# What 'undiagnosed' means (§5.3): borderline answers and health-system contact of HbA1c-positive
+# non-reporters.
+# Reads d (DIQ010, DIQ160, DIQ180, stratum_3x3); writes the contact table; asserts counts and the weighted
+# share.
+# DIQ010 coding: 1 yes, 2 no, 3 borderline. Compare how often HbA1c reaches 6.5 in the borderline and 'no'
+# groups.
 bl = d["DIQ010"].eq(3)
 no = d["DIQ010"].eq(2)
 p_bl, p_no = d.loc[bl, "L_A1c"].mean(), d.loc[no, "L_A1c"].mean()
 print(f"DIQ010 = 3 (borderline): {int(bl.sum())}; HbA1c >= 6.5: {int(d.loc[bl, 'L_A1c'].sum())} ({pct(p_bl)}) "
       f"vs DIQ010 = 2: {pct(p_no)}")
+# Undiagnosed = HbA1c-positive without a self-reported diagnosis (a 3x3 stratum); the mask is kept for domain
+# estimates.
 und_mask = (d["stratum_3x3"] == "Undiagnosed").to_numpy()
 und = d[und_mask]
+# Three contact indicators among the undiagnosed; all are post-test information, so they stay audit-only.
 care = {
     "told borderline (DIQ010=3)": und["DIQ010"].eq(3),
     "blood test past 3 years (DIQ180=1)": und["DIQ180"].eq(1),
@@ -250,6 +280,8 @@ care = {
 }
 rows = []
 for name, s in care.items():
+    # y is defined on the whole cohort but NaN outside the domain; `domain=` keeps every PSU and stratum in
+    # the jackknife.
     y = np.where(und_mask, d.index.isin(s[s].index), np.nan)
     w = S.weighted_prop(d, y.astype(float), weight=WT, domain=und_mask)
     rows.append({"contact": name, "n": int(s.sum()), "of": len(und), "share": s.sum() / len(und),
@@ -259,6 +291,8 @@ care_tab = pd.DataFrame(rows)
 print(care_tab.round(3).to_string(index=False))
 print(f"DIQ180 missing among undiagnosed: {int(und['DIQ180'].isna().sum())}; DIQ160 missing: {int(und['DIQ160'].isna().sum())} "
       "(borderline respondents skip DIQ160)")
+# Guards on the unweighted counts: borderline n, borderline HbA1c-positives, undiagnosed n and per-indicator
+# n.
 assert int(bl.sum()) == 213 and int(d.loc[bl, "L_A1c"].sum()) == 36 and len(und) == 152
 assert care_tab["n"].tolist() == [36, 104, 48]
 close(p_bl, 0.169, 0.001, "borderline A1c+ share")
@@ -296,9 +330,16 @@ register("DR-S5-04", "label_semantics",
 # difference (WTPH2YR, jackknife) on the joint domain's df, with the smaller group's own df as a conservative check.
 
 # %%
+# Who is undiagnosed (§5.4): undiagnosed share by insurance, usual place of care and race among HbA1c >= 6.5.
+# Computes KG proportions with NCHS flags and jackknife risk differences; asserts values, df and the H1a rule.
+# Outcome: 1 if an HbA1c-positive adult does not self-report diabetes (the domain is restricted to a1c_dom
+# later).
 d["undx"] = 1.0 - d["L_self"]
+# HIQ011: 1 = covered, 2 = not covered; refused/don't-know codes stay NaN and drop out of the domain.
 d["uninsured"] = np.select([d["HIQ011"].eq(2), d["HIQ011"].eq(1)], [1.0, 0.0], np.nan)
+# HUQ030 (usual place of care): 2 = none -> 1; 1 = one place or 3 = several places -> 0; other codes stay NaN.
 d["no_usual_place"] = np.select([d["HUQ030"].eq(2), d["HUQ030"].isin([1, 3])], [1.0, 0.0], np.nan)
+# Domain mask: HbA1c-positive adults. All rows are kept so that the jackknife retains every stratum and PSU.
 a1c_dom = d["L_A1c"].eq(1).to_numpy()
 
 
@@ -309,8 +350,11 @@ def risk_difference(df, y, ga, gb, weight=WT):
     a, b = np.asarray(ga) & ok, np.asarray(gb) & ok
     y0 = np.nan_to_num(yv)
 
+    # stat_fn(df, w): the jackknife re-calls this with replicate weights; masks a and b select the two groups.
     def f(_d, w):
         return np.dot(w * a, y0) / np.sum(w * a) - np.dot(w * b, y0) / np.sum(w * b)
+    # df_override: the contrast's degrees of freedom come from the joint domain a | b, not from the whole
+    # design.
     return S.jackknife(df, f, weight=weight, df_override=S.domain_df(df, a | b))
 
 
@@ -319,6 +363,7 @@ contrasts = [  # (name, column, level a, level b, label a, label b)
     ("no usual place - usual place", "no_usual_place", 1.0, 0.0, "no usual place", "usual place"),
     ("NH Asian - NH White", "RIDRETH3", 6, 3, "NH Asian", "NH White"),
 ]
+# For each contrast: KG proportions for both groups plus the weighted risk difference with its jackknife CI.
 prop_rows, rd_rows = [], []
 for name, col, a, b, la, lb in contrasts:
     for lev, lab in [(a, la), (b, lb)]:
@@ -329,6 +374,7 @@ for name, col, a, b, la, lb in contrasts:
     rd = risk_difference(d, "undx", a1c_dom & d[col].eq(a).to_numpy(), a1c_dom & d[col].eq(b).to_numpy())
     rd_rows.append({"contrast": name, "rd_pp": 100 * rd["est"], "ci_low_pp": 100 * rd["ci_low"],
                     "ci_high_pp": 100 * rd["ci_high"], "df": rd["df"]})
+# One row per group; drop_duplicates is a safeguard in case a group is reused across contrasts.
 props = pd.DataFrame(prop_rows).drop_duplicates("group")
 rds = pd.DataFrame(rd_rows)
 print("Undiagnosed share among HbA1c >= 6.5 (WTPH2YR, Korn-Graubard)")
@@ -336,6 +382,7 @@ print(props.drop(columns="flags").round(3).to_string(index=False))
 print("\nRisk differences (percentage points, JK CI)")
 print(rds.round(1).to_string(index=False))
 
+# Reference asserts for proportions, KG bounds and domain df (the insurance and care groups share a small df).
 P = props.set_index("group")
 close(P.loc["uninsured", "est"], 0.430, 0.0015, "uninsured share"); assert P.loc["uninsured", "n"] == 49
 close(P.loc["uninsured", "kg_low"], 0.242, 0.002, "uninsured KG low"); close(P.loc["uninsured", "kg_high"], 0.635, 0.002, "uninsured KG high")
@@ -344,10 +391,13 @@ close(P.loc["insured", "est"], 0.199, 0.0015, "insured share")
 close(P.loc["no usual place", "est"], 0.403, 0.0015, "no usual place share"); assert P.loc["no usual place", "n"] == 41
 close(P.loc["NH Asian", "est"], 0.362, 0.0015, "Asian share"); assert P.loc["NH Asian", "n"] == 40 and P.loc["NH Asian", "df"] == 4
 close(P.loc["NH Asian", "kg_low"], 0.131, 0.002, "Asian KG low"); close(P.loc["NH Asian", "kg_high"], 0.652, 0.002, "Asian KG high")
+# All three small-group proportions must carry the NCHS 'suppress' flag (KG interval wider than the NCHS
+# maximum).
 for g in ("uninsured", "no usual place", "NH Asian"):
     assert P.loc[g, "ci_width"] >= C.NCHS_CI_WIDTH_MAX and P.loc[g, "nchs_status"] == "suppress"
 assert P.loc["insured", "nchs"] == "meets NCHS standard"
 RD = rds.set_index("contrast")
+# Reference risk differences (estimate, low, high in pp); tolerance 0.06 pp = rounding to one decimal.
 for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual place - usual place": (19.9, -1.6, 41.5),
                           "NH Asian - NH White": (15.6, -5.7, 36.9)}.items():
     close(RD.loc[name, "rd_pp"], e, 0.06, name); close(RD.loc[name, "ci_low_pp"], lo, 0.06, name + " low")
@@ -356,9 +406,12 @@ for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual pl
 # Degrees of freedom of the contrast. The jackknife uses the domain "group a or group b", which here spans all
 # strata (df shown above). The smaller group alone has fewer df (uninsured: 9), so as a conservative check the
 # same standard error is combined with the t-quantile of the smaller group's domain df.
+# Conservative check: same SE, but the t quantile uses the smaller group's own df (fewer df -> wider
+# interval).
 rd_df = []
 for name, col, a, b, la, lb in contrasts:
     r_ = RD.loc[name]
+    # Back out the SE from the stored 95% half-width: (high - low) / (2 * t_{0.975, df}).
     se_ = (r_["ci_high_pp"] - r_["ci_low_pp"]) / (2 * stats.t.ppf(0.975, r_["df"]))
     df_min = int(min(P.loc[la, "df"], P.loc[lb, "df"]))
     t_min = stats.t.ppf(0.975, df_min)
@@ -368,6 +421,8 @@ for name, col, a, b, la, lb in contrasts:
 rd_df = pd.DataFrame(rd_df)
 display(rd_df.round(1))
 RDC = rd_df.set_index("contrast")
+# Guards: the smaller group's df is as stated, and the conservative lower bound of the insurance contrast
+# stays > 0.
 assert RDC.loc["uninsured - insured", "df_smaller_group"] == 9
 assert RDC.loc["uninsured - insured", "ci_low_pp_conservative"] > 0      # H1a rule holds with either df
 
@@ -385,9 +440,15 @@ assert RDC.loc["uninsured - insured", "ci_low_pp_conservative"] > 0      # H1a r
 # its own mediator.
 
 # %%
+# Adjusted logistic models per exposure (§5.4), fitted unweighted and WTPH2YR-weighted (jackknife).
+# Reads d; builds the covariates; asserts n per model and that every odds ratio points the same way as its
+# crude RD.
+# Race levels with NH White first, so that it becomes the reference category in the formula.
 RACE_LEVELS = ["NH White", *[r for r in RACE.values() if r != "NH White"]]
+# Age in decades: the coefficient is per 10 years, a more readable scale.
 d["age10"] = d["RIDAGEYR"] / 10
 d["male"] = d["RIAGENDR"].eq(1).astype(float)
+# Median-impute the income ratio; the pir_miss indicator in the formulas flags the imputed rows.
 d["pir"] = d["INDFMPIR"].fillna(d["INDFMPIR"].median())
 d["race_cat"] = pd.Categorical(d["race3"], categories=RACE_LEVELS)
 ADJ_MODELS = [  # (exposure label, coefficient, formula, adjustment set)
@@ -401,19 +462,26 @@ def _wlogit(form, term, mask):
     """stat_fn for survey.jackknife: weighted logit coefficient of `term` on rows with mask & w > 0."""
     def f(df, w):
         m = mask & (w > 0)
+        # Silence per-replicate fit warnings (each of the many replicate fits would otherwise print them).
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            # freq_weights rescaled to mean 1: the point estimate is unchanged and the sample size is not
+            # inflated.
             fit_w = smf.glm(form, data=df[m], family=sm.families.Binomial(), freq_weights=w[m] / w[m].mean()).fit()
         return fit_w.params[term]
     return f
 
 
+# One model per exposure, each with its own DAG-based adjustment set (see the table above).
 adj_rows = []
 for lab, term, form, adj in ADJ_MODELS:
+    # `term` can be a patsy level name such as race_cat[T.NH Asian]; strip it to get the data column.
     col = term.split("[")[0]
+    # cc = HbA1c-positive adults with complete exposure and covariates; the same rows feed both fits.
     cc = a1c_dom & d[[col, "age10", "male", "pir", "pir_miss"]].notna().all(axis=1).to_numpy()
     fit = smf.logit(form, data=d[cc]).fit(disp=0)
     ci = fit.conf_int().loc[term]
+    # df_override: domain df of the modelled rows, so the t quantile reflects the PSUs actually available.
     jk = S.jackknife(d, _wlogit(form, term, cc), weight=WT, df_override=S.domain_df(d, cc))
     adj_rows.append({"exposure": lab, "adjustment_set": adj, "n": int(cc.sum()), "events": int(d.loc[cc, "undx"].sum()),
                      "OR": np.exp(fit.params[term]), "ci_low": np.exp(ci[0]), "ci_high": np.exp(ci[1]),
@@ -425,11 +493,13 @@ print(f"domain: {int(a1c_dom.sum())} adults with HbA1c >= 6.5; PIR missing for {
 print(logit_tab.drop(columns="formula").round(2).to_string(index=False))
 LT = logit_tab.set_index("exposure")
 assert LT["n"].tolist() == [719, 721, 721]
+# Does a 95% interval exclude the null odds ratio of 1?
 excl = lambda lo, hi: lo > 1 or hi < 1   # noqa: E731
 LT["unweighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["ci_low"], LT["ci_high"])]
 LT["weighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["w_ci_low"], LT["w_ci_high"])]
 display(LT[["unweighted_excludes_1", "weighted_excludes_1"]])
 assert (LT[["OR", "OR_w"]] > 1).all().all()          # every exposure points in the same direction as its crude RD
+# Pre-stated expectations: insurance excludes 1 in both fits, NH Asian in neither, usual place disagrees.
 assert LT.loc["uninsured", "unweighted_excludes_1"] and LT.loc["uninsured", "weighted_excludes_1"]
 assert not LT.loc["NH Asian", "unweighted_excludes_1"] and not LT.loc["NH Asian", "weighted_excludes_1"]
 assert LT.loc["no usual place", "unweighted_excludes_1"] and not LT.loc["no usual place", "weighted_excludes_1"]  # fits disagree
@@ -441,11 +511,14 @@ assert LT.loc["no usual place", "unweighted_excludes_1"] and not LT.loc["no usua
 # The odds ratios are associations under the assumed DAG, not causal effects of insurance or care.
 
 # %%
+# Figure for §5.4: undiagnosed share by group (left) and risk differences with jackknife CI (right).
+# Reads P and rds from the cells above; writes the figure and the §5.4 CSVs.
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4), gridspec_kw={"width_ratios": [1.25, 1]})
 order = ["insured", "uninsured", "usual place", "no usual place", "NH White", "NH Asian"]
 pp = P.loc[order]
 yy = np.arange(len(order))[::-1]
 for yi, (g, r) in zip(yy, pp.iterrows()):
+    # Hollow marker = fails the NCHS presentation standard (exploratory).
     expl = r["nchs"].startswith("exploratory")
     col = plots.PALETTE[5] if expl else plots.PALETTE[4]
     ax1.plot([r["kg_low"] * 100, r["kg_high"] * 100], [yi, yi], color=col, lw=2)
@@ -467,6 +540,7 @@ plots.savefig(fig, "S5_undiagnosed_inequality",
                       "differences with delete-one-PSU jackknife CI. Hollow markers: fails the NCHS presentation standard (exploratory).")
 plt.show()
 
+# Persist the tables and stash results for the final write-out in §5.9.
 props.to_csv(OUT / "undiagnosed_by_group.csv", index=False)
 rds.to_csv(OUT / "undiagnosed_risk_differences.csv", index=False)
 logit_tab.to_csv(OUT / "undiagnosed_logit.csv", index=False)
@@ -509,11 +583,17 @@ register("DR-S5-05", "label_bias",
 # (unweighted measurement properties).
 
 # %%
+# BMI as a measurement of adiposity in Asian vs White adults: BMI < 25 among diabetics, prevalence by band
+# (§5.5).
+# Reads d; asserts counts and 3-decimal reference values; thin bands are flagged by their NCHS status.
 grp = {"NH Asian": 6, "NH White": 3}
 bmi_dm = []
 for g, code in grp.items():
+    # L_comb diabetics in the group with a BMI value (missing BMI is excluded from the denominator).
     dm = d[(d["RIDRETH3"] == code) & (d["L_comb"] == 1) & d["BMXBMI"].notna()]
+    # k = diabetics with BMI below 25, i.e. cases a 'BMI >= 25' screening rule would miss.
     k = int((dm["BMXBMI"] < 25).sum())
+    # Weighted share by domain estimation; missing BMI becomes NaN so that it drops out of the proportion.
     w = S.weighted_prop(d, (d["BMXBMI"] < 25).astype(float).where(d["BMXBMI"].notna()), weight=WT,
                         domain=((d["RIDRETH3"] == code) & (d["L_comb"] == 1)).to_numpy())
     bmi_dm.append({"group": g, "bmi_lt25": k, "diabetics_with_bmi": len(dm), "share": k / len(dm),
@@ -524,8 +604,10 @@ print(bmi_dm.round(3))
 assert (bmi_dm.loc["NH Asian", "bmi_lt25"], bmi_dm.loc["NH Asian", "diabetics_with_bmi"]) == (24, 47)
 close(bmi_dm.loc["NH Asian", "share"], 0.511, 0.001, "Asian BMI<25"); close(bmi_dm.loc["NH White", "share"], 0.072, 0.001, "White BMI<25")
 
+# Bands: 23 = lower action point proposed for Asian adults (WHO 2004), 25 = overweight, 30 = obesity.
 BANDS = [0, 23, 25, 30, 200]
 BLAB = ["<23", "23–24.9", "25–29.9", "≥30"]
+# right=False gives intervals [lo, hi); 200 is simply an open upper bound.
 d["bmi_band"] = pd.cut(d["BMXBMI"], BANDS, right=False, labels=BLAB)
 band_rows = []
 for g, code in grp.items():
@@ -540,25 +622,36 @@ bands = pd.DataFrame(band_rows)
 print("\nL_comb prevalence by BMI band (unweighted and WTPH2YR with KG CI)")
 print(bands.round(3).to_string(index=False))
 B_ = bands.set_index(["group", "bmi_band"])
+# Count the Asian BMI bands whose weighted estimate fails the NCHS presentation standard.
 n_flag_asian = int((bands.loc[bands["group"] == "NH Asian", "nchs_status"] != "present").sum())
 print(f"NH Asian BMI bands failing the NCHS presentation standard: {n_flag_asian} of {len(BLAB)}")
+# Guard: most Asian band estimates must stay exploratory, so the text may not present them as precise.
 assert n_flag_asian >= 3
+# Reference prevalences (unweighted 'prev' and weighted 'w_prev') per group and band, tolerance 0.001.
 close(B_.loc[("NH Asian", "<23"), "prev"], 0.121, 0.001, "Asian <23"); close(B_.loc[("NH White", "<23"), "prev"], 0.043, 0.001, "White <23")
 close(B_.loc[("NH Asian", "23–24.9"), "prev"], 0.175, 0.001, "Asian 23-25"); close(B_.loc[("NH White", "23–24.9"), "prev"], 0.033, 0.001, "White 23-25")
 close(B_.loc[("NH Asian", "25–29.9"), "prev"], 0.115, 0.001, "Asian 25-30"); close(B_.loc[("NH Asian", "25–29.9"), "w_prev"], 0.053, 0.001, "Asian 25-30 weighted")
 close(B_.loc[("NH Asian", "<23"), "w_prev"], 0.078, 0.001, "Asian <23 weighted"); close(B_.loc[("NH Asian", "23–24.9"), "w_prev"], 0.140, 0.001, "Asian 23-25 weighted")
 
 # %%
+# Single-feature ROC-AUC of BMI, waist and WHtR per group, with a stratified bootstrap (§5.5).
+# Produces the AUC table `roc` and the bootstrap draws `boot_store`; asserts values and a positive Asian gain
+# CI.
+# Candidate adiposity measures; WHtR = waist-to-height ratio.
 FEATS = {"BMI": "BMXBMI", "waist": "BMXWAIST", "WHtR": "whtr"}
+# Number of bootstrap replicates (smaller outside the FINAL run).
 B = C.N_BOOT
+# Seed derived from the master seed plus a fixed label: reproducible and independent of other cells.
 rng = np.random.default_rng(E.derive_seed(C.SEED_MASTER, "S5", "auc_bootstrap"))
 
+# AUC of each feature for L_comb plus the paired gain (WHtR AUC - BMI AUC) on rows where both exist.
 
 def auc_set(g):
     out = {}
     for f, col in FEATS.items():
         ok = g[col].notna()
         out[f] = roc_auc_score(g.loc[ok, "L_comb"], g.loc[ok, col])
+    # The gain uses only rows with both BMI and WHtR, so both AUCs are computed on the same people.
     both = g["BMXBMI"].notna() & g["whtr"].notna()
     out["gain"] = (roc_auc_score(g.loc[both, "L_comb"], g.loc[both, "whtr"])
                    - roc_auc_score(g.loc[both, "L_comb"], g.loc[both, "BMXBMI"]))
@@ -569,6 +662,7 @@ roc_rows, boot_store = [], {}
 for g, code in grp.items():
     sub = d.loc[d["RIDRETH3"] == code, ["L_comb", *FEATS.values()]].reset_index(drop=True)
     est = auc_set(sub)
+    # Positives and negatives are resampled separately in each replicate, so the case count stays fixed.
     pos, neg = np.flatnonzero(sub["L_comb"] == 1), np.flatnonzero(sub["L_comb"] == 0)
     reps = pd.DataFrame([auc_set(sub.iloc[np.concatenate([rng.choice(pos, len(pos)), rng.choice(neg, len(neg))])])
                          for _ in range(B)])
@@ -578,6 +672,8 @@ for g, code in grp.items():
                          "n": int(sub[FEATS[k]].notna().sum()) if k in FEATS else int((sub["BMXBMI"].notna() & sub["whtr"].notna()).sum()),
                          "auc": est[k], "ci_low": reps[k].quantile(0.025), "ci_high": reps[k].quantile(0.975)})
 roc = pd.DataFrame(roc_rows)
+# Difference of the two groups' bootstrap gains; the groups are resampled independently, so draws subtract
+# directly.
 gain_diff = boot_store["NH Asian"]["gain"] - boot_store["NH White"]["gain"]
 print(f"Single-feature ROC-AUC for L_comb (stratified bootstrap, B = {B})")
 print(roc.round(3).to_string(index=False))
@@ -585,6 +681,7 @@ print(f"Asian minus White WHtR gain: {roc.iloc[3]['auc'] - roc.iloc[7]['auc']:+.
       f"(bootstrap 95% CI {gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f})")
 RO = roc.set_index(["group", "measure"])
 assert gain_diff.quantile(.025) > 0, "Asian WHtR gain no longer exceeds the White gain"
+# Reference AUCs and gains; tolerances equal the rounding of the stored reference values.
 close(RO.loc[("NH Asian", "BMI"), "auc"], 0.573, 0.001, "Asian BMI AUC")
 close(RO.loc[("NH Asian", "waist"), "auc"], 0.697, 0.001, "Asian waist AUC")
 close(RO.loc[("NH Asian", "WHtR"), "auc"], 0.714, 0.001, "Asian WHtR AUC")
@@ -606,11 +703,18 @@ close(RO.loc[("NH White", "WHtR − BMI (paired)"), "ci_high"], 0.058, tol_ci, "
 # replicate multiplicities enter the unweighted AUCs as frequency weights).
 
 # %%
+# PSU-level (Rao-Wu) bootstrap of the Asian - White difference in WHtR gain, a design-aware check (§5.5).
+# Reads RO and gain_diff; writes the interval comparison CSV; asserts that the PSU interval still excludes 0.
 diff_est = float(RO.loc[("NH Asian", "WHtR − BMI (paired)"), "auc"] - RO.loc[("NH White", "WHtR − BMI (paired)"), "auc"])
+# B Rao-Wu replicate multiplicities (PSUs resampled within strata and rescaled), one column per bootstrap
+# draw.
 MULT = S.rao_wu_weights(d, np.ones(len(d)), B, seed=E.derive_seed(C.SEED_MASTER, "S5", "psu_bootstrap"))
+# Rows with both BMI and WHtR (same pairing as in the person-level bootstrap).
 both_ok = (d["BMXBMI"].notna() & d["whtr"].notna()).to_numpy()
 
 
+# Weighted paired gain within one group; the multiplicities act as frequency weights, zero-weight rows drop
+# out.
 def _gain_w(mask, w):
     m = mask & both_ok & (w > 0)
     y = d["L_comb"].to_numpy()[m]
@@ -619,6 +723,7 @@ def _gain_w(mask, w):
 
 
 is_as, is_wh = d["RIDRETH3"].eq(6).to_numpy(), d["RIDRETH3"].eq(3).to_numpy()
+# One difference per draw: gain in Asian adults minus gain in White adults under the same PSU resample.
 psu_diff = np.array([_gain_w(is_as, MULT[:, b]) - _gain_w(is_wh, MULT[:, b]) for b in range(B)])
 gain_ci = pd.DataFrame([
     {"method": "person-level stratified bootstrap", "est": diff_est,
@@ -629,6 +734,7 @@ gain_ci = pd.DataFrame([
 print(f"Asian − White difference in paired WHtR − BMI gain (B = {B})")
 print(gain_ci.round(3).to_string(index=False))
 close(diff_est, 0.088, 0.0006, "gain difference")
+# Guard: the design-aware interval must exclude 0, otherwise the Asian-gain claim does not survive clustering.
 assert np.quantile(psu_diff, .025) > 0, "PSU bootstrap CI of the gain difference includes 0"
 if C.IS_FINAL:   # reviewer's independent PSU bootstrap: 0.039-0.116
     close(np.quantile(psu_diff, .025), 0.039, 0.01, "PSU CI low"); close(np.quantile(psu_diff, .975), 0.116, 0.01, "PSU CI high")
@@ -642,11 +748,15 @@ gain_ci.to_csv(OUT / "whtr_gain_difference_ci.csv", index=False)
 # is itself approximate.
 
 # %%
+# Sensitivity and specificity of fixed BMI cut-offs (25 and 23) for L_comb within each group (§5.5).
+# Reads d; asserts the Asian and White reference values (unweighted measurement properties).
 cut_rows = []
 for g, code in grp.items():
     sub = d[(d["RIDRETH3"] == code) & d["BMXBMI"].notna()]
     y = sub["L_comb"].eq(1)
     for cut in (25, 23):
+        # Rule flags everyone at or above the cut-off; sensitivity = flagged share among cases, specificity =
+        # unflagged among non-cases.
         flag = sub["BMXBMI"] >= cut
         cut_rows.append({"group": g, "rule": f"BMI ≥ {cut}", "sensitivity": flag[y].mean(),
                          "specificity": (~flag[~y]).mean(), "flagged_share": flag.mean(), "cases": int(y.sum())})
@@ -659,18 +769,23 @@ close(CU.loc[("NH Asian", "BMI ≥ 23"), "sensitivity"], 0.723, 0.001, "Asian se
 close(CU.loc[("NH Asian", "BMI ≥ 23"), "specificity"], 0.357, 0.001, "Asian spec BMI>=23")
 
 # %%
+# Figure for §5.5: prevalence by BMI band (left) and single-feature AUCs (right), Asian vs White.
+# Reads bands and RO; writes the figure and the §5.5 CSVs.
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.6))
 xb = np.arange(len(BLAB))
 for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots.PALETTE[4])]):
     sb = bands[bands["group"] == g]
+    # Small horizontal offset so that the two groups' points do not overlap.
     off = (i - 0.5) * 0.3
     ax1.errorbar(xb + off, sb["w_prev"] * 100, yerr=[(sb["w_prev"] - sb["kg_low"]) * 100, (sb["kg_high"] - sb["w_prev"]) * 100],
                  fmt="none", ecolor=col, capsize=3)
+    # Filled marker = band passes the NCHS presentation standard; hollow = exploratory.
     ok = (sb["nchs_status"] == "present").to_numpy()
     ax1.plot((xb + off)[ok], sb["w_prev"].to_numpy()[ok] * 100, "o", color=col, label=g if ok.any() else None)
     ax1.plot((xb + off)[~ok], sb["w_prev"].to_numpy()[~ok] * 100, "o", color=col, mfc="white",
              label=f"{g} (exploratory, NCHS standard not met)" if (~ok).any() else None)
     for x_, (_, r) in zip(xb + off, sb.iterrows()):
+        # cases/n printed under the axis as a reminder of how thin the cells are.
         ax1.text(x_, -3.5 - 3.5 * i, f"{r['cases']}/{r['n']}", ha="center", fontsize=7.5, color=col)
 ax1.set_xticks(xb, BLAB)
 ax1.set(xlabel="BMI band (kg/m²)", ylabel="L_comb prevalence (%, WTPH2YR, KG 95% CI)", ylim=(-9, 60),
@@ -683,6 +798,7 @@ for i, (g, col) in enumerate([("NH Asian", plots.PALETTE[5]), ("NH White", plots
     ax2.errorbar(np.arange(3) + off, rr["auc"], yerr=[rr["auc"] - rr["ci_low"], rr["ci_high"] - rr["auc"]],
                  fmt="o", color=col, capsize=3,
                  label=f"{g}: WHtR − BMI {RO.loc[(g, 'WHtR − BMI (paired)'), 'auc']:+.3f}")
+# AUC 0.5 = no discrimination.
 ax2.axhline(0.5, color="k", lw=0.8, ls=":")
 ax2.set_xticks(range(3), meas)
 ax2.set(ylabel="ROC-AUC for L_comb (95% bootstrap CI)", ylim=(0.4, 0.85),
@@ -695,6 +811,7 @@ plots.savefig(fig, "S5_asian_bmi_whtr",
                       "Right: single-feature ROC-AUC of BMI, waist and WHtR with stratified bootstrap CI; legend = paired WHtR - BMI gain.")
 plt.show()
 
+# Persist the CSVs, then collect results and register the finding.
 roc.to_csv(OUT / "bmi_race_roc.csv", index=False)
 bands.to_csv(OUT / "bmi_band_prevalence.csv", index=False)
 cuts.to_csv(OUT / "bmi_cutoff_sensitivity.csv", index=False)
@@ -736,6 +853,10 @@ register("DR-S5-06", "measurement_bias",
 # participation relates to health (self-reported diabetes, WTINT2YR, interview-only vs adults with an HbA1c result).
 
 # %%
+# Representation and response (§5.6): sample vs weighted composition, Kish design effect, selection into the
+# exam.
+# Reads d and the merged NHANES file; asserts composition, design effect and the share of the gap explained by
+# age.
 band_s = S.age_band(d["RIDAGEYR"]).to_numpy()
 rep_rows = []
 for dim, vals in [("age", band_s), ("race", d["race3"].to_numpy())]:
@@ -744,13 +865,16 @@ for dim, vals in [("age", band_s), ("race", d["race3"].to_numpy())]:
         rep_rows.append({"dimension": dim, "level": lev, "n": int(m.sum()), "sample_share": m.mean(),
                          "weighted_share": d.loc[m, WT].sum() / d[WT].sum()})
 rep = pd.DataFrame(rep_rows).sort_values(["dimension", "level"]).reset_index(drop=True)
+# diff_pp > 0: the group is over-represented in the sample relative to its weighted (population) share.
 rep["diff_pp"] = 100 * (rep["sample_share"] - rep["weighted_share"])
 print(rep.round(3).to_string(index=False))
+# Kish design effect = 1 + CV^2 of the weights: variance inflation from unequal weights; n_eff = n / deff.
 deff = S.kish_deff(d[WT])
 unw_prev = d["L_comb"].mean()
 print(f"\nKish design effect of WTPH2YR: {deff:.2f} (effective n ≈ {len(d) / deff:,.0f}); "
       f"L_comb unweighted {pct(unw_prev)} vs weighted {pct(w_prev['est'])}")
 RP = rep.set_index(["dimension", "level"])
+# Reference sample and weighted shares for the age extremes, then the Kish design effect.
 close(RP.loc[("age", "60+"), "sample_share"], 0.462, 0.001, "60+ sample"); close(RP.loc[("age", "60+"), "weighted_share"], 0.314, 0.001, "60+ weighted")
 close(RP.loc[("age", "20-39"), "sample_share"], 0.247, 0.001, "20-39 sample"); close(RP.loc[("age", "20-39"), "weighted_share"], 0.348, 0.001, "20-39 weighted")
 close(deff, 1.55, 0.01, "Kish deff")
@@ -763,16 +887,22 @@ close(age_explained, 0.84, 0.01, "share of gap explained by age (S4)")
 RESPONSE = {"interview_unweighted": 0.346, "exam_unweighted": 0.257}
 print(f"documented response rates: interview {pct(RESPONSE['interview_unweighted'])}, exam {pct(RESPONSE['exam_unweighted'])}")
 
+# Full interview-and-exam file: needed to compare interview-only with examined adults.
 merged = NIO.load_merged()
+# Drop attached audit frames, as for the cohort above.
 merged.attrs = {}
 # Domains are masks on the full 11,933-row design (weights zeroed outside), never row subsets, so every
 # jackknife replicate keeps all strata and PSUs.
+# Self-reported diabetes indicator; NaN where DIQ010 is missing so it drops out of the proportion.
 merged["self_dm"] = merged["DIQ010"].eq(1).astype(float).where(merged["DIQ010"].notna())
+# Domains: interview-only adults (RIDSTATR 1) vs examined adults with an HbA1c result (RIDSTATR 2).
 adult = (merged["RIDAGEYR"] >= C.ADULT_MIN_AGE).to_numpy()
 io_mask = adult & merged["RIDSTATR"].eq(1).to_numpy()
 a1c_mask = adult & (merged["RIDSTATR"].eq(2) & merged["LBXGH"].notna()).to_numpy()
+# Both groups use the interview weight, the only weight defined for interview-only adults.
 p_io = S.weighted_prop(merged, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=io_mask)
 p_a1c = S.weighted_prop(merged, "self_dm", weight=C.WEIGHT_INTERVIEW, domain=a1c_mask)
+# Risk difference (HbA1c group - interview-only): do exam participants report diabetes more often?
 rd_sel = risk_difference(merged, "self_dm", a1c_mask, io_mask, weight=C.WEIGHT_INTERVIEW)
 print(f"self-reported diabetes (WTINT2YR): interview-only adults {kg_text(p_io)}")
 print(f"                                   adults with HbA1c   {kg_text(p_a1c)}")
@@ -794,6 +924,7 @@ plots.savefig(fig, "S5_representation",
               caption="Sample versus WTPH2YR-weighted composition of the 5,730-adult cohort by age band and race/ethnicity.")
 plt.show()
 
+# Persist the table, then collect results and register the finding.
 rep.to_csv(OUT / "representation.csv", index=False)
 RES["representation"] = {
     "shares": {f"{a}|{b}": v for (a, b), v in RP[["n", "sample_share", "weighted_share"]].to_dict("index").items()},
@@ -826,6 +957,10 @@ register("DR-S5-07", "representation",
 # Self-report is observed for most adults without HbA1c, so the bounds are sharper than the naive width m.
 
 # %%
+# HbA1c missingness (§5.7): missing share by race, MEC vs phlebotomy weighting, Manski bounds on L_comb
+# prevalence.
+# Reads merged; writes the missingness and Manski CSVs; asserts missing shares and the MEC-weighted
+# prevalence.
 # Missingness by race on all examined adults (the §3.7 definition); Manski bounds below on the cohort universe
 # (examined, non-pregnant adults).
 merged["a1c_missing"] = merged["LBXGH"].isna().astype(float)
@@ -835,28 +970,37 @@ coh_univ = exam & ~merged["RIDEXPRG"].eq(1).to_numpy()                   # cohor
 miss_rows = []
 for g in sorted(merged.loc[exam, "race3"].unique()):
     m = exam & merged["race3"].eq(g).to_numpy()
+    # Missingness is weighted with the exam weight (WTMEC2YR), the weight of everyone who was examined.
     w = S.weighted_prop(merged, "a1c_missing", weight=C.WEIGHT_MEC, domain=m)
     miss_rows.append({"race3": g, "examined": int(m.sum()), "missing": int(merged.loc[m, "a1c_missing"].sum()),
                       "missing_share": merged.loc[m, "a1c_missing"].mean(), "w_missing_share": w["est"],
                       "kg_low": w["kg_low"], "kg_high": w["kg_high"], "df": w["df"]})
 miss = pd.DataFrame(miss_rows).set_index("race3")
 print(miss.round(3))
+# Black - White contrast on the same weight; jackknife CI via risk_difference.
 rd_miss = risk_difference(merged, "a1c_missing", exam & merged["race3"].eq("NH Black").to_numpy(),
                           exam & merged["race3"].eq("NH White").to_numpy(), weight=C.WEIGHT_MEC)
 print(f"missing HbA1c, NH Black - NH White (WTMEC2YR, JK): {100 * rd_miss['est']:+.1f} pp "
       f"({100 * rd_miss['ci_low']:.1f}, {100 * rd_miss['ci_high']:.1f})")
 close(miss.loc["NH Black", "missing_share"], 0.093, 0.0015, "Black missing"); close(miss.loc["NH White", "missing_share"], 0.040, 0.0015, "White missing")
 
+# Prevalence under the exam weight, to compare with WTPH2YR (which includes a blood-draw non-response
+# adjustment).
 prev_mec = np.average(d["L_comb"], weights=d[C.WEIGHT_MEC])
 print(f"\nL_comb prevalence: WTMEC2YR-weighted {pct(prev_mec)} vs WTPH2YR-weighted {pct(w_prev['est'])}")
 close(prev_mec, 0.139, 0.0015, "MEC-weighted prevalence")
 
 # Manski bounds on L_comb prevalence among examined adults (WTMEC2YR): missing HbA1c rows with self-reported
 # diabetes are known positives; the rest could be anything.
+# known_pos: HbA1c >= 6.5 or self-reported diabetes; these are positives whatever the missing values are.
 known_pos = (merged["LBXGH"].ge(C.HBA1C_DIABETES) | merged["DIQ010"].eq(1)).astype(float).to_numpy()
+# unknown: HbA1c missing and no self-reported diabetes; these could be positive or negative.
 unknown = (merged["LBXGH"].isna() & ~merged["DIQ010"].eq(1)).astype(float).to_numpy()
 observed = merged["LBXGH"].notna().to_numpy()
+# Missing weights -> 0 so that such rows do not contribute.
 w_mec = merged[C.WEIGHT_MEC].fillna(0).to_numpy()
+# Lower bound = weighted share of known positives; upper = lower + weighted share of unknowns (Manski).
+# naive_width_m is the plain missing share, i.e. the width if self-report were ignored.
 man = []
 for g in ["all", *sorted(merged.loc[coh_univ, "race3"].unique())]:
     m = coh_univ if g == "all" else coh_univ & merged["race3"].eq(g).to_numpy()
@@ -868,6 +1012,7 @@ for g in ["all", *sorted(merged.loc[coh_univ, "race3"].unique())]:
 manski = pd.DataFrame(man).set_index("group")
 print("\nManski bounds for L_comb prevalence (WTMEC2YR, examined non-pregnant adults)")
 print(manski.round(3))
+# Persist the tables, then collect results and register the finding.
 miss.to_csv(OUT / "a1c_missingness.csv")
 manski.to_csv(OUT / "manski_bounds.csv")
 RES["missingness"] = {"by_race": miss.to_dict("index"),
@@ -895,13 +1040,22 @@ register("DR-S5-08", "missingness",
 # and the sensitivity labels SL1–SL7 (`governance/label_freeze.md`, executable in `src/labels.py`).
 
 # %%
+# Label-revision gate (§5.8): criteria C1-C4 for freezing L_comb, judged after seeing the data.
+# Reads the variable spec and the labels; asserts the gate outcome; writes the gate table CSV.
 spec = NIO.load_spec()
+# Target components plus closely related post-diagnosis variables (medication, tests, glucose).
 TARGET_PARTS = ["LBXGH", "DIQ010", "DIQ050", "DIQ070", "DID040", "DID060", "DIQ160", "DIQ180", "LBXGLU"]
+# One spec row per variable; C2 requires that none of the target's components is admissible as a feature.
 adm = spec[spec["var"].isin(TARGET_PARTS)].drop_duplicates("var").set_index("var")["admissible"].astype(str)
+# Guard: every target part must exist in the spec, otherwise C2 would pass vacuously.
 assert set(adm.index) == set(TARGET_PARTS), set(TARGET_PARTS) - set(adm.index)
+# T1/T2 are the admissible tiers of the variable spec; any component carrying one would fail C2.
 c2_bad = adm[adm.str.upper().isin(["T1", "T2"])]
+# Positives per race group for C3 (the smallest reported group needs at least 40).
 race_pos = d.groupby("race3")[["L_comb", "L_A1c"]].sum()
+# Sensitivity labels SL1-SL7 from the executable label definitions.
 sl = L.sensitivity_labels(d)
+# C1 evidence: share of the union each instrument misses, plus the agreement statistics from §5.1.
 c1 = {"self_missed": miss_self / n_comb, "a1c_missed": miss_a1c / n_comb, "kappa": unw["kappa"], "pa": unw["pa"], "na": unw["na"]}
 gate = pd.DataFrame([
     {"criterion": "C1 descriptive evidence: each single instrument misses a material share of the union",
@@ -920,8 +1074,11 @@ gate = pd.DataFrame([
      "verdict": "PASS (borderline negative + flagged; SL3 as sensitivity)"},
 ])
 display(gate)
+# Hard gate: C2 clean, >= 500 positives, >= 40 per race group under L_comb and for NH Asian under L_A1c.
 assert c2_bad.empty and n_comb >= 500 and race_pos["L_comb"].min() >= 40 and race_pos.loc["NH Asian", "L_A1c"] >= 40
+# C4: the borderline-positive label SL3 must keep its frozen positive count.
 assert int(sl["SL3"].sum()) == 1148
+# Cross-check C1 against the §5.1 reference shares.
 close(c1["self_missed"], 0.157, 0.001, "C1 self missed"); close(c1["a1c_missed"], 0.257, 0.001, "C1 A1c missed")
 gate.to_csv(OUT / "l2_gate.csv", index=False)
 
@@ -931,45 +1088,65 @@ gate.to_csv(OUT / "l2_gate.csv", index=False)
 # the code cannot drift apart.
 
 # %%
+# Recompute the frozen definitions (3x3 strata, E-SCREEN, SL1-SL5) and compare them with
+# governance/label_freeze.md.
+# Asserts the counts and the document's JSON block, records its SHA-256; writes the strata figure and CSV.
 strata = L.strata_counts(d)
+# E-SCREEN population: adults without a self-reported diagnosis, target = HbA1c >= 6.5.
 esc = d[d["in_escreen"] == 1]
 esc_counts = {"n": len(esc), "positives": int(esc["y_escreen"].sum()), "negatives": int((esc["y_escreen"] == 0).sum()),
               "borderline_in_escreen": int(esc["borderline"].sum()),
               "borderline_positive": int(((esc["borderline"] == 1) & (esc["y_escreen"] == 1)).sum())}
 print("3x3 evaluation strata:", strata)
 print("E-SCREEN:", esc_counts)
+# Guard: stratum counts equal the frozen values.
 assert strata == {"D_uncontrolled": 569, "D_controlled": 250, "Undiagnosed": 152, "NonDiabetic": 4759}
 assert esc_counts["positives"] == 152 and esc_counts["borderline_positive"] == 36
 
+# Fasting-subsample mask (SL5 uses fasting plasma glucose, which is measured only there).
 fm = L.fasting_mask(d)
+# SL1-SL5 with definition and the weight matching each sample (WTPH2YR; the fasting weight for SL5).
 sl_rows = []
 for col, desc, wcol in [("SL1", "L_A1c only", WT), ("SL2", "L_self only", WT), ("SL3", "borderline counted positive", WT),
                         ("SL4", "treatment-aware (A1c or treated self-report, DIQ070 universe)", WT),
                         ("SL5", "NCHS: self-report or A1c>=6.5 or FPG>=126, fasting subsample", C.WEIGHT_FASTING)]:
+    # Weighted prevalence per sensitivity label; the label is attached as a temporary column _y.
     w = S.weighted_prop(d.assign(_y=sl[col]), "_y", weight=wcol)
     sl_rows.append({"label": col, "definition": desc, "n": int(sl[col].notna().sum()), "positives": int(sl[col].sum()),
                     "prev_unweighted": sl[col].mean(), "weight": wcol, "w_prev": w["est"], "w_ci_low": w["ci_low"], "w_ci_high": w["ci_high"]})
 sl_tab = pd.DataFrame(sl_rows)
 print(sl_tab.round(3).to_string(index=False))
+# DIQ070 universe: respondents asked about diabetes pills; pills of non-diagnosed people are not counted
+# (SL4).
 univ = L.diq070_universe(d)
+# Who reports pills: mostly diagnosed; the borderline and prediabetes pill takers motivate the universe
+# restriction.
 pills_by_status = d[d["DIQ070"].eq(1)].groupby(d["DIQ010"].map({1: "diagnosed", 2: "no (told prediabetes)", 3: "borderline"})).size()
 print("DIQ070 = 1 by DIQ010:", pills_by_status.to_dict(), f"; DIQ070 universe n = {int(univ.sum())}")
 SLT = sl_tab.set_index("label")
+# Guard: SL positives equal the frozen counts; the SL5 count is computed (fasting subsample).
 assert SLT["positives"].tolist() == [721, 819, 1148, 886, int(SLT.loc["SL5", "positives"])]
 assert pills_by_status.to_dict() == {"borderline": 44, "diagnosed": 592, "no (told prediabetes)": 41}
+# SL5 mirrors the NCHS definition, so its weighted prevalence should land near the published figure (15.8 %).
 close(SLT.loc["SL5", "w_prev"], 0.158, 0.006, "SL5 vs NCHS DB516 15.8%")
 
+# Governance document vs code: parse the JSON block of label_freeze.md and compare it with recomputed counts.
 freeze_path = C.GOVERNANCE_DIR / "label_freeze.md"
 freeze_text = freeze_path.read_text(encoding="utf-8")
+# The document stores its counts in a fenced json block; take the text between the first fence pair.
 frozen = json.loads(freeze_text.split("```json")[1].split("```")[0])
 computed = {"N": len(d), "L_comb": n_comb, "L_self": int(d["L_self"].sum()), "L_A1c": int(d["L_A1c"].sum()),
             "strata_3x3": strata, "escreen_positives": esc_counts["positives"], "escreen_negatives": esc_counts["negatives"],
             "escreen_borderline_positive": esc_counts["borderline_positive"],
             "SL_positives": {k: int(v) for k, v in SLT["positives"].items()}, "SL5_n": int(SLT.loc["SL5", "n"])}
+# Guard: document and code cannot drift apart; on mismatch the message lists the differing keys.
 assert frozen == computed, {k: (frozen.get(k), v) for k, v in computed.items() if frozen.get(k) != v}
+# The document's hash is stored with the results so that later edits are detectable.
 freeze_sha = hashlib.sha256(freeze_path.read_bytes()).hexdigest()
 print(f"label_freeze.md counts match the code; SHA-256 {freeze_sha[:16]}…")
 
+# Figure: stacked bar of the three positive strata (diagnosed uncontrolled, diagnosed controlled,
+# undiagnosed).
 fig, ax = plt.subplots(figsize=(8, 2.6))
 cols = [plots.PALETTE[5], plots.PALETTE[0], plots.PALETTE[2]]
 left = 0
@@ -987,6 +1164,7 @@ plots.savefig(fig, "S5_label_strata", caption="Composition of the 971 L_comb pos
               "D_uncontrolled 569, D_controlled 250, Undiagnosed 152 (= E-SCREEN positives).")
 plt.show()
 
+# Persist the table, then collect results and register the findings.
 sl_tab.to_csv(OUT / "sensitivity_labels.csv", index=False)
 RES["freeze"] = {"target": "L_comb = (DIQ010 == 1) | (LBXGH >= 6.5)", "N": len(d), "gate": gate.set_index("criterion")["verdict"].to_dict(),
                  "gate_posthoc": True, "strata_3x3": strata, "escreen": esc_counts,
@@ -1033,16 +1211,23 @@ register("DR-S5-10", "sensitivity_labels",
 # `results/metrics_S5.json` are written at the end.
 
 # %%
+# Hypothesis status (§5.9): check H1a, H4a and H4b against their pre-stated rules and read their prior
+# exposure.
+# Reads RD, RO, gain_diff, psu_diff and bmi_dm; asserts all three verdicts and the pre-registration status.
 from statsmodels.stats.proportion import confint_proportions_2indep
 
+# H4a: difference in the share with BMI < 25 between Asian and White diabetics.
 ka, na_ = int(bmi_dm.loc["NH Asian", "bmi_lt25"]), int(bmi_dm.loc["NH Asian", "diabetics_with_bmi"])
 kw, nw = int(bmi_dm.loc["NH White", "bmi_lt25"]), int(bmi_dm.loc["NH White", "diabetics_with_bmi"])
+# Newcombe hybrid-score interval for a difference of two independent proportions (suited to small counts).
 h4a_lo, h4a_hi = confint_proportions_2indep(ka, na_, kw, nw, method="newcomb", compare="diff")
 h4a = ka / na_ - kw / nw
+# Survey-weighted version of the same difference via the jackknife risk difference, as a cross-check.
 rd_bmi = risk_difference(d.assign(bmi_lt25=(d["BMXBMI"] < 25).astype(float).where(d["BMXBMI"].notna())), "bmi_lt25",
                          ((d["RIDRETH3"] == 6) & (d["L_comb"] == 1)).to_numpy(), ((d["RIDRETH3"] == 3) & (d["L_comb"] == 1)).to_numpy())
 g_as, g_wh = RO.loc[("NH Asian", "WHtR − BMI (paired)")], RO.loc[("NH White", "WHtR − BMI (paired)")]
 rd_un = RD.loc["uninsured - insured"]
+# One row per hypothesis: estimate, pre-stated decision rule and verdict.
 hyp = pd.DataFrame([
     {"hyp_id": "H1a", "estimate": f"RD uninsured - insured {rd_un['rd_pp']:+.1f} pp ({rd_un['ci_low_pp']:.1f}, {rd_un['ci_high_pp']:.1f})",
      "rule": "lower CI bound > 0", "verdict": "supported" if rd_un["ci_low_pp"] > 0 else "inconclusive",
@@ -1050,6 +1235,7 @@ hyp = pd.DataFrame([
     {"hyp_id": "H4a", "estimate": f"BMI<25 among diabetics, Asian - White {100 * h4a:+.1f} pp (Newcombe {100 * h4a_lo:.1f}, {100 * h4a_hi:.1f}); "
                                   f"weighted {100 * rd_bmi['est']:+.1f} pp (JK {100 * rd_bmi['ci_low']:.1f}, {100 * rd_bmi['ci_high']:.1f})",
      "rule": "difference >= 20 pp with CI above 20 pp",
+     # Supported if the lower CI bound reaches 20 pp; inconclusive if only the point estimate does.
      "verdict": "supported" if h4a_lo >= 0.20 else ("inconclusive" if h4a >= 0.20 else "refuted"),
      "note": "47 Asian diabetics with BMI: exploratory"},
     {"hyp_id": "H4b", "estimate": f"WHtR - BMI gain Asian {g_as['auc']:+.3f} ({g_as['ci_low']:.3f}, {g_as['ci_high']:.3f}) vs "
@@ -1057,10 +1243,13 @@ hyp = pd.DataFrame([
                                   f"(person {gain_diff.quantile(.025):+.3f}, {gain_diff.quantile(.975):+.3f}; "
                                   f"PSU {np.quantile(psu_diff, .025):+.3f}, {np.quantile(psu_diff, .975):+.3f})",
      "rule": "Asian gain larger and CIs not fully overlapping",
+     # H4b needs a larger Asian gain, CIs that do not fully overlap and a PSU-bootstrap difference interval
+     # above 0.
      "verdict": "supported" if (g_as["auc"] > g_wh["auc"] and g_as["ci_low"] > g_wh["ci_low"] and np.quantile(psu_diff, .025) > 0) else "inconclusive",
      "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"},
 ])
 display(hyp)
+# Guard: all three hypotheses must be supported.
 assert hyp["verdict"].tolist() == ["supported", "supported", "supported"]
 hyp.to_csv(OUT / "hypothesis_checks.csv", index=False)
 RES["hypotheses"] = hyp.set_index("hyp_id").to_dict("index")
@@ -1073,8 +1262,10 @@ _rows = [ln.split("|") for ln in (C.GOVERNANCE_DIR / "hypotheses.md").read_text(
          if ln.startswith("| H") and not ln.startswith("| hyp_id")]
 prior = {r[1].strip(): r[9].strip() for r in _rows if len(r) > 10}
 display(pd.Series(prior, name="prior_exposure").to_frame().T)
+# prior_exposure == 'none' marks genuinely pre-registered tests.
 genuine = sorted(h for h, p in prior.items() if p == "none")
 print("genuinely pre-registered (prior_exposure = none):", genuine)
+# Guard: the pre-registered tests are H2b, H2c and H3, while H2a had already been seen.
 assert {"H2b", "H2c", "H3"} <= set(genuine) and prior.get("H2a") == "analysis_seen"
 
 # %% [markdown]
@@ -1085,9 +1276,12 @@ assert {"H2b", "H2c", "H3"} <= set(genuine) and prior.get("H2a") == "analysis_se
 # are H2b, H2c and H3 in §7–§8; H2a (leakage gate) is `analysis_seen` and the WHtR arm P14 is `descriptive_seen`.
 
 # %%
+# Write the decision register and the section's metrics JSON (via results_io).
+# Output: register rows sorted by id; the register CSV is written with LF line endings.
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
 reg_path = C.GOVERNANCE_DIR / "register" / "S5.csv"
 reg_path.parent.mkdir(parents=True, exist_ok=True)
+# lineterminator='\n' keeps the CSV byte-identical across Windows and Linux (stable hash).
 reg_df.to_csv(reg_path, index=False, lineterminator="\n")
 R.save_section("S5", RES)
 print(f"{len(reg_df)} register rows -> {reg_path.relative_to(C.ROOT).as_posix()}; results -> results/metrics_S5.json")
