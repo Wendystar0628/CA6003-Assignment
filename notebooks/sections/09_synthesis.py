@@ -18,6 +18,10 @@
 # effect whose CI excludes 0 and that is stable under §9's checks, **E3** moderate effect or sensitive to a
 # choice, **E4** exploratory. The wording of a claim follows its grade: E1 *confirms*, E2 *shows*, E3 *is
 # consistent with*, E4 *suggests*. Statements say *association*, never *cause*.
+#
+# Run modes. Numbers quoted in the text cells are those of the FINAL run (5 × 5 CV, B = 1,000) stored with this
+# notebook. A FAST re-run prints its own values in the code cells; they can differ in the third decimal and, for
+# the borderline items listed in limitation L12, in a sub-verdict.
 
 # %%
 import sys, pathlib
@@ -569,7 +573,7 @@ HEAD_LINES = [
 if HO_OK:
     s_all, s_scr = HOM.loc[("S", 1, "E-ALL"), "roc_auc"], HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"]
     HEAD_LINES.append(("one-shot hold-out: same gap for arm S", f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f})"))
-print("\nHEADLINE – whole-sample AUC measures recognition of known diabetes, not screening; independent evidence lines:")
+print("\nHEADLINE – whole-sample AUC measures recognition of known diabetes, not screening; distinct evidence lines:")
 for a, b in HEAD_LINES:
     print(f"   - {a}: {b}")
 S10["headline"] = dict(finding="Whole-sample AUC measures recognition of known diabetes, not screening",
@@ -1243,7 +1247,7 @@ reg = pd.DataFrame([
          decision="Report H2b as underpowered on AUC, refuted on Brier by class weights alone, borderline on stability; no verdict change",
          alternatives_rejected="calling S equivalent or better", hyp_id="H2b", check_verdict="PASS", check_note=""),
     dict(dr_id="DR-S10-06", type="headline", finding="One non-obvious headline finding is needed (HR1)",
-         evidence_ref="§10.6; figures/S10_recognition_vs_screening.png", evidence_value=f"{len(HEAD_LINES)} independent evidence lines; gap {sw(hl['eall_minus_escreen_S_T1'])}",
+         evidence_ref="§10.6; figures/S10_recognition_vs_screening.png", evidence_value=f"{len(HEAD_LINES)} distinct evidence lines (§7, §8, hold-out); gap {sw(hl['eall_minus_escreen_S_T1'])}",
          decision="Headline: whole-sample AUC measures recognition of known diabetes, not screening", alternatives_rejected="leak gate (expected once the rule is stated); Asian TPR gap (exploratory)",
          hyp_id="H2c", check_verdict="PASS", check_note=""),
     dict(dr_id="DR-S10-07", type="claims", finding="Claims need grades, falsifiers and a wording rule",
