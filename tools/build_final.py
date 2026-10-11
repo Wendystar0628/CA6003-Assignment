@@ -504,27 +504,30 @@ def team_table(rows: list[list[str]], header: list[str]) -> str:
     return "\n".join(lines)
 
 
-def group_md(team: dict) -> str:
+def title_md(team: dict, run: str) -> str:
+    facts = [["Group", team["group_number"]],
+             ["Members", ", ".join(m["name"] for m in team["members"]) + " (roles under *Team and contributions*)"],
+             ["Video (public YouTube)", team["video_url"]],
+             ["Data", "NHANES August 2021 – August 2023 public-use files (CDC/NCHS), 16 files, verified by SHA-256"],
+             ["Models", "L2 logistic regression with splines; depth-3 decision tree; no LLM or complex model in the pipeline"],
+             ["Outputs", run]]
+    return (f"# {TITLE}\n\n"
+            "**CA6003 Best Practices in Data Governance, Preparation and Analytics** · NTU MSc AI · group project\n\n"
+            "A data-centric study of adult diabetes identification. Machine learning is used as *evidence about the data*, "
+            "not as the goal: basic interpretable models measure what data-preparation and labelling decisions change.\n\n"
+            + team_table(facts, ["Item", "Entry"]))
+
+
+def team_md(team: dict) -> str:
     open_items = bool(FILL_RE.search(json.dumps(team, ensure_ascii=False)))
-    note = ("> **To the team:** every **[TEAM TO FILL: …]** entry (group, members, video, contributions, the GenAI verification "
-            "lines and the *Section lead* line under each § heading) must be completed before submission. Edit "
-            "`notebooks/final/team.json` and run `tools/build_final.py --fill-team <notebook>` (code cells and outputs are kept), "
-            "or edit the markdown directly; `tools/build_final.py --validate-only <notebook>` lists what is left.\n\n") if open_items else ""
-    return ("## Group, members and video\n\n" + note
-            + team_table([["Group number", team["group_number"]],
-                          ["Video (public YouTube; group number in the title)", team["video_url"]],
-                          ["Notebook", f"`{OUT_NAME}`, the only code deliverable; it recreates everything it needs"]],
-                         ["Item", "Entry"])
-            + "\n\n" + team_table([[m["name"], m["matric"], m["role"]] for m in team["members"]],
-                                  ["Member", "Matric no.", "Role"]))
-
-
-def contribution_md(team: dict) -> str:
-    return ("## Contribution table\n\n"
-            "Sections each member led and reviewed, the decisions in the register they are responsible for (Appendix A.1, "
-            "ids `DR-Sk-nn`), their video segment and the evidence they checked. Every § heading also names its lead.\n\n"
-            + team_table([[m["name"], m["sections_led"], m["decisions"], m["video_segment"], m["verified"]] for m in team["members"]],
-                         ["Member", "Sections led (reviewed)", "Decisions", "Video segment", "Verified"])
+    note = ("> **To the team:** complete every **[TEAM TO FILL: …]** entry before submission: edit "
+            "`notebooks/final/team.json`, run `tools/build_final.py --fill-team <notebook>` (only markdown changes), "
+            "then `--validate-only <notebook>` to list what is left.\n\n") if open_items else ""
+    return ("## Team and contributions\n\n" + note
+            + team_table([[m["name"], m["matric"], m["role"], m["sections_led"], m["video_segment"]] for m in team["members"]],
+                         ["Member", "Matric no.", "Role", "Leads (reviews)", "Video"])
+            + "\n\n" + team_table([[m["name"], m["decisions"], m["verified"]] for m in team["members"]],
+                                    ["Member", "Decisions (register, Appendix A.1)", "Verified"])
             + ("\n\n" + team["verification_note"] if team.get("verification_note") else "")
             + ("\n\n**How the work was shared.**\n\n" + "\n".join(f"- {x}" for x in team["collaboration"])
                if team.get("collaboration") else ""))
@@ -605,7 +608,7 @@ def summary_md() -> tuple[str, int]:
         f"{float(g('S5', rd + '.ci_high_pp')):.1f}) more often undiagnosed.\n\n"
         f"**Minimal vs systematic, same L2 logistic regression:** ΔAUC {a('S7', 'headline.S_minus_M1_T1_eall.est', True)} "
         f"{ci('S7', 'headline.S_minus_M1_T1_eall')}, {v('S10', 'h2b.subs.(a) AUC.verdict')} (margin ±0.01); "
-        f"Brier {v('S10', 'h2b.subs.(b) Brier.verdict')} ({a('S10', 'h2b.subs.(b) Brier.est', True)}) through class weights "
+        f"Brier worsens ({a('S10', 'h2b.subs.(b) Brier.est', True)}, {v('S10', 'h2b.subs.(b) Brier.verdict')}) from class weights "
         f"(without them ΔAUC {a('S10', pp.format('roc_auc'), True)}, ΔBrier {a('S10', pp.format('brier'), True)}).\n\n"
         f"**One-shot hold-out (n = {n('S9', 'holdout.log.n_test')}):** leak gate "
         f"{a('S9', 'holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est', True)}; recognition gap of the same direction and size "
@@ -628,114 +631,71 @@ def word_count(markdown: str) -> int:
 
 # Brief requirement -> where it is satisfied. @@H:<n>/<title prefix>@@ tokens become links after assembly (resolve_links).
 CHECKLIST = [
-    ("Non-obvious pattern found by systematic profiling / EDA",
-     "@@H:3/Cost of a blanket recode@@ (blanket recode deletes HbA1c 7.0 % and 9.0 %); @@H:7/Leak gate@@ (imputed age at diagnosis as a label code); @@H:5/Treatment masking@@"),
-    ("Profiling, cleaning, validation, transformation",
-     "§2–§3 (@@H:3/XPT read artefact@@, @@H:3/Data-quality dimension matrix@@); @@H:6/Step catalogue@@"),
-    ("Bias, outliers and integrity: cause, mitigation, impact",
-     "@@H:3/Outliers@@; @@H:5/Who is undiagnosed@@; @@H:5/BMI as a biased measurement@@; @@H:8/3 × 3 label matrix@@; @@H:8/WHtR measurement fix@@"),
-    ("EDA fallacies (correlation vs causation, Simpson's paradox)",
-     "@@H:4/Insurance@@; @@H:4/Simpson scan@@; @@H:4/Causal structure@@"),
-    ("Redundancy, multicollinearity, skewness",
-     "@@H:4/Redundancy and collinearity@@; @@H:4/Skewness@@"),
-    ("Minimal vs systematic preparation, same basic model",
-     "@@H:6/Arms@@; @@H:7/Cumulative path@@; @@H:7/Leave-one-block-out@@; @@H:10/Hypothesis scoreboard@@ (H2b)"),
-    ("Basic interpretable models only",
-     "@@H:7/Data-justified model choice@@: L2 logistic regression and a depth-3 decision tree"),
-    ("Improvements and deteriorations explained",
-     "@@H:10/Improvements and deteriorations@@; @@H:10/What the ML evidence says@@"),
-    ("Data governance: DUA, minimisation, pre-registration",
-     "@@H:1/Data user agreement@@; @@H:1/Data minimisation@@; @@H:6/Hypotheses and pre-registration lock@@"),
-    ("GenAI declaration (tool, purpose, verification)",
-     "@@A:Generative-AI declaration~Generative-AI declaration@@; @@A:A.7 Generative-AI use log~Appendix A.7@@"),
-    ("Reproducibility",
-     "@@H:0/Self-contained workspace@@; @@H:0/Run mode@@; @@A:A.5 Reference check (FINAL_REF)~Appendix A.5@@; @@A:A.6 Build record~A.6@@"),
+    ("Non-obvious finding from profiling / EDA", "@@H:3/Cost of a blanket recode@@; @@H:7/Leak gate@@"),
+    ("Profiling, cleaning, validation, transformation", "@@H:3/Data-quality dimension matrix@@; @@H:6/Step catalogue@@"),
+    ("Bias, outliers, integrity: cause, mitigation, impact", "@@H:3/Outliers@@; @@H:5/Who is undiagnosed@@; @@H:8/3 × 3 label matrix@@"),
+    ("EDA fallacies (correlation vs causation, Simpson)", "@@H:4/Simpson scan@@; @@H:4/Causal structure@@"),
+    ("Redundancy, multicollinearity, skewness", "@@H:4/Redundancy and collinearity@@; @@H:4/Skewness@@"),
+    ("Minimal vs systematic, same basic model", "@@H:7/Cumulative path@@; @@H:10/Hypothesis scoreboard@@"),
+    ("Improvements and deteriorations explained", "@@H:10/Improvements and deteriorations@@"),
+    ("Governance: DUA, minimisation, pre-registration", "@@H:1/Data user agreement@@; @@H:6/Hypotheses and pre-registration lock@@"),
+    ("GenAI declaration", "@@A:Generative-AI declaration~below@@; @@A:A.7 Generative-AI use log~Appendix A.7@@"),
+    ("Reproducibility", "@@H:0/Self-contained workspace@@; @@A:A.5 Reference check (FINAL_REF)~Appendix A.5@@"),
 ]
 
 # Marker's path: the subsections that carry the argument, in reading order.
 MARKERS_PATH = [
-    ("3/Cost of a blanket recode", "non-obvious profiling finding: a routine recode deletes valid HbA1c values"),
-    ("3/Data-quality dimension matrix", "quality verdict per dimension"),
-    ("4/External anchor", "replication of the official NCHS prevalence estimates"),
-    ("4/Simpson scan", "fallacy scan: sign flips come from mediators"),
-    ("5/Treatment masking", "self-report and HbA1c disagree because treatment works"),
-    ("5/Who is undiagnosed", "access to care decides who carries a diagnosis"),
-    ("6/Hypotheses and pre-registration lock", "hypotheses locked before any ablation result"),
-    ("7/Leak gate", "minimal arm with and without inadmissible items (treatment, diagnosis history, glucose testing)"),
-    ("7/E-ALL vs E-SCREEN", "recognition vs screening"),
-    ("8/3 × 3 label matrix", "the training label decides who is missed"),
-    ("9/One-shot hold-out", "untouched test set after the experiment freeze"),
+    ("3/Cost of a blanket recode", "a routine recode deletes valid HbA1c values (profiling finding)"),
+    ("4/Simpson scan", "which sign flips are real and which are mediator artefacts"),
+    ("5/Treatment masking", "self-report and HbA1c disagree"),
+    ("7/Leak gate", "inadmissible items inflate AUC; the tree splits on an imputed age-at-diagnosis constant"),
+    ("7/E-ALL vs E-SCREEN", "recognition of known cases vs screening value"),
+    ("8/3 × 3 label matrix", "who is missed under each label; the undiagnosed are hardest whatever the label"),
     ("10/Hypothesis scoreboard", "every verdict, including refuted and inconclusive"),
     ("10/Improvements and deteriorations", "what each preparation block helped or hurt"),
 ]
 
 
-def reading_guide_md() -> str:
-    path = md_table([[str(i), f"@@H:{p}@@", why] for i, (p, why) in enumerate(MARKERS_PATH, 1)], ["#", "Subsection", "Why read it"])
-    return (
-        "## Reading guide\n\n"
-        f"**Marker's path.** The {len(MARKERS_PATH)} subsections that carry the argument, in reading order:\n\n" + path + "\n\n"
-        "- **Structure.** §0 prepares the workspace and checks the environment; §1 states the question and the governance rules; §2 checks "
-        "provenance, specification and minimisation and §3 audits data quality; §4–§10 follow the data lifecycle (EDA and fallacies, labels "
-        "and bias, preparation design, experiments, fairness, robustness, synthesis). "
-        "The appendix holds the merged decision register, the pre-registration text, the references and the GenAI log.\n"
-        "- **Stage names.** “Stage Sk” in file names, decision ids (`DR-Sk-nn`) and figure names is §k of this notebook.\n"
-        "- **Every analysis step has three parts:** a *Why* paragraph (the question and the method), the code, and a *So what* paragraph "
-        "(the concrete numbers that code printed and what they mean). Each number in the text is produced by a code cell and asserted.\n"
-        "- **Numbering.** Headings are `§N` (section) and `N.M` (item). Cross-references such as “§6.5” point to these headings.\n"
-        "- **Independent sections.** Each section starts from a clean namespace (`new_section()`), re-loads the cohort and reads upstream results from `results/`, "
-        "so it can be re-run on its own after §0.\n"
-        "- **Collapsed cells.** The cells in §0.0 that write the helper modules and inputs are collapsed; they are verbatim copies of the project files.\n"
-        "- **Decision register.** Decisions are labelled `DR-Sk-nn` in the text and listed in full in Appendix A.1 with evidence and self-check verdicts.\n"
-        "- **Verdict vocabulary.** Hypotheses end as *supported*, *refuted*, *equivalent*, *inconclusive* or *mixed*; the margins (SESOI) were fixed in advance.")
+def run_line(mode, seconds=None, cores=None) -> str:
+    """One line on the stored outputs (mode, measured runtime) for the title table."""
+    if not mode:
+        return "none stored: run top to bottom (default `NB_MODE=FAST`, about 5 min; `NB_MODE=FINAL` about 25 min)"
+    t = ""
+    if seconds:
+        t = f", {int(seconds // 60)} min {seconds % 60:02.0f} s" + (f" on {cores} logical cores" if cores else "")
+    return f"stored from a full {mode} run{t}; a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)"
 
 
-LAPTOP_NOTE = ("On a 4–8-core laptop expect roughly 10–25 min in FAST mode and 1–3 h in FINAL mode (scaled from the number of parallel "
-               "workers, not measured).")
+def guide_md() -> str:
+    path = "\n".join(f"{i}. @@H:{p}@@ – {why}" for i, (p, why) in enumerate(MARKERS_PATH, 1))
+    return ("## How to read and run\n\n"
+            f"**Marker's path** – the {len(MARKERS_PATH)} subsections that carry the argument:\n\n" + path + "\n\n"
+            "- **Each step** has a *Why* paragraph, the code, and a *So what* paragraph with the numbers that code printed; "
+            "every quoted number is asserted.\n"
+            "- **Labels.** `§N.M` are headings; `DR-Sk-nn` are decisions (Appendix A.1), Stage Sk = §k; verdicts are "
+            "*supported*, *refuted*, *equivalent*, *inconclusive* or *mixed* against margins fixed in advance.\n"
+            "- **Running.** Python 3.12 with the pinned packages (§0.1). The notebook writes only to a `ca6003_workspace/` "
+            "folder next to it and downloads the raw files from the CDC (about 12 MB, hash-checked) if no local copy exists.\n\n"
+            "**Contents** (§0–§10 and Appendix A)\n\n@@TOC@@")
 
 
-def run_mode_md(args, runtime_marker: str) -> str:
-    sizes = ("5×5 repeated cross-validation, B = 1,000 bootstrap replicates, 500 coefficient-bootstrap replicates, 100 label "
-             "permutations (§9) and 200 group permutations (§8)")
-    fast = ("5×2 CV, B = 100, 30 coefficient-bootstrap replicates in §7 and §9, 20 label permutations; the 200 group "
-            "permutations of §8 are the same in both modes")
-    if args.mode == "FINAL" and args.execute:
-        mode_text = (f"**Stored outputs: FINAL mode** (`NB_MODE=FINAL`: {sizes}). Re-running with the default `NB_MODE=FAST` ({fast}) "
-                     "reproduces every figure and table with wider Monte-Carlo error; the asserted reference values (Appendix A.5) hold in both modes.")
-    elif args.execute:
-        mode_text = (f"**Stored outputs: FAST mode** (`NB_MODE=FAST`, the default: {fast}). "
-                     f"Set the environment variable `NB_MODE=FINAL` before starting Jupyter to run the full protocol ({sizes}).")
-    else:
-        mode_text = (f"**This file has no stored outputs.** Run it top to bottom. The default mode is FAST ({fast}); "
-                     f"set `NB_MODE=FINAL` before starting Jupyter for the full protocol ({sizes}).")
-    return ("## Run mode and runtime\n\n" + mode_text + " Every size per mode is listed in @@H:0/Run mode@@.\n\n"
-            "The notebook needs Python 3.12 with the packages pinned in the requirements shown in §0.1, and internet access only if the "
-            "raw files are not already in a `data/nhanes_2021_2023/raw/` folder above the notebook (then about 13 MB are downloaded from the CDC site and verified by SHA-256). "
-            "It creates a `ca6003_workspace/` folder next to the notebook and writes nothing outside it.\n\n"
-            + runtime_marker + "\n\n" + LAPTOP_NOTE)
+FRONT_TAGS = {"front-title", "front-summary", "front-checklist", "front-team", "front-genai", "front-guide",
+              "front-group", "front-contrib", "front-runmode", "toc"}          # the last four: earlier layouts
 
 
-def front_matter(args, n_sections: int, runtime_marker: str) -> tuple[list, dict]:
+def front_matter(args, n_sections: int, run: str) -> tuple[list, dict]:
     team = load_team()
     summary, n_words = summary_md()
     cells = [
-        md(f"# {TITLE}\n\n"
-           "**CA6003 Best Practices in Data Governance, Preparation and Analytics** · NTU MSc AI · group project\n\n"
-           "A data-centric study of adult diabetes identification with the public NHANES August 2021 – August 2023 files. "
-           "Machine learning is used as *evidence about the data*, not as the goal: only basic interpretable models "
-           "(L2 logistic regression with splines, a shallow decision tree) are used, and the question is what data-preparation "
-           "decisions change. **There is no LLM or complex model anywhere in the analysis pipeline.**", tags=["front-title"]),
+        md(title_md(team, run), tags=["team", "front-title"]),
         md(summary, tags=["front-summary"]),
         md("## Brief requirements and where they are met\n\n"
            + md_table([[r, w] for r, w in CHECKLIST], ["Requirement (assignment brief)", "Where"]), tags=["front-checklist"]),
-        md(group_md(team), tags=["team", "front-group"]),
-        md(contribution_md(team), tags=["team", "front-contrib"]),
+        md(team_md(team), tags=["team", "front-team"]),
         md(genai_md(team), tags=["team", "front-genai"]),
-        md(reading_guide_md(), tags=["front-guide"]),
-        md(run_mode_md(args, runtime_marker), tags=["front-runmode"]),
-        md("## Contents\n\n@@TOC@@", tags=["toc"]),
+        md(guide_md(), tags=["front-guide"]),
     ]
-    stats = {"summary_words": n_words, "genai_words": word_count(cells[5].source)}
+    stats = {"summary_words": n_words, "genai_words": word_count(cells[4].source)}
     return cells, stats
 
 
@@ -816,7 +776,7 @@ def resolve_links(cells: list, partial: bool) -> list[str]:
     return problems
 
 
-RUNTIME_PLACEHOLDER = "*Runtime table: filled in when the notebook is executed by `tools/build_final.py --execute`.*"
+RUNTIME_PLACEHOLDER = "@@RUNTIME@@"
 
 
 def make_toc(cells: list) -> str:
@@ -834,10 +794,7 @@ def make_toc(cells: list) -> str:
             m2 = re.match(r"^##\s+((?:\d+|A)\.\d+)\s+(.*)$", line)
             if m1:
                 title = f"{m1.group(1)} {m1.group(2)}"
-                lines.append(f"- **[{title}](#{quote(title.replace(' ', '-'), safe='-§–')})**")
-            elif m2:
-                title = f"{m2.group(1)} {m2.group(2)}"
-                lines.append(f"    - [{title}](#{quote(title.replace(' ', '-'), safe='-§–')})")
+                lines.append(f"- [{title}](#{quote(title.replace(' ', '-'), safe='-§–')})")
     return "\n".join(lines)
 
 
@@ -1248,7 +1205,7 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
     appendix = appendix_cells(section_files, section_sha)
     for c in appendix:
         c.metadata["tags"] = ["appendix"] + [t for t in c.metadata.get("tags", []) if t != "appendix"]
-    front, info = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER)
+    front, info = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER if args.execute else run_line(None))
     cells = front + body + appendix
     partial = bool(args.sections)
     info["problems"] = resolve_links(cells, partial)
@@ -1357,15 +1314,12 @@ def slowest_cells(nb, k: int = 12) -> list[str]:
 
 
 def finish_runtime_cell(nb, mode: str, runtimes: dict[str, float], total: float) -> str:
-    def fmt(s):
-        return f"{int(s // 60)} min {s % 60:02.0f} s" if s >= 60 else f"{s:.0f} s"
-    rows = [[k, fmt(v)] for k, v in runtimes.items()] + [["**Total (kernel wall time)**", f"**{fmt(total)}**"]]
-    table = md_table(rows, ["Section", f"Run time, stored outputs ({mode})"])
+    """Write the stored-run line into the title table (per-section times go to build_record.json and runtime_log.md)."""
+    line = run_line(mode, total, os.cpu_count())
     for c in nb.cells:
         if c.cell_type == "markdown" and RUNTIME_PLACEHOLDER in c.source:
-            c.source = c.source.replace(RUNTIME_PLACEHOLDER, table + f"\n\n*Measured on the build machine ({os.cpu_count()} logical "
-                                        "cores; §7–§9 run up to 16 parallel workers); cell timings include model fitting and bootstrap loops.*")
-    return table
+            c.source = c.source.replace(RUNTIME_PLACEHOLDER, line)
+    return line
 
 
 # ----------------------------------------------------------------------------- validation
@@ -1428,7 +1382,7 @@ def fill_team(path: Path) -> int:
     nb = nbformat.read(path, as_version=4)
     before = code_hash(nb)
     team = load_team()
-    render = {"front-group": group_md, "front-contrib": contribution_md, "front-genai": genai_md}
+    render = {"front-team": team_md, "front-genai": genai_md}
     n, problems = 0, []
     for c in nb.cells:
         tags = c.metadata.get("tags", [])
@@ -1450,6 +1404,39 @@ def fill_team(path: Path) -> int:
     left = placeholders(nb)
     print(f"updated {n} markdown cells from {TEAM_FILE.name}; code-cell SHA-256 unchanged ({before[:16]})")
     print(f"{len(left)} placeholders left" + "".join(f"\n   {x}" for x in left))
+    return 1 if problems else 0
+
+
+def stored_run_line() -> str:
+    rec = json.loads((FINAL_DIR / "build_record.json").read_text(encoding="utf-8"))
+    mode = rec.get("stored_outputs_mode")
+    run = (rec.get("runs") or {}).get(mode or "", {})
+    return run_line(mode, run.get("runtime_seconds"), run.get("cores") or run.get("cpu_count"))
+
+
+def refresh_front(path: Path) -> int:
+    """Replace the front matter of an existing (executed) notebook with the current layout and text.
+    Code cells and outputs are untouched (asserted through the code-cell SHA-256)."""
+    nb = nbformat.read(path, as_version=4)
+    before = code_hash(nb)
+    k = 0
+    while k < len(nb.cells) and FRONT_TAGS & set(nb.cells[k].metadata.get("tags", [])):
+        k += 1
+    front, info = front_matter(argparse.Namespace(mode="FINAL", execute=False), 0, stored_run_line())
+    nb.cells = front + nb.cells[k:]
+    problems = resolve_links(nb.cells, partial=False)
+    toc = make_toc(nb.cells)
+    for c in nb.cells:
+        if c.cell_type == "markdown" and "@@TOC@@" in c.source:
+            c.source = c.source.replace("@@TOC@@", toc)
+    if info["summary_words"] > SUMMARY_MAX_WORDS:
+        problems.append(f"summary has {info['summary_words']} words (> {SUMMARY_MAX_WORDS})")
+    assert code_hash(nb) == before, "code cells changed"
+    for p in problems:
+        print("PROBLEM", p)
+    nbformat.write(nb, path)
+    print(f"front matter replaced: {k} old cells -> {len(front)} new cells; code-cell SHA-256 unchanged ({before[:16]})")
+    print("front-matter words:", front_word_counts(nb))
     return 1 if problems else 0
 
 
@@ -1504,6 +1491,8 @@ def main() -> int:
                     "execution counts, size, code-cell hash, remaining team placeholders) and exit")
     ap.add_argument("--fill-team", metavar="NOTEBOOK", help="re-render the team cells and section-lead lines of an existing "
                     "notebook from notebooks/final/team.json (code cells and outputs unchanged) and exit")
+    ap.add_argument("--refresh-front", metavar="NOTEBOOK", help="replace the front matter of an existing notebook with the "
+                    "current layout and text (code cells and outputs unchanged) and exit")
     args = ap.parse_args()
 
     if args.make_final_ref:
@@ -1527,6 +1516,8 @@ def main() -> int:
         return 1 if problems else 0
     if args.fill_team:
         return fill_team(Path(args.fill_team).resolve())
+    if args.refresh_front:
+        return refresh_front(Path(args.refresh_front).resolve())
 
     out = Path(args.out).resolve()
     t0 = time.time()
