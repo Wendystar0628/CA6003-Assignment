@@ -571,20 +571,19 @@ def summary_md() -> tuple[str, int]:
     rd = "undiagnosed_inequality.risk_differences_pp.uninsured - insured"
     text = (
         "## Summary\n\n"
-        "**Question.** Which data-preparation decisions change how a basic, interpretable model identifies adult diabetes, "
-        "and does a high AUC mean a model can find *undiagnosed* cases?\n\n"
-        f"**Cohort.** NHANES August 2021 – August 2023: {n('S1', 'n_cohort')} examined, non-pregnant adults aged 20+ with HbA1c; "
+        "**Question.** What do data-preparation decisions change in a basic, interpretable diabetes model, "
+        "and does a high AUC mean it finds *undiagnosed* cases?\n\n"
+        f"**Cohort.** NHANES 2021–2023: {n('S1', 'n_cohort')} examined, non-pregnant adults aged 20+ with HbA1c; "
         f"{n('S1', 'labels.L_comb')} positive by self-report or HbA1c ≥ 6.5 % (weighted {pct('S1', 'prevalence_comb.weighted')} %, "
         f"95 % CI {pct('S1', 'prevalence_comb.ci_low')}–{pct('S1', 'prevalence_comb.ci_high')}), {n('S1', 'e_screen.positives')} of them undiagnosed.\n\n"
-        "**Findings.**\n\n"
-        f"1. **Recognition, not screening.** The prepared model: AUC {a('S7', 'headline.auc_S_eall_T1')} on all adults, "
+        f"1. **Recognition, not screening.** Prepared model: AUC {a('S7', 'headline.auc_S_eall_T1')} on all adults, "
         f"{a('S7', 'headline.auc_S_escreen_T1')} on adults without a diagnosis (gap {a('S7', 'headline.eall_minus_escreen_S_T1.est', True)} "
-        f"{ci('S7', 'headline.eall_minus_escreen_S_T1')}). Dropping care-contact items lowers the first "
-        f"({a('S7', 'headline.minus_care_eall.est', True)}) and raises the second ({a('S7', 'headline.minus_care_escreen.est', True)}); "
-        f"recall {float(g('S8', 'gap_decomposition.tpr_diagnosed')):.2f} for diagnosed vs "
-        f"{float(g('S8', 'gap_decomposition.tpr_undiagnosed')):.2f} for undiagnosed positives.\n"
-        f"2. **Leakage and naive cleaning.** Treatment items lift AUC from {a('S7', 'headline.auc_M1_eall_T1')} to "
-        f"{a('S7', 'headline.auc_M0_eall_T1')}; a depth-3 tree then splits on age at diagnosis, median-imputed to "
+        f"{ci('S7', 'headline.eall_minus_escreen_S_T1')}). Without care-contact items the first falls "
+        f"({a('S7', 'headline.minus_care_eall.est', True)}), the second rises ({a('S7', 'headline.minus_care_escreen.est', True)}); "
+        f"recall {float(g('S8', 'gap_decomposition.tpr_diagnosed')):.2f} (diagnosed) vs "
+        f"{float(g('S8', 'gap_decomposition.tpr_undiagnosed')):.2f} (undiagnosed).\n"
+        f"2. **Leakage and naive cleaning.** Inadmissible items (treatment, diagnosis history, glucose testing) lift AUC from "
+        f"{a('S7', 'headline.auc_M1_eall_T1')} to {a('S7', 'headline.auc_M0_eall_T1')}; a depth-3 tree splits on age at diagnosis, median-imputed to "
         f"{float(g('S7', 'tree_m0.did040_fill')):.0f} for the {pct('S7', 'tree_m0.did040_missing_share', 0)} % never asked. "
         f"*Non-obvious profiling finding:* a blanket “7/9 = missing” recode deletes {n('S3', 'blanket_recode.valid_cells_destroyed_cohort')} "
         f"valid cells, including HbA1c 7.0 % and 9.0 %, losing {n('S3', 'blanket_recode.a1c_positives_lost')} of "
@@ -594,14 +593,15 @@ def summary_md() -> tuple[str, int]:
         f"HbA1c are {float(g('S5', rd + '.rd_pp')):+.1f} pp ({float(g('S5', rd + '.ci_low_pp')):.1f} to "
         f"{float(g('S5', rd + '.ci_high_pp')):.1f}) more often undiagnosed.\n\n"
         f"**Minimal vs systematic, same L2 logistic regression:** ΔAUC {a('S7', 'headline.S_minus_M1_T1_eall.est', True)} "
-        f"{ci('S7', 'headline.S_minus_M1_T1_eall')}, {v('S10', 'h2b.subs.(a) AUC.verdict')} (equivalence margin ±0.01); "
+        f"{ci('S7', 'headline.S_minus_M1_T1_eall')}, {v('S10', 'h2b.subs.(a) AUC.verdict')} (margin ±0.01); "
         f"Brier {v('S10', 'h2b.subs.(b) Brier.verdict')} ({a('S10', 'h2b.subs.(b) Brier.est', True)}) through class weights "
         f"(without them ΔAUC {a('S10', pp.format('roc_auc'), True)}, ΔBrier {a('S10', pp.format('brier'), True)}).\n\n"
         f"**One-shot hold-out (n = {n('S9', 'holdout.log.n_test')}):** leak gate "
-        f"({a('S9', 'holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est', True)}) and recognition gap (AUC {a('S9', ho.format('E-ALL'))} vs "
-        f"{a('S9', ho.format('E-SCREEN'))}) replicate; {n('S9', 'holdout.n_flag_2se')} of {n('S10', 'holdout.n_rows')} metrics > "
-        "2 SE below cross-validation.\n\n"
-        "*All numbers: stored results, re-asserted in Appendix A.5.*")
+        f"{a('S9', 'holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est', True)}; recognition gap of the same direction and size "
+        f"({a('S9', ho.format('E-ALL') + ' MINUS ' + ho.format('E-SCREEN'), True)} vs {a('S7', 'headline.eall_minus_escreen_S_T1.est', True)}), "
+        f"not separately testable with {n('S9', 'holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos')} screening positives; "
+        f"{n('S9', 'holdout.n_flag_2se')} of {n('S10', 'holdout.n_rows')} metrics > 2 SE below cross-validation.\n\n"
+        "*Numbers re-asserted in Appendix A.5.*")
     return text, word_count(text)
 
 
@@ -1021,6 +1021,8 @@ REF_SPECS = [
     ("summary_holdout_M1_minus_M0", "S9", "holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est", 0, 0),
     ("summary_holdout_n_test", "S9", "holdout.log.n_test", 0, 0),
     ("summary_holdout_rows", "S10", "holdout.n_rows", 0, 0),
+    ("summary_holdout_gap_S", "S9", "holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc MINUS holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc", 0, 0),
+    ("summary_holdout_escreen_positives", "S9", "holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos", 0, 0),
 ]
 FINAL_REF_FILE = FINAL_DIR / "final_ref.json"
 
@@ -1032,7 +1034,11 @@ from IPython.display import display
 FINAL_REF = @@REF@@
 
 def dig(d, path):
-    """Value at a dotted path; a list element is selected with key[field=value&field=value] (values compared as text)."""
+    """Value at a dotted path; a list element is selected with key[field=value&field=value] (values compared as text);
+    'path_a MINUS path_b' is the difference of two values."""
+    if " MINUS " in path:
+        a, b = path.split(" MINUS ")
+        return float(dig(d, a)) - float(dig(d, b))
     for part in re.findall(r"[^.\\[]+(?:\\[[^\\]]*\\])?", path):
         key, _, sel = part.partition("[")
         d = d[key]
@@ -1078,7 +1084,11 @@ def refcheck_cells() -> list:
 
 
 def dig_path(d, path: str):
-    """Same path syntax as `dig` in the notebook cell: dotted keys, list element by key[field=value&field=value]."""
+    """Same path syntax as `dig` in the notebook cell: dotted keys, list element by key[field=value&field=value],
+    'path_a MINUS path_b' for a difference."""
+    if " MINUS " in path:
+        a, b = path.split(" MINUS ")
+        return float(dig_path(d, a)) - float(dig_path(d, b))
     for part in re.findall(r"[^.\[]+(?:\[[^\]]*\])?", path):
         key, _, sel = part.partition("[")
         d = d[key]
