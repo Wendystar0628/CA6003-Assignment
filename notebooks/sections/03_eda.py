@@ -72,20 +72,26 @@ print(f"cohort: {len(coh):,} adults, L_comb positives {int(coh.L_comb.sum())}")
 # 2 PSUs, which leaves only **15 design degrees of freedom** however many people are sampled.
 
 # %%
+# Weights map: which survey weight belongs to which NHANES component, how many cohort rows carry it, and
+# the design degrees of freedom. Reads the cohort; writes the weights map files and OUT['design'].
 WEIGHTS_MAP = pd.DataFrame([
     ("Interview (questionnaires: DIQ, BPQ, HIQ, HUQ, SMQ, PAQ, INQ)", C.WEIGHT_INTERVIEW, "all interviewed", "interview-only descriptives"),
     ("MEC examination (BMX, BPXO)", C.WEIGHT_MEC, "examined", "exam-only descriptives"),
     ("Phlebotomy analytes (GHB = HbA1c, TCHOL, HDL)", C.WEIGHT_PHLEB, "examined + blood drawn", "**cohort analyses (contain HbA1c)**"),
     ("Fasting analytes (GLU, TRIGLY/LDL)", C.WEIGHT_FASTING, "morning fasting subsample, 8–24 h fast", "**DB516 replication, triglycerides, LDL**"),
 ], columns=["component", "weight", "subsample", "used here for"])
+# Count rows with a positive weight per component (zero weight = not part of that subsample).
 WEIGHTS_MAP["positive in cohort"] = [int((coh[w].fillna(0) > 0).sum()) for w in WEIGHTS_MAP.weight]
 display(WEIGHTS_MAP)
 
+# Design structure: PSUs nested in strata; design df = #PSU - #strata.
 design = coh.groupby(C.STRATA)[C.PSU].nunique()
 n_strata, n_psu = design.size, int(design.sum())
 DF_DESIGN = S.design_df(coh)
 print(f"\nstrata = {n_strata}, PSUs = {n_psu}, design df = #PSU - #strata = {DF_DESIGN}")
+# Guard: 15 strata x 2 PSUs = 30 PSUs, hence 15 design df (all full-sample intervals use t with 15 df).
 assert (n_strata, n_psu, DF_DESIGN) == (15, 30, 15)
+# Fasting weight 0 inside the cohort = fasted outside the 8-24 h window or no specimen.
 print(f"fasting rows with WTSAF2YR = 0 (fasted outside 8-24 h or no specimen) inside the cohort: "
       f"{int(((coh.WTSAF2YR == 0)).sum())}")
 
@@ -97,6 +103,7 @@ md = ["# Weights map (S4)", "", md_table(WEIGHTS_MAP), "", rule, "",
       "the domain) - (strata containing the domain) (NCHS rule); df < 8 flagged for review (NCHS)."]
 (S4_DIR / "weights_map.md").write_text("\n".join(md) + "\n", encoding="utf-8")
 WEIGHTS_MAP.to_csv(S4_DIR / "weights_map.csv", index=False)
+# Store the design facts for the section's results file.
 OUT["design"] = {"n_strata": n_strata, "n_psu": n_psu, "df": DF_DESIGN,
                  "n_wtph_pos": int((coh.WTPH2YR > 0).sum()),
                  "n_fasting_pos": int((coh.WTSAF2YR.fillna(0) > 0).sum())}
@@ -115,29 +122,39 @@ OUT["design"] = {"n_strata": n_strata, "n_psu": n_psu, "df": DF_DESIGN,
 # containing the domain).
 
 # %%
+# Validate the jackknife variance engine against Taylor linearisation, on the full sample and on domains.
+# Asserts SE ratios within 2 %; writes OUT['variance_check'] and the Asian-undiagnosed domain df.
 def taylor_se_ratio(df, y, weight, domain=None):
     """Taylor-linearised SE of a weighted domain mean (with-replacement PSU approximation)."""
     yv = df[y].to_numpy(float) if isinstance(y, str) else np.asarray(y, float)
     dm = np.ones(len(df), bool) if domain is None else np.asarray(domain, bool)
+    # Domain estimation by weight zeroing: weight 0 outside the domain and where y is missing.
     w = df[weight].fillna(0).to_numpy(float) * dm * ~np.isnan(yv)
+    # NaN -> 0 is harmless because those rows already have weight 0.
     y0 = np.nan_to_num(yv)
     p = np.dot(w, y0) / w.sum()
+    # Linearised score of the ratio estimator: z_i = w_i (y_i - p) / sum(w).
     z = w * (y0 - p) / w.sum()
+    # Sum scores within each PSU first; the variance comes from PSU totals.
     tot = pd.DataFrame({"h": df[C.STRATA].to_numpy(), "i": df[C.PSU].to_numpy(), "z": z}).groupby(["h", "i"]).z.sum()
     var = 0.0
+    # With-replacement stratified variance: n_h / (n_h - 1) times the squared PSU deviations in each stratum.
     for _, g in tot.groupby(level=0):
         nh = len(g)
         var += nh / (nh - 1) * ((g - g.mean()) ** 2).sum()
     return p, np.sqrt(var)
 
 
+# Four checks: the whole cohort, and three domains of decreasing size (the Asian domain has few PSUs).
 checks = []
 asian = coh.race.eq("NH Asian").to_numpy()
+# L_A1c == 1 = HbA1c >= 6.5 %: the denominator of the 'undiagnosed share'.
 undx_dom = coh.L_A1c.eq(1).to_numpy()
 for name, y, dom in [("L_comb, all adults", "L_comb", None),
                      ("L_comb, NH Asian", "L_comb", asian),
                      ("undiagnosed share, HbA1c>=6.5", "in_escreen", undx_dom),
                      ("undiagnosed share, Asian HbA1c>=6.5", "in_escreen", undx_dom & asian)]:
+    # Jackknife estimate with Korn-Graubard (KG) interval and NCHS presentation flags.
     jk = S.weighted_prop(coh, y, weight=C.WEIGHT_PHLEB, domain=dom)
     p_t, se_t = taylor_se_ratio(coh, y, C.WEIGHT_PHLEB, dom)
     checks.append({"estimate": name, "n": jk["n"], "p": jk["est"], "se_jk": jk["se"], "se_taylor": se_t,
@@ -145,6 +162,7 @@ for name, y, dom in [("L_comb, all adults", "L_comb", None),
                    "kg_high": jk["kg_high"], "flags": ",".join(jk["nchs_flags"]) or "–", "nchs": jk["nchs_status"]})
 checks = pd.DataFrame(checks)
 print(checks.round(4).to_string(index=False))
+# Guard: jackknife and Taylor SEs may differ by at most 2 %, otherwise the variance engine is wrong.
 assert np.allclose(checks.ratio, 1, atol=0.02), "jackknife and Taylor SEs disagree"
 
 # zero-weighting vs dropping rows: identical point estimate, but dropping hides which strata are empty
@@ -170,6 +188,8 @@ OUT["asian_undx_domain_df"] = S.domain_df(coh, undx_dom & asian)
 # mg/dL or HbA1c ≥ 6.5 %); age adjustment to the US 2000 standard (20–39 / 40–59 / 60+). Note the fasting weight.
 
 # %%
+# Replicate NCHS Data Brief 516 (DB516) on the fasting subsample and compare with the published values.
+# Asserts identical n and |difference| <= 0.1 pp; writes the replication table and OUT['db516'].
 # NCHS Data Brief 516, Tables 1-2 (external reference values, transcribed from
 # https://www.cdc.gov/nchs/products/databriefs/db516.htm). Percent (95% CI).
 NCHS = pd.DataFrame([
@@ -191,20 +211,27 @@ NCHS = pd.DataFrame([
     ("undiagnosed", "60+", "crude", 1389, 6.8, 5.3, 8.5),
 ], columns=["measure", "group", "kind", "n_nchs", "nchs", "nchs_low", "nchs_high"])
 
+# DB516 population: positive fasting weight and a glucose result.
 fast = coh.copy()
 fast_dom = (fast[C.WEIGHT_FASTING].fillna(0) > 0) & fast.LBXGLU.notna()
+# diagnosed = self-reported diagnosis; undiagnosed = no diagnosis and FPG >= 126 mg/dL or HbA1c >= 6.5 %
+# (the cut-offs L.FPG_CUT and L.A1C_CUT); total = either.
 fast["diagnosed"] = fast.L_self.astype(float)
 fast["undiagnosed"] = ((fast.L_self == 0) & ((fast.LBXGLU >= L.FPG_CUT) | (fast.LBXGH >= L.A1C_CUT))).astype(float)
 fast["total"] = ((fast.diagnosed == 1) | (fast.undiagnosed == 1)).astype(float)
 fast["All"] = "All"
+# Three NCHS age bands, used for the age-specific rows and for age adjustment.
 fast["age3"] = S.age_band(fast.RIDAGEYR).to_numpy()
 fast["sexg"] = fast.sex.map({"Male": "Men", "Female": "Women"})
 # the SL5 label of labels.py is the same NCHS definition - cross-check
 assert (L.sensitivity_labels(fast)["SL5"][fast_dom] == fast.loc[fast_dom, "total"]).all()
 
+# Collect our estimates in the layout of the NCHS table: overall and by sex (crude and age-adjusted),
+# then by age band (crude).
 rows = []
 for measure in ["total", "diagnosed", "undiagnosed"]:
     for gcol in ["All", "sexg"]:
+        # age_standardise: crude and directly standardised rates with KG and jackknife CIs per group.
         t = S.age_standardise(fast, measure, gcol, weight=C.WEIGHT_FASTING, domain=fast_dom)
         for _, r in t.iterrows():
             rows.append((measure, r.group, "crude", r.n, r.crude, r.crude_kg_low, r.crude_kg_high, r.crude_low, r.crude_high, r.df))
@@ -213,9 +240,12 @@ for measure in ["total", "diagnosed", "undiagnosed"]:
         r = S.weighted_prop(fast, measure, weight=C.WEIGHT_FASTING, domain=fast_dom & (fast.age3 == band))
         rows.append((measure, band, "crude", r["n"], r["est"], r["kg_low"], r["kg_high"], r["ci_low"], r["ci_high"], r["df"]))
 ours = pd.DataFrame(rows, columns=["measure", "group", "kind", "n", "est", "kg_low", "kg_high", "jk_low", "jk_high", "df"])
+# Percent scale, as in the published table.
 ours[["est", "kg_low", "kg_high", "jk_low", "jk_high"]] *= 100
+# Left join keeps every published estimate; a missing replication would show as NaN and fail the asserts.
 DB516 = NCHS.merge(ours, on=["measure", "group", "kind"], how="left")
 DB516["diff_pp"] = DB516.est - DB516.nchs
+# ci_overlap: our KG interval overlaps the published CI. kg_matches: bounds agree to the published 0.1 pp.
 DB516["ci_overlap"] = (DB516.kg_low <= DB516.nchs_high) & (DB516.kg_high >= DB516.nchs_low)
 DB516["kg_matches_nchs_ci"] = ((DB516.kg_low.round(1) - DB516.nchs_low).abs() <= 0.1) & \
                               ((DB516.kg_high.round(1) - DB516.nchs_high).abs() <= 0.1)
@@ -223,8 +253,11 @@ DB516.to_csv(S4_DIR / "db516_replication.csv", index=False)
 print(DB516[["measure", "group", "kind", "n", "n_nchs", "est", "kg_low", "kg_high", "nchs", "nchs_low",
              "nchs_high", "diff_pp"]].round(2).to_string(index=False))
 
+# Guard: same sample sizes as NCHS, so population definition and weights match.
 assert (DB516.n == DB516.n_nchs).all(), "sample sizes differ from NCHS"
+# Guard: every estimate within 0.1 pp (published precision, plus float tolerance) and every CI overlaps.
 assert DB516.diff_pp.abs().max() <= 0.1 + 1e-9 and DB516.ci_overlap.all()
+# Headline rows (all adults) used in the summary lines and in the stored results.
 head = DB516.query("group == 'All'").set_index(["measure", "kind"])
 print(f"\nheadline: total {head.loc[('total','crude'),'est']:.2f}% "
       f"(JK t15 {head.loc[('total','crude'),'jk_low']:.2f}, {head.loc[('total','crude'),'jk_high']:.2f}; "
@@ -241,9 +274,13 @@ print(f"max |diff| over {len(DB516)} published estimates = {DB516.diff_pp.abs().
 # next cell computes that variant so the size of this definitional choice (about 0.01 pp) is visible.
 
 # %%
+# Definitional variant: keep adults without an HbA1c result (treated as not diabetic) to show how much
+# a looser denominator moves the DB516 numbers. Reads the merged files; writes OUT['db516']['variant'].
 full = io.zero_weights_to_nan(io.load_merged())
+# Adults at or above the minimum age, not pregnant, in the fasting subsample; no HbA1c requirement.
 v_dom = (full.RIDAGEYR >= C.ADULT_MIN_AGE) & (full.RIDEXPRG != 1) & (full[C.WEIGHT_FASTING].fillna(0) > 0)
 dx = full.DIQ010.eq(1)
+# A missing HbA1c does not count as high, which is what lets these adults enter as non-diabetic.
 und = ~dx & (full.LBXGLU.ge(L.FPG_CUT) | full.LBXGH.ge(L.A1C_CUT))
 variant = {}
 for nm, y in [("total", dx | und), ("diagnosed", dx), ("undiagnosed", und)]:
@@ -262,11 +299,14 @@ OUT["db516"] = {"n": int(head.loc[("total", "crude"), "n"]),
                 "variant_n2940": variant}
 
 # %%
+# Forest plot of published DB516 values vs our replication (KG intervals), then two register rows.
 fig, axes = plt.subplots(1, 3, figsize=(12, 5.2), sharey=True)
 for ax, measure in zip(axes, ["total", "diagnosed", "undiagnosed"]):
     d = DB516[DB516.measure == measure].reset_index(drop=True)
     labels_ = [f"{g} ({'age-adj.' if k == 'age-adj' else 'crude'})" for g, k in zip(d.group, d.kind)]
+    # y positions run downwards so the first group is plotted at the top.
     yy = np.arange(len(d))[::-1]
+    # Small vertical offsets (+/-0.15) separate the published and replicated markers of the same row.
     ax.errorbar(d.nchs, yy + 0.15, xerr=[d.nchs - d.nchs_low, d.nchs_high - d.nchs], fmt="s", ms=5,
                 color=C.OKABE_ITO["grey"], capsize=2, label="NCHS DB516 (published)")
     ax.errorbar(d.est, yy - 0.15, xerr=[d.est - d.kg_low, d.kg_high - d.est], fmt="o", ms=5,
@@ -274,10 +314,12 @@ for ax, measure in zip(axes, ["total", "diagnosed", "undiagnosed"]):
     ax.set_yticks(yy, labels_)
     ax.set_title(measure.capitalize())
     ax.set_xlabel("Prevalence, % (95% CI)")
+# One shared legend for the three panels.
 h_, l_ = axes[0].get_legend_handles_labels()
 fig.legend(h_, l_, loc="lower center", ncol=2, fontsize=9)
 fig.suptitle(f"Replication of NCHS Data Brief 516 (fasting subsample, n = 2,938, WTSAF2YR): "
              f"max |difference| = {DB516.diff_pp.abs().max():.2f} pp over {len(DB516)} estimates", fontsize=11)
+# rect leaves room at the bottom for the shared legend.
 fig.tight_layout(rect=(0, 0.06, 1, 1))
 plots.savefig(fig, "S4_db516_forest",
               caption="Our design-based estimates (blue, Korn-Graubard 95% CI) against the published NCHS "
@@ -315,17 +357,23 @@ reg("DR-S4-02", "validation", "Survey toolkit reproduces NCHS Data Brief 516 on 
 # is also not expected to equal DB516's 15.8 %. Both gaps need to be explained, not ignored.
 
 # %%
+# Weighted vs unweighted prevalence of L_comb and how much of the gap the age structure explains.
+# Asserts the frozen prevalence and Kish values; writes OUT['prevalence'].
 w_ph = coh[C.WEIGHT_PHLEB].to_numpy(float)
 unw = coh.L_comb.mean()
 wp = S.weighted_prop(coh, "L_comb", weight=C.WEIGHT_PHLEB)
+# Kish design effect from unequal weights only (1 + CV^2 of the weights); clustering is added in wp['deff'].
 kish = S.kish_deff(w_ph)
 coh["age3"] = S.age_band(coh.RIDAGEYR).to_numpy()
 bands = list(S.US2000_3BAND)
+# Sample share per age band vs weighted (population) share = weight in band / total weight.
 share_s = coh.age3.value_counts(normalize=True).reindex(bands)
 share_w = pd.Series({b: w_ph[coh.age3 == b].sum() / w_ph.sum() for b in bands})
 rate_unw = coh.groupby("age3").L_comb.mean().reindex(bands)
 rate_w = {b: S.weighted_prop(coh, "L_comb", weight=C.WEIGHT_PHLEB, domain=coh.age3 == b) for b in bands}
+# Counterfactual: sample age-specific rates combined with the population age mix.
 unw_age_reweighted = float((rate_unw * share_w).sum())     # sample rates, population age mix
+# Fraction of the unweighted-weighted gap that re-weighting the age mix alone reproduces.
 explained = (unw - unw_age_reweighted) / (unw - wp["est"])
 AGE_TAB = pd.DataFrame({"sample share": share_s, "weighted share": share_w, "unweighted rate": rate_unw,
                         "weighted rate": [rate_w[b]["est"] for b in bands],
@@ -337,6 +385,7 @@ print(f"sample rates re-weighted to the population age mix: {pct(unw_age_reweigh
       f"{100 * explained:.0f}% of the {100 * (unw - wp['est']):.2f} pp gap")
 print(f"Kish deff (unequal weights) = {kish:.3f}; Kish n_eff = {S.kish_neff(w_ph):,.0f}; "
       f"full design effect for L_comb = {wp['deff']:.2f}")
+# Guard: frozen prevalence (to 0.05 pp) and Kish deff (to 0.01); drift means cohort or weights changed.
 assert abs(unw - 0.1695) < 5e-4 and abs(wp["est"] - 0.140) < 5e-4 and abs(kish - 1.55) < 0.01
 OUT["prevalence"] = {"unweighted": unw, "weighted": wp["est"], "weighted_jk_ci": [wp["ci_low"], wp["ci_high"]],
                      "weighted_kg_ci": [wp["kg_low"], wp["kg_high"]], "kish_deff": kish, "design_deff": wp["deff"],
@@ -345,13 +394,17 @@ OUT["prevalence"] = {"unweighted": unw, "weighted": wp["est"], "weighted_jk_ci":
                      "unweighted_age_reweighted": unw_age_reweighted, "gap_explained_by_age": explained}
 
 # %%
+# Two panels: age mix of sample vs population (left) and weighted vs unweighted prevalence by age band
+# (right). Reads AGE_TAB from the previous cell; only plots.
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4))
 x = np.arange(3)
+# Side-by-side bars: offsets of -/+0.2 with width 0.4.
 a1.bar(x - 0.2, share_s * 100, 0.4, label="sample (unweighted)", color=C.OKABE_ITO["orange"])
 a1.bar(x + 0.2, share_w * 100, 0.4, label="population (WTPH2YR)", color=C.OKABE_ITO["blue"])
 a1.set_xticks(x, bands); a1.set_ylabel("Share of adults, %"); a1.set_xlabel("Age band")
 a1.set_title("The sample is older than the population"); a1.legend()
 yr = AGE_TAB["weighted rate"] * 100
+# Asymmetric error bars from the KG interval bounds.
 a2.errorbar(x, yr, yerr=[yr - AGE_TAB.kg_low * 100, AGE_TAB.kg_high * 100 - yr], fmt="o", capsize=4,
             color=C.OKABE_ITO["blue"], label="weighted rate (KG 95% CI)")
 a2.plot(x, AGE_TAB["unweighted rate"] * 100, "s", color=C.OKABE_ITO["orange"], label="unweighted rate")
@@ -381,24 +434,33 @@ plt.show()
 # sensitivity analyses.
 
 # %%
+# Derive the 3-band and 6-band US 2000 standards from the 5-year standard million, then build the age-
+# standardised prevalence table by group with NCHS flags. Asserts agreement with survey.US2000_3BAND.
 # US 2000 standard population per million, 5-year groups from age 20 (Klein & Schoenborn 2001, Table 2)
 US2000_5Y = {"20-24": 66478, "25-29": 64529, "30-34": 71044, "35-39": 80762, "40-44": 81851, "45-49": 72118,
              "50-54": 62716, "55-59": 48454, "60-64": 38793, "65-69": 34264, "70-74": 31773, "75-79": 26999,
              "80-84": 17842, "85+": 15508}
+# Lower age bound of each 5-year group, e.g. '85+' -> 85.
 lo_of = {k: int(k.rstrip("+").split("-")[0]) for k in US2000_5Y}
+# Collapse the 5-year standard into coarser bands and renormalise so the weights sum to 1.
 def collapse(cuts):
     out = {}
     for lab, (lo, hi) in cuts.items():
+        # A 5-year group belongs to a band when its lower bound falls inside the band.
         out[lab] = sum(v for k, v in US2000_5Y.items() if lo <= lo_of[k] <= hi)
     tot = sum(out.values())
     return {k: v / tot for k, v in out.items()}
+# Primary three-band standard (as used by NCHS) and a six-band sensitivity standard.
 STD3 = collapse({"20-39": (20, 39), "40-59": (40, 59), "60+": (60, 200)})
 STD6 = collapse({"20-29": (20, 29), "30-39": (30, 39), "40-49": (40, 49), "50-59": (50, 59), "60-69": (60, 69), "70+": (70, 200)})
 print("3-band weights derived:", {k: round(v, 4) for k, v in STD3.items()}, "| survey.US2000_3BAND:", S.US2000_3BAND)
+# Guard: derived weights equal the constants stored in survey.py (to 1e-4).
 assert all(abs(STD3[k] - S.US2000_3BAND[k]) < 1e-4 for k in STD3)
 STD_INT = {b: float(share_w[b]) for b in bands}            # internal standard: the weighted cohort itself
 print("6-band weights:", {k: round(v, 4) for k, v in STD6.items()})
 
+# Grouping variables for the standardised tables: insurance, and usual place of care (codes 1 and 3 both
+# mean the person has a usual place).
 coh["insurance"] = coh.HIQ011.map({1: "insured", 2: "uninsured"})
 coh["usual_care"] = coh.HUQ030.map({1: "has usual place", 3: "has usual place", 2: "no usual place"})
 std_tabs = []
@@ -408,22 +470,27 @@ for gcol in ["race", "sex", "insurance", "usual_care"]:
     std_tabs.append(t)
 STD_TAB = pd.concat(std_tabs, ignore_index=True)
 STD_TAB["kg_width"] = STD_TAB.crude_kg_high - STD_TAB.crude_kg_low
+# NCHS presentation flags per row (small n, small effective n, wide KG interval, low df, few events).
 _fl = [S.nchs_flags(r.n, S._design_neff(r.crude, r.crude_se, r.n), r.kg_width, r.df, p=r.crude, n_events=r.n_events)
        for r in STD_TAB.itertuples()]
 STD_TAB["nchs_flags"] = [",".join(f) for f in _fl]
 STD_TAB["nchs_status"] = [S.nchs_status(f) for f in _fl]
 STD_TAB.to_csv(S4_DIR / "std_prev_table.csv", index=False)
 show = STD_TAB[["grouping", "group", "n", "df", "crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high", "nchs_status"]].copy()
+# Percent scale for display only.
 show[["crude", "crude_kg_low", "crude_kg_high", "std", "std_low", "std_high"]] *= 100
 print(show.round(1).to_string(index=False))
 
 # %%
+# Age-standardised differences with CIs for the planned contrasts under three standards (US 2000 3-band,
+# 6-band and internal). Asserts the frozen Asian-White and insured-uninsured results; fills OUT.
 CONTRASTS = [("race", "NH Asian", "NH White"), ("race", "NH Black", "NH White"),
              ("race", "Mexican American", "NH White"), ("insurance", "insured", "uninsured"),
              ("usual_care", "has usual place", "no usual place")]
 diffs = []
 for gcol, a, b in CONTRASTS:
     for sname, std in [("US2000 3-band", STD3), ("US2000 6-band", STD6), ("internal 3-band", STD_INT)]:
+        # std_difference: crude and standardised difference of group a minus group b with a jackknife CI.
         d = S.std_difference(coh, "L_comb", gcol, a, b, weight=C.WEIGHT_PHLEB, std=std)
         diffs.append({"contrast": f"{a} − {b}", "standard": sname, "n_a": d["n_a"], "n_b": d["n_b"], "df": d["df"],
                       "crude": 100 * d["crude_diff"], "crude_low": 100 * d["crude_low"], "crude_high": 100 * d["crude_high"],
@@ -432,9 +499,12 @@ DIFFS = pd.DataFrame(diffs)
 DIFFS.to_csv(S4_DIR / "std_differences.csv", index=False)
 print(DIFFS.round(1).to_string(index=False))
 
+# The two headline contrasts under the primary (US 2000 3-band) standard.
 aw = DIFFS.query("contrast == 'NH Asian − NH White' and standard == 'US2000 3-band'").iloc[0]
 iu = DIFFS.query("contrast == 'insured − uninsured' and standard == 'US2000 3-band'").iloc[0]
+# Guard: frozen crude and standardised Asian-White estimates and CI bounds (to 0.1 pp).
 assert abs(aw.crude - (-0.8)) < 0.1 and abs(aw["std"] - 2.1) < 0.1 and abs(aw.crude_low + 5.1) < 0.1 and abs(aw.std_high - 6.8) < 0.1
+# Guard: the same for insured minus uninsured.
 assert abs(iu.crude - 5.3) < 0.1 and abs(iu["std"] - 0.7) < 0.1 and abs(iu.crude_low - 1.8) < 0.1 and abs(iu.std_high - 3.9) < 0.1
 asian_std = STD_TAB.query("group == 'NH Asian'").iloc[0]; white_std = STD_TAB.query("group == 'NH White'").iloc[0]
 print(f"\nNH Asian vs NH White: crude {aw.crude:+.1f} ({aw.crude_low:.1f}, {aw.crude_high:.1f}) -> "
@@ -463,9 +533,12 @@ OUT["standardisation"] = {
 # age drives diabetes.
 
 # %%
+# Insurance as a marker of age: age mix by insurance status and age-specific insured-uninsured differences.
+# Reads w_ph and iu from earlier cells; extends OUT['standardisation'].
 ins_age = (pd.crosstab(coh.insurance, coh.age3, values=w_ph, aggfunc="sum", normalize="index") * 100).reindex(columns=bands)
 print("weighted age mix by insurance status (%):\n", ins_age.round(1))
 band_diff = []
+# Within one age band (a domain) the insurance gap is no longer confounded by age.
 for b in bands:
     d = S.std_difference(coh, "L_comb", "insurance", "insured", "uninsured", weight=C.WEIGHT_PHLEB,
                          domain=coh.age3 == b)
@@ -482,9 +555,11 @@ OUT["standardisation"]["insured_uninsured"].update({
     "band_diffs": band_diff.to_dict("records")})
 
 # %%
+# Forest plot of crude vs age-standardised differences (US 2000 3-band), then three decision-register rows.
 d3 = DIFFS[DIFFS.standard == "US2000 3-band"].reset_index(drop=True)
 fig, ax = plt.subplots(figsize=(8.5, 4.2))
 yy = np.arange(len(d3))[::-1]
+# Offsets of +/-0.13 separate the crude and standardised markers of the same contrast.
 ax.errorbar(d3.crude, yy + 0.13, xerr=[d3.crude - d3.crude_low, d3.crude_high - d3.crude], fmt="o", capsize=3,
             color=C.OKABE_ITO["orange"], label="crude")
 ax.errorbar(d3["std"], yy - 0.13, xerr=[d3["std"] - d3.std_low, d3.std_high - d3["std"]], fmt="s", capsize=3,
@@ -532,30 +607,41 @@ reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.
 # |crude| > 1 pp and |standardised| < ½ |crude|.
 
 # %%
+# Simpson scan: for every exposure x outcome x stratifier compare the crude difference with the stratum-
+# standardised one and count sign flips and attenuations. Defines the grid, the DAG role of each stratifier
+# and a vectorised scan function; fills SCAN with jackknife CIs.
 r3 = coh.RIDRETH3
 EXPOSURES = {   # name: (indicator with NaN outside the comparison, reference description)
     "female": (coh.sex.map({"Female": 1.0, "Male": 0.0}), "male"),
+    # np.select builds a 1/0 indicator of exposure vs reference group, NaN for everyone else.
     "asian": (pd.Series(np.select([r3 == 6, r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
     "black": (pd.Series(np.select([r3 == 4, r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
     "hispanic": (pd.Series(np.select([r3.isin([1, 2]), r3 == 3], [1.0, 0.0], np.nan)), "NH White"),
     "uninsured": (coh.HIQ011.map({2: 1.0, 1: 0.0}), "insured"),
     "no_usual_care": (coh.HUQ030.map({2: 1.0, 1: 0.0, 3: 0.0}), "has usual place"),
+    # Low income = poverty-income ratio below 1.3 (130 % of the poverty line); missing stays missing.
     "low_income": (pd.Series(np.where(coh.INDFMPIR.isna(), np.nan, (coh.INDFMPIR < 1.3).astype(float))), "PIR >= 1.3"),
     "ever_smoker": (coh.SMQ020.map({1: 1.0, 2: 0.0}), "never smoker"),
+    # Low education = less than high school (codes 1-2) vs high school or more (codes 3-5).
     "low_education": (coh.DMDEDUC2.map({1: 1.0, 2: 1.0, 3: 0.0, 4: 0.0, 5: 0.0}), "high school or more"),
 }
+# Outcomes: the three labels plus the undiagnosed (E-SCREEN) flag.
 OUTCOMES = {"L_comb": coh.L_comb.astype(float), "L_A1c": coh.L_A1c.astype(float),
             "L_self": coh.L_self.astype(float), "undiagnosed (E-SCREEN)": coh.y_escreen.astype(float)}
+# Helper: bin a continuous column into labelled intervals closed on the left.
 _cut = lambda x, b, l: pd.cut(x, b, labels=l, right=False).astype(object)
 STRATIFIERS = {
     "age": coh.age3.astype(object),
     "sex": coh.sex.astype(object),
     "race": coh.RIDRETH3.map({1: "Hispanic", 2: "Hispanic", 3: "White", 4: "Black", 6: "Asian", 7: "Other"}),
+    # Income bands in poverty-income ratio (usual NCHS cut-points).
     "income": _cut(coh.INDFMPIR, [0, 1.3, 3.5, 99], ["<1.3", "1.3-3.5", ">=3.5"]),
+    # BMI bands at the WHO overweight and obesity cut-offs.
     "bmi": _cut(coh.BMXBMI, [0, 25, 30, 999], ["<25", "25-30", ">=30"]),
     "insurance": coh.insurance.astype(object),
     "education": coh.DMDEDUC2.map({1: "<HS", 2: "<HS", 3: "HS", 4: ">HS", 5: ">HS"}),
 }
+# Stratifier equal to the exposure itself is skipped: a variable cannot stratify itself.
 SELF = {"female": "sex", "asian": "race", "black": "race", "hispanic": "race", "uninsured": "insurance",
         "low_income": "income", "low_education": "education"}
 RACE_EXP = {"asian", "black", "hispanic"}
@@ -579,14 +665,17 @@ def stratifier_role(exposure, strat):
 
 def scan_one(e, y, s, W):
     """Crude and internally standardised differences for every column of the weight matrix W."""
+    # Usable rows: exposure, outcome and stratum known, and a positive full-sample weight.
     ok = ~np.isnan(e) & ~np.isnan(y) & pd.notna(s) & (W[:, 0] > 0)
     levels = sorted(set(s[ok]))
     cols = []
+    # Indicator columns for every (exposure group, stratum) cell and its outcome-weighted twin.
     for g in (0.0, 1.0):
         for lv in levels:
             m = ok & (e == g) & (s == lv)
             cols += [m, m * np.nan_to_num(y)]
     M = np.column_stack(cols).astype(float)
+    # One matrix product gives weighted denominators and numerators for the full sample and every replicate.
     A = W.T @ M                                      # R x (2 groups * k levels * 2)
     k = len(levels)
     den = A[:, 0::2].reshape(-1, 2, k)
@@ -595,14 +684,19 @@ def scan_one(e, y, s, W):
     share = den.sum(1) / den.sum((1, 2))[:, None]    # pooled stratum shares, R x k
     with np.errstate(invalid="ignore", divide="ignore"):
         rate = num / den
+    # Standardised rate: stratum-specific rates weighted by the pooled (internal) stratum shares.
     std = (rate * share[:, None, :]).sum(2)
+    # Smallest exposure x stratum cell, reported so thin strata stay visible.
     min_cell = int(min(((ok & (e == g) & (s == lv)).sum()) for g in (0.0, 1.0) for lv in levels))
     return 100 * (crude[:, 1] - crude[:, 0]), 100 * (std[:, 1] - std[:, 0]), min_cell, int(ok.sum())
 
 
+# Weight matrix: column 0 = full-sample weights, further columns = delete-one-PSU jackknife replicates.
 W_full = coh[C.WEIGHT_PHLEB].to_numpy(float)
+# jk_factor = jackknife variance multiplier per replicate.
 W_jk, jk_factor = S.replicate_weights(coh, C.WEIGHT_PHLEB)
 W_all = np.column_stack([W_full, W_jk])
+# 95 % t quantile with the 15 design df.
 t15 = stats.t.ppf(0.975, DF_DESIGN)
 rows = []
 for en, (ev, ref) in EXPOSURES.items():
@@ -610,9 +704,11 @@ for en, (ev, ref) in EXPOSURES.items():
     for on, yv in OUTCOMES.items():
         yv = yv.to_numpy(float)
         for sn, sv in STRATIFIERS.items():
+            # Skip the stratifier that coincides with the exposure.
             if SELF.get(en) == sn:
                 continue
             cr, sd, min_cell, n = scan_one(ev, yv, sv.to_numpy(object), W_all)
+            # Jackknife SE of the difference: sqrt(sum_r factor_r * (replicate_r - full-sample estimate)^2).
             se_c = np.sqrt(np.sum(jk_factor * (cr[1:] - cr[0]) ** 2))
             se_s = np.sqrt(np.sum(jk_factor * (sd[1:] - sd[0]) ** 2))
             rows.append({"exposure": en, "reference": ref, "outcome": on, "stratifier": sn,
@@ -620,10 +716,14 @@ for en, (ev, ref) in EXPOSURES.items():
                          "crude": cr[0], "crude_low": cr[0] - t15 * se_c, "crude_high": cr[0] + t15 * se_c,
                          "std": sd[0], "std_low": sd[0] - t15 * se_s, "std_high": sd[0] + t15 * se_s})
 SCAN = pd.DataFrame(rows)
+# flip: crude and standardised signs differ and both differences exceed 1 pp in size.
 SCAN["flip"] = (np.sign(SCAN.crude) != np.sign(SCAN["std"])) & (SCAN.crude.abs() > 1) & (SCAN["std"].abs() > 1)
+# attenuation: same sign, crude above 1 pp and the standardised difference less than half of it.
 SCAN["attenuation_50"] = (np.sign(SCAN.crude) == np.sign(SCAN["std"])) & (SCAN.crude.abs() > 1) & \
                          (SCAN["std"].abs() < 0.5 * SCAN.crude.abs())
+# any_flip: sign change without the 1 pp size requirement.
 SCAN["any_flip"] = np.sign(SCAN.crude) != np.sign(SCAN["std"])
+# Grid size, minus the self-stratified combinations skipped above.
 n_grid = len(EXPOSURES) * len(OUTCOMES) * len(STRATIFIERS)
 n_self = len(OUTCOMES) * len(SELF)
 print(f"grid {len(EXPOSURES)} x {len(OUTCOMES)} x {len(STRATIFIERS)} = {n_grid}; minus {n_self} self-stratifications "
@@ -640,21 +740,28 @@ print("flips by stratifier role:", SCAN[SCAN.flip].role.value_counts().to_dict()
 # differ) and P(standardised sign equals the point estimate's sign).
 
 # %%
+# Design-based (Rao-Wu) bootstrap of the flagged flips and of the pre-specified Asian x L_comb x age contrast.
+# Adds P(crude and standardised signs differ); writes the scan table and OUT['simpson'].
 B = C.N_BOOT
+# Rao-Wu rescaled weights: PSUs resampled within strata, m_h = n_h - 1; seed from the master sequence.
 W_boot = S.rao_wu_weights(coh, C.WEIGHT_PHLEB, B, seed=int(RNG_SEEDS[0].generate_state(1)[0]))
+# Probe set: all flips plus the pre-specified contrast.
 probe = SCAN[SCAN.flip | ((SCAN.exposure == "asian") & (SCAN.outcome == "L_comb") & (SCAN.stratifier == "age"))]
 boot_rows = []
 for idx, r in probe.iterrows():
     ev = EXPOSURES[r.exposure][0].to_numpy(float)
     yv = OUTCOMES[r.outcome].to_numpy(float)
     sv = STRATIFIERS[r.stratifier].to_numpy(object)
+    # Same scan statistic on bootstrap weights: column 0 is the full sample, the rest are replicates.
     cr, sd, _, _ = scan_one(ev, yv, sv, np.column_stack([W_full, W_boot]))
     cr_b, sd_b = cr[1:], sd[1:]
+    # p_sign_differs: share of replicates in which the crude and standardised signs differ.
     boot_rows.append({"idx": idx, "p_sign_differs": float(np.mean(np.sign(cr_b) != np.sign(sd_b))),
                       "p_std_sign_as_point": float(np.mean(np.sign(sd_b) == np.sign(r["std"]))),
                       "p_flip_rule": float(np.mean((np.sign(cr_b) != np.sign(sd_b)) & (np.abs(cr_b) > 1) & (np.abs(sd_b) > 1)))})
 boot = pd.DataFrame(boot_rows).set_index("idx")
 SCAN = SCAN.join(boot)
+# A flip counts as DAG-supported only if the stratifier is a confounder (see §4.8).
 SCAN["dag_supported"] = SCAN.flip & (SCAN.role == "confounder")
 SCAN.to_csv(S4_DIR / "simpson_scan.csv", index=False)
 cols = ["exposure", "outcome", "stratifier", "role", "crude", "crude_low", "crude_high", "std", "std_low", "std_high",
@@ -665,6 +772,7 @@ print("\nlargest attenuations (|crude| > 1 pp):")
 print(SCAN[SCAN.attenuation_50].assign(ratio=lambda d: d["std"] / d.crude).sort_values("ratio")
       [["exposure", "outcome", "stratifier", "role", "crude", "std"]].round(2).head(12).to_string(index=False))
 
+# The two headline examples quoted in the text.
 ex_ins = SCAN.query("exposure == 'uninsured' and outcome == 'L_A1c' and stratifier == 'age'").iloc[0]
 ex_as = SCAN.query("exposure == 'asian' and outcome == 'L_comb' and stratifier == 'age'").iloc[0]
 print(f"headline example uninsured x L_A1c | age: crude {ex_ins.crude:+.2f} -> standardised {ex_ins['std']:+.2f} pp; "
@@ -681,6 +789,8 @@ OUT["simpson"] = {"n_comparisons": len(SCAN), "grid": [len(EXPOSURES), len(OUTCO
                   "n_dag_supported_flips": int(SCAN.dag_supported.sum())}
 
 # %%
+# Scatter of crude vs standardised differences for all scan comparisons, coloured by DAG role, flips circled;
+# then one decision-register row.
 fig, ax = plt.subplots(figsize=(7.5, 6.5))
 role_col = {"confounder": C.OKABE_ITO["blue"], "mediator": C.OKABE_ITO["vermillion"], "ambiguous": C.OKABE_ITO["grey"]}
 for role, g in SCAN.groupby("role"):
@@ -693,9 +803,12 @@ for i, r in enumerate(fl.itertuples(), 1):
     key.append(f"{i}: {r.exposure} × {r.outcome.split(' ')[0]}, by {r.stratifier} ({r.role})")
 ax.text(0.98, 0.03, chr(10).join(key), transform=ax.transAxes, ha="right", va="bottom", fontsize=8, multialignment="left",
         bbox=dict(boxstyle="round", fc="white", ec="0.7"))
+# Symmetric axis limits so the diagonal is the identity line.
 lim = np.nanmax(np.abs(SCAN[["crude", "std"]].to_numpy())) * 1.05
+# Dashed diagonal: standardisation changes nothing.
 ax.plot([-lim, lim], [-lim, lim], color="k", lw=0.6, ls="--")
 ax.axhline(0, color="k", lw=0.6); ax.axvline(0, color="k", lw=0.6)
+# Shaded quadrants: crude and standardised differences have opposite signs.
 ax.fill_between([0, lim], -lim, 0, color=C.OKABE_ITO["yellow"], alpha=0.15)
 ax.fill_between([-lim, 0], 0, lim, color=C.OKABE_ITO["yellow"], alpha=0.15)
 ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
@@ -736,8 +849,11 @@ reg("DR-S4-06", "interpretation",
 # (d-separation in networkx) instead of being asserted.
 
 # %%
+# Encode the assumed causal structure as a DAG and check adjustment sets with the back-door criterion
+# (networkx d-separation). Asserts the key valid/invalid sets; writes the adjustment-set table.
 import networkx as nx
 
+# Edges are assumed direct causal effects, taken from subject knowledge and not estimated from the data.
 DAG_EDGES = [
     ("U: birth cohort / migration", "Race/ancestry"), ("U: birth cohort / migration", "Age"),
     ("Age", "Medicare"), ("Medicare", "Insurance"), ("SES", "Insurance"), ("Race/ancestry", "SES"),
@@ -749,6 +865,7 @@ DAG_EDGES = [
     ("Diabetes", "ExamSelection"), ("SES", "ExamSelection"), ("Age", "ExamSelection"),
 ]
 G = nx.DiGraph(DAG_EDGES)
+# Guard: a causal graph must be acyclic.
 assert nx.is_directed_acyclic_graph(G)
 LATENT = {"U: birth cohort / migration", "Adiposity", "Diabetes"}      # not directly observed
 
@@ -756,24 +873,29 @@ LATENT = {"U: birth cohort / migration", "Adiposity", "Diabetes"}      # not dir
 def backdoor_ok(g, x, y, z):
     """Back-door criterion: Z has no descendant of X and d-separates X and Y once X's out-edges are cut."""
     z = set(z)
+    # Invalid if Z contains a descendant of X (post-exposure variable) or an unobserved variable.
     if z & nx.descendants(g, x) or z & LATENT:
         return False
+    # Cut X's outgoing edges; if Z then d-separates X and Y, it blocks every back-door path.
     g2 = g.copy()
     g2.remove_edges_from(list(g.out_edges(x)))
     return nx.is_d_separator(g2, {x}, {y}, z)
 
 
+# Enumerate minimal sufficient adjustment sets (up to max_size) among observed non-descendants of x.
 def minimal_sets(g, x, y, max_size=3):
     cand = sorted(set(g) - {x, y} - nx.descendants(g, x) - LATENT)
     found = []
     from itertools import combinations
     for k in range(0, max_size + 1):
         for z in combinations(cand, k):
+            # Keep only minimal sets: skip any set that contains one already found.
             if backdoor_ok(g, x, y, z) and not any(set(f) <= set(z) for f in found):
                 found.append(z)
     return found
 
 
+# Sets to test: sufficient ones, insufficient ones (crude, age only) and harmful ones (BMI, SES as mediators).
 queries = [
     ("Insurance", "Diagnosis", ["Age", "SES"], "Insurance → undiagnosed (§5.4)"),
     ("Insurance", "Diagnosis", ["Age"], "… age only"),
@@ -795,12 +917,14 @@ ms_race = minimal_sets(G, "Race/ancestry", "Diabetes")
 print("\nminimal sufficient sets  Insurance -> Diagnosis:", ms_ins)
 print("minimal sufficient sets  Race -> Diabetes:", ms_race)
 # Selection: the cohort exists only for examined adults (conditioning on a collider)
+# Remove the direct SES effects so SES and Diabetes are d-separated by construction.
 g_noses = G.copy(); g_noses.remove_edge("SES", "Diabetes"); g_noses.remove_edge("SES", "Adiposity")
 indep_without = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age"})
 indep_given_sel = nx.is_d_separator(g_noses, {"SES"}, {"Diabetes"}, {"Race/ancestry", "Age", "ExamSelection"})
 print("\ncollider check (SES->diabetes edges removed):")
 print(f"  SES ⟂ Diabetes | Race, Age: {indep_without}; also conditioning on ExamSelection: {indep_given_sel}")
 print("  -> selection into the examination opens a path")
+# Guard: {Age, SES} valid for insurance -> diagnosis, {Age, Sex} for race -> diabetes, adding BMI invalid.
 assert DAG_TAB.loc[0, "valid (back-door)"] and DAG_TAB.loc[3, "valid (back-door)"] and not DAG_TAB.loc[6, "valid (back-door)"]
 DAG_TAB.to_csv(S4_DIR / "dag_adjustment_sets.csv", index=False)
 OUT["dag"] = {"n_nodes": G.number_of_nodes(), "n_edges": G.number_of_edges(),
@@ -809,10 +933,13 @@ OUT["dag"] = {"n_nodes": G.number_of_nodes(), "n_edges": G.number_of_edges(),
               "bmi_adjustment_valid": bool(DAG_TAB.loc[6, "valid (back-door)"]), "exam_selection_opens_path": bool(indep_without and not indep_given_sel)}
 
 # %%
+# Draw the DAG (layout, colours by node kind, mediator path dashed). Only plots; adds one register row.
+# Hand-set node coordinates place causes on the left and outcomes on the right.
 POS = {"Age": (0, 6.4), "U: birth cohort / migration": (0, 4.4), "Race/ancestry": (0, 2.4), "Sex": (0, 0.0),
        "Medicare": (2.2, 7.6), "Insurance": (4.4, 7.0), "UsualCare": (6.8, 5.6), "SES": (2.4, 4.0),
        "Adiposity": (2.8, 1.2), "BMI (measured)": (3.4, -1.2), "Diabetes": (6.0, 2.0), "Diagnosis": (8.8, 4.4),
        "Treatment": (11.0, 4.4), "HbA1c (measured)": (11.0, 1.6), "ExamSelection": (8.4, -1.0)}
+# Node kinds drive the colours; any node not listed is an observed cause.
 KIND = {n: "latent" for n in LATENT} | {"BMI (measured)": "measure", "HbA1c (measured)": "measure",
                                         "ExamSelection": "selection", "Diagnosis": "process", "Treatment": "process",
                                         "UsualCare": "process"}
@@ -822,7 +949,9 @@ fig, ax = plt.subplots(figsize=(14, 8.5))
 cols_ = [KCOL[KIND.get(n, "observed")] for n in G.nodes]
 nx.draw_networkx_nodes(G, POS, ax=ax, node_color=cols_, node_size=4400, alpha=0.9,
                        node_shape="o", linewidths=1, edgecolors="k")
+# Mediator path highlighted: race -> adiposity -> BMI.
 mediator_edges = [("Race/ancestry", "Adiposity"), ("Adiposity", "BMI (measured)"), ("Race/ancestry", "BMI (measured)")]
+# Edge curvature per edge to pull overlapping arrows apart.
 EDGE_RAD = {("Race/ancestry", "BMI (measured)"): 0.35, ("Age", "UsualCare"): -0.12, ("Age", "Diabetes"): -0.08,
             ("Age", "ExamSelection"): -0.28, ("Age", "Adiposity"): 0.12, ("SES", "ExamSelection"): 0.10}
 for e in G.edges:                                   # draw edge by edge so overlapping paths can be curved apart
@@ -871,9 +1000,12 @@ reg("DR-S4-07", "method", "In the DAG, BMI is a descendant of race (race -> adip
 # automatic deletion rule.
 
 # %%
+# Collinearity: VIFs per variable set, structural-redundancy checks and an iterative VIF pruning example.
+# Asserts the frozen VIFs; writes the VIF table, OUT['vif'] and OUT['redundancy'].
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 
+# Sets are analysed block-wise because a VIF depends on which variables enter together.
 VIF_SETS = {
     "raw_anthropometry": ["BMXWT", "BMXHT", "BMXBMI", "BMXWAIST", "BMXHIP", "BMXARMC"],
     "ht_bmi": ["BMXHT", "BMXBMI"],
@@ -885,9 +1017,12 @@ VIF_SETS = {
 }
 vif_rows = []
 for set_name, cols in VIF_SETS.items():
+    # Complete cases within each set.
     x = coh[cols].dropna()
+    # VIF_i = 1 / (1 - R^2_i) from regressing column i on the others, with an intercept.
     X = sm.add_constant(x.to_numpy(float))
     for i, c in enumerate(cols):
+        # i + 1 skips the constant column.
         vif_rows.append({"set": set_name, "variable": c, "vif": variance_inflation_factor(X, i + 1), "n": len(x)})
 VIF = pd.DataFrame(vif_rows)
 VIF.to_csv(S4_DIR / "vif_table.csv", index=False)
@@ -896,12 +1031,16 @@ print("complete cases per set:")
 print("  " + ", ".join(f"{k} {v:,}" for k, v in VIF.groupby("set", sort=False).n.first().items()))
 
 VIFS = VIF.set_index(["set", "variable"]).vif
+# Guard: frozen VIFs of weight and BMI (structural redundancy).
 assert abs(VIFS[("raw_anthropometry", "BMXWT")] - 95.7) < 0.1 and abs(VIFS[("raw_anthropometry", "BMXBMI")] - 97.6) < 0.1
 bp = VIF.query("set == 'bp_readings'").vif
+# Guard: frozen VIF range of the six BP readings.
 assert abs(bp.min() - 8.8) < 0.1 and abs(bp.max() - 11.7) < 0.1
 
 a = coh[["BMXBMI", "BMXWT", "BMXHT"]].dropna()
+# BMI = W / H^2, so log BMI = log W - 2 log H exactly (cm -> m); r near 1 shows the duplication.
 r_struct = np.corrcoef(np.log(a.BMXBMI), np.log(a.BMXWT) - 2 * np.log(a.BMXHT / 100))[0, 1]
+# LDL and triglycerides are valid only where the fasting weight is positive.
 fast_ok = coh[C.WEIGHT_FASTING].fillna(0) > 0
 lip = coh.loc[fast_ok, ["LBXTC", "LBDLDL"]].dropna()
 r_tc_ldl = lip.corr().iloc[0, 1]
@@ -916,12 +1055,15 @@ def prune_vif(x, protect, thresh=10.0):
     while True:
         X = sm.add_constant(x[cols].to_numpy(float))
         vifs = pd.Series([variance_inflation_factor(X, i + 1) for i in range(len(cols))], index=cols)
+        # Largest VIF among the unprotected columns; protected ones (BMI, waist) are never dropped.
         cand = vifs.drop(labels=[c for c in protect if c in cols]).sort_values(ascending=False)
+        # Stop once no VIF exceeds the threshold (10, a conventional rule of thumb; O'Brien 2007).
         if cand.empty or cand.iloc[0] <= thresh:
             return dropped, vifs
         dropped.append(cand.index[0]); cols.remove(cand.index[0])
 
 
+# Illustration on the raw anthropometry set; the in-pipeline version (§6.5) refits this in each training fold.
 _dropped, _vifs_after = prune_vif(coh[VIF_SETS["raw_anthropometry"]].dropna(), protect=["BMXBMI", "BMXWAIST"])
 print(f"iterative VIF > 10 pruning (BMI, waist protected) on the raw anthropometry set drops {_dropped}; "
       f"remaining max VIF {_vifs_after.max():.1f} ({_vifs_after.idxmax()})")
@@ -929,6 +1071,8 @@ OUT["vif_pruning_illustration"] = {"dropped": _dropped, "vif_after": _vifs_after
 OUT["redundancy"] = {"r_logbmi_logw_2logh": r_struct, "r_tc_ldl": r_tc_ldl, "n_tc_ldl": len(lip)}
 
 # %%
+# Clustered Spearman heat map of candidate predictors and the clusters at |rho| >= 0.7.
+# Only plots; adds the cluster list to OUT['redundancy'].
 import seaborn as sns
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import squareform
@@ -940,8 +1084,11 @@ SPEAR_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWT": "weight", "BMXHT": "h
               "LBDLDL": "LDL*", "LBXTLG": "TG*", "INDFMPIR": "PIR"}
 sp = coh[list(SPEAR_VARS)].copy()
 sp.loc[~fast_ok, ["LBDLDL", "LBXTLG"]] = np.nan                     # fasting analytes only where valid
+# Spearman = rank-based, robust to skew; pairwise complete observations.
 rho = sp.rename(columns=SPEAR_VARS).corr(method="spearman")          # pairwise complete
+# Distance 1 - |rho|: strong negative and strong positive correlations both count as redundancy.
 dist = 1 - rho.abs()
+# squareform gives the condensed distances that linkage expects; average linkage.
 link = hierarchy.linkage(squareform(dist.to_numpy(), checks=False), method="average")
 annot_txt = rho.map(lambda v: f"{v:.1f}".replace("-0.0", "0.0"))
 cg = sns.clustermap(rho, row_linkage=link, col_linkage=link, cmap="RdBu_r", vmin=-1, vmax=1, center=0,
@@ -955,7 +1102,9 @@ plots.savefig(cg.fig, "S4_spearman_clustermap",
               caption="Clustered Spearman correlation heatmap of candidate predictors (pairwise complete; *LDL and "
                       "triglycerides on the valid fasting subsample only).")
 plt.show()
+# Cut the tree at distance 0.3: members of a cluster are correlated at about |rho| >= 0.7.
 clusters = pd.Series(hierarchy.fcluster(link, t=1 - 0.7, criterion="distance"), index=rho.index)
+# Keep only clusters with more than one member.
 groups = [list(g.index) for _, g in clusters.groupby(clusters) if len(g) > 1]
 print("clusters with |rho| >= 0.7 (average linkage):")
 for g_ in groups:
@@ -979,27 +1128,35 @@ OUT["redundancy"]["clusters_rho07"] = groups
 # are a fasting analyte: they are only valid where the fasting weight is positive (8–24 h fast).
 
 # %%
+# Skewness of continuous candidates raw, after log and after Yeo-Johnson; triglycerides only on valid fasting
+# rows. Asserts the frozen BMI skewness; writes the skew table and OUT['skew'].
 SKEW_VARS = [("BMXBMI", "BMI"), ("bp_sys_mean", "SBP mean"), ("LBDHDD", "HDL"), ("BMXWAIST", "waist"),
              ("LBXTC", "total cholesterol"), ("INDFMPIR", "PIR")]
 skew_rows = []
+# One skew-table row: raw, log and Yeo-Johnson skewness plus the fitted Yeo-Johnson lambda.
 def _skew_row(x, var, label, subsample):
     x = x.dropna().astype(float)
+    # yeojohnson returns the transformed values and the maximum-likelihood lambda.
     yj, lam = stats.yeojohnson(x)
     return {"variable": var, "label": label, "subsample": subsample, "n": len(x), "skew_raw": stats.skew(x),
+            # log skewness exists only when all values are positive.
             "skew_log": stats.skew(np.log(x)) if (x > 0).all() else np.nan, "skew_yj": stats.skew(yj), "yj_lambda": lam}
 for var, label in SKEW_VARS:
     skew_rows.append(_skew_row(coh[var], var, label, "cohort"))
+# Triglycerides twice: valid fasting rows vs every row with a value, to show the cost of non-fasting rows.
 skew_rows.append(_skew_row(coh.loc[fast_ok, "LBXTLG"], "LBXTLG", "triglycerides", "fasting (WTSAF2YR > 0)"))
 skew_rows.append(_skew_row(coh["LBXTLG"], "LBXTLG", "triglycerides", "all with a value (incl. WTSAF2YR = 0)"))
 SKEW = pd.DataFrame(skew_rows)
 SKEW.to_csv(S4_DIR / "skew_table.csv", index=False)
 print(SKEW.round(2).to_string(index=False))
 sk = SKEW.set_index(["variable", "subsample"])
+# Guard: frozen BMI skewness and (near) zero skewness after Yeo-Johnson.
 assert abs(sk.loc[("BMXBMI", "cohort"), "skew_raw"] - 1.22) < 0.01 and abs(sk.loc[("BMXBMI", "cohort"), "skew_yj"]) < 0.01
 tg_f, tg_all = sk.loc[("LBXTLG", "fasting (WTSAF2YR > 0)")], sk.loc[("LBXTLG", "all with a value (incl. WTSAF2YR = 0)")]
 print(f"\ntriglycerides: valid fasting n = {tg_f.n:,}, skew {tg_f.skew_raw:.2f} -> log {tg_f.skew_log:.2f}; "
       f"including {tg_all.n - tg_f.n} non-fasting rows: skew {tg_all.skew_raw:.2f} -> log {tg_all.skew_log:.2f}")
 _raw_w = io.read_xpt("GLU_L")[C.WEIGHT_FASTING]          # unfixed transport-file read
+# Zero weights read from the raw transport file appear as tiny positive floats and wrongly pass '> 0'.
 _tiny = _raw_w[(_raw_w > 0) & (_raw_w < C.XPT_ZERO_EPS)]
 print(f"unfixed GLU_L read: {len(_tiny)} fasting weights stored as 0 appear as {_tiny.max():.1e} and pass a '> 0' filter")
 OUT["skew_tg_unfixed_zero_weights"] = {"n": len(_tiny), "value": float(_tiny.max()) if len(_tiny) else None}
@@ -1008,8 +1165,10 @@ OUT["skew"] = {f"{r.variable}|{r.subsample}": {"n": r.n, "raw": r.skew_raw, "log
 
 # Triglycerides on the valid fasting subsample: raw vs log scale (same rows as the skew table).
 tg = coh.loc[fast_ok, "LBXTLG"].dropna().astype(float)
+# Guard: the plotted sample is exactly the skew-table sample.
 assert len(tg) == tg_f.n and abs(stats.skew(tg) - tg_f.skew_raw) < 1e-9 and abs(stats.skew(np.log(tg)) - tg_f.skew_log) < 1e-9
 fig, (t1, t2) = plt.subplots(1, 2, figsize=(11, 4))
+# 25 mg/dL bins.
 t1.hist(tg, bins=np.arange(0, tg.max() + 25, 25), color=C.OKABE_ITO["orange"], edgecolor="white", lw=0.3)
 t1.axvline(tg.median(), color="k", ls="--", lw=1); t1.text(tg.median() * 1.08, t1.get_ylim()[1] * 0.9, f"median {tg.median():.0f}", fontsize=10)
 t1.set_xlabel("Triglycerides, mg/dL"); t1.set_ylabel("Adults")
@@ -1053,6 +1212,8 @@ reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; trigly
 # linear and sex adjusted (complete cases, `L_comb`, unweighted: a model-structure question).
 
 # %%
+# Linearity: likelihood-ratio test of a 4-knot restricted cubic spline against a linear term, per predictor.
+# Asserts the frozen complete-case n and chi-square values; writes the test table and OUT['linearity'].
 import statsmodels.formula.api as smf
 
 LIN_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWAIST": "waist", "bp_sys_mean": "SBP (mean)",
@@ -1062,24 +1223,32 @@ LIN_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWAIST": "waist", "bp_sys_mea
 def rcs_basis(x, q=(0.05, 0.35, 0.65, 0.95)):
     """Harrell restricted cubic spline basis (linear term + k-2 non-linear terms), knots at quantiles."""
     x = np.asarray(x, float)
+    # Knots at the 5th/35th/65th/95th percentiles (Harrell's default for four knots).
     t = np.quantile(x, q)
     k = len(t)
+    # Truncated cubic (u)+^3.
     p3 = lambda u: np.maximum(u, 0) ** 3
+    # Non-linear terms: truncated cubics constrained to be linear beyond the outer knots (restricted spline).
     nl = [(p3(x - t[j]) - p3(x - t[k - 2]) * (t[k - 1] - t[j]) / (t[k - 1] - t[k - 2])
            + p3(x - t[k - 1]) * (t[k - 2] - t[j]) / (t[k - 1] - t[k - 2])) / (t[k - 1] - t[0]) ** 2 for j in range(k - 2)]
     return np.column_stack([x] + nl), t
 
 
+# Complete cases across all seven predictors so every model uses the same rows.
 lin = coh.dropna(subset=list(LIN_VARS)).reset_index(drop=True)
 lin["female"] = (lin.sex == "Female").astype(float)
 y_lin = lin.L_comb.to_numpy(float)
+# Unweighted logit: this is a model-structure question, not a population estimate.
 fit_logit = lambda X: sm.Logit(y_lin, sm.add_constant(X)).fit(disp=0)
 lin_rows = []
 for v, lab in LIN_VARS.items():
+    # All other predictors enter linearly; sex is always adjusted.
     others = lin[[o for o in LIN_VARS if o != v] + ["female"]].to_numpy(float)
     basis, knots = rcs_basis(lin[v])
+    # Linear vs spline fit of the tested variable: nested models, so a likelihood-ratio test applies.
     m_lin = fit_logit(np.column_stack([basis[:, :1], others]))
     m_rcs = fit_logit(np.column_stack([basis, others]))
+    # LR statistic = 2 (llf_full - llf_reduced); df = number of non-linear terms (k - 2 = 2 for four knots).
     chi2 = 2 * (m_rcs.llf - m_lin.llf)
     dfree = basis.shape[1] - 1
     lin_rows.append({"variable": v, "label": lab, "n": len(lin), "n_events": int(y_lin.sum()), "chi2": chi2, "df": dfree,
@@ -1089,6 +1258,7 @@ LIN["nonlinear"] = LIN.p < 0.05
 LIN.to_csv(S4_DIR / "linearity_tests.csv", index=False)
 print(LIN.assign(p=LIN.p.map(lambda p: f"{p:.2g}")).round(2).to_string(index=False))
 expected = {"RIDAGEYR": 57.6, "BMXBMI": 11.6, "BMXWAIST": 7.1, "bp_sys_mean": 5.9, "LBDHDD": 18.5, "LBXTC": 41.8, "INDFMPIR": 0.8}
+# Guard: frozen complete-case n and chi-square statistics (to 0.1).
 assert len(lin) == 4478 and all(abs(LIN.set_index("variable").chi2[k] - e) < 0.1 for k, e in expected.items())
 OUT["linearity"] = {r.variable: {"label": r.label, "chi2": r.chi2, "df": r.df, "p": r.p} for r in LIN.itertuples()}
 OUT["linearity_n"] = {"n": len(lin), "events": int(y_lin.sum())}
@@ -1099,19 +1269,26 @@ OUT["linearity_n"] = {"n": len(lin), "events": int(y_lin.sum())}
 # linear and RCS logistic fits.
 
 # %%
+# Decile-binned empirical log-odds with linear and spline fits for age, BMI, HDL and total cholesterol,
+# to show the shape of the curvature. Only plots; stores the binned values in OUT.
 fig, axes = plt.subplots(2, 2, figsize=(12, 9))
 binned = {}
 for ax, (v, lab) in zip(axes.ravel(), [("RIDAGEYR", "Age, years"), ("BMXBMI", "BMI, kg/m²"),
                                        ("LBDHDD", "HDL cholesterol, mg/dL"), ("LBXTC", "Total cholesterol, mg/dL")]):
     d = coh[[v, "L_comb"]].dropna()
+    # Deciles; duplicates='drop' merges bins if ties collapse a boundary.
     d["bin"] = pd.qcut(d[v], 10, duplicates="drop")
     g = d.groupby("bin", observed=True).agg(x=(v, "median"), n=("L_comb", "size"), k=("L_comb", "sum"))
+    # Add 0.5 to events and non-events (Haldane-Anscombe) so empty or full bins keep a finite log-odds.
     pr = (g.k + 0.5) / (g.n + 1)
+    # Standard error of an empirical log-odds: sqrt(1 / events + 1 / non-events).
     lo_ = np.log(pr / (1 - pr)); se = np.sqrt(1 / (g.k + 0.5) + 1 / (g.n - g.k + 0.5))
     ax.errorbar(g.x, lo_, yerr=1.96 * se, fmt="o", ms=6, color="k", capsize=3, label="decile log-odds (95% CI)")
+    # Plot between the 1st and 99th percentile to avoid extreme tails.
     grid = np.linspace(d[v].quantile(0.01), d[v].quantile(0.99), 200)
     Bx, kn = rcs_basis(d[v])
     m_r = sm.Logit(d.L_comb.to_numpy(float), sm.add_constant(Bx)).fit(disp=0)
+    # Same truncated cubic as in rcs_basis, evaluated on the plotting grid with the fitted knots.
     p3 = lambda u: np.maximum(u, 0) ** 3
     k_ = len(kn)
     Bg = np.column_stack([grid] + [(p3(grid - kn[j]) - p3(grid - kn[k_ - 2]) * (kn[k_ - 1] - kn[j]) / (kn[k_ - 1] - kn[k_ - 2])
@@ -1150,16 +1327,21 @@ OUT["binned_logodds"] = {lab: df_.to_dict("list") for lab, df_ in binned.items()
 # reported and the tests are repeated under three specifications.
 
 # %%
+# Interaction tests (race, Asian, age, sex x BMI) under three model specifications, with the minimum
+# detectable effect. Asserts the race terms are non-significant; writes the tests and OUT['interactions'].
 inter = lin.rename(columns={"RIDAGEYR": "age", "BMXBMI": "bmi", "BMXWAIST": "waist", "bp_sys_mean": "sbp",
                             "LBDHDD": "hdl", "LBXTC": "tc", "INDFMPIR": "pir"}).copy()
 inter["race6"] = pd.Categorical(inter.race.astype(str), categories=list(io.RACE_ORDER))   # NH White = reference
 inter["asian"] = (inter.race == "NH Asian").astype(float)
+# Spline columns for age and BMI, needed by the splines specification.
 for v in ["age", "bmi"]:
     Bv, _ = rcs_basis(inter[v]); inter[f"{v}_s1"], inter[f"{v}_s2"] = Bv[:, 1], Bv[:, 2]
+# Specification B uses all adults with a BMI (larger n), so it is built from the full cohort.
 bmi_cc = coh.dropna(subset=["BMXBMI"]).rename(columns={"RIDAGEYR": "age", "BMXBMI": "bmi"}).copy()
 bmi_cc["female"] = (bmi_cc.sex == "Female").astype(float)
 bmi_cc["race6"] = pd.Categorical(bmi_cc.race.astype(str), categories=list(io.RACE_ORDER))
 bmi_cc["asian"] = (bmi_cc.race == "NH Asian").astype(float)
+# Three specifications show whether the conclusion depends on the covariate set.
 SPECS = {
     "A_primary": (inter, "age + female + race6 + bmi + waist + sbp + hdl + tc + pir"),
     "B_minimal": (bmi_cc, "age + female + race6 + bmi"),
@@ -1167,14 +1349,18 @@ SPECS = {
 }
 TERMS = {"race_x_bmi": "race6:bmi", "asian_x_bmi": "asian:bmi", "age_x_bmi": "age:bmi",
          "sex_x_bmi": "female:bmi"}
+# z(1 - alpha/2) + z(power): multiplier for the minimum detectable effect (alpha 0.05, power 80 %).
 z80 = stats.norm.ppf(0.975) + stats.norm.ppf(0.80)
 int_rows = []
 for spec, (d, base) in SPECS.items():
+    # Base model without the interaction, for the nested likelihood-ratio test.
     m0 = smf.logit(f"L_comb ~ {base}", d).fit(disp=0)
     for term, expr in TERMS.items():
         m1 = smf.logit(f"L_comb ~ {base} + {expr}", d).fit(disp=0)
+        # LR test of the interaction; df = number of parameters added.
         chi2 = 2 * (m1.llf - m0.llf); k = int(m1.df_model - m0.df_model)
         mde = np.nan
+        # MDE is computed only for one-parameter interactions.
         if k == 1:
             name = [p for p in m1.params.index if p not in m0.params.index][0]
             mde = z80 * m1.bse[name] * 5                     # log-OR difference per 5 kg/m² BMI (per year x 5 for age)
@@ -1193,6 +1379,7 @@ print(f"MDE (80% power) for the Asian x BMI slope difference: {mde_asian:.2f} lo
       f"(odds-ratio multiplier {np.exp(mde_asian):.2f} per 5 kg/m²)")
 race_p_range = (INT[INT.term == "race_x_bmi"].p.min(), INT[INT.term == "race_x_bmi"].p.max())
 sex_p_range = (INT[INT.term == "sex_x_bmi"].p.min(), INT[INT.term == "sex_x_bmi"].p.max())
+# Guard: race x BMI and Asian x BMI must be non-significant in every specification (the wording rests on it).
 assert race_p_range[0] > 0.05 and INT[INT.term == "asian_x_bmi"].p.min() > 0.05
 OUT["interactions"] = {r.term: {"chi2": r.chi2, "df": r.df, "p": r.p, "mde": r.mde} for r in prim.reset_index().itertuples()}
 OUT["interactions_by_spec"] = INT.to_dict("records")
@@ -1223,6 +1410,8 @@ reg("DR-S4-11", "model", "Interactions with BMI not detectable: race x BMI and A
 # the alternatives were rejected. The table is built from the numbers computed above.
 
 # %%
+# Assemble the data -> algorithm (DAJ) table from numbers computed above, so it changes if the data change.
+# Writes the DAJ table and OUT['daj'].
 L_ = LIN.set_index("variable")
 DAJ = pd.DataFrame([
     ("Non-linearity", f"RCS chi2(2): age {L_.chi2['RIDAGEYR']:.1f}, TC {L_.chi2['LBXTC']:.1f}, HDL {L_.chi2['LBDHDD']:.1f}, "
@@ -1277,6 +1466,8 @@ reg("DR-S4-12", "model", "Data -> algorithm table: 9 diagnostics mapped to model
 # (`governance/register/S4.csv`) and `results/metrics_S4.json` are then written.
 
 # %%
+# Self-check: recompute key numbers and compare them with the reference values frozen for the project;
+# differences are recorded, not silently fixed. Writes the self-check table and OUT['self_check'].
 pa = prim.loc["asian_x_bmi", "p"]
 SELF_CHECK = pd.DataFrame([
     ("DB516 n (fasting adults)", 2938, OUT["db516"]["n"], "equals NCHS"),
@@ -1303,10 +1494,13 @@ SELF_CHECK = pd.DataFrame([
     ("race x BMI p", 0.39, prim.loc["race_x_bmi", "p"], "primary specification; non-significant in all 3"),
     ("Asian x BMI p", 0.93, pa, "primary specification"),
 ], columns=["quantity", "reference", "recomputed", "note"])
+# Tolerance: 0.05 plus 0.2 % of the reference value (rounding of the quoted number); p-values 0.02;
+# bootstrap probability 0.10 (Monte-Carlo error).
 tol = 0.05 + 0.002 * SELF_CHECK.reference.abs()                     # rounding of the quoted value
 tol[SELF_CHECK.quantity.str.endswith(" p")] = 0.02                   # p-values
 tol[SELF_CHECK.quantity.str.contains("P(sign", regex=False)] = 0.10   # bootstrap probability, Monte-Carlo error at B = 100
 SELF_CHECK["tolerance"] = tol
+# PASS when the recomputed value lies within the tolerance of the reference.
 SELF_CHECK["verdict"] = np.where((SELF_CHECK.recomputed - SELF_CHECK.reference).abs() <= tol, "PASS", "DIFF")
 SELF_CHECK.to_csv(S4_DIR / "self_check.csv", index=False)
 print(SELF_CHECK.round(3).to_string(index=False))
@@ -1327,6 +1521,7 @@ reg("DR-S4-13", "check", f"S4 self-check: {len(SELF_CHECK) - n_diff}/{len(SELF_C
 # fasting subsample for triglycerides (§4.10) and the interaction-test specification (§4.12).
 
 # %%
+# Write the decision register and the stored section results.
 reg_df = pd.DataFrame(REG)
 (C.GOVERNANCE_DIR / "register").mkdir(parents=True, exist_ok=True)
 reg_df.to_csv(C.GOVERNANCE_DIR / "register" / "S4.csv", index=False)
