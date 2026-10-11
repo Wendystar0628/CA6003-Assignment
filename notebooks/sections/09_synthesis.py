@@ -56,15 +56,20 @@ print(f"mode {C.NB_MODE}; this section re-estimates nothing – it reads stored 
 # keys are written next to every slide number in §10.11, so each number can be traced to its origin.
 
 # %%
+# Load the stored metrics of §1–§9 and define the `get` source-key helper used for every number below.
+# Reads results/metrics_S*.json through results_io; in a FINAL run asserts that §7–§9 ran in FINAL mode.
 M = {s: R.load_section(s) for s in SECTIONS}
 modes = {s: M[s]["_meta"]["nb_mode"] for s in SECTIONS}
 print("run mode per section:", modes)
+# Resampling-dependent results (§7–§9) are only valid at full size: refuse FAST leftovers in a FINAL run.
 if C.IS_FINAL:   # numbers that depend on resampling size must come from the full protocol
     assert all(modes[s] == "FINAL" for s in ("S7", "S8", "S9")), modes
 
+# Split a key path on '.' except inside [...] filters, whose values may themselves contain dots.
 _SPLIT = re.compile(r"\.(?![^\[]*\])")
 
 
+# Compare a stored field with a filter value numerically when it parses as a number, else as text.
 def _match(v, want: str) -> bool:
     try:
         return abs(float(v) - float(want)) < 1e-9
@@ -76,6 +81,7 @@ def get(key: str, src: dict | None = None):
     """Resolve 'S7:path.to[k=v&k2=v2].value' in the metrics dictionaries (default: this run's M)."""
     sec, path = key.split(":", 1)
     d = (src or M)[sec]
+    # Each segment is 'name', 'name[k=v&k2=v2]' or '[k=v]': descend into `name`, then pick one list record.
     for seg in _SPLIT.split(path):
         m = re.fullmatch(r"([^\[]*)(?:\[(.*)\])?", seg)
         name, filt = m.group(1), m.group(2)
@@ -84,6 +90,7 @@ def get(key: str, src: dict | None = None):
         if filt:
             conds = [c.split("=", 1) for c in filt.split("&")]
             hits = [x for x in d if all(_match(x.get(k), v) for k, v in conds)]
+            # Exactly one record must match: zero or several would silently return the wrong number.
             assert len(hits) == 1, f"{key}: {len(hits)} records match [{filt}]"
             d = hits[0]
     return d
@@ -93,20 +100,27 @@ def get(key: str, src: dict | None = None):
 hyp_bytes = (C.GOVERNANCE_DIR / "hypotheses.md").read_bytes()
 hyp_sha = hashlib.sha256(hyp_bytes).hexdigest()
 lock = get("S6:hypotheses.lock")
+# Pre-registration guard: any edit to the locked file after the lock changes its hash and stops the run.
 assert hyp_sha == lock["sha256"], "governance/hypotheses.md differs from the locked version"
 print(f"hypotheses.md SHA-256 {hyp_sha[:16]}... equals the lock of {lock['timestamp']} (commit {lock['commit'][:10]})")
+# The lock must predate the first ablation commit (ISO timestamps compare correctly as strings).
 print(f"first experiment commit {lock['first_exp_timestamp']} is later: {lock['first_exp_timestamp'] > lock['timestamp']}")
 
 # parse the locked hypothesis tables (statement, metric, direction, magnitude, SESOI, falsifier, prior exposure)
 HCOLS = ["hyp_id", "rq_or_block", "statement", "metric", "direction", "magnitude", "sesoi", "falsifier", "prior_exposure", "weights"]
 rows = []
+# Table rows start with '| '; skip the header and separator rows. The split regex ignores escaped pipes (\|)
+# inside a cell, and the replace() restores them afterwards.
 for line in hyp_bytes.decode("utf-8").splitlines():
     if line.startswith("| ") and not line.startswith("| hyp_id") and not line.startswith("|---"):
         cells = [c.strip().replace("\\|", "|") for c in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
         if len(cells) == len(HCOLS):
             rows.append(dict(zip(HCOLS, cells)))
 HYP = pd.DataFrame(rows).set_index("hyp_id")
+# First word of prior_exposure (e.g. none, analysis_seen) tells how much was known before the hypothesis
+# was locked.
 HYP["prior"] = HYP["prior_exposure"].str.split(" ").str[0]
+# Parsed table and the §6 record must both hold all 17 hypotheses; a parsing slip would drop rows silently.
 assert len(HYP) == M["S6"]["hypotheses"]["n_total"] == 17, len(HYP)
 print(f"{len(HYP)} locked hypotheses parsed; prior exposure: {HYP['prior'].value_counts().to_dict()}")
 
@@ -125,12 +139,19 @@ print(f"{len(HYP)} locked hypotheses parsed; prior exposure: {HYP['prior'].value
 # post-lock M1 sensitivity of §7.12.1.
 
 # %%
+# Build the hypothesis scoreboard: one verdict per locked hypothesis with estimate, CI, SESOI and MDD.
+# Reads the stored §7 scoreboard and the §4/§5/§8 results; re-applies the locked rules as an assert.
+# `prim` keeps the pre-registered primary sub-claims only (secondary and exploratory rows are excluded).
 det = pd.DataFrame(M["S7"]["scoreboard_detail"])
 prim = det[det["role"] == "primary"]
 
 
+# Newcombe's method 10 combines the two Wilson intervals; unlike the Wald interval it stays valid for small
+# counts and proportions near 0 or 1. z = 1.959964 is the 97.5 % normal quantile (two-sided 95 % CI).
 def newcombe_diff(x1, n1, x2, n2, z=1.959964):
     """Newcombe hybrid-score CI for p1 - p2 (method 10), from Wilson intervals."""
+    # Wilson score interval: the centre c is pulled towards 0.5 and the half-width h includes the z^2/4n^2
+    # term.
     def wilson(x, n):
         p = x / n
         c = (p + z * z / (2 * n)) / (1 + z * z / n)
@@ -138,10 +159,14 @@ def newcombe_diff(x1, n1, x2, n2, z=1.959964):
         return p, c - h, c + h
     p1, l1, u1 = wilson(x1, n1)
     p2, l2, u2 = wilson(x2, n2)
+    # Hybrid CI for the difference: distances from each estimate to the Wilson bound facing the other group.
     d = p1 - p2
     return d, d - np.sqrt((p1 - l1) ** 2 + (u2 - p2) ** 2), d + np.sqrt((u1 - p1) ** 2 + (p2 - l2) ** 2)
 
 
+# Collector for scoreboard rows. `add` appends one dict per hypothesis; `underpowered` is derived
+# (inconclusive
+# verdict and MDD > SESOI) unless the caller passes it explicitly.
 SB = []
 
 
@@ -154,11 +179,16 @@ def add(hyp, est, lo, hi, unit, verdict, *, interval="", mdd=np.nan, sesoi=np.na
 
 
 # --- RQ1 (S4, S5)
+# H1a: weighted risk difference with its jackknife CI. df = 15 is the design df of this survey cycle
+# (number of PSUs minus number of strata, see §5); it is used when the stored record has no df of its own.
 rd = get("S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured")
 add("H1a", rd["rd_pp"], rd["ci_low_pp"], rd["ci_high_pp"], "pp", get("S5:hypotheses.H1a.verdict"), interval=f"jackknife (df {rd.get('df', 15)})",
     source="§5 (S5)", note="uninsured share itself exploratory (Korn-Graubard width ≥ 0.30)")
 ins = get("S4:standardisation.insured_uninsured")
 h1b_std, (h1b_lo, h1b_hi), h1b_crude = ins["std"], ins["std_ci"], ins["crude"]
+# Locked H1b rule (§6): refuted if the age-standardised gap stays >= +2 pp with its CI above 0; supported
+# if it
+# falls below +2 pp (or its CI covers 0) and is smaller than the crude gap; otherwise inconclusive.
 if h1b_std >= 2 and h1b_lo > 0:
     h1b_v = "refuted"
 elif (h1b_std < 2 or h1b_lo <= 0) and h1b_std < h1b_crude:
@@ -169,18 +199,26 @@ add("H1b", h1b_std, h1b_lo, h1b_hi, "pp", h1b_v, interval="jackknife (df 15)", s
     note=f"crude {h1b_crude:+.1f} pp [{ins['crude_ci'][0]:+.1f}, {ins['crude_ci'][1]:+.1f}] -> age-standardised; attenuation, not reversal")
 
 # --- RQ2 and blocks (S7)
+# One displayed row per block hypothesis: the first primary sub-claim gives the estimate and CI, the stored
+# combined verdict gives the verdict, and every sub-verdict is listed in text.
 S7V = M["S7"]["scoreboard"]
 for h in ["H2a", "H2b", "H2c", "B1", "B2", "B2t", "B3", "B4", "B5", "B6a", "B6b"]:
     g = prim[prim["hyp_id"] == h]
     r0 = g.iloc[0]
+    # Sub-verdict text; the population is appended only when the same sub-claim appears on several
+    # populations.
     subs = "; ".join(f"{r['sub']}{' ' + r['pop'] if (g['sub'] == r['sub']).sum() > 1 else ''}: {r['verdict']}" for _, r in g.iterrows())
+    # Display unit by metric; dict.get falls back to the raw metric name for anything unlisted.
     unit = {"roc_auc": "AUC", "brier": "Brier", "sd_ratio": "ratio", "calslope_dev": "|slope−1|"}.get(r0["metric"], str(r0["metric"]))
     add(h, r0["est"], r0["lo"], r0["hi"], unit if np.isfinite(r0["est"]) else "", S7V[h]["verdict"], interval=str(r0["interval"]) if pd.notna(r0["interval"]) else "",
         mdd=r0["mdd"], sesoi=r0["sesoi"], subs=subs, source="§7 (S7)",
+        # Underpowered = some inconclusive sub-claim whose minimal detectable difference exceeds its SESOI.
         underpowered=bool(((g["verdict"] == "inconclusive") & (g["mdd"] > g["sesoi"])).any()),
         note=f"primary: {r0['comparison']}, {r0['pop']}" + (f", Tier {int(r0['tier'])}" if pd.notna(r0['tier']) else ""))
 
 # --- P14: (a) from S7, (b) and the combined verdict from S8 (supersedes the interim S7 entry)
+# P14 has two parts: (a) the paired AUC difference from §7 and (b) the NH Asian TPR change from §8;
+# the combined §8 verdict replaces the interim §7 entry.
 pa = prim[(prim["hyp_id"] == "P14") & (prim["sub"] == "(a) AUC")].iloc[0]
 wt = pd.DataFrame(get("S8:whtr.table")).set_index("quantity")
 pb = wt.loc["ΔTPR NH Asian"]
@@ -189,6 +227,8 @@ add("P14", pb["est"], pb["lo"], pb["hi"], "TPR", get("S8:verdicts.P14"), interva
     source="§7 (a), §8 (b)", note=f"§7 interim entry was '{S7V['P14']['verdict']} ({S7V['P14']['note']})'; §8 combined verdict used")
 
 # --- RQ3 (S8): H3 three elements, column-wise reading
+# H3 is shown through its worst-stratum recall gap between labels L_comb and L_self (column-wise reading,
+# §10.3).
 lm = get("S8:label_matrix")
 h3c = pd.DataFrame(lm["contrasts"])
 e3 = h3c[h3c["contrast"] == "worst-cell gap: L_comb - L_self"].iloc[0]
@@ -200,9 +240,14 @@ add("H3", e3["est"], e3["lo"], e3["hi"], "recall", lm["verdict"], interval="pair
 ab = get("S5:asian_bmi.bmi_lt25_among_diabetics")
 x1, n1 = ab["NH Asian"]["bmi_lt25"], ab["NH Asian"]["diabetics_with_bmi"]
 x2, n2 = ab["NH White"]["bmi_lt25"], ab["NH White"]["diabetics_with_bmi"]
+# H4a: recompute the Asian-minus-White gap in BMI < 25 shares from counts with Newcombe's CI (in pp) and
+# check it against the string stored by §5, so the two routes cannot drift apart.
 h4a = np.array(newcombe_diff(x1, n1, x2, n2)) * 100
 s5_h4a = get("S5:hypotheses.H4a.estimate")
 assert f"+{h4a[0]:.1f} pp (Newcombe {h4a[1]:.1f}, {h4a[2]:.1f})" in s5_h4a, (h4a, s5_h4a)   # independent recomputation
+# Locked H4a rule: supported if the gap is >= 20 pp and its lower bound stays above 20; refuted if the
+# upper bound
+# falls below 20; otherwise inconclusive.
 h4a_v = "supported" if (h4a[0] >= 20 and h4a[1] > 20) else ("refuted" if h4a[2] < 20 else "inconclusive")
 assert h4a_v == get("S5:hypotheses.H4a.verdict")
 add("H4a", h4a[0], h4a[1], h4a[2], "pp", h4a_v, interval="Newcombe (recomputed from counts)", source="§5 (S5)",
@@ -216,17 +261,22 @@ add("H4b", gd["est"], gd["psu_ci_low"], gd["psu_ci_high"], "AUC", get("S8:verdic
                                    f"{get('S5:asian_bmi.auc.NH White|WHtR − BMI (paired).auc'):+.3f}")
 
 SCORE = pd.DataFrame(SB)
+# Re-index in the locked hypothesis order so the table reads like hypotheses.md; the assert below checks that
+# every verdict is one of the allowed labels.
 order = list(HYP.index)
 SCORE = SCORE.set_index("hyp_id").loc[order].reset_index()
 assert set(SCORE["verdict"]) <= set(C.VERDICTS), set(SCORE["verdict"])
 
 # independent re-application of the locked rules to the stored S7 CIs
+# Rule per stored sub-claim: 'equiv' = equivalence inside +/-0.01 AUC, 'noninf' = non-inferiority at -0.01,
+# (sign, margin) = directional test against that margin (SESOI).
 CHECK = {  # (hyp, sub): rule
     ("B1", "(a) AUC"): "equiv", ("B3", "(a) AUC"): "equiv", ("B4", "(a) AUC"): "equiv", ("B6a", "(a) AUC"): "equiv",
     ("P14", "(a) AUC"): "equiv", ("H2b", "(a) AUC"): "equiv", ("B6b", "(a) unweighted AUC"): "noninf",
     ("H2a", "AUC M0-M1"): ("+", 0.05), ("B2", "(a) AUC M1-M0"): ("-", 0.05), ("B6a", "(b) Brier"): ("+", 0.005),
     ("B6a", "(c) balanced accuracy at 0.5"): ("+", 0.05), ("H2c", "(i) AUC E-ALL - E-SCREEN (S)"): ("+", 0.03),
     ("H2c", "(iii) S - ADA-lite, E-SCREEN"): ("+", 0.01)}
+# Format an estimate with its CI as '+est [lo, hi]' with k decimals.
 def ci3_(e, lo, hi, k=3):
     return f"{e:+.{k}f} [{lo:+.{k}f}, {hi:+.{k}f}]"
 
@@ -234,12 +284,17 @@ def ci3_(e, lo, hi, k=3):
 n_ok = 0
 for (h, sub), rule in CHECK.items():
     r = prim[(prim["hyp_id"] == h) & (prim["sub"] == sub)].iloc[0]
+    # Equivalence: supported if the whole CI lies inside +/-0.01, refuted if it lies wholly beyond one edge.
     if rule == "equiv":
         v = "supported" if (-0.01 < r["lo"] and r["hi"] < 0.01) else ("refuted" if (r["lo"] >= 0.01 or r["hi"] <= -0.01) else "inconclusive")
+    # Non-inferiority: supported if the lower bound clears -0.01, refuted if even the upper bound lies
+    # below it.
     elif rule == "noninf":
         v = "supported" if r["lo"] > -0.01 else ("refuted" if r["hi"] < -0.01 else "inconclusive")
     else:
+        # Directional rules use the shared evalkit helper, so this check applies the same logic as §7.
         v = ek.verdict(r["lo"], r["hi"], rule[1], rule[0], r["est"])
+    # The independent re-application of the locked rule must reproduce the stored verdict exactly.
     assert v == r["verdict"], (h, sub, v, r["verdict"])
     n_ok += 1
 print(f"locked rules re-applied to {n_ok} stored S7 sub-claims: all reproduce the stored verdict")
@@ -249,6 +304,7 @@ score_view = SCORE.assign(est_ci=SCORE.apply(lambda r: "" if not np.isfinite(r["
 # exploratory rows (not hypotheses, not counted in the verdict totals): pure preparation and the post-lock M1 sensitivity
 pp_rows = pd.DataFrame(M["S7"]["pure_preparation_S_B6a_vs_M1"]).set_index(["pop", "metric"])
 pl7 = pd.DataFrame(get("S7:postlock_m1_sensitivity.rows"))
+# Keep only the refit variants of M1; the stored fit is already on the scoreboard.
 pl_main = pl7[(pl7["a"] == "S") & (pl7["pop"] == "E-ALL") & (pl7["metric"] == "roc_auc")
               & (pl7["variant"] != "M1 stored (lbfgs, max_iter 5,000)")]
 EXPL = pd.DataFrame([dict(hyp_id="(expl.) S−B6a vs M1", est_ci=ci3_(pp_rows.loc[("E-ALL", m_), "diff"], pp_rows.loc[("E-ALL", m_), "lo"], pp_rows.loc[("E-ALL", m_), "hi"], 4),
@@ -262,6 +318,7 @@ show(pd.concat([score_view[["hyp_id", "est_ci", "unit", "mdd", "underpowered", "
 print("\nsub-verdicts:")
 for _, r in SCORE[SCORE["sub_verdicts"] != ""].iterrows():
     print(textwrap.fill(f"  {r['hyp_id']:<4} {r['sub_verdicts']}", width=140, subsequent_indent="       "))
+# Verdict totals for all hypotheses and for the genuine pre-registrations only (prior_exposure = none).
 VCOUNT = SCORE["verdict"].value_counts().to_dict()
 VCOUNT_PRE = SCORE[SCORE["prior_exposure"] == "none"]["verdict"].value_counts().to_dict()
 print(f"\nverdicts: {VCOUNT}; genuine pre-registrations only: {VCOUNT_PRE}")
@@ -274,15 +331,19 @@ SCORE.to_csv(OUT / "scoreboard.csv", index=False)
 # pure-preparation contrast S−B6a vs M1 (S without class weights) and the POST-LOCK M1 variants of §7.12.1.
 
 # %%
+# Break H2b into its locked sub-claims and add the exploratory pure-preparation and post-lock M1 rows.
+# Reads the stored §7 results; writes results/S10/h2b_detail.csv.
 h2b = prim[prim["hyp_id"] == "H2b"].set_index("sub")
 pp_ = pd.DataFrame(M["S7"]["pure_preparation_S_B6a_vs_M1"]).set_index(["pop", "metric"])
 for sub, r in h2b.iterrows():
+    # MDD above SESOI means an inconclusive result is underpowered rather than a demonstrated null.
     extra = (f"; MDD {r['mdd']:.3f} vs SESOI {r['sesoi']:.3f} -> {'underpowered' if r['mdd'] > r['sesoi'] else 'powered'}"
              if (pd.notna(r["mdd"]) and r["verdict"] == "inconclusive") else "")
     print(f"H2b {sub:<18} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] ({r['interval'] if pd.notna(r['interval']) else 'Monte Carlo'}): {r['verdict']}{extra}")
 print(f"H2b combined (locked combination rule): {S7V['H2b']['verdict']}")
 for (pop, met), r in pp_.iterrows():
     print(f"pure preparation S−B6a vs M1, {pop:<8} {met:<7} {r['diff']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}]")
+# Bootstrap SD ratio of the BMI coefficient (M1 versus the systematic linear model), from §7.
 cs = M["S7"]["coef_stability"]
 print(f"BMI coefficient SD ratio M1 / S-linear {cs['ratio_H2b']['ratio']:.2f} [{cs['ratio_H2b']['lo']:.2f}, {cs['ratio_H2b']['hi']:.2f}]; "
       f"unscaled cumulative {cs['ratio_cumulative']['ratio']:.2f}; inside scaled L2 (B3) {cs['ratio_B3']['ratio']:.2f}")
@@ -318,9 +379,15 @@ S10["h2b"] = dict(subs={k: dict(est=r["est"], lo=r["lo"], hi=r["hi"], verdict=r[
 # some stability, not discrimination.
 
 # %%
+# Forest plot of the paired AUC differences of the locked sub-claims against the +/-0.01 SESOI band.
+# Reads the scoreboard detail built above; saves the figure with its caption through plots.savefig.
 fig, axes = plt.subplots(1, 2, figsize=(14, 6.5), gridspec_kw={"width_ratios": [1.1, 1]})
+# SEEN collects the verdicts that occur so the legend lists only those; VCOL gives each verdict its colour.
 SEEN = set()
 VCOL = {"supported": OI["green"], "equivalent": OI["blue"], "refuted": OI["vermillion"], "inconclusive": OI["grey"], "mixed": OI["purple"]}
+# Rows are (hypothesis, sub-claim prefix, axis label). The left panel holds the small preparation effects
+# and the
+# right panel the large leakage/population effects, hence the different x limits.
 LEFT = [("B1", "(a) AUC", "B1 integrity"), ("B3", "(a) AUC", "B3 redundancy"), ("B4", "(a) AUC", "B4 missingness"),
         ("B5", "(b) AUC block", "B5 representation"), ("B5", "(c) AUC splines", "B5 splines vs linear"),
         ("B6a", "(a) AUC", "B6a class weights"), ("B6b", "(a) unweighted AUC", "B6b survey weights"),
@@ -330,24 +397,30 @@ RIGHT = [("B2", "(a) AUC M1-M0", "leak gate M1 − M0"), ("H2c", "(i) AUC E-ALL 
 for ax, spec, ttl, lim in ((axes[0], LEFT, "Preparation blocks", (-0.03, 0.03)), (axes[1], RIGHT, "Leakage, population, baseline", (-0.17, 0.11))):
     ylabels = []
     for i, (h, sub, lab) in enumerate(spec):
+        # Tier 1 AUC rows of this sub-claim; the 4-character prefix lets the E-ALL and E-SCREEN rows both
+        # match.
         g = det[(det["hyp_id"] == h) & (det["sub"].str.startswith(sub[:4])) & (det["metric"] == "roc_auc") & (det["tier"] == 1)]
         if h == "H2c" and sub.startswith("(ii)"):
             g = det[(det["hyp_id"] == "H2c") & det["sub"].str.startswith("(ii)")]
         for _, r in g.iterrows():
+            # E-ALL is drawn just above the row centre (filled circle), E-SCREEN just below (hollow square).
             off = -0.15 if r["pop"] in ("E-ALL", "E-ALL minus E-SCREEN") else 0.15
             col = VCOL.get(r["verdict"], OI["grey"])
             SEEN.add(r["verdict"])
             ax.errorbar(r["est"], i + off, xerr=[[r["est"] - r["lo"]], [r["hi"] - r["est"]]], fmt="o" if off < 0 else "s",
                         color=col, mfc=col if off < 0 else "white", capsize=3, ms=8, lw=1.8)
+            # Mark the one sub-claim whose CI excludes 0 although the locked prediction was 'unchanged'.
             if h == "H2c" and r["pop"] == "E-SCREEN" and r["verdict"] == "inconclusive" and r["lo"] > 0:
                 ax.annotate(f"predicted unchanged;\nobserved {r['est']:+.3f}", (r["lo"], i + off), xytext=(-12, -14), va="top",
                             textcoords="offset points", fontsize=11, color=OI["vermillion"], ha="right",
                             arrowprops=dict(arrowstyle="-", color=OI["vermillion"], lw=0.8))
         ylabels.append(lab)
+    # Shaded band = SESOI of +/-0.01 AUC; a CI wholly inside it is evidence of equivalence.
     ax.axvspan(-0.01, 0.01, color=OI["sky"], alpha=0.18, lw=0)
     ax.axvline(0, color="k", lw=0.7)
     ax.set_yticks(range(len(spec)), ylabels, fontsize=12)
     ax.tick_params(axis="x", labelsize=11)
+    # First row at the top.
     ax.invert_yaxis()
     ax.set_xlim(lim)
     ax.set_title(ttl, fontsize=14)
@@ -378,6 +451,8 @@ plt.show()
 # verdict of H1b. The POST-LOCK M1 sensitivity is recorded in §7.12.1 and DR-S7-16.
 
 # %%
+# Record the three post-lock interpretation notes (H3 reading, P14 verdict source, H1b verdict) next to their
+# consequence. Reads values computed above; the locked hypotheses file itself is never modified.
 POSTLOCK = [
     dict(item="H3 reading", note=("'Misses most' is read column-wise: within a diabetes stratum, which training label has the lowest recall "
                                   "(coded in fairness.h3_elements before the matrix was viewed). The row-wise reading – which stratum each label "
@@ -401,9 +476,12 @@ show(pd.DataFrame(POSTLOCK))
 # the identifying test and the verdict.
 
 # %%
+# Table of improvements and deteriorations: mechanism, identifying test and verdict for each change.
+# Reads the stored §7/§8 results; writes results/S10/improvements_deteriorations.csv.
 lg = M["S7"]["leak_gate"]
 hl = M["S7"]["headline"]
 tm = M["S7"]["tree_m0"]
+# Race-reweighing arm: equal-opportunity difference (EOD) by group, indexed by arm and group.
 rw = pd.DataFrame(get("S8:reweighing.eod")).set_index(["arm", "group"]).sort_index()
 blk = rw.loc[("S+RW(race)", "NH Black")]
 asn = rw.loc[("S+RW(race)", "NH Asian")]
@@ -413,10 +491,13 @@ ada = M["S7"]["ada_lr_minus_points"]["E-SCREEN"]
 b6b_s = det[(det["hyp_id"] == "B6b") & (det["pop"] == "E-SCREEN")].iloc[0]
 
 
+# Format an estimate with its CI as '+est [lo, hi]' with k decimals.
 def ci3(e, lo, hi, k=3):
     return f"{e:+.{k}f} [{lo:+.{k}f}, {hi:+.{k}f}]"
 
 
+# One row per change: `effect` is the measured paired difference, `mechanism` the explanation and `test` the
+# analysis that identifies it. Every number is looked up in stored results, none is typed in.
 IMPDET = pd.DataFrame([
     dict(change="Availability rule (M0 → M1)", direction="deterioration (correct)", metric="ΔAUC E-ALL / E-SCREEN",
          effect=f"{ci3(lg['T1_E-ALL']['est'], lg['T1_E-ALL']['lo'], lg['T1_E-ALL']['hi'])} / {ci3(lg['T1_E-SCREEN']['est'], lg['T1_E-SCREEN']['lo'], lg['T1_E-SCREEN']['hi'])}",
@@ -477,6 +558,8 @@ IMPDET.to_csv(OUT / "improvements_deteriorations.csv", index=False)
 # property, the probe, the reading, the number and the evidence grade.
 
 # %%
+# Table of data properties revealed by the models: probe, reading, number and evidence grade.
+# Reads stored §3–§9 results; writes results/S10/what_ml_says.csv.
 s3 = M["S3"]["blanket_recode"]
 mask = M["S5"]["masking"]
 cal = pd.DataFrame(get("S8:calibration.table")).set_index("group")
@@ -484,8 +567,11 @@ eod = pd.DataFrame(get("S8:eod_eall_t1")).set_index("group")
 perm9 = M["S9"]["permutation"]
 gdec = M["S8"]["gap_decomposition"]
 flips = pd.DataFrame(get("S4:simpson.flips"))
+# Simpson sign flips caused by mediator stratifiers (stratifying on a mediator is not a valid adjustment).
 n_med_flip = int((flips["role"] == "mediator").sum())
 mnar = M["S9"]["mnar"]
+# Delta-adjusted (MNAR) prevalence, indexed by the assumed odds ratio for being missing; 1.0 = missing at
+# random.
 dp = pd.DataFrame(mnar["delta_prevalence"]).set_index("odds_ratio")
 WHAT = pd.DataFrame([
     dict(property="Skip-logic leakage", probe="leak gate M0 → M1; depth-3 tree root",
@@ -556,7 +642,11 @@ WHAT.to_csv(OUT / "what_ml_says.csv", index=False)
 # as the headline non-obvious modelling finding.
 
 # %%
+# Collect the three findings for the video and the evidence lines behind the chosen modelling headline.
+# Reads stored results, including the one-shot hold-out when available; writes
+# results/S10/headline_findings.csv.
 pc = pd.DataFrame(M["S9"]["positive_control"]["rows"])
+# The hold-out may be absent in a re-run; HO_OK switches every hold-out reference on or off.
 HO = M["S9"].get("holdout", {})
 HO_OK = "metrics" in HO
 if HO_OK:
@@ -591,6 +681,8 @@ for k, v in F.items():
         print("   -", line)
 
 # headline: whole-sample AUC measures recognition of known diabetes, not screening
+# Independent evidence lines for the headline, each from a different analysis (a headline needs at least
+# two, §10.7).
 HEAD_LINES = [
     ("pre-registered spectrum gap (H2c-i, supported)", f"{ci3(hl['eall_minus_escreen_S_T1']['est'], hl['eall_minus_escreen_S_T1']['lo'], hl['eall_minus_escreen_S_T1']['hi'])}"),
     ("care-trace ablation changes sign between populations (H2c-ii)", f"E-ALL {hl['minus_care_eall']['est']:+.3f} vs E-SCREEN {hl['minus_care_escreen']['est']:+.3f}"),
@@ -600,6 +692,7 @@ HEAD_LINES = [
     ("leakage also is recognition: the leak gate is smaller on E-SCREEN", f"{lg['T1_E-ALL']['est']:+.3f} vs {lg['T1_E-SCREEN']['est']:+.3f}"),
 ]
 if HO_OK:
+    # Hold-out AUCs of arm S on both populations; only direction and size of the gap are compared with CV.
     s_all, s_scr = HOM.loc[("S", 1, "E-ALL"), "roc_auc"], HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"]
     HEAD_LINES.append(("hold-out, arm S: same direction and size (not separately testable, 25 screening positives)",
                        f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)"))
@@ -628,19 +721,26 @@ HF.to_csv(OUT / "headline_findings.csv", index=False)   # slide material for the
 # that codes the label. Both are invisible to summary statistics and are the leakage and naive-cleaning finding (F1).
 
 # %%
+# Dumbbell plot: the same out-of-fold AUCs scored on E-ALL (recognition) and E-SCREEN (screening) per arm.
+# Reads the §7 arm metrics and baselines, plus hold-out markers when available; saves the figure with caption.
 fig, ax = plt.subplots(figsize=(9, 4.8))
+# Arm metrics indexed by (arm, tier, model); the 'lr' rows are the logistic-regression results.
 am = pd.DataFrame(M["S7"]["arm_metrics"]).set_index(["arm", "tier", "model"])
 bl = M["S7"]["baselines"]
+# Rows are (arm, tier, label); Tier 2 adds lipid measurements to the arm S features.
 ARMS_FIG = [("M0", 1, "M0 naive (leakage)"), ("M1", 1, "M1 availability rule"), ("S", 1, "S systematic"),
             ("T1-minus-care", 1, "S without care traces"), ("S", 2, "S Tier 2 (+ lipids)")]
 for i, (a, t, lab) in enumerate(ARMS_FIG):
     r = am.loc[(a, t, "lr")]
+    # The grey bar spans the two AUCs: its length is the cost of moving from recognition to screening.
     ax.plot([r["escr_auc"], r["eall_auc"]], [i, i], color=OI["grey"], lw=2, zorder=1)
     ax.errorbar(r["eall_auc"], i, xerr=[[r["eall_auc"] - r["eall_auc_lo"]], [r["eall_auc_hi"] - r["eall_auc"]]], fmt="o", color=OI["blue"], capsize=2, zorder=2)
     ax.errorbar(r["escr_auc"], i, xerr=[[r["escr_auc"] - r["escr_auc_lo"]], [r["escr_auc_hi"] - r["escr_auc"]]], fmt="o", color=OI["vermillion"], capsize=2, zorder=2)
+    # One-shot hold-out AUCs as hollow triangles just below the CV points.
     if HO_OK and (a, t, "E-ALL") in HOM.index:
         ax.plot(HOM.loc[(a, t, "E-ALL"), "roc_auc"], i - 0.25, "^", color=OI["blue"], mfc="white", ms=6)
         ax.plot(HOM.loc[(a, t, "E-SCREEN"), "roc_auc"], i - 0.25, "^", color=OI["vermillion"], mfc="white", ms=6)
+# Extra last row: the ADA-lite points score, a simple points-based risk score used as the baseline.
 j = len(ARMS_FIG)
 ada_p = bl["BL-ADAlite (points)"]
 ax.errorbar(ada_p["escr_auc"], j, xerr=[[ada_p["escr_auc"] - ada_p["lo"]], [ada_p["hi"] - ada_p["escr_auc"]]], fmt="o", color=OI["vermillion"], capsize=2)
@@ -677,16 +777,29 @@ plt.show()
 # downgraded automatically.
 
 # %%
+# Build the claims ledger: each claim gets a grade, evidence lines, CI, scope and falsifier from stored
+# results.
+# Reads stored results; asserts the wording rules (<= 25 words, grade verbs, no causal verbs); writes
+# claims files.
+# Evidence grade -> verb: the strength of the wording follows the grade (E1 confirms ... E4 suggests).
 LADDER = {"E1": "confirms that", "E2": "shows that", "E3": "is consistent with the view that", "E4": "suggests that"}
+# Forbidden causal wording: the data are observational, so statements may only claim association.
 CAUSAL = re.compile(r"\b(caus\w*|drive[sn]?|driven|leads? to|results? in|due to|because|impact\w*|effect of|prevent\w*)\b", re.I)
+# Video segments with their time slots; every claim is assigned to exactly one.
 VSEG = {"V1": "0:00-1:30 scope and design", "V2": "1:30-2:15 cost of naive cleaning", "V3": "2:15-3:30 leakage gate",
         "V4": "3:30-4:30 redundancy and skew", "V5": "4:30-6:00 fallacies", "V6": "6:00-8:30 label and measurement bias",
         "V7": "8:30-10:15 models and evaluation", "V8": "10:15-11:20 what ML says about the data"}
+# §9 robustness summary for E-ALL. Row labels contain run-dependent counts (seeds, specifications), so rows
+# are
+# found by their suffix instead of by full name.
 sm = M["S9"]["summary"]["table"]
 sm_e = {r["check"]: r for r in sm if r["pop"] == "E-ALL"}
 pick = lambda suf: next(v for k, v in sm_e.items() if k.endswith(suf))   # labels carry the run's counts (FAST 5 seeds / 30 specs)
 N_SEEDS, N_CURVE = M["S9"]["seeds"]["n"], M["S9"]["specification_curve"]["n"]
+# The leading integer of the label is the number of sensitivity specifications that were run.
 N_SENS = int(pick("sensitivity specs")["check"].split()[0])
+# Robustness strings quoted in the ledger are assembled from §9 results so that they cannot drift from the
+# notebook.
 ROB_H2B = (f"{N_SEEDS} seeds {pick('CV seeds')['verdicts']}; {N_SENS} specs {pick('sensitivity specs')['verdicts']}; "
            f"{N_CURVE}-spec curve {pick('-spec curve')['verdicts']}; PSU-grouped CV {sm_e['strata x PSU grouped CV']['verdicts']}; "
            f"IPW {sm_e['IPW (evaluation; fit + evaluation)']['verdicts']}")
@@ -700,6 +813,7 @@ ADA_ITEMS, ADA_MISS = get("S1:ada_lite.items"), get("S1:ada_lite.missing")
 PUB_DB516 = {"total": 15.8, "diagnosed": 11.3, "undiagnosed": 4.5}   # published NCHS Data Brief 516 (external reference)
 EXT_DB = (f"NCHS DB516: reproduced {db['total']:.2f}/{db['diagnosed']:.2f}/{db['undiagnosed']:.2f} % vs published "
           f"{PUB_DB516['total']}/{PUB_DB516['diagnosed']}/{PUB_DB516['undiagnosed']}")
+# Format est [lo, hi] for a record with keys est, lo and hi.
 sw = lambda r: f"{r['est']:+.3f} [{r['lo']:+.3f}, {r['hi']:+.3f}]"
 und = get("S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1)")
 pe = lambda h: HYP.loc[h, "prior"]
@@ -723,6 +837,12 @@ asian_whtr_n = int(get("S5:asian_bmi.auc.NH Asian|WHtR.n"))
 sum9 = {r["check"]: r["verdicts"] for r in M["S9"]["summary"]["table"] if r["pop"] == "E-ALL"}
 top10_pass = sum(r["verdict"] == "PASS" for r in M["S9"]["leak_hunt"]["top10"])
 
+# One dict per claim: id, video segment, headline flag, evidence grade, type, subject, proposition,
+# evidence lines,
+# effect with CI, pre-registration status, robustness, external reference, scope, falsifier and hypothesis
+# ids.
+# Numbers inside the text are f-string look-ups into stored results; none is typed in by hand.
+# --- leakage and naive cleaning (C01-C04)
 CL = [
     dict(cid="C01", vs="V3", head=True, grade="E2", type="leakage", subj="The leak gate",
          prop=f"removing inadmissible items (treatment, diagnosis history, glucose testing) lowers E-ALL AUC by {-lg['T1_E-ALL']['est']:.2f}, and the excess was leakage",
@@ -745,6 +865,7 @@ CL = [
          prop=f"repairing XPT zeros and sentinels changes E-ALL AUC by only {prim[(prim['hyp_id'] == 'B1')].iloc[0]['est']:+.3f}: justified by fidelity, not performance",
          ev=["§7 paired CV B1", "§7 E-SCREEN and Tier 2 replicates"], eff=f"ΔAUC {sw(prim[prim['hyp_id'] == 'B1'].iloc[0])}",
          prereg=pe("B1"), rob="same verdict on E-SCREEN and Tier 2", ext="none", scope="training part", fals="CI wholly beyond ±0.01", hyp="B1"),
+    # --- minimal versus systematic preparation, spectrum and care traces (C05-C10)
     dict(cid="C05", vs="V7", head=True, grade="E3", type="minimal_vs_systematic", subj="The M1-versus-S contrast",
          prop=f"systematic preparation changes AUC by under {h2b.loc['(a) AUC', 'hi']:.3f}; equivalence stays unestablished (MDD {h2b.loc['(a) AUC', 'mdd']:.3f})",
          ev=["§7 paired CV H2b(a)", f"§9 {N_SEEDS} seeds", f"§9 {N_SENS}-spec table", f"§9 {N_CURVE}-spec curve", "§9 PSU-grouped CV"] + (["§9 one-shot hold-out S − M1"] if HO_OK else []),
@@ -780,6 +901,7 @@ CL = [
          prop=f"this diagnosis-dominated label lowers screening AUC by {-ada['est']:.3f} versus the points score",
          ev=["§7 paired bootstrap ADA-LR vs points"], eff=f"ΔAUC E-SCREEN {sw(ada)}", prereg="none (not locked)", rob=ROB_NONE,
          ext="none", scope="E-SCREEN, training part", fals="CI including 0", hyp=""),
+    # --- fallacies: age standardisation and Simpson scan (C11-C13)
     dict(cid="C11", vs="V5", head=False, grade="E2", type="fallacy", subj="Age standardisation",
          prop=f"the insured-minus-uninsured prevalence gap shrinks from {ins['crude']:+.1f} to {ins['std']:+.1f} pp: age confounding, not a reversal",
          ev=["§4 jackknife crude vs standardised difference", "§4 age-band differences"],
@@ -797,6 +919,7 @@ CL = [
          prop=f"BMI is a mediator, not a confounder, of race differences ({n_med_flip}/{len(flips)} flips involve mediators)",
          ev=["§4 DAG adjustment sets", "§4 224-comparison Simpson scan"], eff=f"{len(flips)} flips in {M['S4']['simpson']['n_comparisons']} comparisons; e.g. {fx['exposure']} by {fx['stratifier']}: crude {fx['crude']:+.1f} [{fx['crude_low']:+.1f}, {fx['crude_high']:+.1f}] -> std {fx['std']:+.1f} [{fx['std_low']:+.1f}, {fx['std_high']:+.1f}] pp; P(sign differs) {flips['p_sign_differs'].min():.2f}-{flips['p_sign_differs'].max():.2f}",
          prereg="analysis_seen", rob=f"bootstrap flip probabilities ≤ {flips['p_sign_differs'].max():.2f} (exploratory)", ext="none", scope="structural assumption", fals="sign flips that persist under confounder-only stratification", hyp=""),
+    # --- label, access and measurement bias, fairness audit (C14-C21)
     dict(cid="C14", vs="V6", head=True, grade="E1", type="label_bias", subj="The label audit",
          prop=f"{mask['below_6_5']} of {mask['self_reported']} self-reported diabetics ({mask['below_6_5_share']:.1%}) have HbA1c below 6.5, so an HbA1c-only label calls them negative",
          ev=["§5 label cross-tabulation", f"§5 medication split ({mask['below_6_5_on_med']} treated)", "§8 3 × 3 matrix D-controlled column"],
@@ -834,6 +957,7 @@ CL = [
          prop=f"it leaves AUC and the Asian gap unchanged and widens the NH Black gap by {-eod_b['d_eod']:.3f}",
          ev=["§8 paired bootstrap of EOD change"], eff=f"ΔEOD NH Black {eod_b['d_eod']:+.3f} [{eod_b['d_eod_lo']:+.3f}, {eod_b['d_eod_hi']:+.3f}]",
          prereg="none (mitigation arm)", rob=ROB_NONE, ext="none", scope="E-ALL, training part", fals="ΔEOD CI including 0", hyp=""),
+    # --- procedure credibility, external replication and missing data (C22-C24)
     dict(cid="C22", vs="V7", head=False, grade="E1", type="credibility", subj="The control analysis",
          prop=f"the evaluation returns AUC {perm9['S']['null_mean']:.2f} without signal and detects a weak synthetic feature",
          ev=["§9 100 label permutations", "§9 positive control"], eff=f"null mean M1 {perm9['M1']['null_mean']:.4f}, S {perm9['S']['null_mean']:.4f}",
@@ -874,35 +998,46 @@ CL.append(dict(cid="C26", vs="V4", head=False, grade="E1", type="redundancy_skew
                scope=f"cohort; triglycerides on the {tg_skew['n']:,} fasting-subsample adults with a valid weight",
                fals="a recomputation giving different values", hyp="B3;B5"))
 
+# Automatic checks per claim: downgrade a headline with fewer than two independent evidence lines, then
+# enforce
+# the wording rules. A violated rule stops the run, so the ledger never holds an unchecked claim.
 GRADES = ["E1", "E2", "E3", "E4"]
 recs, PROBLEMS = [], []
 for c in CL:
     g = c["grade"]
     n_lines = len(c["ev"])
+    # A headline claim resting on fewer than two independent evidence lines loses one grade (E4 is the floor).
     downgraded = c["head"] and n_lines < 2
     if downgraded:
         g = GRADES[min(GRADES.index(g) + 1, 3)]
+    # Statement = subject + grade-specific verb + proposition.
     stmt = f"{c['subj']} {LADDER[g]} {c['prop']}."
     nw = len(stmt.split())
+    # Word limit keeps each claim to one sentence that can be read out in the video.
     if nw > 25:
         PROBLEMS.append((c["cid"], f"{nw} words", stmt))
     if CAUSAL.search(stmt):
         PROBLEMS.append((c["cid"], f"causal verb '{CAUSAL.search(stmt).group(0)}'", stmt))
+    # Only deterministic counts (E1) may omit an interval; every other claim needs a CI or the word
+    # 'descriptive'.
     if g != "E1" and not (re.search(r"[\[(]", c["eff"]) or "descriptive" in c["eff"]):
         PROBLEMS.append((c["cid"], "non-E1 claim without CI", c["eff"]))
     recs.append(dict(claim_id=c["cid"], statement=stmt, type=c["type"], evidence_refs=" | ".join(c["ev"]), effect_ci=c["eff"], grade=g,
                      prereg=c["prereg"], robustness=c["rob"], external_ref=c["ext"], scope=c["scope"], falsifier=c["fals"],
                      video_seg=f"{c['vs']} {VSEG[c['vs']]}", headline=c["head"], n_evidence_lines=n_lines, downgraded=downgraded,
                      hyp_ids=c["hyp"], words=nw))
+# Any violated rule above stops the run here.
 assert not PROBLEMS, " || ".join(map(str, PROBLEMS))
 CLAIMS = pd.DataFrame(recs)
 show(CLAIMS[["claim_id", "grade", "headline", "n_evidence_lines", "downgraded", "words", "statement"]])
 print(f"\n{len(CLAIMS)} claims; grades {CLAIMS['grade'].value_counts().sort_index().to_dict()}; headline claims "
       f"{int(CLAIMS['headline'].sum())}, all with ≥ 2 evidence lines: {bool((CLAIMS.loc[CLAIMS['headline'], 'n_evidence_lines'] >= 2).all())}; "
       f"downgraded {int(CLAIMS['downgraded'].sum())}; max words {CLAIMS['words'].max()}")
+# Columns of the public claims schema; the full table with extra audit fields stays in results/S10.
 CL_COLS = ["claim_id", "statement", "type", "evidence_refs", "effect_ci", "grade", "prereg", "robustness", "external_ref", "scope", "falsifier", "video_seg"]
 CLAIMS.to_csv(OUT / "claims_full.csv", index=False)
 if C.IS_FINAL:
+    # Only a FINAL run overwrites the committed ledger; a FAST re-run leaves it untouched.
     CLAIMS[CL_COLS].to_csv(C.GOVERNANCE_DIR / "claims.csv", index=False)
     print("wrote governance/claims.csv (claims schema)")
 else:
@@ -921,18 +1056,23 @@ else:
 # about 0.05 on E-SCREEN, so differences below about 0.03 cannot be resolved.
 
 # %%
+# Compare the one-shot hold-out with cross-validation, arm by arm and for the paired contrasts.
+# Reads the stored hold-out results (nothing is re-evaluated); writes results/S10/holdout_vs_cv.csv and
+# holdout_pairs_vs_cv.csv.
 if HO_OK:
     hm = pd.DataFrame(HO["metrics"])
     cols_ = ["arm", "tier", "pop", "n_pos", "cv_auc", "cv_lo", "cv_hi", "roc_auc", "auc_lo", "auc_hi", "gap_holdout_minus_cv", "gap_in_se", "flag_2se_below_cv"]
     HOT = hm[cols_].copy()
     show(HOT, 3)
     hp = pd.DataFrame(HO["pairs"])
+    # CV reference for each hold-out contrast, taken from stored results so both are on the same scale.
     CVREF = {("S T1 - M1 T1", "E-ALL"): M["S9"]["reference"]["E-ALL"], ("S T1 - M1 T1", "E-SCREEN"): M["S9"]["reference"]["E-SCREEN"],
              ("M1 T1 - M0 T1", "E-ALL"): lg["T1_E-ALL"], ("M1 T1 - M0 T1", "E-SCREEN"): lg["T1_E-SCREEN"],
              ("T1-minus-care T1 - S T1", "E-ALL"): hl["minus_care_eall"], ("T1-minus-care T1 - S T1", "E-SCREEN"): hl["minus_care_escreen"],
              ("S T1 - BL-ADAlite T1", "E-SCREEN"): hl["S_minus_ADAlite_escreen"]}
     hp["cv"] = [f"{CVREF[(c, p)]['est']:+.3f} [{CVREF[(c, p)]['lo']:+.3f}, {CVREF[(c, p)]['hi']:+.3f}]" if (c, p) in CVREF else "" for c, p in zip(hp["comparison"], hp["pop"])]
     hp["holdout"] = [f"{e:+.3f} [{l:+.3f}, {h:+.3f}]" for e, l, h in zip(hp["est"], hp["lo"], hp["hi"])]
+    # 1.0 when the hold-out difference has the sign of the CV difference; NaN when no CV counterpart exists.
     hp["same_sign_as_cv"] = [float(np.sign(e) == np.sign(CVREF[(c, p)]["est"])) if (c, p) in CVREF else np.nan for c, p, e in zip(hp["comparison"], hp["pop"], hp["est"])]
     print()
     show(hp[["comparison", "pop", "rule", "cv", "holdout", "verdict", "same_sign_as_cv"]])
@@ -965,6 +1105,9 @@ else:
 # limits, so that a limitation is a property of specific claims, not a disclaimer.
 
 # %%
+# Build the limitations register: each threat with its bias direction, how it was bounded and affected claims.
+# Reads stored results; flags borderline verdicts; writes results/S10/limitations.csv and
+# governance/limitations.csv.
 n_prior = HYP["prior"].value_counts().to_dict()
 conv = pd.DataFrame(M["S7"]["runs"]["convergence"])
 nonconv = conv[conv["n_convergence_warnings"] >= 0.9 * get("S7:posthoc_c_sensitivity.n_folds")]   # failed in ≥ 90 % of folds
@@ -973,6 +1116,7 @@ nonconv = conv[conv["n_convergence_warnings"] >= 0.9 * get("S7:posthoc_c_sensiti
 # A CI bound of an inconclusive sub-claim that touches 0 is also listed (it decides the "excludes 0" reading).
 EQUIV = {("B1", "(a)"), ("B3", "(a)"), ("B4", "(a)"), ("B5", "(b)"), ("B5", "(c)"), ("B6a", "(a)"), ("P14", "(a)"), ("H2b", "(a)"), ("H2c", "(ii) minus care, E-SCREEN")}
 bd = prim[prim["metric"] == "roc_auc"].copy()
+# Boundaries that decide one sub-claim's verdict under its locked rule (see the comments above).
 def _bounds(r):
     if (r["hyp_id"], r["sub"][:3]) in EQUIV or (r["hyp_id"], r["sub"]) in EQUIV:
         b = [-r["sesoi"], r["sesoi"]] + ([0.0] if r["verdict"] == "inconclusive" else [])
@@ -981,6 +1125,8 @@ def _bounds(r):
     else:
         b = [0.0]
     return b
+# margin = distance from the nearest CI bound to the nearest decision boundary. Below 0.002 AUC, different
+# Monte-Carlo noise (a FAST re-run) could flip the verdict, so these items are listed as borderline.
 bd["margin"] = bd.apply(lambda r: min(abs(b - x) for b in _bounds(r) for x in (r["lo"], r["hi"])), axis=1)
 BORDER = bd[bd["margin"] < 0.002]
 border_txt = "; ".join(f"{r['hyp_id']} {r['sub']} {r['pop']} (CI {r['lo']:+.4f} to {r['hi']:+.4f}, margin {r['margin']:.4f})" for _, r in BORDER.iterrows())
@@ -990,6 +1136,8 @@ for t_ in border_txt.split("; "):
 esc_mdd = M["S9"]["reference"]["E-SCREEN"]["mdd"]
 sup = M["S8"]["n_suppressed"]
 uns = get("S5:undiagnosed_inequality.proportions.uninsured")
+# One row per threat. `claims_affected` lists ledger claim IDs and is validated against the claims table
+# below.
 LIM = pd.DataFrame([
     dict(lim_id="L01", threat="Cross-sectional, observational data",
          bias_direction="unknown sign; associations can run backwards (e.g. diagnosed people change weight or blood pressure)",
@@ -1050,9 +1198,11 @@ LIM = pd.DataFrame([
 ])
 show(LIM[["lim_id", "threat", "claims_affected"]])
 LIM.to_csv(OUT / "limitations.csv", index=False)
+# Every claim ID cited by a limitation must exist in the ledger (catches typos and renumbering).
 cited = set(re.findall(r"C\d\d", " ".join(LIM["claims_affected"])))
 assert cited <= set(CLAIMS["claim_id"]), cited - set(CLAIMS["claim_id"])
 if C.IS_FINAL:
+    # Only a FINAL run overwrites the committed limitations file.
     LIM.to_csv(C.GOVERNANCE_DIR / "limitations.csv", index=False)
     print("wrote governance/limitations.csv")
 
@@ -1068,7 +1218,10 @@ if C.IS_FINAL:
 # with the results.
 
 # %%
+# Ethics and governance table plus the recommendations that follow from the measured effects.
+# Reads the GenAI log and stored results; writes results/S10/ethics.csv and recommendations.csv.
 gl = pd.read_csv(C.GOVERNANCE_DIR / "genai_log.csv")
+# Arm S (class-weighted) supplies PR-AUC and prevalence; its unweighted variant supplies calibration below.
 am_s = am.loc[("S", 1, "lr")]
 am_nw = am.loc[("S-B6a", 1, "lr")]   # S without class weights: calibration not distorted by re-weighting
 ETH = pd.DataFrame([
@@ -1088,6 +1241,7 @@ ETH = pd.DataFrame([
          evidence="governance/genai_log.csv; front-matter declaration"),
 ])
 show(ETH)
+# Each recommendation is paired with the measured effect that motivates it (`because`).
 REC = pd.DataFrame([
     dict(rec="Use an explicit decision threshold instead of balanced class weights",
          because=f"class weights leave AUC unchanged ({b6.loc['(a) AUC', 'est']:+.4f}) but worsen Brier by {b6.loc['(b) Brier', 'est']:.3f}; the gain in balanced accuracy at 0.5 is a threshold effect"),
@@ -1119,6 +1273,9 @@ REC.to_csv(OUT / "recommendations.csv", index=False)
 # and asserted, and key values are recomputed independently.
 
 # %%
+# List every number shown in the video as (segment, label, source key, format). Definitions only: values are
+# resolved from stored results in the next cell. Keys use the `get` syntax of §10.1; V1–V8 are the video
+# segments.
 NUM = [  # slide, label, source key, format
     ("V1", "adults in DEMO_L", "S1:funnel.DEMO_L participants", "{:,.0f}"),
     ("V1", "analytic cohort", "S1:n_cohort", "{:,.0f}"),
@@ -1212,6 +1369,7 @@ NUM = [  # slide, label, source key, format
     ("V7", "DB516 undiagnosed reproduced (%)", "S4:db516.undiagnosed", "{:.2f}"),
 ]
 if HO_OK:
+    # Hold-out numbers are listed only when the hold-out exists.
     NUM += [("V7", "hold-out AUC S E-ALL", "S9:holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc", "{:.3f}"),
             ("V7", "hold-out AUC S E-SCREEN", "S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc", "{:.3f}"),
             ("V7", "hold-out AUC M0 E-ALL", "S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc", "{:.3f}"),
@@ -1230,6 +1388,8 @@ NUM += [("V8", "hypotheses supported", "S10:verdict_counts.supported", "{:.0f}")
 # **Storage before the audit.** The §10 results are saved first, so that `collect()` can include them.
 
 # %%
+# Save the §10 results first, then resolve every slide number from the merged final_metrics.json.
+# Writes results/metrics_S10.json, results/final_metrics.json and results/S10/numbers_on_slides.csv.
 S10["verdict_counts"] = {v: int(VCOUNT.get(v, 0)) for v in C.VERDICTS}
 S10["verdict_counts_prereg_none"] = {v: int(VCOUNT_PRE.get(v, 0)) for v in C.VERDICTS}
 S10["scoreboard"] = SCORE.round(6).to_dict("records")
@@ -1240,10 +1400,12 @@ S10["postlock_notes"] = POSTLOCK
 S10["h1b_verdict"] = h1b_v
 S10["h4a_newcombe_pp"] = h4a.round(4).tolist()
 R.save_section("S10", S10)
+# collect() merges all section files, now including §10, into one dictionary and results/final_metrics.json.
 FM = R.collect()
 print(f"final_metrics.json: sections {list(FM)}")
 
 rows_ = []
+# `value` is the formatted string shown on the slide; `value_raw` keeps full precision for the audit below.
 for slide, label, key, fmt in NUM:
     v = get(key, FM)
     rows_.append(dict(slide_id=slide, label=label, value=fmt.format(float(v)), value_raw=float(v), source_key=key))
@@ -1258,27 +1420,41 @@ print(NOS.groupby("slide_id").size().to_dict())
 # values are recomputed independently of the metrics files.
 
 # %%
+# Audit every slide number: re-read from disk, re-resolve the source key, then recompute key values
+# independently.
+# Reads final_metrics.json, numbers_on_slides.csv, out-of-fold predictions and stored result tables;
+# asserts equality.
 FM_disk = json.loads((C.RESULTS_DIR / "final_metrics.json").read_text(encoding="utf-8"))
 nos = pd.read_csv(OUT / "numbers_on_slides.csv")
 fmt_of = {lab: f for _, lab, _, f in NUM}
 n_pass = 0
 for _, r in nos.iterrows():
     v = float(get(r["source_key"], FM_disk))
+    # Same value as when it was saved (relative tolerance 1e-9) ...
     assert abs(v - r["value_raw"]) <= 1e-9 * max(1, abs(v)), (r["label"], v, r["value_raw"])
+    # ... and the same formatted text, so a rounding or format change cannot slip through.
     assert fmt_of[r["label"]].format(v) == str(r["value"]), (r["label"], fmt_of[r["label"]].format(v), r["value"])
     n_pass += 1
 print(f"{n_pass}/{len(nos)} slide numbers re-resolved from final_metrics.json: identical")
 
 # independent recomputations
+# Out-of-fold predictions of every arm: lets the key AUCs be recomputed without going through the metrics
+# files.
 oof = pd.read_parquet(C.RESULTS_DIR / "oof_predictions.parquet", columns=["arm", "tier", "model", "row", "prob", "L_comb", "y_escreen", "in_escreen"])
+# AUC of one arm on E-ALL or E-SCREEN: average the repeated-CV predictions per person, then score once.
 def auc_from_oof(arm, pop, model="lr", tier=1):
     g = oof[(oof["arm"] == arm) & (oof["tier"] == tier) & (oof["model"] == model)]
+    # One row per person: mean probability over CV repeats; the label and screening flag are constant per
+    # person.
     p = g.groupby("row", observed=True).agg(prob=("prob", "mean"), y=("L_comb", "first"), ye=("y_escreen", "first"), ie=("in_escreen", "first"))
     if pop == "E-SCREEN":
         p = p[p["ie"] == 1]
         return roc_auc_score(p["ye"], p["prob"])
     return roc_auc_score(p["y"], p["prob"])
 nv = nos.set_index("label")["value_raw"]
+# (label, independently recomputed value, absolute tolerance). Tolerance 0 means an exact count; otherwise
+# it is
+# about the rounding precision of the stored value.
 RECOMP = [("AUC M0 E-ALL", auc_from_oof("M0", "E-ALL"), 1e-6), ("AUC M1 E-ALL", auc_from_oof("M1", "E-ALL"), 1e-6),
           ("AUC S E-ALL", auc_from_oof("S", "E-ALL"), 1e-6), ("AUC S E-SCREEN", auc_from_oof("S", "E-SCREEN"), 1e-6),
           ("tree AUC E-SCREEN M0", auc_from_oof("M0", "E-SCREEN", model="tree"), 1e-4),
@@ -1301,12 +1477,14 @@ RECOMP = [("AUC M0 E-ALL", auc_from_oof("M0", "E-ALL"), 1e-6), ("AUC M1 E-ALL", 
           ("post-lock: S - M1 dAUC, M1 at exact optimum", float(pd.read_csv(C.RESULTS_DIR / "S7" / "postlock_m1_sensitivity.csv").query(
               "variant == 'M1 exact optimum (newton-cholesky)' and a == 'S' and pop == 'E-ALL' and metric == 'roc_auc'")["est"].iloc[0]), 1e-6)]   # metrics store 6 decimals
 if HO_OK:
+    # Hold-out recomputation reads the stored hold-out tables and the split file, not the section metrics.
     ho_pairs = pd.read_csv(C.RESULTS_DIR / "S9" / "holdout_pairs.csv").set_index(["comparison", "pop"])
     ho_m = pd.read_csv(C.RESULTS_DIR / "S9" / "holdout_metrics.csv").set_index(["arm", "tier", "pop"])
     RECOMP += [("hold-out n", len(json.loads((C.RESULTS_DIR / "splits" / "holdout.json").read_text(encoding="utf-8"))["test_seqn"]), 0),
                ("hold-out gap E-ALL minus E-SCREEN (arm S)",
                 float(ho_m.loc[("S", 1, "E-ALL"), "roc_auc"] - ho_m.loc[("S", 1, "E-SCREEN"), "roc_auc"]), 1e-4),
                ("hold-out S - ADA-lite E-SCREEN", float(ho_pairs.loc[("S T1 - BL-ADAlite T1", "E-SCREEN"), "est"]), 1e-5)]   # metrics store 5 decimals
+# A deviation beyond tolerance means a slide number no longer matches its independent recomputation.
 for lab, val, tol in RECOMP:
     assert abs(nv[lab] - val) <= tol, (lab, nv[lab], val)
 print(f"{len(RECOMP)} slide numbers recomputed independently (OOF predictions, recode audit, label strata): all within tolerance")
@@ -1324,8 +1502,13 @@ for lab, val, _ in RECOMP:
 # `results/S10/` and `results/final_metrics.json`.
 
 # %%
+# Write this section's decision-register fragment and save the final results.
+# Writes the register fragment under governance/register (FINAL runs only), results/metrics_S10.json and
+# results/final_metrics.json.
 from datetime import date
 today = date.today().isoformat()
+# One register row per decision. Evidence values are f-strings over the results above, so the register cannot
+# disagree with the notebook.
 reg = pd.DataFrame([
     dict(dr_id="DR-S10-01", type="scoreboard", finding="Every locked hypothesis has one verdict under its locked rule",
          evidence_ref="results/S10/scoreboard.csv; figures/S10_scoreboard_forest.png", evidence_value=f"verdicts {VCOUNT}; genuine pre-registrations {VCOUNT_PRE}",
@@ -1384,14 +1567,17 @@ reg = pd.DataFrame([
          evidence_ref="results/S10/numbers_on_slides.csv; results/final_metrics.json", evidence_value=f"{len(NOS)} numbers re-resolved; {len(RECOMP)} recomputed independently",
          decision="Slides use only numbers_on_slides.csv", alternatives_rejected="typing numbers into slides", hyp_id="", check_verdict="PASS", check_note="asserted in code"),
 ])
+# Columns that are constant for every row of this section (empty string = not applicable).
 for col, val in (("stage", "S10"), ("date", today), ("status", "decided"), ("loop_ref", ""), ("change_request", ""), ("commit", "")):
     reg[col] = val
 REG_COLS = ["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision", "alternatives_rejected", "hyp_id", "status",
             "check_verdict", "check_note", "loop_ref", "change_request", "commit"]
+# Enforce the exact column order required by governance/README.md (the header checked in §0).
 reg = reg[REG_COLS]
 show(reg[["dr_id", "type", "check_verdict", "decision"]])
 REG_PATH = C.GOVERNANCE_DIR / "register" / "S10.csv"
 if C.IS_FINAL:
+    # Only a FINAL run overwrites the committed register fragment.
     reg.to_csv(REG_PATH, index=False)
     print(f"wrote {REG_PATH.relative_to(C.ROOT).as_posix()} ({len(reg)} rows)")
 else:
