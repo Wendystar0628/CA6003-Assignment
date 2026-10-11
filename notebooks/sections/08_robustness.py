@@ -1153,15 +1153,30 @@ print(reg[["dr_id", "type", "check_verdict", "evidence_value"]].to_string(index=
 # `exp-freeze` tag**; arms BL0, BL-ADAlite (points), BL-ADAlite-LR, M0, M1, S and T1-minus-care (Tier 1; M0, M1 and S also
 # Tier 2) are refitted on the whole training part with the frozen configuration; thresholds for recall at
 # specificity 0.80 come from the training part; a hold-out AUC more than 2 standard errors below its CV estimate is
-# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged. Expected
+# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged. The gate
+# below opens only in FINAL mode, when the tag exists, when C0, the fold-file hash and the hold-out SEQN hash equal
+# the values committed at the tag, and when the modelling code (`config`, `prep`, `evalkit`, `labels`,
+# `nhanes_io`) is unchanged since the tag; a re-execution must reproduce the logged AUCs exactly. Expected
 # precision: AUC SE about 0.017 on E-ALL and about 0.05 on E-SCREEN (about 25 positives).
 
 # %%
 HOLDOUT_LOG = OUT / "holdout_log.json"
 HOLDOUT_CSV = OUT / "holdout_metrics.csv"
-RELEASED = RB.tag_exists("exp-freeze") or HOLDOUT_LOG.exists()
-print(f"exp-freeze tag present: {RB.tag_exists('exp-freeze')}; hold-out log present: {HOLDOUT_LOG.exists()} -> "
-      f"{'evaluate the hold-out' if RELEASED else 'hold-out NOT evaluated (experiment not frozen yet)'}")
+prev = json.loads(HOLDOUT_LOG.read_text(encoding="utf-8")) if HOLDOUT_LOG.exists() else None
+TAG_OK = RB.tag_exists("exp-freeze")
+# frozen values as committed at the tag; without git (a reader's copy) fall back to those logged at the one-shot run
+FROZEN = RB.frozen_reference("exp-freeze") if TAG_OK else (prev or {}).get("frozen")
+CURRENT = dict(C0=ctx.C0, folds_hash=ctx.folds.hash, holdout_sha256=hold["sha256_test_seqn"])
+SRC_OK = RB.sources_unchanged("exp-freeze") if TAG_OK else None
+gate = {"FINAL mode": C.IS_FINAL,
+        "exp-freeze tag exists": TAG_OK or (prev is not None and FROZEN is not None),
+        **{f"{k} = frozen": FROZEN is not None and FROZEN.get(k) == v for k, v in CURRENT.items()},
+        f"modelling sources unchanged since tag ({len(RB.FROZEN_SOURCES)} files)": SRC_OK is True or (prev is not None and SRC_OK is None)}
+RELEASED = all(gate.values())
+for k, v in gate.items():
+    print(f"  {'PASS' if v else 'FAIL'}  {k}")
+GATE_STATUS = "released" if RELEASED else "not evaluated: gate failed (" + "; ".join(k for k, v in gate.items() if not v) + ")"
+print(f"hold-out log present: {prev is not None} -> {'evaluate the hold-out' if RELEASED else GATE_STATUS}")
 
 # %%
 if RELEASED:
@@ -1284,7 +1299,6 @@ if RELEASED:
 # %%
 if RELEASED:
     now = pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds")
-    prev = json.loads(HOLDOUT_LOG.read_text(encoding="utf-8")) if HOLDOUT_LOG.exists() else None
     if prev is not None and HOLDOUT_CSV.exists():   # a re-execution must reproduce the one-shot numbers exactly
         old = pd.read_csv(HOLDOUT_CSV).set_index(["arm", "tier", "pop"])["roc_auc"]
         new = ho.set_index(["arm", "tier", "pop"])["roc_auc"]
@@ -1294,7 +1308,7 @@ if RELEASED:
                 n_executions=(prev["n_executions"] + 1) if prev else 1, sha256_test_seqn=sha_te, n_test=int(len(cl_te)),
                 exp_freeze_commit=RB.head_commit("exp-freeze"), head_at_first_run=prev["head_at_first_run"] if prev else RB.head_commit(),
                 arms=[f"{a} T{t}" for a, t in P_TE], threshold_rule="specificity 0.80 on training-part predictions of the refitted model",
-                nb_mode_first_run=prev["nb_mode_first_run"] if prev else C.NB_MODE)
+                nb_mode_first_run=prev["nb_mode_first_run"] if prev else C.NB_MODE, frozen=FROZEN, gate=gate)
     HOLDOUT_LOG.write_text(json.dumps(log_, indent=2), encoding="utf-8")
     ho.to_csv(HOLDOUT_CSV, index=False)
     hp.to_csv(OUT / "holdout_pairs.csv", index=False)
@@ -1302,7 +1316,7 @@ if RELEASED:
     S9["holdout"] = dict(log=log_, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
                          n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
 else:
-    S9["holdout"] = dict(status="not evaluated: exp-freeze tag missing")
+    S9["holdout"] = dict(status=GATE_STATUS)
 
 # %% [markdown]
 # ## 12 Storage

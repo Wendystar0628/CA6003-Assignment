@@ -86,7 +86,8 @@ __all__ = [
     "signal_feature", "tree_features_used", "single_feature_scan", "missing_indicator_scan",
     "contribution_importance", "base_variable", "availability_proof", "examined_population",
     "missingness_design", "observation_model", "delta_prevalence", "delta_auc", "tag_exists",
-    "head_commit", "holdout_frames", "fit_full", "holdout_scores", "IterativeImpute",
+    "head_commit", "frozen_reference", "sources_unchanged", "FROZEN_SOURCES", "holdout_frames", "fit_full",
+    "holdout_scores", "IterativeImpute",
 ]
 
 ADMISSIBLE_ARMS = ("M1", "S")
@@ -764,6 +765,35 @@ def head_commit(ref: str = "HEAD") -> str | None:
     try:
         out = subprocess.run(["git", "rev-list", "-n", "1", ref], cwd=C.ROOT, capture_output=True, text=True, timeout=20)
         return out.stdout.strip() or None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# modelling code whose behaviour the frozen configuration depends on (robustness.py itself is
+# extended after the freeze with hold-out helpers only, so it is not part of this list)
+FROZEN_SOURCES = ("src/config.py", "src/prep.py", "src/evalkit.py", "src/labels.py", "src/nhanes_io.py")
+
+
+def frozen_reference(tag: str = "exp-freeze") -> dict | None:
+    """C0, fold-file hash and hold-out SEQN hash exactly as committed at ``tag``
+    (``results/metrics_S7.json`` in the tagged commit); None if git or the tag is unavailable."""
+    try:
+        out = subprocess.run(["git", "show", f"{tag}:results/metrics_S7.json"], cwd=C.ROOT,
+                             capture_output=True, text=True, encoding="utf-8", timeout=20)
+        if out.returncode != 0:
+            return None
+        s7 = json.loads(out.stdout)
+        return dict(C0=float(s7["C0"]["C0"]), folds_hash=s7["splits"]["folds_hash"],
+                    holdout_sha256=s7["splits"]["holdout_sha256"])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def sources_unchanged(tag: str = "exp-freeze", paths=FROZEN_SOURCES) -> bool | None:
+    """True if the working-tree versions of ``paths`` equal those at ``tag`` (None if git is unavailable)."""
+    try:
+        out = subprocess.run(["git", "diff", "--quiet", tag, "--", *paths], cwd=C.ROOT, capture_output=True, timeout=20)
+        return {0: True, 1: False}.get(out.returncode)
     except Exception:  # noqa: BLE001
         return None
 
