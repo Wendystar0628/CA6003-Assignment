@@ -329,6 +329,11 @@ PA_SUBS = pd.DataFrame([dict(hyp_id=h, sub=sub, estimate=r["est"], interval=f"[{
                                                         f"{PA9['ratio_outer']['ratio_H2b_c_converged']['outer_q975']:.2f}] (converged M1)" if PA9 else "")))
                         for h, sub in sorted(WITHDRAWN) for _, r in prim[(prim["hyp_id"] == h) & (prim["sub"] == sub)].iterrows()])
 show(PA_SUBS, 2)
+# Scoreboard column with the post-audit status and the locked label of each withdrawn sub-claim.
+SCORE["post_audit"] = SCORE["hyp_id"].map({h: "; ".join(f"{s_} not testable (post-audit); locked verdict {r['verdict']}"
+                                                         for h_, s_ in sorted(WITHDRAWN) if h_ == h
+                                                         for _, r in prim[(prim["hyp_id"] == h) & (prim["sub"] == s_)].iterrows())
+                                           for h, _ in WITHDRAWN}).fillna("")
 
 score_view = SCORE.assign(est_ci=SCORE.apply(lambda r: "" if not np.isfinite(r["estimate"]) else
                                               f"{r['estimate']:+.3f} [{r['ci_low']:+.3f}, {r['ci_high']:+.3f}]", axis=1))
@@ -357,7 +362,7 @@ if PA9:
         dict(hyp_id="(post-audit) EOD NH Black, weighted-count reweighing", est_ci=f"{_rw['eod_nh_black']['corrected']:+.3f} (as run {_rw['eod_nh_black']['asrun']:+.3f})",
              unit="TPR", mdd=np.nan, underpowered=False, verdict="descriptive; 'not adopted' stands", prior_exposure="post audit", source="§9.12 (4)")])],
         ignore_index=True)
-show(pd.concat([score_view[["hyp_id", "est_ci", "unit", "mdd", "underpowered", "verdict", "prior_exposure", "source"]], EXPL],
+show(pd.concat([score_view[["hyp_id", "est_ci", "unit", "mdd", "underpowered", "verdict", "post_audit", "prior_exposure", "source"]], EXPL],
                ignore_index=True), 4)
 print("\nsub-verdicts:")
 for _, r in SCORE[SCORE["sub_verdicts"] != ""].iterrows():
