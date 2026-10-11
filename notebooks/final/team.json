@@ -1,0 +1,60 @@
+{
+ "_help": "Fill every [TEAM TO FILL: ...] value, then run: .venv/Scripts/python tools/build_final.py --fill-team notebooks/final/CA6003_NHANES_Diabetes.ipynb (updates only the team cells and the Section lead lines; code cells and outputs are kept). section_leads: one member name per section number 0-10.",
+ "group_number": "[TEAM TO FILL: group no.]",
+ "video_url": "[TEAM TO FILL: public YouTube link]",
+ "members": [
+  {
+   "name": "[TEAM TO FILL: name]",
+   "matric": "[TEAM TO FILL: matric no.]",
+   "role": "[TEAM TO FILL: role]",
+   "sections_led": "[TEAM TO FILL: § list]",
+   "decisions": "[TEAM TO FILL: DR ids]",
+   "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
+   "verified": "[TEAM TO FILL: what this member re-ran and checked]",
+   "genai_verified": "[TEAM TO FILL: what was checked, how]"
+  },
+  {
+   "name": "[TEAM TO FILL: name]",
+   "matric": "[TEAM TO FILL: matric no.]",
+   "role": "[TEAM TO FILL: role]",
+   "sections_led": "[TEAM TO FILL: § list]",
+   "decisions": "[TEAM TO FILL: DR ids]",
+   "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
+   "verified": "[TEAM TO FILL: what this member re-ran and checked]",
+   "genai_verified": "[TEAM TO FILL: what was checked, how]"
+  },
+  {
+   "name": "[TEAM TO FILL: name]",
+   "matric": "[TEAM TO FILL: matric no.]",
+   "role": "[TEAM TO FILL: role]",
+   "sections_led": "[TEAM TO FILL: § list]",
+   "decisions": "[TEAM TO FILL: DR ids]",
+   "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
+   "verified": "[TEAM TO FILL: what this member re-ran and checked]",
+   "genai_verified": "[TEAM TO FILL: what was checked, how]"
+  },
+  {
+   "name": "[TEAM TO FILL: name]",
+   "matric": "[TEAM TO FILL: matric no.]",
+   "role": "[TEAM TO FILL: role]",
+   "sections_led": "[TEAM TO FILL: § list]",
+   "decisions": "[TEAM TO FILL: DR ids]",
+   "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
+   "verified": "[TEAM TO FILL: what this member re-ran and checked]",
+   "genai_verified": "[TEAM TO FILL: what was checked, how]"
+  }
+ ],
+ "section_leads": {
+  "0": "[TEAM TO FILL: member name]",
+  "1": "[TEAM TO FILL: member name]",
+  "2": "[TEAM TO FILL: member name]",
+  "3": "[TEAM TO FILL: member name]",
+  "4": "[TEAM TO FILL: member name]",
+  "5": "[TEAM TO FILL: member name]",
+  "6": "[TEAM TO FILL: member name]",
+  "7": "[TEAM TO FILL: member name]",
+  "8": "[TEAM TO FILL: member name]",
+  "9": "[TEAM TO FILL: member name]",
+  "10": "[TEAM TO FILL: member name]"
+ }
+}

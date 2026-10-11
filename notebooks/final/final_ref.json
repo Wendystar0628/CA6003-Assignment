@@ -1,7 +1,6 @@
 {
- "written_utc": "2026-10-11T06:22:57+00:00",
+ "written_utc": "2026-10-11T08:22:09+00:00",
  "source_modes": [
-  "FAST",
   "FINAL"
  ],
  "entries": [
@@ -242,6 +241,166 @@
    "section": "S10",
    "path": "holdout.n_flag_2se",
    "value": 0,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_undiagnosed",
+   "section": "S1",
+   "path": "e_screen.positives",
+   "value": 152,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_prevalence_ci_low",
+   "section": "S1",
+   "path": "prevalence_comb.ci_low",
+   "value": 0.12438333225970571,
+   "tol_fast": 1e-06,
+   "tol_final": 1e-06
+  },
+  {
+   "id": "summary_prevalence_ci_high",
+   "section": "S1",
+   "path": "prevalence_comb.ci_high",
+   "value": 0.15633145830420503,
+   "tol_fast": 1e-06,
+   "tol_final": 1e-06
+  },
+  {
+   "id": "summary_blanket_cells_destroyed",
+   "section": "S3",
+   "path": "blanket_recode.valid_cells_destroyed_cohort",
+   "value": 1496,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_blanket_a1c_positives_lost",
+   "section": "S3",
+   "path": "blanket_recode.a1c_positives_lost",
+   "value": 29,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_masking_below_6_5",
+   "section": "S5",
+   "path": "masking.below_6_5",
+   "value": 250,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_self_reported",
+   "section": "S5",
+   "path": "masking.self_reported",
+   "value": 819,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_undiagnosed_rd_uninsured_pp",
+   "section": "S5",
+   "path": "undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp",
+   "value": 23.157835907921932,
+   "tol_fast": 1e-06,
+   "tol_final": 1e-06
+  },
+  {
+   "id": "summary_eall_minus_escreen_S",
+   "section": "S7",
+   "path": "headline.eall_minus_escreen_S_T1.est",
+   "value": 0.05518253895983283,
+   "tol_fast": 0.02,
+   "tol_final": 0.005
+  },
+  {
+   "id": "summary_minus_care_eall",
+   "section": "S7",
+   "path": "headline.minus_care_eall.est",
+   "value": -0.01587600396805298,
+   "tol_fast": 0.01,
+   "tol_final": 0.003
+  },
+  {
+   "id": "summary_minus_care_escreen",
+   "section": "S7",
+   "path": "headline.minus_care_escreen.est",
+   "value": 0.019231047655686062,
+   "tol_fast": 0.02,
+   "tol_final": 0.005
+  },
+  {
+   "id": "summary_did040_fill",
+   "section": "S7",
+   "path": "tree_m0.did040_fill",
+   "value": 50.0,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_did040_missing_share",
+   "section": "S7",
+   "path": "tree_m0.did040_missing_share",
+   "value": 0.8582024432809773,
+   "tol_fast": 1e-06,
+   "tol_final": 1e-06
+  },
+  {
+   "id": "summary_tpr_diagnosed",
+   "section": "S8",
+   "path": "gap_decomposition.tpr_diagnosed",
+   "value": 0.7015384615384616,
+   "tol_fast": 0.05,
+   "tol_final": 0.01
+  },
+  {
+   "id": "summary_h2b_brier",
+   "section": "S10",
+   "path": "h2b.subs.(b) Brier.est",
+   "value": 0.07392,
+   "tol_fast": 0.01,
+   "tol_final": 0.003
+  },
+  {
+   "id": "summary_pure_prep_auc",
+   "section": "S10",
+   "path": "h2b.pure_preparation[pop=E-ALL&metric=roc_auc].diff",
+   "value": 0.007332867558757137,
+   "tol_fast": 0.015,
+   "tol_final": 0.005
+  },
+  {
+   "id": "summary_pure_prep_brier",
+   "section": "S10",
+   "path": "h2b.pure_preparation[pop=E-ALL&metric=brier].diff",
+   "value": -0.0018306190971882797,
+   "tol_fast": 0.003,
+   "tol_final": 0.001
+  },
+  {
+   "id": "summary_holdout_M1_minus_M0",
+   "section": "S9",
+   "path": "holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est",
+   "value": -0.1168,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_holdout_n_test",
+   "section": "S9",
+   "path": "holdout.log.n_test",
+   "value": 1146,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_holdout_rows",
+   "section": "S10",
+   "path": "holdout.n_rows",
+   "value": 20,
    "tol_fast": 0,
    "tol_final": 0
   }

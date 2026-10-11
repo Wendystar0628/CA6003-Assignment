@@ -4,20 +4,26 @@
     .venv/Scripts/python tools/build_final.py --execute            # build + execute in a temp workspace (FAST)
     .venv/Scripts/python tools/build_final.py --execute --mode FINAL
     .venv/Scripts/python tools/build_final.py --out some/dir/x.ipynb --sections 00,01
+    .venv/Scripts/python tools/build_final.py --validate-only NOTEBOOK   # checks + remaining [TEAM TO FILL] entries
+    .venv/Scripts/python tools/build_final.py --fill-team NOTEBOOK       # team cells from notebooks/final/team.json
 
 What it does
-  1. Front matter: title, group/members and video placeholders, contribution table template,
-     GenAI declaration (rendered from governance/genai_log.csv), reading guide, run-mode and
-     runtime note, table of contents (generated from the headings of the assembled notebook).
+  1. Front matter: title (shared with the slides), executive Summary (numbers read from
+     results/final_metrics.json and re-asserted in A.5), brief-requirement checklist with § links,
+     group / members / video and contribution table ([TEAM TO FILL] entries from team.json), short
+     GenAI declaration, reading guide with the marker's path, run mode and runtime, contents.
+     § links are written as @@H:<n>/<title prefix>@@ and resolved against the assembled headings.
   2. Setup (section 0.0): recreates src/*.py, config/variable_spec.csv, the governance inputs and the
      few stored artefacts the sections read, in a workspace folder next to the notebook, then makes
      the 16 raw NHANES files available (local copy if found, else download from CDC) and verifies the
      inlined MANIFEST. A reader needs the .ipynb only.
   3. Sections: notebooks/sections/NN_*.py (jupytext percent) in order. The duplicated per-section
      bootstrap cell is dropped (one global bootstrap in Setup; every section starts from a clean
-     namespace via new_section()); sub-headings are renumbered N.M under the section's own §N.
-  4. Appendix: merged decision register, pre-registration text + SHA-256, hypothesis scoreboard,
-     references, build record.
+     namespace via new_section()); sub-headings are renumbered N.M under the section's own §N; a
+     "(Stage Sk)" suffix is dropped from the § heading and a "Section lead" line is added under it.
+  4. Appendix: A.1 merged decision register, A.2 locked pre-registration text + SHA-256 + glossary,
+     A.3 pointer to the §10 scoreboard, A.4 references (only those cited; citations are checked both
+     ways), A.5 FINAL_REF check, A.6 build record, A.7 GenAI use log.
   5. Optional execution with nbclient (NB_MODE FAST|FINAL) in a clean temp directory (never in the
      repository checkout), output scrubbing, runtime per section, validation.
 
@@ -84,13 +90,13 @@ SEED_RESULTS = [
 # (same namespace: no new_section() between the parts, the code is unchanged). `head_title` retitles the first part;
 # `head_map` renames headings of the first part (so its single item is N.1, not N.0).
 SPLITS = {
-    "02_profiling.py": dict(at="## 1 XPT read artefact", no=3, title="Data profiling and quality audit (Stage S3)",
-                            head_title="Data provenance, specification and minimisation (Stage S2)",
+    "02_profiling.py": dict(at="## 1 XPT read artefact", no=3, title="Data profiling and quality audit",
+                            head_title="Data provenance, specification and minimisation",
                             head_map={"## 0 Provenance, specification and minimisation (Stage S2 checks)":
                                       "## 1 Provenance, specification and minimisation"},
                             intro=("This section continues §2 in the same workspace state (the helper functions and result "
                                    "dictionaries defined there are reused; no `new_section()` in between). It holds the nine audit "
-                                   "items listed at the start of §2 (§3.1–§3.9) and the decision register of Stages S2 and S3.")),
+                                   "items listed at the start of §2 (§3.1–§3.9) and the decision register of §2 and §3.")),
 }
 CODEBOOK_DIR = "data/nhanes_2021_2023/codebooks"
 
@@ -442,82 +448,361 @@ def section_number(cells: list, path: Path) -> tuple[int, str]:
 
 
 # ----------------------------------------------------------------------------- front matter
-def genai_table() -> str:
-    import csv
-    rows = list(csv.DictReader((ROOT / "governance" / "genai_log.csv").open(encoding="utf-8", newline="")))
-    header = ["Date", "Tool (version)", "Purpose", "Data shared", "Output used in", "Human verification"]
-    body = [[r["date"], r["tool_version"], r["purpose"], r["data_shared"], r["output_used_in"], r["human_verification"]]
-            for r in rows]
-    return md_table(body, header)
+# One title for the notebook and the video slides.
+TITLE = "Who Gets Labelled Diabetic? Basic Models as Instruments on NHANES 2021–2023"
+
+# Team entries. Everything the team still has to complete carries the marker FILL; `--validate-only` lists what is left.
+# The entries live in notebooks/final/team.json (optional; defaults below). `--fill-team NOTEBOOK` re-renders only the
+# team cells and the "Section lead" lines of an existing (executed) notebook from that file; code cells stay untouched.
+FILL = "[TEAM TO FILL]"
+FILL_RE = re.compile(r"\[TEAM TO FILL[^\]]*\]")
+TEAM_FILE = FINAL_DIR / "team.json"
+N_MEMBERS = 4
+SECTION_NOS = list(range(0, 11))
+MEMBER_FIELDS = {
+    "name": "[TEAM TO FILL: name]",
+    "matric": "[TEAM TO FILL: matric no.]",
+    "role": "[TEAM TO FILL: role]",
+    "sections_led": "[TEAM TO FILL: § list]",
+    "decisions": "[TEAM TO FILL: DR ids]",
+    "video_segment": "[TEAM TO FILL: mm:ss–mm:ss]",
+    "verified": "[TEAM TO FILL: what this member re-ran and checked]",
+    "genai_verified": "[TEAM TO FILL: what was checked, how]",
+}
+LEAD_LINE = "**Section lead:** "
+LEAD_RE = re.compile(r"^\*\*Section lead:\*\* .*$", re.M)
 
 
-def front_matter(args, n_sections: int, runtime_marker: str) -> list:
-    commit = git("rev-parse", "--short", "HEAD") or "unknown"
-    dirty = " (working tree had uncommitted changes)" if git("status", "--porcelain", "--", "src", "notebooks/sections", "governance", "config") else ""
-    cells = []
-    cells.append(md(
-        "# Who Gets Labelled Diabetic? Labels, Features and Preparation Choices in NHANES 2021–2023\n\n"
-        "**CA6003 Best Practices in Data Governance, Preparation and Analytics** · NTU MSc AI · group project\n\n"
-        "A data-centric study of adult diabetes identification with the public NHANES August 2021 – August 2023 files. "
-        "Machine learning is used as *evidence about the data*, not as the goal: only basic interpretable models "
-        "(L2 logistic regression with splines, a shallow decision tree) are used, and the question is what data-preparation "
-        "decisions change. **There is no LLM or complex model anywhere in the analysis pipeline.**"))
-    cells.append(md(
-        "## Group and video\n\n"
-        "| Item | Entry |\n|---|---|\n"
-        "| Group number | **[TODO: group no.]** |\n"
-        "| Members | **[TODO: names and student IDs]** |\n"
-        "| Video (public YouTube, group number in title) | **[TODO: video link]** |\n"
-        "| Notebook file | `" + OUT_NAME + "` (this file is the only code deliverable; it recreates everything it needs) |\n"))
-    cells.append(md(
-        "## Contribution table\n\n"
-        "*Template: the team fills in one row per member (sections owned, role, video segment). "
-        "The section list below is the structure of this notebook.*\n\n"
-        + md_table([["[TODO]", "[TODO: e.g. data profiling lead]", "[TODO: §2]", "[TODO: 0:00–1:30]"],
-                    ["[TODO]", "[TODO]", "[TODO]", "[TODO]"],
-                    ["[TODO]", "[TODO]", "[TODO]", "[TODO]"],
-                    ["[TODO]", "[TODO]", "[TODO]", "[TODO]"]],
-                   ["Member", "Role", "Sections", "Video segment"])))
-    cells.append(md(
-        "## Generative-AI declaration\n\n"
-        "**No LLM or complex model is part of the analysis pipeline.** Generative AI was used as a *development aid* "
-        "(planning, drafting code and documentation, cross-auditing). The log below lists every use: tool and version, purpose, "
-        "what data was shared, where the output was used and how it was verified. **All numbers reported in this notebook are "
-        "recomputed in this notebook** from the raw public-use NHANES files and checked by `assert` statements against the "
-        "verified reference values; nothing is copied from a model's output. The log is maintained in `governance/genai_log.csv` "
-        "(rendered here verbatim).\n\n" + genai_table()))
-    cells.append(md(
+def load_team() -> dict:
+    team = {"group_number": "[TEAM TO FILL: group no.]", "video_url": "[TEAM TO FILL: public YouTube link]",
+            "members": [dict(MEMBER_FIELDS) for _ in range(N_MEMBERS)],
+            "section_leads": {str(n): "[TEAM TO FILL: member name]" for n in SECTION_NOS}}
+    if TEAM_FILE.exists():
+        user = json.loads(TEAM_FILE.read_text(encoding="utf-8"))
+        for k in ("group_number", "video_url"):
+            if str(user.get(k, "")).strip():
+                team[k] = str(user[k]).strip()
+        if user.get("members"):
+            team["members"] = [{f: (str(m.get(f, "")).strip() or d) for f, d in MEMBER_FIELDS.items()} for m in user["members"]]
+        for n, v in (user.get("section_leads") or {}).items():
+            if str(v).strip():
+                team["section_leads"][str(n)] = str(v).strip()
+    return team
+
+
+def em(x: str) -> str:
+    """Bold a placeholder so it cannot be missed."""
+    return FILL_RE.sub(lambda m: f"**{m.group(0)}**", md_escape(x))
+
+
+def team_table(rows: list[list[str]], header: list[str]) -> str:
+    lines = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
+    lines += ["| " + " | ".join(em(x) for x in row) + " |" for row in rows]
+    return "\n".join(lines)
+
+
+def group_md(team: dict) -> str:
+    open_items = bool(FILL_RE.search(json.dumps(team, ensure_ascii=False)))
+    note = ("> **To the team:** every **[TEAM TO FILL: …]** entry (group, members, video, contributions, the GenAI verification "
+            "lines and the *Section lead* line under each § heading) must be completed before submission. Edit "
+            "`notebooks/final/team.json` and run `tools/build_final.py --fill-team <notebook>` (code cells and outputs are kept), "
+            "or edit the markdown directly; `tools/build_final.py --validate-only <notebook>` lists what is left.\n\n") if open_items else ""
+    return ("## Group, members and video\n\n" + note
+            + team_table([["Group number", team["group_number"]],
+                          ["Video (public YouTube; group number in the title)", team["video_url"]],
+                          ["Notebook", f"`{OUT_NAME}`, the only code deliverable; it recreates everything it needs"]],
+                         ["Item", "Entry"])
+            + "\n\n" + team_table([[m["name"], m["matric"], m["role"]] for m in team["members"]],
+                                  ["Member", "Matric no.", "Role"]))
+
+
+def contribution_md(team: dict) -> str:
+    return ("## Contribution table\n\n"
+            "Who led which sections, which decisions in the register (Appendix A.1, ids `DR-Sk-nn`) each member authored, "
+            "which video segment each member presents and what each member re-ran and verified. Every § heading also names "
+            "its lead.\n\n"
+            + team_table([[m["name"], m["sections_led"], m["decisions"], m["video_segment"], m["verified"]] for m in team["members"]],
+                         ["Member", "Sections led", "Decisions authored", "Video segment", "Verified"]))
+
+
+def genai_md(team: dict) -> str:
+    lines = "\n".join(f"- {em(m['name'])} verified {em(m['genai_verified'])}" for m in team["members"])
+    return ("## Generative-AI declaration\n\n"
+            "No LLM or other complex model is part of the analysis pipeline; generative AI was a development aid only.\n\n"
+            + md_table([["Claude (Anthropic): Opus and Sonnet models, chat and command line",
+                         "Planning the analysis, drafting code and text, reviewing statistics and consistency",
+                         "Every number is recomputed from the raw NHANES files by the code in this notebook and asserted; "
+                         "independent re-implementation audits of key results; external replication of NCHS Data Brief 516 "
+                         "(@@H:4/External anchor@@, @@H:9/External validity@@); full change history in git"]],
+                       ["Tool", "Purpose", "How verified"])
+            + "\n\nNo participant-level record was entered into any prompt. Each member's own check:\n\n" + lines
+            + "\n\nDated log with tool versions and the data shared: @@A:A.7 Generative-AI use log~Appendix A.7@@.")
+
+
+# Executive summary: every number is read from the stored FINAL results (results/final_metrics.json) at build time and
+# re-asserted against the executed notebook in Appendix A.5 (the same paths are in REF_SPECS).
+SUMMARY_MAX_WORDS = 250
+
+
+def summary_md() -> tuple[str, int]:
+    fm = json.loads((ROOT / "results" / "final_metrics.json").read_text(encoding="utf-8"))
+
+    def g(sec: str, path: str):
+        return dig_path(fm[sec], path)
+
+    def n(sec, path):                      # count
+        return f"{int(round(float(g(sec, path)))):,}"
+
+    def a(sec, path, signed=False):        # AUC-scale number
+        v = float(g(sec, path))
+        return f"{v:+.3f}".replace("-", "−") if signed else f"{v:.3f}"
+
+    def ci(sec, base, lo="lo", hi="hi"):
+        return f"[{a(sec, base + '.' + lo, True)}, {a(sec, base + '.' + hi, True)}]"
+
+    def pct(sec, path, d=1):
+        return f"{100 * float(g(sec, path)):.{d}f}"
+
+    def v(sec, path):
+        return str(g(sec, path))
+
+    ho = "holdout.metrics[arm=S&tier=1&pop={}].roc_auc"
+    pp = "h2b.pure_preparation[pop=E-ALL&metric={}].diff"
+    rd = "undiagnosed_inequality.risk_differences_pp.uninsured - insured"
+    text = (
+        "## Summary\n\n"
+        "**Question.** Which data-preparation decisions change how a basic, interpretable model identifies adult diabetes, "
+        "and does a high AUC mean a model can find *undiagnosed* cases?\n\n"
+        f"**Cohort.** NHANES August 2021 – August 2023: {n('S1', 'n_cohort')} examined, non-pregnant adults aged 20+ with HbA1c; "
+        f"{n('S1', 'labels.L_comb')} positive by self-report or HbA1c ≥ 6.5 % (weighted {pct('S1', 'prevalence_comb.weighted')} %, "
+        f"95 % CI {pct('S1', 'prevalence_comb.ci_low')}–{pct('S1', 'prevalence_comb.ci_high')}), {n('S1', 'e_screen.positives')} of them undiagnosed.\n\n"
+        "**Findings.**\n\n"
+        f"1. **Recognition, not screening.** The prepared model: AUC {a('S7', 'headline.auc_S_eall_T1')} on all adults, "
+        f"{a('S7', 'headline.auc_S_escreen_T1')} on adults without a diagnosis (gap {a('S7', 'headline.eall_minus_escreen_S_T1.est', True)} "
+        f"{ci('S7', 'headline.eall_minus_escreen_S_T1')}). Dropping care-contact items lowers the first "
+        f"({a('S7', 'headline.minus_care_eall.est', True)}) and raises the second ({a('S7', 'headline.minus_care_escreen.est', True)}); "
+        f"recall {float(g('S8', 'gap_decomposition.tpr_diagnosed')):.2f} for diagnosed vs "
+        f"{float(g('S8', 'gap_decomposition.tpr_undiagnosed')):.2f} for undiagnosed positives.\n"
+        f"2. **Leakage and naive cleaning.** Treatment items lift AUC from {a('S7', 'headline.auc_M1_eall_T1')} to "
+        f"{a('S7', 'headline.auc_M0_eall_T1')}; a depth-3 tree then splits on age at diagnosis, median-imputed to "
+        f"{float(g('S7', 'tree_m0.did040_fill')):.0f} for the {pct('S7', 'tree_m0.did040_missing_share', 0)} % never asked. "
+        f"*Non-obvious profiling finding:* a blanket “7/9 = missing” recode deletes {n('S3', 'blanket_recode.valid_cells_destroyed_cohort')} "
+        f"valid cells, including HbA1c 7.0 % and 9.0 %, losing {n('S3', 'blanket_recode.a1c_positives_lost')} of "
+        f"{n('S3', 'blanket_recode.a1c_positives')} HbA1c-positive adults.\n"
+        f"3. **Label and measurement bias.** {n('S5', 'masking.below_6_5')} of {n('S5', 'masking.self_reported')} self-reported "
+        f"diabetics ({pct('S5', 'masking.below_6_5_share')} %) have HbA1c below 6.5 % (treatment masking); uninsured adults with high "
+        f"HbA1c are {float(g('S5', rd + '.rd_pp')):+.1f} pp ({float(g('S5', rd + '.ci_low_pp')):.1f} to "
+        f"{float(g('S5', rd + '.ci_high_pp')):.1f}) more often undiagnosed.\n\n"
+        f"**Minimal vs systematic, same L2 logistic regression:** ΔAUC {a('S7', 'headline.S_minus_M1_T1_eall.est', True)} "
+        f"{ci('S7', 'headline.S_minus_M1_T1_eall')}, {v('S10', 'h2b.subs.(a) AUC.verdict')} (equivalence margin ±0.01); "
+        f"Brier {v('S10', 'h2b.subs.(b) Brier.verdict')} ({a('S10', 'h2b.subs.(b) Brier.est', True)}) through class weights "
+        f"(without them ΔAUC {a('S10', pp.format('roc_auc'), True)}, ΔBrier {a('S10', pp.format('brier'), True)}).\n\n"
+        f"**One-shot hold-out (n = {n('S9', 'holdout.log.n_test')}):** leak gate "
+        f"({a('S9', 'holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est', True)}) and recognition gap (AUC {a('S9', ho.format('E-ALL'))} vs "
+        f"{a('S9', ho.format('E-SCREEN'))}) replicate; {n('S9', 'holdout.n_flag_2se')} of {n('S10', 'holdout.n_rows')} metrics > "
+        "2 SE below cross-validation.\n\n"
+        "*All numbers: stored results, re-asserted in Appendix A.5.*")
+    return text, word_count(text)
+
+
+def word_count(markdown: str) -> int:
+    """Words a reader sees: headings, emphasis markers, link targets and table rules removed."""
+    t = re.sub(r"\]\([^)]*\)", "]", markdown)
+    t = re.sub(r"@@H:[^@]*@@", "§x.y", t)
+    t = re.sub(r"@@A:[^~@]*~([^@]*)@@", r"\1", t)
+    t = re.sub(r"[#*|>`\[\]]", " ", t)
+    t = re.sub(r"^-{3,}$|\|?-{3,}\|", " ", t, flags=re.M)
+    return len([w for w in t.split() if re.search(r"[\w%§]", w)])
+
+
+# Brief requirement -> where it is satisfied. @@H:<n>/<title prefix>@@ tokens become links after assembly (resolve_links).
+CHECKLIST = [
+    ("Non-obvious pattern found by systematic profiling / EDA",
+     "@@H:3/Cost of a blanket recode@@ (blanket recode deletes HbA1c 7.0 % and 9.0 %); @@H:7/Leak gate@@ (imputed age at diagnosis as a label code); @@H:5/Treatment masking@@"),
+    ("Profiling, cleaning, validation, transformation",
+     "§2–§3 (@@H:3/XPT read artefact@@, @@H:3/Data-quality dimension matrix@@); @@H:6/Step catalogue@@"),
+    ("Bias, outliers and integrity: cause, mitigation, impact",
+     "@@H:3/Outliers@@; @@H:5/Who is undiagnosed@@; @@H:5/BMI as a biased measurement@@; @@H:8/3 × 3 label matrix@@; @@H:8/WHtR measurement fix@@"),
+    ("EDA fallacies (correlation vs causation, Simpson's paradox)",
+     "@@H:4/Insurance@@; @@H:4/Simpson scan@@; @@H:4/Causal structure@@"),
+    ("Redundancy, multicollinearity, skewness",
+     "@@H:4/Redundancy and collinearity@@; @@H:4/Skewness@@"),
+    ("Minimal vs systematic preparation, same basic model",
+     "@@H:6/Arms@@; @@H:7/Cumulative path@@; @@H:7/Leave-one-block-out@@; @@H:10/Hypothesis scoreboard@@ (H2b)"),
+    ("Basic interpretable models only",
+     "@@H:7/Data-justified model choice@@: L2 logistic regression and a depth-3 decision tree"),
+    ("Improvements and deteriorations explained",
+     "@@H:10/Improvements and deteriorations@@; @@H:10/What the ML evidence says@@"),
+    ("Data governance: DUA, minimisation, pre-registration",
+     "@@H:1/Data user agreement@@; @@H:1/Data minimisation@@; @@H:6/Hypotheses and pre-registration lock@@"),
+    ("GenAI declaration (tool, purpose, verification)",
+     "@@A:Generative-AI declaration~Generative-AI declaration@@; @@A:A.7 Generative-AI use log~Appendix A.7@@"),
+    ("Reproducibility",
+     "@@H:0/Self-contained workspace@@; @@H:0/Run mode@@; @@A:A.5 Reference check (FINAL_REF)~Appendix A.5@@; @@A:A.6 Build record~A.6@@"),
+]
+
+# Marker's path: the subsections that carry the argument, in reading order.
+MARKERS_PATH = [
+    ("3/Cost of a blanket recode", "non-obvious profiling finding: a routine recode deletes valid HbA1c values"),
+    ("3/Data-quality dimension matrix", "quality verdict per dimension"),
+    ("4/External anchor", "replication of the official NCHS prevalence estimates"),
+    ("4/Simpson scan", "fallacy scan: sign flips come from mediators"),
+    ("5/Treatment masking", "self-report and HbA1c disagree because treatment works"),
+    ("5/Who is undiagnosed", "access to care decides who carries a diagnosis"),
+    ("6/Hypotheses and pre-registration lock", "hypotheses locked before any ablation result"),
+    ("7/Leak gate", "minimal arm with and without treatment items"),
+    ("7/E-ALL vs E-SCREEN", "recognition vs screening"),
+    ("8/3 × 3 label matrix", "the training label decides who is missed"),
+    ("9/One-shot hold-out", "untouched test set after the experiment freeze"),
+    ("10/Hypothesis scoreboard", "every verdict, including refuted and inconclusive"),
+    ("10/Improvements and deteriorations", "what each preparation block helped or hurt"),
+]
+
+
+def reading_guide_md() -> str:
+    path = md_table([[str(i), f"@@H:{p}@@", why] for i, (p, why) in enumerate(MARKERS_PATH, 1)], ["#", "Subsection", "Why read it"])
+    return (
         "## Reading guide\n\n"
+        f"**Marker's path.** The {len(MARKERS_PATH)} subsections that carry the argument, in reading order:\n\n" + path + "\n\n"
         "- **Structure.** §0 prepares the workspace and checks the environment; §1 states the question and the governance rules; §2 checks "
         "provenance, specification and minimisation and §3 audits data quality; §4–§10 follow the data lifecycle (EDA and fallacies, labels "
         "and bias, preparation design, experiments, fairness, robustness, synthesis). "
-        "The appendix holds the merged decision register, the pre-registration text and the references.\n"
+        "The appendix holds the merged decision register, the pre-registration text, the references and the GenAI log.\n"
+        "- **Stage names.** “Stage Sk” in file names, decision ids (`DR-Sk-nn`) and figure names is §k of this notebook.\n"
         "- **Every analysis step has three parts:** a *Why* paragraph (the question and the method), the code, and a *So what* paragraph "
         "(the concrete numbers that code printed and what they mean). Each number in the text is produced by a code cell and asserted.\n"
         "- **Numbering.** Headings are `§N` (section) and `N.M` (item). Cross-references such as “§6.5” point to these headings.\n"
         "- **Independent sections.** Each section starts from a clean namespace (`new_section()`), re-loads the cohort and reads upstream results from `results/`, "
         "so it can be re-run on its own after §0.\n"
         "- **Collapsed cells.** The cells in §0.0 that write the helper modules and inputs are collapsed; they are verbatim copies of the project files.\n"
-        "- **Decision register.** Decisions are labelled `DR-<stage>-<nn>` in the text and listed in full in Appendix A.1 with evidence and self-check verdicts.\n"
-        "- **Verdict vocabulary.** Hypotheses end as *supported*, *refuted*, *equivalent*, *inconclusive* or *mixed*; the margins (SESOI) were fixed in advance."))
+        "- **Decision register.** Decisions are labelled `DR-Sk-nn` in the text and listed in full in Appendix A.1 with evidence and self-check verdicts.\n"
+        "- **Verdict vocabulary.** Hypotheses end as *supported*, *refuted*, *equivalent*, *inconclusive* or *mixed*; the margins (SESOI) were fixed in advance.")
+
+
+LAPTOP_NOTE = ("On a 4–8-core laptop expect roughly 10–25 min in FAST mode and 1–3 h in FINAL mode (scaled from the number of parallel "
+               "workers, not measured).")
+
+
+def run_mode_md(args, runtime_marker: str) -> str:
+    sizes = ("5×5 repeated cross-validation, B = 1,000 bootstrap replicates, 500 coefficient-bootstrap replicates, 100 label "
+             "permutations (§9) and 200 group permutations (§8)")
+    fast = ("5×2 CV, B = 100, 30 coefficient-bootstrap replicates in §7 and §9, 20 label permutations; the 200 group "
+            "permutations of §8 are the same in both modes")
     if args.mode == "FINAL" and args.execute:
-        mode_text = ("**Stored outputs: FINAL mode** (`NB_MODE=FINAL`: 5×5 repeated cross-validation, 1,000 bootstrap replicates, 500 coefficient "
-                     "bootstrap replicates, 100 permutations). Re-running with the default `NB_MODE=FAST` (5×2 CV, B = 100, 20 permutations) "
-                     "takes a few minutes and reproduces every figure and table with wider Monte-Carlo error; the asserted reference values hold in both modes.")
+        mode_text = (f"**Stored outputs: FINAL mode** (`NB_MODE=FINAL`: {sizes}). Re-running with the default `NB_MODE=FAST` ({fast}) "
+                     "reproduces every figure and table with wider Monte-Carlo error; the asserted reference values (Appendix A.5) hold in both modes.")
     elif args.execute:
-        mode_text = ("**Stored outputs: FAST mode** (`NB_MODE=FAST`, the default: 5×2 repeated CV, B = 100, 20 permutations). "
-                     "Set the environment variable `NB_MODE=FINAL` before starting Jupyter to run the full protocol (5×5 CV, B = 1,000).")
+        mode_text = (f"**Stored outputs: FAST mode** (`NB_MODE=FAST`, the default: {fast}). "
+                     f"Set the environment variable `NB_MODE=FINAL` before starting Jupyter to run the full protocol ({sizes}).")
     else:
-        mode_text = ("**This file has no stored outputs.** Run it top to bottom. The default mode is FAST (5×2 repeated CV, B = 100, 20 permutations); "
-                     "set `NB_MODE=FINAL` before starting Jupyter for the full protocol (5×5 CV, B = 1,000, 500 coefficient replicates, 100 permutations).")
-    cells.append(md(
-        "## Run mode and runtime\n\n" + mode_text + "\n\n"
-        "The notebook needs Python 3.12 with the packages pinned in the requirements shown in §0.1, and internet access only if the "
-        "raw files are not already in a `data/nhanes_2021_2023/raw/` folder above the notebook (then about 13 MB are downloaded from the CDC site and verified by SHA-256). "
-        "It creates a `ca6003_workspace/` folder next to the notebook and writes nothing outside it.\n\n"
-        + runtime_marker))
-    cells.append(md("## Contents\n\n@@TOC@@", tags=["toc"]))
-    return cells
+        mode_text = (f"**This file has no stored outputs.** Run it top to bottom. The default mode is FAST ({fast}); "
+                     f"set `NB_MODE=FINAL` before starting Jupyter for the full protocol ({sizes}).")
+    return ("## Run mode and runtime\n\n" + mode_text + " Every size per mode is listed in @@H:0/Run mode@@.\n\n"
+            "The notebook needs Python 3.12 with the packages pinned in the requirements shown in §0.1, and internet access only if the "
+            "raw files are not already in a `data/nhanes_2021_2023/raw/` folder above the notebook (then about 13 MB are downloaded from the CDC site and verified by SHA-256). "
+            "It creates a `ca6003_workspace/` folder next to the notebook and writes nothing outside it.\n\n"
+            + runtime_marker + "\n\n" + LAPTOP_NOTE)
+
+
+def front_matter(args, n_sections: int, runtime_marker: str) -> tuple[list, dict]:
+    team = load_team()
+    summary, n_words = summary_md()
+    cells = [
+        md(f"# {TITLE}\n\n"
+           "**CA6003 Best Practices in Data Governance, Preparation and Analytics** · NTU MSc AI · group project\n\n"
+           "A data-centric study of adult diabetes identification with the public NHANES August 2021 – August 2023 files. "
+           "Machine learning is used as *evidence about the data*, not as the goal: only basic interpretable models "
+           "(L2 logistic regression with splines, a shallow decision tree) are used, and the question is what data-preparation "
+           "decisions change. **There is no LLM or complex model anywhere in the analysis pipeline.**", tags=["front-title"]),
+        md(summary, tags=["front-summary"]),
+        md("## Brief requirements and where they are met\n\n"
+           + md_table([[r, w] for r, w in CHECKLIST], ["Requirement (assignment brief)", "Where"]), tags=["front-checklist"]),
+        md(group_md(team), tags=["team", "front-group"]),
+        md(contribution_md(team), tags=["team", "front-contrib"]),
+        md(genai_md(team), tags=["team", "front-genai"]),
+        md(reading_guide_md(), tags=["front-guide"]),
+        md(run_mode_md(args, runtime_marker), tags=["front-runmode"]),
+        md("## Contents\n\n@@TOC@@", tags=["toc"]),
+    ]
+    stats = {"summary_words": n_words, "genai_words": word_count(cells[5].source)}
+    return cells, stats
+
+
+def inject_lead(cell, no: int, team: dict) -> None:
+    """Add the 'Section lead' line under the '# §N' heading of a section's first cell."""
+    lead = team["section_leads"].get(str(no), FILL)
+    line = LEAD_LINE + em(lead)
+    if LEAD_RE.search(cell.source):
+        cell.source = LEAD_RE.sub(lambda _: line, cell.source, count=1)
+    else:
+        head, _, rest = cell.source.partition("\n")
+        cell.source = head + "\n\n" + line + ("\n\n" + rest.lstrip("\n") if rest.strip() else "")
+    tags = cell.metadata.get("tags", [])
+    if "section-lead" not in tags:
+        cell.metadata["tags"] = tags + ["section-lead"]
+
+
+# ----------------------------------------------------------------------------- heading links
+H_TOKEN = re.compile(r"@@H:([^@]+)@@")
+A_TOKEN = re.compile(r"@@A:([^@]+)@@")
+
+
+def anchor(title: str) -> str:
+    return "#" + quote(title.replace(" ", "-"), safe="-§–")
+
+
+def heading_index(cells: list) -> list[tuple[str, str, str]]:
+    """(section number, item number, title) for every '## N.M' / '### N.M.k' heading of the assembled notebook."""
+    out = []
+    for c in cells:
+        if c.cell_type != "markdown":
+            continue
+        fence = False
+        for line in c.source.split("\n"):
+            if line.lstrip().startswith("```"):
+                fence = not fence
+            if fence:
+                continue
+            m = re.match(r"^#{2,3}\s+(\d+)((?:\.\d+)+)\s+(.*?)\s*$", line)
+            if m:
+                out.append((m.group(1), m.group(1) + m.group(2), m.group(3)))
+    return out
+
+
+def resolve_links(cells: list, partial: bool) -> list[str]:
+    """Replace @@H:n/title prefix@@ by a link '[§n.m](#anchor)'. Returns problems (unresolved or ambiguous tokens)."""
+    idx = heading_index(cells)
+    problems = []
+
+    def repl(m):
+        spec = m.group(1)
+        sec, _, prefix = spec.partition("/") if "/" in spec else ("", "", spec)
+        hits = [(num, t) for s, num, t in idx if (not sec or s == sec) and t.lower().startswith(prefix.lower())]
+        if len(hits) > 1:                      # prefer the shallowest heading (N.M over N.M.k)
+            depth = min(num.count(".") for num, _ in hits)
+            hits = [h for h in hits if h[0].count(".") == depth]
+        if len(hits) != 1:
+            if not partial:
+                problems.append(f"heading link {spec!r}: {len(hits)} matches")
+            return f"§{sec}" if sec else prefix
+        num, t = hits[0]
+        return f"[§{num}]({anchor(f'{num} {t}')})"
+
+    titles = set()
+    for c in cells:
+        if c.cell_type == "markdown":
+            titles.update(m.group(1) for m in re.finditer(r"^#{1,3}\s+(.*?)\s*$", c.source, re.M))
+
+    def repl_a(m):
+        title, _, label = m.group(1).partition("~")
+        if title not in titles and not partial:
+            problems.append(f"heading link {title!r}: heading not found")
+        return f"[{label or title}]({anchor(title)})"
+
+    for c in cells:
+        if c.cell_type == "markdown" and "@@" in c.source:
+            c.source = A_TOKEN.sub(repl_a, H_TOKEN.sub(repl, c.source))
+    return problems
 
 
 RUNTIME_PLACEHOLDER = "*Runtime table: filled in when the notebook is executed by `tools/build_final.py --execute`.*"
@@ -546,30 +831,103 @@ def make_toc(cells: list) -> str:
 
 
 # ----------------------------------------------------------------------------- appendix
+# (alias regex that detects a citation in the notebook text, or None = first author's surname; reference text).
+# A.4 lists only references that are cited somewhere in the assembled notebook (sections, inlined modules, registers,
+# pre-registration text); `citation_report` lists citations without a reference and references never cited.
 REFERENCES = [
-    "Araneta, M. R. G., Kanaya, A. M., Hsu, W. C., et al. (2015). Optimum BMI cut points to screen Asian Americans for type 2 diabetes. *Diabetes Care*, 38(5), 814–820.",
-    "Bang, H., Edwards, A. M., Bomback, A. S., et al. (2009). Development and validation of a patient self-assessment score for diabetes risk. *Annals of Internal Medicine*, 151(11), 775–783.",
-    "Cicchetti, D. V., & Feinstein, A. R. (1990). High agreement but low kappa: II. Resolving the paradoxes. *Journal of Clinical Epidemiology*, 43(6), 551–558.",
-    "Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman & Hall.",
-    "Gebru, T., Morgenstern, J., Vecchione, B., et al. (2021). Datasheets for datasets. *Communications of the ACM*, 64(12), 86–92. https://arxiv.org/abs/1803.09010",
-    "Groenwold, R. H. H., White, I. R., Donders, A. R. T., et al. (2012). Missing covariate data in clinical research: when and when not to use the missing-indicator method for analysis. *CMAJ*, 184(11), 1265–1269.",
-    "Hanley, J. A., & McNeil, B. J. (1982). The meaning and use of the area under a receiver operating characteristic (ROC) curve. *Radiology*, 143(1), 29–36.",
-    "Hardt, M., Price, E., & Srebro, N. (2016). Equality of opportunity in supervised learning. *Advances in Neural Information Processing Systems*, 29.",
-    "Kamiran, F., & Calders, T. (2012). Data preprocessing techniques for classification without discrimination. *Knowledge and Information Systems*, 33(1), 1–33.",
-    "Klein, R. J., & Schoenborn, C. A. (2001). Age adjustment using the 2000 projected U.S. population. *Healthy People Statistical Notes*, 20. National Center for Health Statistics.",
-    "Korn, E. L., & Graubard, B. I. (1998). Confidence intervals for proportions with small expected number of positive counts estimated from survey data. *Survey Methodology*, 24(2), 193–201.",
-    "Nadeau, C., & Bengio, Y. (2003). Inference for the generalization error. *Machine Learning*, 52(3), 239–281.",
-    "National Center for Health Statistics. NHANES August 2021 – August 2023: data files, codebooks and survey documentation. https://wwwn.cdc.gov/nchs/nhanes/ ; analytic guidance on weighting: https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx",
-    "National Center for Health Statistics. Data Brief No. 516, prevalence of diabetes among adults in the United States, August 2021 – August 2023. https://www.cdc.gov/nchs/products/databriefs/db516.htm",
-    "National Center for Health Statistics. Data User Agreement. https://www.cdc.gov/nchs/policy/data-user-agreement.html",
-    "Ojala, M., & Garriga, G. C. (2010). Permutation tests for studying classifier performance. *Journal of Machine Learning Research*, 11, 1833–1863.",
-    "Parker, J. D., Talih, M., Malec, D. J., et al. (2017). National Center for Health Statistics data presentation standards for proportions. *Vital and Health Statistics*, Series 2, No. 175.",
-    "Phipson, B., & Smyth, G. K. (2010). Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn. *Statistical Applications in Genetics and Molecular Biology*, 9(1), Article 39.",
-    "Rao, J. N. K., & Wu, C. F. J. (1988). Resampling inference with complex survey data. *Journal of the American Statistical Association*, 83(401), 231–241.",
-    "Rule, A., Birmingham, A., Zuniga, C., et al. (2019). Ten simple rules for writing and sharing computational analyses in Jupyter Notebooks. *PLoS Computational Biology*, 15(7), e1007007.",
-    "Saito, T., & Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLoS ONE*, 10(3), e0118432.",
-    "Westreich, D., & Greenland, S. (2013). The Table 2 fallacy: presenting and interpreting confounder and modifier coefficients. *American Journal of Epidemiology*, 177(4), 292–298.",
+    (r"American Diabetes Association|\bADA\b[^\n]{0,60}\bBMI\b[^\n]{0,12}\b23\b|\bBMI\b[^\n]{0,6}(?:≥|>=|from|of)\s?23\b",
+     "American Diabetes Association Professional Practice Committee (2024). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes – 2024. *Diabetes Care*, 47(Suppl. 1), S20–S42."),
+    (None, "Araneta, M. R. G., Kanaya, A. M., Hsu, W. C., et al. (2015). Optimum BMI cut points to screen Asian Americans for type 2 diabetes. *Diabetes Care*, 38(5), 814–820."),
+    (None, "Bang, H., Edwards, A. M., Bomback, A. S., et al. (2009). Development and validation of a patient self-assessment score for diabetes risk. *Annals of Internal Medicine*, 151(11), 775–783."),
+    (r"Fairlearn", "Bird, S., Dudík, M., Edgar, R., et al. (2020). *Fairlearn: A toolkit for assessing and improving fairness in AI* (Technical Report MSR-TR-2020-32). Microsoft."),
+    (None, "Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. *Monthly Weather Review*, 78(1), 1–3."),
+    (None, "Chouldechova, A. (2017). Fair prediction with disparate impact: A study of bias in recidivism prediction instruments. *Big Data*, 5(2), 153–163."),
+    (None, "Cicchetti, D. V., & Feinstein, A. R. (1990). High agreement but low kappa: II. Resolving the paradoxes. *Journal of Clinical Epidemiology*, 43(6), 551–558."),
+    (r"Cohen['’]s (?:κ|kappa)", "Cohen, J. (1960). A coefficient of agreement for nominal scales. *Educational and Psychological Measurement*, 20(1), 37–46."),
+    (r"\bCox\b[^\n]{0,20}1958", "Cox, D. R. (1958). Two further applications of a model for binary regression. *Biometrika*, 45(3–4), 562–565."),
+    (r"\bDAMA\b", "DAMA UK Working Group (2013). *The six primary dimensions for data quality assessment*. DAMA UK."),
+    (None, "Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman & Hall."),
+    (r"Gebru|[Dd]atasheets? for datasets", "Gebru, T., Morgenstern, J., Vecchione, B., et al. (2021). Datasheets for datasets. *Communications of the ACM*, 64(12), 86–92."),
+    (None, "Groenwold, R. H. H., White, I. R., Donders, A. R. T., et al. (2012). Missing covariate data in clinical research: when and when not to use the missing-indicator method for analysis. *CMAJ*, 184(11), 1265–1269."),
+    (r"Gwira|Data Brief (?:No\.? ?)?516|\bDB ?516\b",
+     "Gwira, J. A., Fryar, C. D., & Gu, Q. (2024). Prevalence of total, diagnosed, and undiagnosed diabetes in adults: United States, August 2021 – August 2023. *NCHS Data Brief*, No. 516. National Center for Health Statistics. https://www.cdc.gov/nchs/products/databriefs/db516.htm"),
+    (None, "Hanley, J. A., & McNeil, B. J. (1982). The meaning and use of the area under a receiver operating characteristic (ROC) curve. *Radiology*, 143(1), 29–36."),
+    (None, "Hardt, M., Price, E., & Srebro, N. (2016). Equality of opportunity in supervised learning. *Advances in Neural Information Processing Systems*, 29."),
+    (None, "Harrell, F. E., Jr. (2015). *Regression Modeling Strategies* (2nd ed.). Springer."),
+    (r"ISO/IEC 25012", "ISO/IEC (2008). *ISO/IEC 25012:2008 Software engineering – Software product Quality Requirements and Evaluation (SQuaRE) – Data quality model*. International Organization for Standardization."),
+    (None, "Kamiran, F., & Calders, T. (2012). Data preprocessing techniques for classification without discrimination. *Knowledge and Information Systems*, 33(1), 1–33."),
+    (None, "Kish, L. (1965). *Survey Sampling*. Wiley."),
+    (None, "Klein, R. J., & Schoenborn, C. A. (2001). Age adjustment using the 2000 projected U.S. population. *Healthy People Statistical Notes*, 20. National Center for Health Statistics."),
+    (r"Korn[-–\s&and]+Graubard", "Korn, E. L., & Graubard, B. I. (1998). Confidence intervals for proportions with small expected number of positive counts estimated from survey data. *Survey Methodology*, 24(2), 193–201."),
+    (None, "Lakens, D. (2017). Equivalence tests: A practical primer for t tests, correlations, and meta-analyses. *Social Psychological and Personality Science*, 8(4), 355–362."),
+    (r"Landis[-–\s&and]+Koch", "Landis, J. R., & Koch, G. G. (1977). The measurement of observer agreement for categorical data. *Biometrics*, 33(1), 159–174."),
+    (r"Little['’]s MCAR|\bLittle\b[^\n]{0,4}\(?1988", "Little, R. J. A. (1988). A test of missing completely at random for multivariate data with missing values. *Journal of the American Statistical Association*, 83(404), 1198–1202."),
+    (None, "Manski, C. F. (2003). *Partial Identification of Probability Distributions*. Springer."),
+    (None, "Nadeau, C., & Bengio, Y. (2003). Inference for the generalization error. *Machine Learning*, 52(3), 239–281."),
+    (r"wwwn\.cdc\.gov/nchs/nhanes|NHANES (?:analytic|tutorial|survey documentation|documentation)|codebooks?",
+     "National Center for Health Statistics. NHANES August 2021 – August 2023: data files, codebooks and survey documentation. https://wwwn.cdc.gov/nchs/nhanes/ ; analytic guidance on weighting: https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx"),
+    (r"Data User Agreement|\bDUA\b", "National Center for Health Statistics. Data User Agreement. https://www.cdc.gov/nchs/policy/data-user-agreement.html"),
+    (r"Okabe", "Okabe, M., & Ito, K. (2008). *Color Universal Design (CUD): How to make figures and presentations that are friendly to colorblind people*. J*Fly. https://jfly.uni-koeln.de/color/"),
+    (r"O['’]Brien", "O'Brien, R. M. (2007). A caution regarding rules of thumb for variance inflation factors. *Quality & Quantity*, 41(5), 673–690."),
+    (None, "Newcombe, R. G. (1998). Interval estimation for the difference between independent proportions: comparison of eleven methods. *Statistics in Medicine*, 17(8), 873–890."),
+    (None, "Ojala, M., & Garriga, G. C. (2010). Permutation tests for studying classifier performance. *Journal of Machine Learning Research*, 11, 1833–1863."),
+    (r"Parker|presentation standards", "Parker, J. D., Talih, M., Malec, D. J., et al. (2017). National Center for Health Statistics data presentation standards for proportions. *Vital and Health Statistics*, Series 2, No. 175."),
+    (None, "Phipson, B., & Smyth, G. K. (2010). Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn. *Statistical Applications in Genetics and Molecular Biology*, 9(1), Article 39."),
+    (None, "Ransohoff, D. F., & Feinstein, A. R. (1978). Problems of spectrum and bias in evaluating the efficacy of diagnostic tests. *New England Journal of Medicine*, 299(17), 926–930."),
+    (r"Rao[-–\s&and]+Wu", "Rao, J. N. K., & Wu, C. F. J. (1988). Resampling inference with complex survey data. *Journal of the American Statistical Association*, 83(401), 231–241."),
+    (None, "Rubin, D. B. (1976). Inference and missing data. *Biometrika*, 63(3), 581–592."),
+    (r"Rule et al|Ten simple rules", "Rule, A., Birmingham, A., Zuniga, C., et al. (2019). Ten simple rules for writing and sharing computational analyses in Jupyter Notebooks. *PLoS Computational Biology*, 15(7), e1007007."),
+    (None, "Saito, T., & Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. *PLoS ONE*, 10(3), e0118432."),
+    (None, "Simonsohn, U., Simmons, J. P., & Nelson, L. D. (2020). Specification curve analysis. *Nature Human Behaviour*, 4(11), 1208–1214."),
+    (r"Westreich|Table 2 fallacy", "Westreich, D., & Greenland, S. (2013). The Table 2 fallacy: presenting and interpreting confounder and modifier coefficients. *American Journal of Epidemiology*, 177(4), 292–298."),
+    (r"WHO Expert Consultation|\bWHO\b(?!LE)", "WHO Expert Consultation (2004). Appropriate body-mass index for Asian populations and its implications for policy and intervention strategies. *The Lancet*, 363(9403), 157–163."),
+    (None, "Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. *Journal of the American Statistical Association*, 22(158), 209–212."),
+    (r"Yeo[-–\s&and]+Johnson", "Yeo, I.-K., & Johnson, R. A. (2000). A new family of power transformations to improve normality or symmetry. *Biometrika*, 87(4), 954–959."),
+    (None, "Youden, W. J. (1950). Index for rating diagnostic tests. *Cancer*, 3(1), 32–35."),
 ]
+# Named methods / sources that need a reference even when no year is given next to them.
+NAMED_CITATIONS = [r"\bHarrell\b", r"\bRubin\b", r"Little['’]s MCAR", r"\bManski\b", r"\bKish\b", r"Yeo[-–]Johnson",
+                   r"Landis[-–]Koch", r"\bDAMA\b", r"ISO/IEC \d+", r"Fairlearn", r"Ransohoff", r"Korn[-–]Graubard",
+                   r"Rao[-–]Wu", r"Nadeau[-–]Bengio", r"\bGebru\b", r"Data User Agreement", r"Data Brief (?:No\.? ?)?516",
+                   r"\bWHO\b(?!LE)", r"Table 2 fallacy", r"\bLakens\b", r"\bYouden\b", r"\bBenjamini\b", r"\bHolm\b",
+                   r"\bBonferroni\b", r"Okabe", r"\bTRIPOD\b", r"\bSteyerberg\b", r"\bVan Calster\b", r"\bPearl\b",
+                   r"\bHernán\b", r"\bBreiman\b", r"\bFirth\b", r"\bPlatt\b", r"\bHosmer\b", r"\bDeLong\b", r"\bNewcombe\b",
+                   r"\bWilson\b", r"Cohen['’]s (?:κ|kappa)", r"spectrum bias", r"\bADA\b[^\n]{0,60}\bBMI\b[^\n]{0,12}\b23\b"]
+AUTHOR_YEAR = re.compile(r"\b([A-Z][A-Za-z'’\-–]+)(?:,?\s+(?:&|and)\s+[A-Z][A-Za-z'’\-]+|\s+et\s+al\.?)?,?\s+\(?((?:19|20)\d\d)\b")
+NOT_AUTHORS = {"Aug", "August", "NHANES", "The", "US", "In", "Since", "January", "October", "November", "September",
+               "Cycle", "Stage", "Python", "Release", "Version", "Data", "Brief", "Standard", "Census", "Population", "UTC"}
+
+
+def ref_alias(alias: str | None, text: str) -> re.Pattern:
+    return re.compile(alias if alias else r"\b" + re.escape(re.split(r"[,(]", text, 1)[0].strip()) + r"\b")
+
+
+def ref_key(text: str) -> tuple[str, str]:
+    m = re.search(r"\((\d{4})\)", text)
+    return (text[:m.start()] if m else text.split(".")[0]), (m.group(1) if m else "")
+
+
+def citation_report(cells: list) -> dict:
+    """Cited-but-missing and never-cited references, from the text of the assembled notebook (A.4 excluded)."""
+    corpus = "\n".join(c.source for c in cells if "references" not in c.metadata.get("tags", []))
+    keys = [ref_key(t) for _, t in REFERENCES]
+    missing = set()
+    for m in AUTHOR_YEAR.finditer(corpus):
+        name, year = m.group(1), m.group(2)
+        parts = [p for p in re.split(r"[-–]", name) if p]
+        if name in NOT_AUTHORS or not parts:
+            continue
+        if not any(y == year and any(re.search(r"\b" + re.escape(p) + r"\b", authors) for p in parts) for authors, y in keys):
+            missing.add(f"{m.group(0).strip()}")
+    for pat in NAMED_CITATIONS:
+        for m in re.finditer(pat, corpus):
+            hit = m.group(0)
+            ctx = corpus[max(0, m.start() - 40):m.end() + 40]
+            if not any(ref_alias(a, t).search(hit) or ref_alias(a, t).search(ctx) for a, t in REFERENCES):
+                missing.add(hit)
+    cited = [t for a, t in REFERENCES if ref_alias(a, t).search(corpus)]
+    never = [t.split("(")[0].strip() for a, t in REFERENCES if t not in cited]
+    return {"cited": cited, "missing": sorted(missing), "never_cited": never}
 
 REGISTER_CODE = '''\
 new_section()
@@ -603,21 +961,6 @@ hyp_bytes = hyp_path.read_bytes()
 print("governance/hypotheses.md  SHA-256:", hashlib.sha256(hyp_bytes).hexdigest())
 print("file timestamp (UTC) of the copy in this workspace is not evidence; the lock commit and its timestamp are shown in section 6.11.")
 display(Markdown(hyp_bytes.decode("utf-8")))'''
-
-SCOREBOARD_CODE = '''\
-import pandas as pd
-from IPython.display import display
-
-for rel in ("results/S10/scoreboard.csv", "results/S7/scoreboard.csv"):
-    p = C.ROOT / rel
-    if p.exists():
-        sb = pd.read_csv(p)
-        print(rel, "-", len(sb), "rows")
-        display(sb)
-        break
-else:
-    print("no scoreboard available (run section 7 first)")'''
-
 
 # Reference numbers: (id, section, dotted path in results/metrics_<S>.json, tolerance FAST, tolerance FINAL).
 # `--make-final-ref` stores the values of a FINAL run in notebooks/final/final_ref.json; the appendix cell asserts
@@ -657,6 +1000,27 @@ REF_SPECS = [
     ("S10_limitations", "S10", "limitations.n", 0, 0),
     ("S10_verdicts_supported", "S10", "verdict_counts.supported", 1, 0),
     ("S10_holdout_rows_2se_below_cv", "S10", "holdout.n_flag_2se", 0, 0),
+    # numbers quoted in the front-matter Summary (read from results/final_metrics.json at build time)
+    ("summary_undiagnosed", "S1", "e_screen.positives", 0, 0),
+    ("summary_prevalence_ci_low", "S1", "prevalence_comb.ci_low", 1e-6, 1e-6),
+    ("summary_prevalence_ci_high", "S1", "prevalence_comb.ci_high", 1e-6, 1e-6),
+    ("summary_blanket_cells_destroyed", "S3", "blanket_recode.valid_cells_destroyed_cohort", 0, 0),
+    ("summary_blanket_a1c_positives_lost", "S3", "blanket_recode.a1c_positives_lost", 0, 0),
+    ("summary_masking_below_6_5", "S5", "masking.below_6_5", 0, 0),
+    ("summary_self_reported", "S5", "masking.self_reported", 0, 0),
+    ("summary_undiagnosed_rd_uninsured_pp", "S5", "undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp", 1e-6, 1e-6),
+    ("summary_eall_minus_escreen_S", "S7", "headline.eall_minus_escreen_S_T1.est", 0.02, 0.005),
+    ("summary_minus_care_eall", "S7", "headline.minus_care_eall.est", 0.01, 0.003),
+    ("summary_minus_care_escreen", "S7", "headline.minus_care_escreen.est", 0.02, 0.005),
+    ("summary_did040_fill", "S7", "tree_m0.did040_fill", 0, 0),
+    ("summary_did040_missing_share", "S7", "tree_m0.did040_missing_share", 1e-6, 1e-6),
+    ("summary_tpr_diagnosed", "S8", "gap_decomposition.tpr_diagnosed", 0.05, 0.01),
+    ("summary_h2b_brier", "S10", "h2b.subs.(b) Brier.est", 0.01, 0.003),
+    ("summary_pure_prep_auc", "S10", "h2b.pure_preparation[pop=E-ALL&metric=roc_auc].diff", 0.015, 0.005),
+    ("summary_pure_prep_brier", "S10", "h2b.pure_preparation[pop=E-ALL&metric=brier].diff", 0.003, 0.001),
+    ("summary_holdout_M1_minus_M0", "S9", "holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est", 0, 0),
+    ("summary_holdout_n_test", "S9", "holdout.log.n_test", 0, 0),
+    ("summary_holdout_rows", "S10", "holdout.n_rows", 0, 0),
 ]
 FINAL_REF_FILE = FINAL_DIR / "final_ref.json"
 
@@ -740,13 +1104,47 @@ def make_final_ref() -> int:
         modes.add(meta)
         entries.append({"id": id_, "section": sec, "path": path, "value": d, "tol_fast": tf, "tol_final": tfin})
     FINAL_REF_FILE.write_text(json.dumps({"written_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                          "source_modes": sorted(modes), "entries": entries}, indent=1), encoding="utf-8")
+                                          "source_modes": sorted(modes), "entries": entries}, indent=1) + "\n",
+                              encoding="utf-8", newline="\n")
     print(f"wrote {FINAL_REF_FILE.relative_to(ROOT)} with {len(entries)} entries")
     return 0
 
 
+# Internal names that occur in the locked pre-registration text (which cannot be edited after the lock). Only the
+# entries whose pattern occurs in governance/hypotheses.md are shown.
+PREREG_GLOSSARY = [
+    (r"`scope-gov`|`modeling`", "`scope-gov`, `modeling`: the project's work-package labels for scope and governance (§1) and for "
+                                 "preparation design and experiments (§6–§7) at the time of writing"),
+    (r"\bS\d+\b", "S0–S12: project stages; Stage Sk is §k of this notebook (S11–S12 are assembly and video)"),
+    (r"design[- ]phase|prototype", "design phase, prototype: the planning round before the section notebooks; its numbers are "
+                                   "recomputed and asserted in §3–§5"),
+    (r"development_process", "`docs/development_process.md`: the internal methods plan (not part of the submission)"),
+    (r"prereg-lock|prereg-v1", "`prereg-lock`, `prereg-v1`: git tags of the lock commit (§6.11)"),
+    (r"\bP\d\d\b|\bB[1-6]\b", "P01–P14: preparation steps; B1–B6: blocks of steps (§6.2)"),
+    (r"evalkit|config\.", "`evalkit`, `config`: the modules `src/evalkit.py` and `src/config.py` written in §0.0"),
+]
+
+
+def prereg_glossary() -> str:
+    text = read_text("governance/hypotheses.md")
+    items = [g for pat, g in PREREG_GLOSSARY if re.search(pat, text)]
+    return ("**Glossary for internal names in the locked text:** " + " · ".join(items) + ".") if items else ""
+
+
+def genai_log_md() -> str:
+    import csv
+    rows = list(csv.DictReader((ROOT / "governance" / "genai_log.csv").open(encoding="utf-8", newline="")))
+    body = [[r["date"], r["tool_version"], r["purpose"], r["data_shared"], r["output_used_in"], r["human_verification"]]
+            for r in rows]
+    return ("## A.7 Generative-AI use log\n\n"
+            "Every use of a generative-AI tool during the project, in date order (the file `governance/genai_log.csv`, written into the "
+            "workspace in §0.0 and counted in §10). The short declaration is in the front matter: "
+            "@@A:Generative-AI declaration~Generative-AI declaration@@.\n\n"
+            + md_table(body, ["Date", "Tool (version)", "Purpose", "Data shared", "Output used in", "Verification"]))
+
+
 def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> list:
-    cells = [md("# Appendix A: Registers, pre-registration and references"),
+    cells = [md("# Appendix A: Registers, pre-registration, references and GenAI log"),
              md("## A.1 Decision register\n"
                 "**Why.** Every decision that shaped the data or the analysis has a row with its evidence, the alternatives that were rejected "
                 "and a self-check verdict (a re-computation of the evidence in the notebook). The per-stage fragments `governance/register/S*.csv` "
@@ -754,15 +1152,17 @@ def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> li
              code(REGISTER_CODE),
              md("**So what.** The table shows all decisions in one place; the summary above it counts them per stage and per self-check verdict. "
                 "A decision without a PASS or PASS-FIX verdict would be visible as `other` and has to be justified in the text of its section."),
-             md("## A.2 Pre-registration text\n"
-                "**Why.** The hypotheses, their margins and their falsifiers were written before the ablation results existed. The full text is reproduced here "
-                "with its SHA-256 so that the file used in the analysis can be compared with the locked version (the lock record is shown in §6.11)."),
+             md("## A.2 Locked pre-registration text (shown verbatim; SHA-256 below)\n"
+                "**Why.** The hypotheses, their margins and their falsifiers were written before the ablation results existed. The file is locked: "
+                "it is reproduced here byte for byte with its SHA-256, so it can be compared with the locked version (the lock commit and "
+                "its timestamp are shown in @@H:6/Hypotheses and pre-registration lock@@). Its wording is therefore not edited for this notebook.\n\n"
+                + prereg_glossary()),
              code(PREREG_CODE),
              md("## A.3 Hypothesis scoreboard\n"
-                "**Why.** One table that lists, for each pre-registered hypothesis, its verdict and the evidence used. It is produced by the experiment "
-                "section and (when available) updated by the synthesis section."),
-             code(SCOREBOARD_CODE),
-             md("## A.4 References\n\n" + "\n".join(f"- {r}" for r in REFERENCES))]
+                "The scoreboard with every verdict, including the refuted and inconclusive ones, is in @@H:10/Hypothesis scoreboard@@; "
+                "it is not repeated here."),
+             md("## A.4 References\n\nEvery work cited in this notebook, including the docstrings of the modules written in §0.0.\n\n@@REFS@@",
+                tags=["references"])]
     cells += refcheck_cells()
     commit = source_commit()
     rows = [[f"notebooks/sections/{p.name}", section_sha[p.name][:16]] for p in section_files]
@@ -771,17 +1171,28 @@ def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> li
                     f"Assembled by `tools/build_final.py` from repository commit `{commit[:12]}`. "
                     "Inlined files and section scripts (first 16 hex digits of the SHA-256 of the LF-normalised text):\n\n"
                     + md_table(rows, ["file", "sha256 (16)"])))
+    cells.append(md(genai_log_md(), tags=["genai-log"]))
     return cells
 
 
 # ----------------------------------------------------------------------------- assembly
-def assemble(args) -> tuple[nbformat.NotebookNode, list[Path]]:
+STAGE_SUFFIX = re.compile(r"\s*\(Stages?\s+S\d+(?:\s*[–-]\s*S\d+)?\)\s*$")
+
+
+def strip_stage_suffix(cell) -> None:
+    """'# §4 Exploratory analysis (Stage S4)' -> '# §4 Exploratory analysis' (Stage Sk = §k is defined in the reading guide)."""
+    head, sep, rest = cell.source.partition("\n")
+    cell.source = STAGE_SUFFIX.sub("", head) + sep + rest
+
+
+def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
     section_files = sorted(SECTIONS_DIR.glob("[0-9][0-9]_*.py"))
     if args.sections:
         wanted = {s.strip() for s in args.sections.split(",")}
         section_files = [p for p in section_files if p.name[:2] in wanted]
     if not section_files:
         raise SystemExit("no section scripts found")
+    team = load_team()
     body, seen_nos, section_sha = [], [], {}
     for i, path in enumerate(section_files):
         cells = strip_bootstrap(load_section(path), path.name)
@@ -795,6 +1206,8 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path]]:
                 print(f"WARN {path.name}: section §{no} does not follow §{seen_nos[-1]} (numbering gap or repeat)")
             seen_nos.append(no)
             renumber(cells, no, path.name, preset_idx={0} if i == 0 else None)
+            strip_stage_suffix(cells[0])
+            inject_lead(cells[0], no, team)
             for c in cells:
                 c.metadata["tags"] = [f"sec-{no}"] + ([t for t in c.metadata.get("tags", [])])
             if i == 0:
@@ -814,20 +1227,30 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path]]:
     appendix = appendix_cells(section_files, section_sha)
     for c in appendix:
         c.metadata["tags"] = ["appendix"] + [t for t in c.metadata.get("tags", []) if t != "appendix"]
-    front = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER)
+    front, info = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER)
     cells = front + body + appendix
+    partial = bool(args.sections)
+    info["problems"] = resolve_links(cells, partial)
+    refs = citation_report(cells)
+    info["citations"] = refs
+    for c in cells:
+        if c.cell_type == "markdown" and "@@REFS@@" in c.source:
+            c.source = c.source.replace("@@REFS@@", "\n".join(f"- {r}" for r in refs["cited"]))
     toc = make_toc(cells)
     for c in cells:
         if c.cell_type == "markdown" and "@@TOC@@" in c.source:
             c.source = c.source.replace("@@TOC@@", toc)
+    leftover = [i for i, c in enumerate(cells) if c.cell_type == "markdown" and re.search(r"@@[A-Z]+[:@]", c.source)]
+    if leftover:
+        info["problems"].append(f"unresolved @@ tokens in cells {leftover}")
     nb = v4.new_notebook(cells=cells)
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
     nb.metadata["language_info"] = {"name": "python"}
-    nb.metadata["title"] = "CA6003 NHANES diabetes - final notebook"
+    nb.metadata["title"] = TITLE
     # deterministic, unique cell ids
     for n, c in enumerate(nb.cells):
         c["id"] = f"c{n:04d}"
-    return nb, section_files
+    return nb, section_files, info
 
 
 # ----------------------------------------------------------------------------- execution
@@ -919,8 +1342,8 @@ def finish_runtime_cell(nb, mode: str, runtimes: dict[str, float], total: float)
     table = md_table(rows, ["Section", f"Run time, stored outputs ({mode})"])
     for c in nb.cells:
         if c.cell_type == "markdown" and RUNTIME_PLACEHOLDER in c.source:
-            c.source = c.source.replace(RUNTIME_PLACEHOLDER, table + "\n\n*Measured on the machine that produced the stored outputs; "
-                                        "cell timings include model fitting and bootstrap loops.*")
+            c.source = c.source.replace(RUNTIME_PLACEHOLDER, table + f"\n\n*Measured on the build machine ({os.cpu_count()} logical "
+                                        "cores; §7–§9 run up to 16 parallel workers); cell timings include model fitting and bootstrap loops.*")
     return table
 
 
@@ -933,6 +1356,8 @@ def validate(nb, path: Path, executed: bool) -> list[str]:
         m = ABS_PATH.search(txt)
         if m:
             problems.append(f"cell {i}: absolute path in source near {txt[max(0, m.start() - 20):m.end() + 20]!r}")
+        if c.cell_type == "markdown" and re.search(r"@@[A-Z]+[:@]", txt):
+            problems.append(f"cell {i}: unresolved @@ token")
     ecs = [c.get("execution_count") for c in nb.cells if c.cell_type == "code"]
     if executed:
         if ecs != list(range(1, len(ecs) + 1)):
@@ -951,6 +1376,60 @@ def validate(nb, path: Path, executed: bool) -> list[str]:
         if any(e is not None for e in ecs):
             problems.append("unexecuted build has execution counts")
     return problems
+
+
+def placeholders(nb) -> list[str]:
+    """Team entries still to be filled in (a warning, not a failure: the team completes them before submission)."""
+    out = []
+    for i, c in enumerate(nb.cells):
+        if c.cell_type != "markdown":
+            continue
+        lines = c.source.split("\n")
+        head = next((ln for ln in lines if ln.startswith("#")), lines[0])[:50]
+        for m in FILL_RE.finditer(c.source):
+            out.append(f"cell {i} ({head}): {m.group(0)}")
+    return out
+
+
+def front_word_counts(nb) -> dict[str, int]:
+    out = {}
+    for c in nb.cells:
+        tags = c.metadata.get("tags", [])
+        tag = next((t for t in tags if t.startswith("front-")), None)
+        if tag:
+            out[tag[6:]] = word_count(c.source)
+    return out
+
+
+def fill_team(path: Path) -> int:
+    """Re-render the team cells and the 'Section lead' lines of an existing notebook from notebooks/final/team.json.
+    Code cells and outputs are untouched (asserted through the code-cell SHA-256)."""
+    nb = nbformat.read(path, as_version=4)
+    before = code_hash(nb)
+    team = load_team()
+    render = {"front-group": group_md, "front-contrib": contribution_md, "front-genai": genai_md}
+    n, problems = 0, []
+    for c in nb.cells:
+        tags = c.metadata.get("tags", [])
+        for tag, fn in render.items():
+            if tag in tags:
+                new = md(fn(team))
+                problems += resolve_links(list(nb.cells) + [new], partial=False)   # headings of this notebook
+                c.source = new.source
+                n += 1
+        if "section-lead" in tags:
+            no = next((t[4:] for t in tags if t.startswith("sec-")), None)
+            if no is not None:
+                inject_lead(c, int(no), team)
+                n += 1
+    assert code_hash(nb) == before, "code cells changed"
+    for p in problems:
+        print("PROBLEM", p)
+    nbformat.write(nb, path)
+    left = placeholders(nb)
+    print(f"updated {n} markdown cells from {TEAM_FILE.name}; code-cell SHA-256 unchanged ({before[:16]})")
+    print(f"{len(left)} placeholders left" + "".join(f"\n   {x}" for x in left))
+    return 1 if problems else 0
 
 
 def code_hash(nb) -> str:
@@ -1001,7 +1480,9 @@ def main() -> int:
     ap.add_argument("--make-final-ref", action="store_true",
                     help="write notebooks/final/final_ref.json from results/metrics_*.json (run after a FINAL execution) and exit")
     ap.add_argument("--validate-only", metavar="NOTEBOOK", help="validate an existing notebook (schema, absolute paths, "
-                    "execution counts, size, code-cell hash) and exit")
+                    "execution counts, size, code-cell hash, remaining team placeholders) and exit")
+    ap.add_argument("--fill-team", metavar="NOTEBOOK", help="re-render the team cells and section-lead lines of an existing "
+                    "notebook from notebooks/final/team.json (code cells and outputs unchanged) and exit")
     args = ap.parse_args()
 
     if args.make_final_ref:
@@ -1014,15 +1495,28 @@ def main() -> int:
         print(size_report(path, nb))
         print("executed:", executed, "| code-cell SHA-256:", code_hash(nb))
         print("check_repo:", run_check_repo(path))
+        print("front-matter words:", front_word_counts(nb))
+        left = placeholders(nb)
+        print(f"WARN {len(left)} team placeholders left (fill before submission)" if left else "team placeholders: none left")
+        for x in left:
+            print("   ", x)
         for p in problems:
             print("PROBLEM", p)
         print("validation", "FAILED" if problems else "OK")
         return 1 if problems else 0
+    if args.fill_team:
+        return fill_team(Path(args.fill_team).resolve())
 
     out = Path(args.out).resolve()
     t0 = time.time()
-    nb, section_files = assemble(args)
+    nb, section_files, info = assemble(args)
     print(f"assembled {len(nb.cells)} cells from {len(section_files)} sections: " + ", ".join(p.name[:2] for p in section_files))
+    print(f"front matter: summary {info['summary_words']} words (limit {SUMMARY_MAX_WORDS}), GenAI declaration {info['genai_words']} words")
+    cit = info["citations"]
+    print(f"references: {len(cit['cited'])} cited and listed in A.4; never cited (dropped): {cit['never_cited'] or 'none'}")
+    print(f"citations without a reference: {cit['missing'] or 'none'}")
+    if info["summary_words"] > SUMMARY_MAX_WORDS:
+        info["problems"].append(f"summary has {info['summary_words']} words (> {SUMMARY_MAX_WORDS})")
     if "course" in out.parts:
         raise SystemExit("refusing to write into course/")
     executed = False
@@ -1062,13 +1556,15 @@ def main() -> int:
             line = (f"| {datetime.now(timezone.utc):%Y-%m-%d %H:%M} | {args.mode} | {len(section_files)} | {wall:.0f} | "
                     + ", ".join(f"{k} {v:.0f}" for k, v in runtimes.items()) + " |\n")
             log.write_text((log.read_text(encoding="utf-8") if log.exists() else head) + line, encoding="utf-8")
-    problems = validate(nb, out, executed)
+    problems = info["problems"] + validate(nb, out, executed)
     out.parent.mkdir(parents=True, exist_ok=True)
     nbformat.write(nb, out)
     print(f"wrote {out}")
     print(size_report(out, nb))
     print("code-cell SHA-256:", code_hash(nb))
     print("check_repo:", run_check_repo(out))
+    left = placeholders(nb)
+    print(f"WARN {len(left)} team placeholders left (fill before submission; --validate-only lists them)" if left else "team placeholders: none left")
     for p in problems:
         print("PROBLEM", p)
     print(f"build {'FAILED' if problems else 'OK'} ({time.time() - t0:.0f} s total)")
