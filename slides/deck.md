@@ -4,7 +4,7 @@ size: 16:9
 paginate: true
 lang: en
 theme: default
-title: NHANES Diabetes Models as Instruments
+title: Who Gets Labelled Diabetic? Basic Models as Instruments on NHANES 2021–2023
 style: |
   section { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 30px; padding: 22px 56px 62px 56px; align-content: start; color: #1f2933; background: #ffffff; }
   h1 { font-size: 46px; color: #0b3954; margin: 0 0 8px 0; padding-bottom: 4px; border-bottom: 3px solid #0072B2; }
@@ -15,7 +15,7 @@ style: |
   section::after { font-size: 22px; color: #52606d; }
   section.text ul { font-size: 44px; line-height: 1.6; margin-top: 40px; }
   section.title { display: flex; flex-direction: column; justify-content: center; text-align: center; }
-  section.title h1 { font-size: 62px; border-bottom: none; }
+  section.title h1 { font-size: 52px; border-bottom: none; }
   section.title p { font-size: 34px; font-weight: 400; }
   section.template table { font-size: 26px; margin: 0 auto; }
   section.template p { font-size: 26px; font-weight: 400; text-align: left; }
@@ -24,9 +24,9 @@ style: |
 <!-- _class: V0 title -->
 <!-- _footer: "CA6003 Data Governance · Group [N] · NHANES 2021–23" -->
 
-# NHANES Diabetes Models as Instruments
+# Who Gets Labelled Diabetic? Basic Models as Instruments on NHANES 2021–2023
 
-Machine-learning models as measuring instruments on NHANES 2021–23 adult diabetes data.
+Basic machine-learning models as measuring instruments on NHANES 2021–23 adult diabetes data.
 
 <!--
 We treat basic machine-learning models as measuring instruments. The question is what they reveal about the data, not how well they score.
@@ -35,7 +35,7 @@ We treat basic machine-learning models as measuring instruments. The question is
 ---
 
 <!-- _class: V1_1 -->
-<!-- _footer: "n = 11,933 → 5,730 · unweighted counts · §2" -->
+<!-- _footer: "n = 11,933 → 5,730 · unweighted counts · §3.2" -->
 
 # Cohort Funnel
 
@@ -50,7 +50,7 @@ We keep adults who were interviewed, examined, HbA1c-measured and not pregnant. 
 ---
 
 <!-- _class: V1_2 -->
-<!-- _footer: "n = 971 positives · unweighted · §1" -->
+<!-- _footer: "n = 971 positives · unweighted · §1.4" -->
 
 # Label Composition
 
@@ -59,13 +59,13 @@ We keep adults who were interviewed, examined, HbA1c-measured and not pregnant. 
 84% of 971 positives already carry a diagnosis; 152 are undiagnosed.
 
 <!--
-The label combines self-report and HbA1c, giving 971 positives and a weighted prevalence of 14.0%. Most already know. Only 152 are undiagnosed, and they form the screening population, E-SCREEN, used later.
+The label combines self-report and HbA1c, giving 971 positives and a weighted prevalence of 14.0%. Most already know. Only 152 are undiagnosed, among 4,911 adults not yet diagnosed, and they form the screening population, E-SCREEN, used later.
 -->
 
 ---
 
 <!-- _class: V1_3 -->
-<!-- _footer: "n = 5,730 · weighted (WTPH2YR) · §4" -->
+<!-- _footer: "n = 2,938 · weighted (WTSAF2YR) · §4.3" -->
 
 # NCHS Replication Check
 
@@ -80,11 +80,11 @@ Before modelling, our survey code reproduces the published NCHS figures, 15.79 v
 ---
 
 <!-- _class: V1_4 -->
-<!-- _footer: "design diagram · n = 5,730 · §6" -->
+<!-- _footer: "design diagram · §6.9" -->
 
 # Experimental Arm Design
 
-![fig h:455](../figures/S6_arm_matrix.png)
+![fig h:455](figures/S6_arm_matrix.png)
 
 M0 is naive, M1 applies the availability rule, S adds systematic preparation.
 
@@ -95,7 +95,22 @@ Three arms, one model family. M0 is naive and leaky. M1 applies only the availab
 ---
 
 <!-- _class: V2_1 -->
-<!-- _footer: "n = 5,730 · unweighted · §2" -->
+<!-- _footer: "public-use data · aggregates only · §1.8, §1.9, §3.9" -->
+
+# Governance and Data Quality
+
+![fig h:455](figures/S3_governance_quality.png)
+
+Public-use data, minimised columns, and a seven-dimension quality audit with stated limits.
+
+<!--
+Public-use data under the NCHS user agreement. We analyse aggregates only, never link records, and drop more than half the raw columns as unnecessary. The quality audit rates seven dimensions. Timeliness is not assessable and credibility is limited.
+-->
+
+---
+
+<!-- _class: V2_2 -->
+<!-- _footer: "n = 5,730 · unweighted · §3.4" -->
 
 # Cost of Naive Cleaning
 
@@ -110,7 +125,7 @@ Recoding questionnaire sentinel codes to missing looks like routine cleaning. It
 ---
 
 <!-- _class: V3_1 -->
-<!-- _footer: "n = 5,730 (E-ALL), 152 positives (E-SCREEN) · unweighted · §7" -->
+<!-- _footer: "n = 4,584 (E-ALL), 127 positives (E-SCREEN) · paired CV, unweighted · §7.5" -->
 
 # Leakage Gate
 
@@ -125,7 +140,7 @@ The naive model M0 reaches AUC 0.961 on all adults. Remove treatment and skip-lo
 ---
 
 <!-- _class: V3_2 -->
-<!-- _footer: "n = 5,730 (E-ALL), 152 positives (E-SCREEN) · unweighted · §7" -->
+<!-- _footer: "n = 4,584 (E-ALL), 127 positives (E-SCREEN) · unweighted · §7.5" -->
 
 # Median Imputation Artefact
 
@@ -140,11 +155,11 @@ Why does it leak? The naive tree splits on a treatment item, then on age at diag
 ---
 
 <!-- _class: V4_1 -->
-<!-- _footer: "n = 5,730 · pairwise Spearman, unweighted · §4" -->
+<!-- _footer: "complete-case adults · VIF and Spearman clusters, unweighted · §4.9" -->
 
 # Redundancy Clusters
 
-![fig h:455](../figures/S4_spearman_clustermap.png)
+![fig h:455](figures/S4_redundancy_vif.png)
 
 Variance inflation factors reach 95.7 for weight and 97.6 for BMI.
 
@@ -155,22 +170,22 @@ Redundancy is structural. Weight and BMI have variance inflation factors of 95.7
 ---
 
 <!-- _class: V4_2 -->
-<!-- _footer: "n = 5,730 · unweighted, bootstrap refits · §7" -->
+<!-- _footer: "n = 4,584 · unweighted, bootstrap refits · §7.11" -->
 
 # Unstable BMI Coefficient
 
-![fig h:455](../figures/S7_coef_forest.png)
+![fig h:455](figures/S7_coef_forest.png)
 
-BMI coefficient spread without pruning: 2.87-fold unscaled, 1.36 inside scaled L2.
+Inside scaled L2, pruning adds little (1.36, refuted).
 
 <!--
-Redundancy destabilises explanation, not prediction. Without pruning, the bootstrap spread of the BMI coefficient is 2.87 times larger in unscaled models and 1.36 times inside scaled L2. Prediction barely moves.
+Redundancy destabilises explanation, not prediction. Inside the scaled L2 pipeline, pruning shrinks the BMI coefficient spread only 1.36-fold, so our stability gain is refuted. Prediction barely moves.
 -->
 
 ---
 
 <!-- _class: V4_3 -->
-<!-- _footer: "fasting subsample · unweighted · §4" -->
+<!-- _footer: "fasting subsample n = 2,820 · unweighted · §4.10" -->
 
 # Skewness and Outlier Fences
 
@@ -179,13 +194,13 @@ Redundancy destabilises explanation, not prediction. Without pruning, the bootst
 Triglyceride skewness is 6.62 against 1.22 for BMI; a log transform tames it.
 
 <!--
-Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails need a transform, not trimming. A Tukey fence on HbA1c would instead delete diagnostic values.
+Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails need a transform, not trimming. An IQR fence on HbA1c would flag 542 values, 519 of them diabetic.
 -->
 
 ---
 
 <!-- _class: V5_1 -->
-<!-- _footer: "n = 5,730 · weighted, jackknife CI · §4" -->
+<!-- _footer: "n = 5,730 · weighted, jackknife CI · §4.5, §4.6" -->
 
 # Age Standardisation
 
@@ -200,11 +215,11 @@ The crude insurance gap is 5.3 points. After age standardisation it is 0.7. Olde
 ---
 
 <!-- _class: V5_2 -->
-<!-- _footer: "n = 5,730 · weighted · §4" -->
+<!-- _footer: "n = 5,730 · weighted · §4.7, §4.8" -->
 
 # BMI as Mediator
 
-![fig h:455](../figures/S4_dag.png)
+![fig h:455](figures/S4_dag.png)
 
 Consistent with BMI as mediator: 6 Simpson sign flips in 224 comparisons.
 
@@ -215,22 +230,22 @@ Our DAG places BMI between race and diabetes, a mediator, not a confounder. A sc
 ---
 
 <!-- _class: V6_1 -->
-<!-- _footer: "n = 971 positives (self-reported subset) · unweighted · §5" -->
+<!-- _footer: "n = 819 self-reported diabetes · unweighted · §5.2" -->
 
 # Treatment Masking
 
 ![fig h:455](../figures/S5_a1c_by_medication.png)
 
-250 self-reported diabetics (30.5%) have HbA1c below 6.5; treatment masks them.
+250 of 819 self-reported diabetics (30.5%) have HbA1c below 6.5; treatment masks them.
 
 <!--
-Among self-reported diabetics, 250, or 30.5%, have HbA1c below 6.5, most of them on medication. An HbA1c-only label calls them negative. Treatment masks disease, so every label is a measurement with its own error.
+Among 819 self-reported diabetics, 250, or 30.5%, have HbA1c below 6.5, most of them on medication. An HbA1c-only label calls them negative. Treatment masks disease, so every label is a measurement with its own error.
 -->
 
 ---
 
 <!-- _class: V6_2 -->
-<!-- _footer: "n = 971 positives · weighted, jackknife CI · §5" -->
+<!-- _footer: "n = 721 adults with HbA1c ≥ 6.5 · weighted, jackknife CI · §5.4" -->
 
 # Undiagnosed Risk Difference
 
@@ -245,7 +260,7 @@ Among adults with diabetes, uninsured adults are 23.2 percentage points more oft
 ---
 
 <!-- _class: V6_3 -->
-<!-- _footer: "n = 5,730 (training part) · unweighted · §8" -->
+<!-- _footer: "n = 4,584 (training part) · unweighted · §8.6" -->
 
 # 3×3 Label Matrix
 
@@ -254,13 +269,13 @@ Among adults with diabetes, uninsured adults are 23.2 percentage points more oft
 Consistent with undiagnosed cases scoring worst: recall 0.50, 0.56, 0.52 by label.
 
 <!--
-We train on three labels and score each against three groups. Undiagnosed recall is lowest under every label, 0.50 self-report, 0.56 HbA1c, 0.52 combined, while controlled diabetes reaches 0.57. Changing the label barely helps. These features do not find the undiagnosed.
+We train on three labels and score each against three groups. Undiagnosed recall is lowest under every label, 0.50 self-report, 0.56 HbA1c, 0.52 combined. Diagnosed positives are found at 0.70 against 0.52. Changing the label barely helps. These features do not find the undiagnosed.
 -->
 
 ---
 
 <!-- _class: V6_4 -->
-<!-- _footer: "NH Asian subsample (exploratory) · prevalence weighted, AUC unweighted · §5" -->
+<!-- _footer: "NH Asian subsample (exploratory) · prevalence weighted, AUC unweighted · §5.5" -->
 
 # Asian BMI versus WHtR
 
@@ -275,67 +290,67 @@ BMI cut-offs under-measure adiposity in Asian adults. 51.1% of Asian diabetics h
 ---
 
 <!-- _class: V6_5 -->
-<!-- _footer: "n = 5,730 (training part) · unweighted · §8" -->
+<!-- _footer: "n = 4,584 (training part) · unweighted · §8.3, §8.12" -->
 
 # Group TPR Gap
 
-![fig h:455](../figures/S8_group_tpr.png)
+![fig h:455](figures/S8_group_tpr.png)
 
 Suggests a TPR gap for NH Asian adults, -0.184; exploratory.
 
 <!--
-At the same specificity, the model flags Asian adults with diabetes less often than White adults, a TPR gap of minus 0.184, with few positives. Calibration differs by race too. Observed over expected is 1.30 for Black and 0.88 for White adults.
+At the same specificity, the model flags Asian adults with diabetes less often than White adults, a TPR gap of minus 0.184, with few positives. Observed over expected is 1.30 for Black, 0.88 for White and 1.35 for Asian adults.
 -->
 
 ---
 
 <!-- _class: V7_1 -->
-<!-- _footer: "n = 5,730 · unweighted · §4" -->
+<!-- _footer: "n = 5,730 · unweighted · §4.11" -->
 
 # Algorithm Justification
 
-![fig h:455](../figures/S4_binned_logodds.png)
+![fig h:455](figures/S4_binned_logodds.png)
 
 Smooth non-linear signal justifies spline logistic regression and shallow trees.
 
 <!--
-The EDA justifies the algorithms. Log-odds bend, so spline logistic regression, with shallow trees as a transparent probe. Basic models only, no LLMs or complex models.
+The EDA justifies the algorithms. Log-odds bend, so spline logistic regression, with shallow trees as a probe. Basic models only.
 -->
 
 ---
 
 <!-- _class: V7_2 -->
-<!-- _footer: "n = 5,730 (E-ALL), 152 positives (E-SCREEN) · paired CV, unweighted · §7, §10" -->
+<!-- _footer: "n = 4,584 (E-ALL), 127 positives (E-SCREEN) · paired CV, unweighted · §7.7, §10.2.1" -->
 
 # Minimal versus Systematic Preparation
 
-![fig h:455](../figures/S10_scoreboard_forest.png)
+![fig h:455](figures/S10_scoreboard_forest.png)
 
-Consistent with a small gain, S minus M1 ΔAUC +0.008 [+0.000, +0.016]; inconclusive.
+S minus M1 ΔAUC +0.008 [+0.000, +0.016]; without class weights +0.007, Brier -0.002; inconclusive.
 
 <!--
-Minimal M1 against systematic S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011. Underpowered, so inconclusive. Calibration is a separate verdict. Class weights worsen Brier by 0.076 at unchanged AUC.
+Minimal M1 against systematic S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, so inconclusive. Class weights alone worsen Brier by 0.076. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
 -->
 
 ---
 
 <!-- _class: V7_3 -->
-<!-- _footer: "n = 5,730 / 152 positives · unweighted · §10" -->
+<!-- _footer: "n = 4,584 / 127 positives · paired CV, unweighted · §7.9, §9.11, §10.6" -->
 
 # Recognition versus Screening
 
-![fig h:455](../figures/S10_recognition_vs_screening.png)
+![fig h:455](figures/S10_recognition_vs_screening.png)
 
 Whole-sample AUC overstates screening, 0.836 on E-ALL against 0.781 on E-SCREEN (gap +0.055).
 
 <!--
-Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on the undiagnosed, a gap of 0.055. Whole-sample AUC measures recognition. Removing care-trace items lowers E-ALL by 0.016 yet raises E-SCREEN by 0.019. ADA-lite trails S by 0.055.
+Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on the undiagnosed, a gap of 0.055. Whole-sample AUC measures recognition. Removing care-trace items lowers E-ALL by 0.016 yet raises E-SCREEN by 0.019. Against ADA-lite, S leads by 0.055 in cross-validation but only 0.029 on the hold-out, interval minus 0.037 to 0.098, inconclusive.
 -->
 
 ---
 
 <!-- _class: V7_4 -->
-<!-- _footer: "one-shot hold-out · unweighted · §9" -->
+<!-- _footer: "one-shot hold-out n = 1,146 · unweighted · §9.11" -->
 
 # Hold-Out Confirmation
 
@@ -344,28 +359,28 @@ Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on
 Hold-out shows cross-validated AUCs carry over, arm S 0.851 E-ALL, 0.791 E-SCREEN.
 
 <!--
-One shot, evaluated once. Arm S scores 0.851 on all adults and 0.791 on the undiagnosed, matching cross-validation. The leak gate holds too, M0 0.964 against M1 0.848.
+One shot, evaluated once. Arm S scores 0.851 and 0.791, matching cross-validation. The leak gate holds, M0 0.964 against M1 0.848.
 -->
 
 ---
 
 <!-- _class: V7_5 -->
-<!-- _footer: "n = 5,730 · unweighted · §9" -->
+<!-- _footer: "n = 4,584 (training part) · unweighted · §9.10" -->
 
 # Robustness Checks
 
 ![fig h:455](../figures/S9_robustness_summary.png)
 
-Sub-verdicts survive seeds, specifications, weighting and missing-data scenarios.
+The S minus M1 verdict is unchanged across all robustness analyses.
 
 <!--
-Seeds, specification curves, weights and missing-data scenarios leave verdicts unchanged. Permuted labels give AUC 0.501.
+Seeds, specifications, grouped cross-validation, weights and missing-data scenarios leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
 -->
 
 ---
 
 <!-- _class: V8_1 text -->
-<!-- _footer: "25 graded claims · weighted where stated · §10" -->
+<!-- _footer: "26 graded claims · weighted where stated · §10.7" -->
 
 # Conclusions
 
@@ -375,13 +390,13 @@ Seeds, specification curves, weights and missing-data scenarios leave verdicts u
 - AUC measures recognition
 
 <!--
-Three findings and one headline. Leakage and naive cleaning inflate performance. Age and mediators create fallacies, and labels mask cases. The headline is that whole-sample AUC measures recognition, 0.836 versus 0.781 on the undiagnosed. Of the hypotheses, 10 are supported, 6 inconclusive, 1 mixed, across 25 graded claims.
+Three findings and one headline. Leakage and naive cleaning inflate performance. Age and mediators create fallacies, and labels mask cases. The headline is that whole-sample AUC measures recognition, 0.836 versus 0.781 on the undiagnosed. Of the hypotheses, 10 are supported, 6 inconclusive, 1 mixed, across 26 graded claims.
 -->
 
 ---
 
 <!-- _class: V8_2 text -->
-<!-- _footer: "152 screening positives · aggregates only · §10" -->
+<!-- _footer: "152 screening positives · aggregates only · §10.9, §10.10" -->
 
 # Limitations and Ethics
 
