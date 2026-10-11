@@ -8,7 +8,7 @@
 # * **E-ALL** – the whole training part, label `L_comb` (84 % of the positives already know their diagnosis);
 # * **E-SCREEN** – people *not* told they have diabetes, positive = HbA1c ≥ 6.5 % (the screening use case).
 #
-# The 20 % hold-out is **not** evaluated here; its single use is §9.11, after `exp-freeze`.
+# The 20 % internal hold-out is kept out of all §7 fitting and scoring; its single use is §9.11, after `exp-freeze`.
 
 # %%
 import sys, pathlib
@@ -98,7 +98,8 @@ S7["splits"] = dict(n_train=n, n_holdout=len(te), n_pos_eall=int(y.sum()), n_esc
 # %% [markdown]
 # **So what.** Each fold holds about 155 E-ALL positives but only about 24 E-SCREEN positives. E-SCREEN is
 # therefore scored on the pooled out-of-fold vector (paired bootstrap), not fold by fold, and most E-SCREEN
-# verdicts are expected to be inconclusive. The hold-out hash is printed so that §9.11 can prove it was untouched.
+# verdicts are expected to be inconclusive. The hold-out hash is printed so that §9.11 can show that the split and the file were unchanged
+# and that none of its rows were scored or fitted in §6–§9. (The §4/§5 diagnostics did use all adults; see §9.11.)
 
 # %% [markdown]
 # ## 2 Data-justified model choice
@@ -167,7 +168,8 @@ S7["model_choice"] = dict(linearity=lin.set_index("label")[["chi2", "p"]].round(
 # **Why.** A fair minimal-versus-systematic comparison requires the *same model* in every arm. C is therefore chosen once – by
 # `LogisticRegressionCV(Cs=[0.01, 0.1, 1, 10])`, inner 5-fold ROC-AUC, on the S arm of Tier 1 with its class and
 # survey weights – and then frozen for every arm. Choosing it on S favours S slightly (the other arms do not get
-# their own tuning); M0 and M1 with their own C are a §9.4 sensitivity.
+# their own tuning); M0 and M1 with their own C are a §9.4 sensitivity. C0 was chosen once on the training part and is
+# *not* nested inside the outer folds; a nested check is reported in §9 (post-audit corrections).
 
 # %%
 # Choose the L2 strength C0 once, by inner 5-fold CV on the S arm (Tier 1), and freeze it for all arms (§7.3).
@@ -198,8 +200,9 @@ S7["C0"] = dict(C0=C0, inner_cv_auc=cv_auc.to_dict())
 
 # %% [markdown]
 # **So what.** The inner-CV AUC is almost flat across C (range about 0.003), so C is not a lever for the results below
-# and the optimism of tuning on S is small. Disclosure: C0 is selected once on the whole training part, not nested
-# inside the outer folds; with so flat a curve the resulting optimism is negligible.
+# and the optimism of tuning on S is expected to be small. Disclosure: C0 was chosen once on the whole training part
+# (the S-arm preparation steps were fitted on all of it for this one choice), not nested inside the outer folds.
+# The flat curve suggests the optimism is small; the nested check in §9 (post-audit corrections) tests this.
 
 # %% [markdown]
 # ## 4 Running the arms
@@ -849,7 +852,9 @@ show(cal, 3)
 # **Why.** Discrimination can hide unstable explanations: collinear anthropometrics share the BMI signal differently in
 # every resample. A nonparametric bootstrap of the whole pipeline (B = 500 in FINAL, 30 in FAST) measures this. BMI is
 # compared per SD across the arms in which it enters linearly (S is represented by S-linear, as locked); B3-b compares
-# S-linear−B3 with S-linear, H2b(c) compares M1 with S-linear.
+# S-linear−B3 with S-linear, H2b(c) compares M1 with S-linear. The *ratio* of two bootstrap SDs is reported as a
+# descriptive number: the interval around it comes from re-drawing the stored bootstrap replicates (Monte Carlo
+# error), not from re-sampling patients, so it is not a sampling interval and cannot decide a hypothesis.
 
 # %%
 # Coefficient stability (§7.11): bootstrap the whole pipeline for five arms and compare the spread of the BMI
@@ -908,13 +913,17 @@ def sd_ratio(arm_a, arm_b, n_rs=2000):
 def v_ratio(d, thr=C.SESOI["coef_sd_ratio"]):
     return "supported" if (d["ratio"] >= thr and d["lo"] > 1) else ("refuted" if d["hi"] < thr else "inconclusive")
 
+# Post-audit label for the two ratio sub-verdicts: the interval is Monte Carlo error, so the ratio is descriptive.
+# The locked-rule label from v_ratio stays in the stored scoreboard files for traceability only.
+WITHDRAWN = "descriptive ratio; verdict withdrawn post-audit (not testable with this design), see §9"
+
 # B3-b (pruning inside the scaled pipeline), H2b-c (minimal vs systematic) and the unscaled cumulative pair.
 ratio_b3 = sd_ratio("S-linear-B3", "S-linear")
 ratio_h2b = sd_ratio("M1", "S-linear")
 ratio_cum = sd_ratio("cum+B1", "cum+B3")
 for d in (ratio_b3, ratio_h2b, ratio_cum):
     print(f"SD ratio BMI {d['a']} / {d['b']}: {d['ratio']:.2f}, Monte Carlo interval [{d['lo']:.2f}, {d['hi']:.2f}] "
-          f"(B = {B_COEF}) -> {v_ratio(d)}")
+          f"(B = {B_COEF}) -> {WITHDRAWN if d is not ratio_cum else 'descriptive only (no verdict)'}")
 
 # Figure: BMI coefficient per SD with bootstrap interval per arm (left); 22 largest S-linear coefficients
 # (right).
@@ -948,7 +957,7 @@ ax.tick_params(axis="x", labelsize=10)
 ax.set_xlabel("coefficient (scaled design), 95 % interval", fontsize=11)
 ax.set_title("S-linear: 22 largest coefficients\n(red = sign flips in > 10 % of refits)", fontsize=13)
 fig.suptitle(f"Pruning stabilises BMI only in unscaled fits (×{ratio_cum['ratio']:.1f}); inside the scaled L2 pipeline "
-             f"×{ratio_b3['ratio']:.1f} (B3-b {v_ratio(ratio_b3)})", fontsize=13)
+             f"×{ratio_b3['ratio']:.1f} (B3-b: descriptive ratio, verdict withdrawn post-audit, see §9)", fontsize=12)
 fig.tight_layout()
 plots.savefig(fig, "S7_coef_forest", caption="Left: bootstrap distribution (point = full-data fit, bar = 2.5-97.5 percentile) of the BMI coefficient per SD in the arms "
               "where BMI enters linearly, with the anthropometric columns present in each arm. Right: the 22 largest coefficients of S-linear "
@@ -959,12 +968,15 @@ S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ra
 
 # %% [markdown]
 # **So what.** Where weight, height and BMI enter together, BMI shares its signal with its formula partners: in the
-# unscaled arms (M1, cum+B1) its intervals cross zero and it flips sign in about one resample in eight. M1 is about
-# twice as unstable as S-linear, but that ratio's interval straddles the locked factor 2 (H2b-c inconclusive). Inside
-# the scaled L2 pipeline pruning adds little: the B3 ratio is about 1.4 with an interval excluding 2 (B3-b
-# **refuted**). B3-c fails for a mechanical reason – after pruning the near-zero *height* coefficient flips in about
-# half of the resamples by construction. Discrimination is the same in all these arms (§7.8); only the stability of
-# the explanation differs. The ratio intervals are Monte Carlo intervals (simulation error, not sampling uncertainty).
+# unscaled arms (M1, cum+B1) its intervals cross zero and it flips sign in about one resample in eight (these two
+# figures come from fits that stop at the iteration limit, which shrinks the coefficients towards zero, so the crossings
+# are partly a solver artefact; see §9). M1 has a BMI SD about 2.0 times that of S-linear (descriptive ratio 1.98).
+# Inside the scaled L2 pipeline pruning adds little: the B3 ratio is about 1.4 (descriptive ratio). **Both ratio
+# intervals are Monte Carlo intervals** (re-draws of the stored bootstrap replicates: simulation error, not sampling
+# uncertainty), so the locked rule's verdicts for B3-b and H2b-c are *withdrawn post-audit (not testable with this
+# design)*; the numbers stay as descriptive ratios, and §9 gives the audit's view. B3-c fails for a mechanical reason –
+# after pruning the near-zero *height* coefficient flips in about half of the resamples by construction.
+# Discrimination is the same in all these arms (§7.8); only the stability of the explanation differs.
 
 # %% [markdown]
 # ### Post-hoc: penalty and stability
@@ -1009,8 +1021,10 @@ S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_non
 # %% [markdown]
 # **So what (exploratory).** As the penalty is relaxed towards an unpenalised fit the B3 ratio grows several-fold, so
 # the L2 penalty and pruning are partly *substitutes*. The large unscaled ratios (cum+B1/cum+B3; M1/S-linear behind
-# H2b-c) come from fits that hit the iteration limit in every fold: part of their spread is optimiser noise, so they
-# are not used to argue for B3.
+# H2b-c) come from fits that hit the iteration limit in every fold, so they are not used to argue for B3. The post-audit
+# check in §9 shows that stopping early shrinks the coefficients and the M1 BMI SD (a converged M1 has a larger SD,
+# 0.355 against 0.301) and adds sign flips; it also shows that scaling alone explains the stability edge of S-linear.
+# The stored SD ratio is therefore not an optimiser-noise inflation.
 
 # %% [markdown]
 # ## 12 Verdicts
@@ -1172,7 +1186,10 @@ sb.to_csv(OUT / "scoreboard_detail.csv", index=False)
 final.to_csv(OUT / "scoreboard.csv", index=False)
 prim = sb[(sb["role"] == "primary") & ~sb["verdict"].str.startswith("tested")]
 print("primary sub-verdicts (E-ALL Tier 1 unless stated; secondary rows in results/S7/scoreboard_detail.csv):")
-show(prim[["hyp_id", "sub", "pop", "est", "lo", "hi", "mdd", "sesoi", "verdict"]], 4)
+# Display copy: the two SD-ratio rows are shown as descriptive (post-audit); stored files keep the locked-rule label.
+prim_show = prim.copy()
+prim_show.loc[prim_show["metric"].eq("sd_ratio"), "verdict"] = "descriptive (verdict withdrawn, see §9)"
+show(prim_show[["hyp_id", "sub", "pop", "est", "lo", "hi", "mdd", "sesoi", "verdict"]], 4)
 print()
 show(final)
 print()
@@ -1183,7 +1200,7 @@ def _fmt_sub(r):
     rng_ = "" if pd.isna(r.get("hi")) else f" [{r['lo']:+.3f}, {r['hi']:+.3f}]"
     return f"{r['sub']} {r['est']:+.3f}{rng_} -> {r['verdict']}"
 for _, f in final.iterrows():
-    subs = prim[prim["hyp_id"] == f["hyp_id"]]
+    subs = prim_show[prim_show["hyp_id"] == f["hyp_id"]]
     if len(subs):
         print(textwrap.fill(f"{f['hyp_id']}: {f['verdict'].upper()} | " + "; ".join(_fmt_sub(r) for _, r in subs.iterrows()),
                             width=140, subsequent_indent="      "))
@@ -1211,10 +1228,10 @@ S7["lr_test_splines"] = lrt
 # |---|---|---|
 # | H2a, B2, B2t leakage | supported | the rule costs about 0.13 AUC on E-ALL – a *correct deterioration* |
 # | B1, B4-a, B6b fidelity, missingness, survey weights | equivalent AUC | repairs change what the data *mean*, not discrimination |
-# | B3 redundancy | mixed | same AUC; stability gain small inside scaled L2 (B3-b, B3-c refuted) |
+# | B3 redundancy | mixed | same AUC; stability gain small inside scaled L2 (B3-c refuted; B3-b is a descriptive ratio 1.36, verdict withdrawn post-audit, see §9) |
 # | B5 representation | inconclusive | calibration gain mostly solver convergence after scaling; splines kept on the LR test |
 # | B6a class weights | supported | same AUC, Brier worse by about 0.07: a threshold choice in disguise |
-# | H2b minimal vs systematic | inconclusive | (a) AUC +0.008 [0.000, 0.016], MDD > SESOI (underpowered); (b) Brier refuted by class weights alone; (c) SD ratio straddles 2 |
+# | H2b minimal vs systematic | inconclusive | (a) AUC +0.008 [0.000, 0.016], MDD > SESOI (underpowered); (b) Brier refuted by class weights alone; (c) SD ratio 1.98 is descriptive only, verdict withdrawn post-audit (see §9) |
 # | H2c recognition vs screening | inconclusive | (i) gap supported; (ii) care items lower E-ALL but *raise* E-SCREEN; (iii) S > ADA-lite |
 #
 # Without class weights (S−B6a vs M1, exploratory) systematic preparation gains a little AUC and costs no calibration.
