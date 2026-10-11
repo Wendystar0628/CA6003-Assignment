@@ -1,5 +1,5 @@
 {
- "written_utc": "2026-10-11T10:11:00+00:00",
+ "written_utc": "2026-10-11T18:23:21+00:00",
  "source_modes": [
   "FINAL"
  ],
@@ -224,7 +224,7 @@
    "id": "S10_limitations",
    "section": "S10",
    "path": "limitations.n",
-   "value": 15,
+   "value": 17,
    "tol_fast": 0,
    "tol_final": 0
   },
