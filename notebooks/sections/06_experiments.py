@@ -38,9 +38,12 @@ OUT.mkdir(parents=True, exist_ok=True)
 import os
 os.environ.setdefault("PYTHONWARNINGS", "ignore::UserWarning")   # silence worker-side solver warnings (counted in run_arm_cv)
 N_JOBS = min(12, max(1, (os.cpu_count() or 2) - 2))
-S7 = {"mode": C.NB_MODE, "cv": f"{C.CV_SPLITS}x{C.CV_REPEATS}", "n_boot": C.N_BOOT, "n_boot_coef": C.N_BOOT_COEF}
+# FAST mode (re-run setting) uses fewer coefficient-bootstrap replicates than config.N_BOOT_COEF: the unscaled arms
+# reach the solver's iteration limit in every refit, which makes this the slowest step of the section. FINAL is unchanged.
+B_COEF = C.N_BOOT_COEF if C.IS_FINAL else 30
+S7 = {"mode": C.NB_MODE, "cv": f"{C.CV_SPLITS}x{C.CV_REPEATS}", "n_boot": C.N_BOOT, "n_boot_coef": B_COEF}
 T_START = time.time()
-print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, coefficient bootstrap B = {C.N_BOOT_COEF}, {N_JOBS} workers")
+print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, coefficient bootstrap B = {B_COEF}, {N_JOBS} workers")
 
 # %% [markdown]
 # ## 1 Splits
@@ -182,7 +185,10 @@ S7["C0"] = dict(C0=C0, inner_cv_auc=cv_auc.to_dict())
 ARM_LIST = list(P.ARMS)
 jobs = [(a, t, "lr") for t in (1, 2) for a in ARM_LIST] + [(a, t, "tree") for t in (1, 2) for a in ("M0", "M1", "S")]
 t0 = time.time()
-runs = Parallel(n_jobs=N_JOBS)(delayed(P.run_arm_cv)(a, t, X[t], raw_tr, folds, C_=C0, model=m) for a, t, m in jobs)
+# one job per arm x tier x model, each deterministic: the number of workers changes the wall time only (FAST may use
+# every core so that the re-run stays within about 5 minutes; FINAL keeps its worker count)
+N_JOBS_ARMS = N_JOBS if C.IS_FINAL else max(N_JOBS, (os.cpu_count() or 2) - 2)
+runs = Parallel(n_jobs=N_JOBS_ARMS)(delayed(P.run_arm_cv)(a, t, X[t], raw_tr, folds, C_=C0, model=m) for a, t, m in jobs)
 OOF = {(r["arm"], r["tier"], r["model"]): r["oof"] for r in runs}
 PM = {k: ek.mean_oof(v, n) for k, v in OOF.items()}          # repeat-averaged OOF probability per row
 diag = pd.DataFrame([{k: r[k] for k in ("arm", "tier", "model", "n_convergence_warnings", "seconds", "n_pos_train_label")}
@@ -723,7 +729,8 @@ print(cal.round(3).to_string(index=False))
 # %% [markdown]
 # ## 11 Coefficient stability
 # **Why.** Discrimination can hide unstable explanations: collinear anthropometrics share the BMI signal differently in
-# every resample. The nonparametric bootstrap of the whole pipeline (B = `N_BOOT_COEF`) measures this. BMI is compared
+# every resample. The nonparametric bootstrap of the whole pipeline (B = 500 in FINAL; 30 in the FAST re-run mode, where the
+# Monte Carlo intervals of the ratios are correspondingly wider) measures this. BMI is compared
 # per standard deviation across the arms in which it enters linearly (S is represented by S-linear, see
 # `hypotheses.md`); B3b compares S-linear−B3 with S-linear, H2b compares M1 with S-linear.
 
@@ -736,7 +743,7 @@ for arm in coef_arms:
     mk = (lambda cfg=cfg: P.build_pipeline(cfg, 1, C_=C0))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        cb = ek.coef_bootstrap(mk, X[1], ylab_, n_boot=C.N_BOOT_COEF, seed=ek.derive_seed(C.SEED_MASTER, "S7", "coef", arm),
+        cb = ek.coef_bootstrap(mk, X[1], ylab_, n_boot=B_COEF, seed=ek.derive_seed(C.SEED_MASTER, "S7", "coef", arm),
                                fit_params=P.fit_params(cfg, raw_tr), n_jobs=N_JOBS)
         dsg = mk()[:-1].fit_transform(X[1])
     sd_bmi = float(dsg["BMXBMI"].std(ddof=0))
@@ -774,7 +781,7 @@ ratio_h2b = sd_ratio("M1", "S-linear")
 ratio_cum = sd_ratio("cum+B1", "cum+B3")
 for d in (ratio_b3, ratio_h2b, ratio_cum):
     print(f"SD ratio BMI {d['a']} / {d['b']}: {d['ratio']:.2f}, Monte Carlo interval [{d['lo']:.2f}, {d['hi']:.2f}] "
-          f"(B = {C.N_BOOT_COEF}) -> {v_ratio(d)}")
+          f"(B = {B_COEF}) -> {v_ratio(d)}")
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5.2), gridspec_kw={"width_ratios": [1, 1.4]})
 ax = axes[0]
@@ -807,7 +814,7 @@ fig.tight_layout()
 plots.savefig(fig, "S7_coef_forest", caption="Left: bootstrap distribution (point = full-data fit, bar = 2.5-97.5 percentile) of the BMI coefficient per SD in the arms "
               "where BMI enters linearly, with the anthropometric columns present in each arm. Right: the 22 largest coefficients of S-linear "
               "(most frequent level of each category omitted for display); "
-              f"red = sign flips in more than 10 % of the {C.N_BOOT_COEF} bootstrap refits. Tier 1, training part.")
+              f"red = sign flips in more than 10 % of the {B_COEF} bootstrap refits. Tier 1, training part.")
 plt.show()
 S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ratio_B3=ratio_b3, ratio_H2b=ratio_h2b, ratio_cumulative=ratio_cum)
 
@@ -835,7 +842,7 @@ S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ra
 
 # %%
 C_grid = [C0, 1.0, 100.0, 1e4]
-B_s = 200 if C.IS_FINAL else 50   # replicates per arm and C (exploratory)
+B_s = 200 if C.IS_FINAL else 20   # replicates per arm and C (exploratory; FAST re-run mode uses fewer)
 cs_rows = []
 for c_ in C_grid:
     sd_ = {}
@@ -872,7 +879,7 @@ S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_non
 # **Why.** Each locked hypothesis gets exactly one verdict from the locked rules: the primary evaluation is E-ALL,
 # Tier 1; E-SCREEN and Tier 2 can only turn a decisive verdict into "mixed" if they contradict it. The verdict lines
 # printed below are generated from the results. The interpretation that follows refers to the FINAL run stored in this
-# notebook (5 × 5 CV, B = 1000, coefficient B = 500); a FAST re-run (5 × 2, B = 100) reproduces every leakage,
+# notebook (5 × 5 CV, B = 1000, coefficient B = 500); a FAST re-run (5 × 2, B = 100, coefficient B = 30) reproduces every leakage,
 # equivalence and class-weight verdict, but borderline ones (B3-b, B5-a, H2b) can move between "inconclusive" and a
 # decisive verdict.
 
