@@ -23,7 +23,7 @@
         "Appendix": 0.2
       },
       "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
-      "file_sha256": "a12d419aa7670de9d580cc00b41e3286ac3e5a83f3c104c8f2e4a041b6ee9b24",
+      "file_sha256": "b24c494c052c41d06203acecf8462233a4642232d8d691c46c2e8d1ba7d2ed2a",
       "size_mb": 5.87,
       "validation": "OK",
       "final_ref": "30 reference quantities reproduced within tolerance (FAST mode)",
@@ -47,12 +47,13 @@
         "Appendix": 0.2
       },
       "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
-      "file_sha256": "3d1704460fbf2b065a1bf86437453217a811583fd2e04364d1282e7cf4dcaab8",
+      "file_sha256": "9d95ac7163455acb18431fb1b0a3a6b7667a05614e44f1e1145475218c8d2689",
       "size_mb": 5.95,
       "validation": "OK",
       "final_ref": "30 reference quantities reproduced within tolerance (FINAL mode)",
       "n_errors": 0,
       "n_stderr": 0
     }
-  }
+  },
+  "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)"
 }
