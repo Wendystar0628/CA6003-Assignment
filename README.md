@@ -6,7 +6,7 @@ A data-centric study of adult diabetes identification using **NHANES Aug 2021 �
 
 ## Deliverable
 
-**`notebooks/final/CA6003_NHANES_Diabetes.ipynb`** – one self-contained notebook (executed FINAL run stored). It recreates its own workspace (code, variable specification, governance inputs), loads the raw data from `data/` or downloads it from CDC, verifies all file hashes, and runs every stage end to end. Default mode FAST (≈5 min on a 28-thread desktop); FINAL reproduces the stored results (≈25 min).
+**`notebooks/final/CA6003_NHANES_Diabetes.ipynb`** – one self-contained notebook (executed FINAL run stored). It recreates its own workspace (code, variable specification, governance inputs), loads the raw data from `data/` or downloads it from CDC, verifies all file hashes, and runs every stage end to end. Default mode FAST (≈10 min on a 28-thread desktop); FINAL reproduces the stored results (≈30 min). The stored outputs are assembled from per-section FINAL runs (`tools/build_final.py --assemble`).
 
 ## Headline findings
 

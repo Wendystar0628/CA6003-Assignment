@@ -113,7 +113,7 @@ print(f"logical CPU cores here: {N_CPU}; parallel workers: min(12, cores - 2) = 
 # %% [markdown]
 # **So what.** The config sizes agree with `config.py` (asserted). The stored outputs come from a FINAL run; FAST changes only Monte-Carlo precision, and the reference values of Appendix A.5 hold in both modes.
 #
-# **Runtime.** Measured on the development machine (28 logical cores; 12 workers in §7–§8, 16 in §9): FAST about 5 minutes, FINAL about 26 minutes (25 min 45 s for the stored run), almost all of it in §7 and §9. On a 4–8-core laptop we estimate roughly 10–25 minutes for FAST and 1–3 hours for FINAL (scaled from the worker count, not measured).
+# **Runtime.** Measured on the development machine (28 logical cores; 12 workers in §7–§8, 16 in §9): FAST about 10 minutes (9 min 26 s in the clean-room check of 12 October), FINAL about 30 minutes, almost all of it in §7 and §9. On a 4–8-core laptop we estimate roughly 20–45 minutes for FAST and 1–3 hours for FINAL (scaled from the worker count, not measured).
 
 # %% [markdown]
 # ## Seed derivation

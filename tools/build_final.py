@@ -661,11 +661,11 @@ MARKERS_PATH = [
 def run_line(mode, seconds=None, cores=None) -> str:
     """One line on the stored outputs (mode, measured runtime) for the title table."""
     if not mode:
-        return "none stored: run top to bottom (default `NB_MODE=FAST`, about 5 min; `NB_MODE=FINAL` about 25 min)"
+        return "none stored: run top to bottom (default `NB_MODE=FAST`, about 10 min; `NB_MODE=FINAL` about 30 min)"
     t = ""
     if seconds:
         t = f", {int(seconds // 60)} min {seconds % 60:02.0f} s" + (f" on {cores} logical cores" if cores else "")
-    return f"stored from a full {mode} run{t}; a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)"
+    return f"stored from a full {mode} run{t}; a default `NB_MODE=FAST` re-run takes about 10 min (sizes in §0.2)"
 
 
 def guide_md() -> str:
@@ -1677,7 +1677,7 @@ def assembled_run_line(prov: dict[str, dict], mode: str) -> tuple[str, float]:
     t = (f"; section runtimes sum to {int(total // 60)} min {total % 60:02.0f} s"
          + (f" (none recorded for {section_ranges(unknown)})" if unknown else ""))
     return (f"stored from {mode} runs: " + "; ".join(parts) + t
-            + "; a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)"), total
+            + "; a default `NB_MODE=FAST` re-run takes about 10 min (sizes in §0.2)"), total
 
 
 def run_appendix(nb, mode: str, timeout: int) -> float:
