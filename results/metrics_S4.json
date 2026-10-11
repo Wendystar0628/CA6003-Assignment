@@ -1,9 +1,9 @@
 {
   "_meta": {
     "section": "S4",
-    "nb_mode": "FAST",
+    "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:40:29+00:00"
+    "written_utc": "2026-10-11T06:53:33+00:00"
   },
   "design": {
     "n_strata": 15,
@@ -207,7 +207,7 @@
     "n_flips": 6,
     "n_any_sign_change": 12,
     "n_attenuation_50": 10,
-    "n_boot": 100,
+    "n_boot": 1000,
     "bootstrap": "Rao-Wu rescaled, m_h = n_h - 1",
     "flips": [
       {
@@ -221,8 +221,8 @@
         "std": 3.405171995094272,
         "std_low": -3.610612961174767,
         "std_high": 10.420956951363312,
-        "p_sign_differs": 0.52,
-        "p_std_sign_as_point": 0.78,
+        "p_sign_differs": 0.531,
+        "p_std_sign_as_point": 0.816,
         "dag_supported": false
       },
       {
@@ -236,8 +236,8 @@
         "std": 2.3787321421785466,
         "std_low": -1.411547886804943,
         "std_high": 6.169012171162036,
-        "p_sign_differs": 0.75,
-        "p_std_sign_as_point": 0.89,
+        "p_sign_differs": 0.729,
+        "p_std_sign_as_point": 0.884,
         "dag_supported": false
       },
       {
@@ -251,8 +251,8 @@
         "std": 1.4378105595735116,
         "std_low": -3.3569747266534673,
         "std_high": 6.232595845800491,
-        "p_sign_differs": 0.45,
-        "p_std_sign_as_point": 0.65,
+        "p_sign_differs": 0.528,
+        "p_std_sign_as_point": 0.728,
         "dag_supported": true
       },
       {
@@ -266,8 +266,8 @@
         "std": -1.1806508417722448,
         "std_low": -6.742298031737934,
         "std_high": 4.380996348193444,
-        "p_sign_differs": 0.48,
-        "p_std_sign_as_point": 0.71,
+        "p_sign_differs": 0.369,
+        "p_std_sign_as_point": 0.635,
         "dag_supported": false
       },
       {
@@ -281,8 +281,8 @@
         "std": -1.464417807542974,
         "std_low": -5.5976853305291,
         "std_high": 2.6688497154431525,
-        "p_sign_differs": 0.5,
-        "p_std_sign_as_point": 0.83,
+        "p_sign_differs": 0.45,
+        "p_std_sign_as_point": 0.765,
         "dag_supported": false
       },
       {
@@ -296,22 +296,22 @@
         "std": 1.1081454072812496,
         "std_low": -1.9245369866285817,
         "std_high": 4.140827801191081,
-        "p_sign_differs": 0.72,
-        "p_std_sign_as_point": 0.75,
+        "p_sign_differs": 0.775,
+        "p_std_sign_as_point": 0.795,
         "dag_supported": true
       }
     ],
     "uninsured_A1c_age": {
       "crude": -2.818674102542504,
       "std": 1.1081454072812496,
-      "p_sign_differs": 0.72,
-      "p_std_sign_as_point": 0.75
+      "p_sign_differs": 0.775,
+      "p_std_sign_as_point": 0.795
     },
     "asian_Lcomb_age": {
       "crude": -0.8140647186259884,
       "std": 3.270297886320675,
-      "p_sign_differs": 0.56,
-      "p_std_sign_as_point": 0.88
+      "p_sign_differs": 0.53,
+      "p_std_sign_as_point": 0.923
     },
     "n_dag_supported_flips": 2
   },
@@ -1007,8 +1007,8 @@
     {
       "quantity": "uninsured x A1c | age P(sign differs)",
       "reference": 0.77,
-      "recomputed": 0.72,
-      "note": "reference at B = 1000; here B = 100 (FAST)",
+      "recomputed": 0.775,
+      "note": "reference at B = 1000; here B = 1000 (FINAL)",
       "tolerance": 0.1,
       "verdict": "PASS"
     },
