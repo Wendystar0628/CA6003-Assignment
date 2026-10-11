@@ -1372,7 +1372,7 @@ if RELEASED:
               f"(first run {prev['first_run_utc']}; max |AUC difference| {dmax:.1e})")
     log_ = dict(first_run_utc=prev["first_run_utc"] if prev else now, last_run_utc=now,
                 n_executions=(prev["n_executions"] + 1) if prev else 1, sha256_test_seqn=sha_te, n_test=int(len(cl_te)),
-                exp_freeze_commit=RB.head_commit("exp-freeze"), head_at_first_run=prev["head_at_first_run"] if prev else RB.head_commit(),
+                exp_freeze_commit=RB.head_commit("exp-freeze") or (REC or {}).get("tag_commit"), head_at_first_run=prev["head_at_first_run"] if prev else RB.head_commit(),
                 arms=[f"{a} T{t}" for a, t in P_TE], threshold_rule="specificity 0.80 on training-part predictions of the refitted model",
                 nb_mode_first_run=prev["nb_mode_first_run"] if prev else C.NB_MODE, frozen=FROZEN, gate=gate)
     HOLDOUT_LOG.write_text(json.dumps(log_, indent=2), encoding="utf-8")
