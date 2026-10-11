@@ -70,7 +70,7 @@ Start after content freeze. Rehearsal passes when the total is between 11:00 and
 | 3 | ADA-lite sentence | 5 | V7.3 |
 | 4 | Governance detail (response rates, availability-rule wording, NCHS decomposition) | 10 | V1.1, V1.3 |
 
-Reserve cuts beyond the process document, only with team agreement: calibration sentence in V6.5 (5 s), robustness slide V7.5 folded into V7.4 (10 s).
+Reserve cuts beyond the process document, only with team agreement: calibration sentence in V6.5 (5 s), robustness sentence in V7.4 (5 s).
 
 Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), minimal versus systematic (V7.2), label bias (V6.1 to V6.4), governance and data quality (V2.1), contributions (V8.3).
 
@@ -96,5 +96,5 @@ Rules from the assignment: one video, at most 12 minutes, all members on camera,
 ## Known gaps
 
 - The notebook version of `S9_robustness_summary`, `S9_holdout_vs_cv` and the other unchanged figures keeps its original font size; the caption carries the message. The slide version of `S7_coef_forest` shows only the BMI coefficient panel (the 22-coefficient panel is not stored in `results/`), and the V4.1 slide shows variance inflation factors and correlation clusters because the Spearman matrix is not stored either.
-- Numbers outside `numbers_on_slides.csv` and the JSON rows of `check_numbers.py` are not used on any slide. Add them there first if the team wants them shown (for example the count of robustness analyses behind V7.5).
+- Numbers outside `numbers_on_slides.csv` and the JSON rows of `check_numbers.py` are not used on any slide. Add them there first if the team wants them shown (for example the count of robustness analyses behind the robustness sentence in V7.4).
 - Segment windows quoted in `governance/claims.csv` (`video_seg`) are unchanged; only the content of V2 changed (V2.1 governance, V2.2 cleaning).
