@@ -1,59 +1,71 @@
 {
-  "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-  "stored_outputs_mode": "FINAL",
-  "source_commit": "961ae812d489627351515e627ae8637f25d52f73",
-  "built_utc": "2026-10-11T07:56:11+00:00",
-  "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same export",
-  "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
-  "runs": {
-    "FAST": {
-      "runtime_seconds": 292.0,
-      "per_section_seconds": {
-        "§0": 2.3,
-        "§1": 0.8,
-        "§2": 1.0,
-        "§3": 3.2,
-        "§4": 4.0,
-        "§5": 3.9,
-        "§6": 15.4,
-        "§7": 87.9,
-        "§8": 22.7,
-        "§9": 147.6,
-        "§10": 0.8,
-        "Appendix": 0.2
-      },
-      "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
-      "file_sha256": "b24c494c052c41d06203acecf8462233a4642232d8d691c46c2e8d1ba7d2ed2a",
-      "size_mb": 5.87,
-      "validation": "OK",
-      "final_ref": "30 reference quantities reproduced within tolerance (FAST mode)",
-      "n_errors": 0,
-      "n_stderr": 0
-    },
-    "FINAL": {
-      "runtime_seconds": 1403.0,
-      "per_section_seconds": {
-        "§0": 2.2,
-        "§1": 0.8,
-        "§2": 1.0,
-        "§3": 3.2,
-        "§4": 4.2,
-        "§5": 20.3,
-        "§6": 15.3,
-        "§7": 569.9,
-        "§8": 55.1,
-        "§9": 727.3,
-        "§10": 0.8,
-        "Appendix": 0.2
-      },
-      "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
-      "file_sha256": "9d95ac7163455acb18431fb1b0a3a6b7667a05614e44f1e1145475218c8d2689",
-      "size_mb": 5.95,
-      "validation": "OK",
-      "final_ref": "30 reference quantities reproduced within tolerance (FINAL mode)",
-      "n_errors": 0,
-      "n_stderr": 0
-    }
+ "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
+ "stored_outputs_mode": "FINAL",
+ "source_commit": "c7476b7294c8cdbccfe29aeddbda67aad86f9fb5",
+ "built_utc": "2026-10-11T09:27:24+00:00",
+ "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same commit",
+ "code_cell_sha256": "ff84cd0cc9ad81f1527130b1775b558107f652ea6fab9e5516dc53d238a9ebf8",
+ "runs": {
+  "FAST": {
+   "runtime_seconds": 327.0,
+   "per_section_seconds": {
+    "§0": 2.3,
+    "§1": 0.8,
+    "§2": 1.0,
+    "§3": 3.2,
+    "§4": 4.3,
+    "§5": 4.0,
+    "§6": 15.3,
+    "§7": 121.4,
+    "§8": 22.3,
+    "§9": 148.4,
+    "§10": 0.9,
+    "Appendix": 0.2
+   },
+   "code_cell_sha256": "ff84cd0cc9ad81f1527130b1775b558107f652ea6fab9e5516dc53d238a9ebf8",
+   "file_sha256": "0465a9ed4b00b3104c512903079d879525d223ea67c5af1bc0a3800c65a63346",
+   "size_mb": 6.88,
+   "validation": "OK",
+   "final_ref": "50 reference quantities reproduced within tolerance (FAST mode)",
+   "n_errors": 0,
+   "n_stderr": 0
   },
-  "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)"
+  "FINAL": {
+   "runtime_seconds": 1485.0,
+   "per_section_seconds": {
+    "§0": 2.3,
+    "§1": 0.8,
+    "§2": 1.0,
+    "§3": 3.2,
+    "§4": 4.4,
+    "§5": 20.1,
+    "§6": 15.4,
+    "§7": 653.4,
+    "§8": 54.9,
+    "§9": 726.2,
+    "§10": 0.9,
+    "Appendix": 0.2
+   },
+   "code_cell_sha256": "ff84cd0cc9ad81f1527130b1775b558107f652ea6fab9e5516dc53d238a9ebf8",
+   "file_sha256": "b50497fdd9ca90baa01f7b5e92f4df8f57348cc38c5cb20bfc38fa901f32858e",
+   "size_mb": 6.96,
+   "validation": "OK",
+   "final_ref": "50 reference quantities reproduced within tolerance (FINAL mode)",
+   "n_errors": 0,
+   "n_stderr": 0
+  }
+ },
+ "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
+ "front_matter_words": {
+  "title": 89,
+  "summary": 250,
+  "checklist": 127,
+  "group": 149,
+  "contrib": 154,
+  "genai": 154,
+  "guide": 360,
+  "runmode": 250
+ },
+ "main_body_markdown_words": 20113,
+ "team_placeholders_left": 54
 }
