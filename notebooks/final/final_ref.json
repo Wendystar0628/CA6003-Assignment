@@ -1,5 +1,5 @@
 {
- "written_utc": "2026-10-11T08:56:22+00:00",
+ "written_utc": "2026-10-11T10:11:00+00:00",
  "source_modes": [
   "FINAL"
  ],
@@ -401,6 +401,22 @@
    "section": "S10",
    "path": "holdout.n_rows",
    "value": 20,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_holdout_gap_S",
+   "section": "S9",
+   "path": "holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc MINUS holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc",
+   "value": 0.06033999999999995,
+   "tol_fast": 0,
+   "tol_final": 0
+  },
+  {
+   "id": "summary_holdout_escreen_positives",
+   "section": "S9",
+   "path": "holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos",
+   "value": 25,
    "tol_fast": 0,
    "tol_final": 0
   }
