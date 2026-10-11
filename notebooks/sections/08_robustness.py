@@ -1636,7 +1636,8 @@ assert PA1["lin_sample_holdout"] == 901 and PA1["lin_sample_holdout_pos"] == 155
 assert PA1["splined_still_nonlinear"] and not PA1["decision_changed"], "a design decision changes on the training part"
 assert all(v is None or v < 1e-5 for v in PA2["max_dev_when_C0"].values()), "nested refits with C = C0 must reproduce the stored predictions"
 assert abs(PA2["S_auc_change"]) < 0.002, PA2["S_auc_change"]
-assert (r3b["outer_q975"] - r3b["outer_q025"]) > (r3b["mc_hi"] - r3b["mc_lo"]), "sampling interval must be wider than the Monte Carlo interval"
+if C.IS_FINAL:   # FAST uses 5 outer samples, too few for a meaningful width comparison
+    assert (r3b["outer_q975"] - r3b["outer_q025"]) > (r3b["mc_hi"] - r3b["mc_lo"]), "sampling interval must be wider than the Monte Carlo interval"
 assert PA4["race_spread_pp"]["corrected"] < 1e-6, "weighted-count reweighing must make group and label independent"
 assert PA4["max_abs_dauc_corrected"] < C.SESOI["roc_auc"]
 assert PA5["full_coef_reproduced"] and PA5["convergence"]["M1 exact optimum (newton-cholesky)"]["at_limit"] == 0

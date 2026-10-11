@@ -1,13 +1,13 @@
 {
   "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
   "stored_outputs_mode": "FINAL",
-  "source_commit": "deba914",
-  "built_utc": "2026-10-11T18:23:59+00:00",
+  "source_commit": "a30e857",
+  "built_utc": "2026-10-11T18:33:50+00:00",
   "procedure": "assembled",
   "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
   "base": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-    "sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4"
+    "sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a"
   },
   "sections": {
     "00_setup.py": {
@@ -53,10 +53,10 @@
       "mode": "FINAL",
       "seconds": 1321.4,
       "run_utc": "2026-10-11T18:20:39+00:00",
-      "executed_sha256": "0aa1d8fef5aca9d6b514e5c7aa74f63e1e5241323ee07e2ae988eb8e31172e23",
-      "section_sha256_at_run": "860f9fc0ca9b0f03f7644b72e31c6988aad40ceee1ff7f4278d621caa6ea5607",
-      "section_sha256_now": "19805091ff9a1ac09b85840c27c492f490da2a2862dce95f08cf4795bbad94ff",
-      "note": "section source changed after the run in comments/markdown only (code tokens verified)"
+      "executed_sha256": "de9bdb2c6251de9fb33e89f3f7bbb8f2f29e4c4d1908ef2c25b835c6acc7265e",
+      "section_sha256_at_run": "30c89d1ab0f39dd7824987ca43052c8b06b87bddd50a4489e6f989fd82e0e7d1",
+      "section_sha256_now": "30c89d1ab0f39dd7824987ca43052c8b06b87bddd50a4489e6f989fd82e0e7d1",
+      "note": "section source unchanged since the run"
     },
     "09_synthesis.py": {
       "from": "notebooks/executed/09_synthesis.ipynb",
@@ -71,53 +71,60 @@
   },
   "section_provenance": {
     "§0": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 2.3
+      "mode": "FINAL",
+      "seconds": 2.3,
+      "source": "full run"
     },
     "§1": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 0.8
+      "mode": "FINAL",
+      "seconds": 0.8,
+      "source": "full run"
+    },
+    "§10": {
+      "source": "section run",
+      "mode": "FINAL",
+      "file": "09_synthesis.py",
+      "date": "2026-10-12",
+      "seconds": 4.1
     },
     "§2": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 1.0
+      "mode": "FINAL",
+      "seconds": 1.0,
+      "source": "full run"
     },
     "§3": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 3.2
+      "mode": "FINAL",
+      "seconds": 3.2,
+      "source": "full run"
     },
     "§4": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 4.4
+      "mode": "FINAL",
+      "seconds": 4.4,
+      "source": "full run"
     },
     "§5": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 20.1
+      "mode": "FINAL",
+      "seconds": 20.1,
+      "source": "full run"
     },
     "§6": {
-      "source": "full run",
-      "mode": "FINAL",
       "commit": "18a4909",
       "date": "2026-10-11",
-      "seconds": 15.3
+      "mode": "FINAL",
+      "seconds": 15.3,
+      "source": "full run"
     },
     "§7": {
       "source": "section run",
@@ -139,33 +146,20 @@
       "file": "08_robustness.py",
       "date": "2026-10-12",
       "seconds": 1321.4
-    },
-    "§10": {
-      "source": "section run",
-      "mode": "FINAL",
-      "file": "09_synthesis.py",
-      "date": "2026-10-12",
-      "seconds": 4.1
     }
   },
   "generated_cells": {
-    "reused_from_base": 47,
-    "synthesised": [
-      "src/fairness.py",
-      "src/postaudit.py (new)",
-      "governance/register/S8.csv",
-      "governance/register/S9.csv",
-      "governance/register/S10.csv"
-    ]
+    "reused_from_base": 52,
+    "synthesised": []
   },
   "appendix": {
-    "executed_seconds": 2.8,
+    "executed_seconds": 2.4,
     "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
   },
   "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)",
   "section_runtime_seconds_sum": 1468.4,
-  "code_cell_sha256": "dc292cd6927ae5daa2873e23408837a1a68481810c2417f4f152fb7ea4687f13",
-  "notebook_sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4 (LF line endings)",
+  "code_cell_sha256": "c1d2460051498c410cd8a50a35166ace98d0c188eed20a98ad3c3bfeaa3dec37",
+  "notebook_sha256": "0c3021ca9c0c66c62e1cf4055ddb7576724a2bdb3399cd332e3e0a06018c4b2a (LF line endings)",
   "front_matter_words": {
     "title": 158,
     "summary": 250,
@@ -230,48 +224,180 @@
   "previous_record": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
     "stored_outputs_mode": "FINAL",
-    "source_commit": "200c32c",
-    "built_utc": "2026-10-11T10:42:59+00:00",
-    "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same commit",
-    "code_cell_sha256": "041a30b32d042cc7e94387fb6d985b7cb3f7590eee3ccf634b72d47272d866c3",
-    "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
+    "source_commit": "deba914",
+    "built_utc": "2026-10-11T18:23:59+00:00",
+    "procedure": "assembled",
+    "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
+    "base": {
+      "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
+      "sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4"
+    },
+    "sections": {
+      "00_setup.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "01_scope_governance.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "02_profiling.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "03_eda.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "04_labels_bias.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "05_prep_design.py": {
+        "from": "base (CA6003_NHANES_Diabetes.ipynb)"
+      },
+      "06_experiments.py": {
+        "from": "notebooks/executed/06_experiments.ipynb",
+        "mode": "FINAL",
+        "seconds": null,
+        "run_utc": "2026-10-11T17:49:46+00:00",
+        "executed_sha256": "6c4422a69a9dfb8d5adce1b3da8d264a57dc0a7d987bc65e0661c01a3e321386",
+        "section_sha256_at_run": "9040ea08baa20e1998d3c1f53705aa9b4e6246b7a4f785118002a439be9ea7c8",
+        "section_sha256_now": "133b4eb43abfd91c5e13681385cf015bd8a007baa516d244d683e092c877cc0e",
+        "note": "section source changed after the run in comments/markdown only (code tokens verified)"
+      },
+      "07_fairness.py": {
+        "from": "notebooks/executed/07_fairness.ipynb",
+        "mode": "FINAL",
+        "seconds": 95.8,
+        "run_utc": "2026-10-11T17:51:26+00:00",
+        "executed_sha256": "59f38630774316d549677509410511552aee307c3ebbe7a3cccf645be208de3d",
+        "section_sha256_at_run": "f384556f3ea2bc662c47da8cd690913972d9e0b0cb4ca49ab507d56a1d0435e2",
+        "section_sha256_now": "f384556f3ea2bc662c47da8cd690913972d9e0b0cb4ca49ab507d56a1d0435e2",
+        "note": "section source unchanged since the run"
+      },
+      "08_robustness.py": {
+        "from": "notebooks/executed/08_robustness.ipynb",
+        "mode": "FINAL",
+        "seconds": 1321.4,
+        "run_utc": "2026-10-11T18:20:39+00:00",
+        "executed_sha256": "0aa1d8fef5aca9d6b514e5c7aa74f63e1e5241323ee07e2ae988eb8e31172e23",
+        "section_sha256_at_run": "860f9fc0ca9b0f03f7644b72e31c6988aad40ceee1ff7f4278d621caa6ea5607",
+        "section_sha256_now": "19805091ff9a1ac09b85840c27c492f490da2a2862dce95f08cf4795bbad94ff",
+        "note": "section source changed after the run in comments/markdown only (code tokens verified)"
+      },
+      "09_synthesis.py": {
+        "from": "notebooks/executed/09_synthesis.ipynb",
+        "mode": "FINAL",
+        "seconds": 4.1,
+        "run_utc": "2026-10-11T18:22:10+00:00",
+        "executed_sha256": "1bc16afd08e1a4750925697e7aeb7368aec5550afb9e2be55c4a36ade2befcb5",
+        "section_sha256_at_run": "f01f2af27f4f8fcacc929470e80acad56fc1744fe3457b6b4c9e853adfb00d25",
+        "section_sha256_now": "f01f2af27f4f8fcacc929470e80acad56fc1744fe3457b6b4c9e853adfb00d25",
+        "note": "section source unchanged since the run"
+      }
+    },
+    "section_provenance": {
+      "§0": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 2.3
+      },
+      "§1": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 0.8
+      },
+      "§2": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 1.0
+      },
+      "§3": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 3.2
+      },
+      "§4": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 4.4
+      },
+      "§5": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 20.1
+      },
+      "§6": {
+        "source": "full run",
+        "mode": "FINAL",
+        "commit": "18a4909",
+        "date": "2026-10-11",
+        "seconds": 15.3
+      },
+      "§7": {
+        "source": "section run",
+        "mode": "FINAL",
+        "file": "06_experiments.py",
+        "date": "2026-10-12",
+        "seconds": null
+      },
+      "§8": {
+        "source": "section run",
+        "mode": "FINAL",
+        "file": "07_fairness.py",
+        "date": "2026-10-12",
+        "seconds": 95.8
+      },
+      "§9": {
+        "source": "section run",
+        "mode": "FINAL",
+        "file": "08_robustness.py",
+        "date": "2026-10-12",
+        "seconds": 1321.4
+      },
+      "§10": {
+        "source": "section run",
+        "mode": "FINAL",
+        "file": "09_synthesis.py",
+        "date": "2026-10-12",
+        "seconds": 4.1
+      }
+    },
+    "generated_cells": {
+      "reused_from_base": 47,
+      "synthesised": [
+        "src/fairness.py",
+        "src/postaudit.py (new)",
+        "governance/register/S8.csv",
+        "governance/register/S9.csv",
+        "governance/register/S10.csv"
+      ]
+    },
+    "appendix": {
+      "executed_seconds": 2.8,
+      "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
+    },
+    "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)",
+    "section_runtime_seconds_sum": 1468.4,
+    "code_cell_sha256": "dc292cd6927ae5daa2873e23408837a1a68481810c2417f4f152fb7ea4687f13",
+    "notebook_sha256": "315f2cf315e01e3042250e521f71a3f4f90a7ced75a10ac0599dd1a9f4fde0e4 (LF line endings)",
     "front_matter_words": {
-      "title": 135,
+      "title": 158,
       "summary": 250,
       "checklist": 74,
       "team": 402,
       "genai": 258,
       "guide": 249
     },
-    "main_body_markdown_words": 17934,
     "team_placeholders_left": 12,
-    "outputs_carried_over": {
-      "from_release": "89bb9e1",
-      "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
-      "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
-    },
-    "notebook_sha256": "372650e8b415b746bd39332dac101ad26cd7341f37ce2a2c15db3b2b755dcbd5 (file as stored in git, LF line endings)",
-    "documentation_update": {
-      "date": "2026-10-12",
-      "base_commit": "c92f0df",
-      "scope": "Team entries (A-D), concise GenAI declaration, summary wording (165 on medication), embedded governance README and GenAI log; no re-execution",
-      "evidence_checks_passed": 28,
-      "original_code_cell_sha256": "bf4b20ceea95c0f011e5880e62f99bc265e8d9fea247bb7501df90e198b63040",
-      "current_code_cell_sha256": "041a30b32d042cc7e94387fb6d985b7cb3f7590eee3ccf634b72d47272d866c3",
-      "changed_code_cells": {
-        "27": "governance/README.md",
-        "34": "governance/genai_log.csv"
-      },
-      "changed_output_cells": [
-        70,
-        499
-      ],
-      "analytical_code_unchanged": true,
-      "numerical_analysis_outputs_unchanged": true,
-      "execution_counts_unchanged": true,
-      "genai_log_entries": 7,
-      "member_acknowledgement": "pending: [TEAM TO FILL] entries remain until each member confirms their own checks",
-      "front_matter_layout": "6 cells (title + facts, summary, requirements, team, GenAI, read and run); refreshed with --refresh-front, no re-execution"
-    }
+    "validation": "OK"
   }
 }
