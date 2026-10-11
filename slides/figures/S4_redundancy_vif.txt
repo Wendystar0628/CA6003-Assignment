@@ -1,0 +1,1 @@
+Left: variance inflation factors of the raw anthropometry set and of the six blood-pressure readings against their means (dashed line = pruning threshold). Right: clusters with absolute Spearman correlation of at least 0.7 (average linkage). Source: results/S4/vif_table.csv and results/metrics_S4.json; the full clustered heatmap is figures/S4_spearman_clustermap.png.

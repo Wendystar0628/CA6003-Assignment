@@ -1,0 +1,1 @@
+Governance controls and data-quality verdict per dimension (DAMA UK dimensions plus ISO/IEC 25012 credibility). Source: results/S3/quality_matrix.csv and results/metrics_S1.json; full table in notebook section 3.9.

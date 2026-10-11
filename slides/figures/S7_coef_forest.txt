@@ -1,0 +1,1 @@
+BMI coefficient per SD across bootstrap refits of four arms (point = full-data fit, bar = 2.5 to 97.5 percentile; SD = spread across refits). Blue arms use the scaled L2 pipeline, grey arms are the earlier unscaled steps. Source: results/S7/coef_stability.csv; the right panel of figures/S7_coef_forest.png (22 coefficients) is not stored in results and is not redrawn here.
