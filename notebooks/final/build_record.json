@@ -57,14 +57,12 @@
   },
   "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
   "front_matter_words": {
-    "title": 89,
-    "summary": 249,
-    "checklist": 127,
-    "group": 161,
-    "contrib": 350,
+    "title": 135,
+    "summary": 250,
+    "checklist": 74,
+    "team": 402,
     "genai": 258,
-    "guide": 365,
-    "runmode": 250
+    "guide": 249
   },
   "main_body_markdown_words": 17934,
   "team_placeholders_left": 12,
@@ -73,7 +71,7 @@
     "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
     "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
   },
-  "notebook_sha256": "8e291d31398cc8d1a994c6df46fcaa6bbd0edb19519b5559b3403831d713619c (file as stored in git, LF line endings)",
+  "notebook_sha256": "372650e8b415b746bd39332dac101ad26cd7341f37ce2a2c15db3b2b755dcbd5 (file as stored in git, LF line endings)",
   "documentation_update": {
     "date": "2026-10-12",
     "base_commit": "c92f0df",
@@ -93,6 +91,7 @@
     "numerical_analysis_outputs_unchanged": true,
     "execution_counts_unchanged": true,
     "genai_log_entries": 7,
-    "member_acknowledgement": "pending: [TEAM TO FILL] entries remain until each member confirms their own checks"
+    "member_acknowledgement": "pending: [TEAM TO FILL] entries remain until each member confirms their own checks",
+    "front_matter_layout": "6 cells (title + facts, summary, requirements, team, GenAI, read and run); refreshed with --refresh-front, no re-execution"
   }
 }
