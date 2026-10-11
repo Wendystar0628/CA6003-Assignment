@@ -44,11 +44,18 @@ OUT = C.RESULTS_DIR / "S9"
 OUT.mkdir(parents=True, exist_ok=True)
 N_JOBS = min(16, max(1, (os.cpu_count() or 2) - 2))
 T_START = time.time()
+# FAST mode (the re-run setting, <= ~5 min for the whole notebook) shrinks three extension-level loops; FINAL is unchanged:
+# coefficient bootstrap of the noise check 500 -> 30 (config FAST value 100), robustness seeds 10 -> 5, specification
+# curve 60 -> 30 specifications (C in {0.1, 10} instead of four values; C is the factor that matters least, see 5).
+B_COEF9 = C.N_BOOT_COEF if C.IS_FINAL else 30
+N_SEEDS = C.N_ROBUSTNESS_SEEDS if C.IS_FINAL else 5
+C_CURVE = RB.C_GRID if C.IS_FINAL else (0.1, 10.0)
 S9 = {"mode": C.NB_MODE, "cv": f"{C.CV_SPLITS}x{C.CV_REPEATS}", "n_boot": C.N_BOOT, "n_perm": C.N_PERM,
-      "n_boot_coef": C.N_BOOT_COEF}
+      "n_boot_coef": B_COEF9, "n_seeds": N_SEEDS, "n_curve": 15 * len(C_CURVE)}
 OI = C.OKABE_ITO
 S7m = R.load_section("S7")
-print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, permutations = {C.N_PERM}, {N_JOBS} workers")
+print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, permutations = {C.N_PERM}, coefficient B = {B_COEF9}, "
+      f"{N_SEEDS} robustness seeds, {S9['n_curve']}-specification curve, {N_JOBS} workers")
 
 # %% [markdown]
 # ## 1 Reference comparison
@@ -110,7 +117,10 @@ S9["reference"] = {r["pop"]: {k: r[k] for k in ("auc_a", "auc_b", "est", "lo", "
 
 # %%
 t0 = time.time()
-PERM = {arm: RB.permutation_null(ctx, Spec(arm), n_perm=C.N_PERM, seed_=RB.seed("perm", arm), n_jobs=N_JOBS)
+# permutations are drawn up front and refitted independently: the worker count changes the wall time only (FAST may run
+# all of its permutations at once; FINAL keeps its worker count)
+N_JOBS_PERM = N_JOBS if C.IS_FINAL else max(N_JOBS, min(C.N_PERM, (os.cpu_count() or 2) - 2))
+PERM = {arm: RB.permutation_null(ctx, Spec(arm), n_perm=C.N_PERM, seed_=RB.seed("perm", arm), n_jobs=N_JOBS_PERM)
         for arm in RB.ADMISSIBLE_ARMS}
 perm_tab = pd.DataFrame([dict(arm=a, observed=d["observed"], null_mean=d["null_mean"], null_sd=d["null_sd"],
                               null_min=d["null"].min(), null_max=d["null"].max(), p_value=d["p_value"], n_perm=d["n_perm"],
@@ -158,7 +168,7 @@ noise_rows, NOISE_CB = [], {}
 for arm in RB.ADMISSIBLE_ARMS:
     sp = Spec(arm, extra=("noise_n01",))
     X_, y_, sw_, _ = RB.spec_inputs(ctx, sp)
-    cb = ek.coef_bootstrap(lambda sp=sp: RB.make_pipe(sp, ctx.C0), X_, y_.astype(int), n_boot=C.N_BOOT_COEF,
+    cb = ek.coef_bootstrap(lambda sp=sp: RB.make_pipe(sp, ctx.C0), X_, y_.astype(int), n_boot=B_COEF9,
                            seed=RB.seed("noise-coef", arm), fit_params=None if sw_ is None else {"model__sample_weight": sw_},
                            n_jobs=N_JOBS)
     NOISE_CB[arm] = cb
@@ -223,7 +233,8 @@ S9["positive_control"] = dict(z_auc=z_auc, rows=pos_tab.to_dict("records"))
 # **Why.** A verdict that flips when only the random fold assignment changes is a property of one lucky split,
 # not of the data. Ten seeds derived from `SEED_MASTER` (`evalkit.derive_seed`) generate ten new repeated
 # stratified fold sets and bootstrap streams; the hold-out, the data, C0 and the final configuration stay fixed.
-# Acceptance: the H2b(a) verdict of S − M1 on E-ALL is the same under all ten seeds.
+# Acceptance: the H2b(a) verdict of S − M1 on E-ALL is the same under all ten seeds. (FAST re-run mode: the first
+# five of the ten seeds.)
 
 # %%
 def prefetch(items):
@@ -232,7 +243,7 @@ def prefetch(items):
     RB.run_jobs(ctx, items, n_jobs=N_JOBS, cache=RUNS)
     return time.time() - t0
 
-SEED_FOLDS = {k: RB.seed_folds(ctx.strat, RB.seed("cv-seed", k)) for k in range(C.N_ROBUSTNESS_SEEDS)}
+SEED_FOLDS = {k: RB.seed_folds(ctx.strat, RB.seed("cv-seed", k)) for k in range(N_SEEDS)}
 secs = prefetch({f"{a}{k}": (Spec(a), f) for k, f in SEED_FOLDS.items() for a in RB.ADMISSIBLE_ARMS})
 seed_rows = []
 for k, f in SEED_FOLDS.items():
@@ -264,12 +275,12 @@ for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
     ax.set(xticks=range(len(s)), xlabel="robustness seed", title=f"{pop}: {', '.join(s['h2b'].value_counts().index)}")
 axes[0].set_ylabel("ΔROC-AUC S − M1 (95 % CI)")
 axes[0].legend(fontsize=8, loc="lower left")
-fig.suptitle("Ten CV / bootstrap seeds: the estimate moves, the verdict does not", fontsize=11)
-plots.savefig(fig, "S9_seed_stability", caption="F9-3. ΔROC-AUC (S − M1, Tier 1) with its conservative 95 % CI under ten robustness seeds "
+fig.suptitle(f"{len(SEED_FOLDS)} CV / bootstrap seeds: the estimate moves, the verdict does not", fontsize=11)
+plots.savefig(fig, "S9_seed_stability", caption=f"F9-3. ΔROC-AUC (S − M1, Tier 1) with its conservative 95 % CI under {len(SEED_FOLDS)} robustness seeds "
               "(new repeated stratified folds and bootstrap streams; data, hold-out and C0 fixed). Colour = verdict under the locked "
               "equivalence rule (grey = inconclusive); dashed = stored folds of the run mode.")
 plt.show()
-S9["seeds"] = dict(n=C.N_ROBUSTNESS_SEEDS, stable_eall=bool(seed_stable), summary=seed_sum.to_dict("index"))
+S9["seeds"] = dict(n=len(SEED_FOLDS), stable_eall=bool(seed_stable), summary=seed_sum.to_dict("index"))
 
 # %% [markdown]
 # **So what.** Across the ten seeds the point estimate of S − M1 moves only in the third decimal (min, max and SD
@@ -427,19 +438,20 @@ S9["sensitivity"] = dict(n_specs=len(SENS), eall_same_verdict=n_same, eall_rows=
 # crosses the choices that the table showed to matter most, so that interactions between them cannot hide a
 # different answer. Grid: 5 training labels (L_comb, SL1–SL4) × 3 weighting schemes (as specified: S weighted and M1
 # unweighted; both unweighted; both weighted) × 4 values of C = **60 specifications**, each with ΔAUC(S − M1) and its
-# conservative CI on E-ALL and E-SCREEN. This extends, and does not replace, the core table.
+# conservative CI on E-ALL and E-SCREEN. This extends, and does not replace, the core table. (FAST re-run mode: C ∈
+# {0.1, 10} only, 30 specifications; the stored FINAL outputs use the full grid.)
 
 # %%
 import itertools
 LABELS_SC = {"L_comb": "arm", "SL1": "SL1", "SL2": "SL2", "SL3": "SL3", "SL4": "SL4"}
 WEIGHTING = ("as specified", "both unweighted", "both weighted")
 grid = []
-for (lab, lab_spec), wt, c in itertools.product(LABELS_SC.items(), WEIGHTING, RB.C_GRID):
+for (lab, lab_spec), wt, c in itertools.product(LABELS_SC.items(), WEIGHTING, C_CURVE):
     cc = None if c == ctx.C0 else c
     sa = Spec("S", label=lab_spec, C=cc, weighted=False if wt == "both unweighted" else None)
     sb = Spec("M1", label=lab_spec, C=cc, weighted=True if wt == "both weighted" else None)
     grid.append(dict(label=lab, weighting=wt, C=c, sa=sa, sb=sb))
-assert len(grid) == 60
+assert len(grid) == S9["n_curve"] == (60 if C.IS_FINAL else 30)
 secs = prefetch({f"sc{i}{j}": (g[k], ctx.folds) for i, g in enumerate(grid) for j, k in enumerate(("sa", "sb"))})
 sc_rows = []
 for i, g in enumerate(grid):
@@ -448,7 +460,7 @@ for i, g in enumerate(grid):
                             ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "mdd", "h2b", "sesoi_class")}))
 curve = pd.DataFrame(sc_rows)
 curve.to_csv(OUT / "specification_curve.csv", index=False)
-print(f"60 specifications x 2 arms in {secs:.0f} s")
+print(f"{len(grid)} specifications x 2 arms in {secs:.0f} s")
 cs = curve.groupby("pop").agg(n=("est", "size"), est_median=("est", "median"), est_min=("est", "min"), est_max=("est", "max"),
                               share_positive=("est", lambda v: (v > 0).mean()),
                               share_ci_above_0=("lo", lambda v: (v > 0).mean()),
@@ -473,9 +485,9 @@ for ax, d, pop in ((axes[0], e_all, "E-ALL"), (axes[1], e_scr, "E-SCREEN")):
     ax.axhspan(-C.SESOI["roc_auc"], C.SESOI["roc_auc"], color=OI["grey"], alpha=0.12)
     ax.axhline(0, color="k", lw=0.7)
     ax.set_ylabel(f"ΔAUC S − M1\n{pop}")
-axes[0].set_title("Specification curve: 60 specifications sorted by the E-ALL estimate (blue dot = reference)", fontsize=11)
+axes[0].set_title(f"Specification curve: {len(grid)} specifications sorted by the E-ALL estimate (blue dot = reference)", fontsize=11)
 ax = axes[2]
-rows_ind = [("label", l) for l in LABELS_SC] + [("weighting", w) for w in WEIGHTING] + [("C", c) for c in RB.C_GRID]
+rows_ind = [("label", l) for l in LABELS_SC] + [("weighting", w) for w in WEIGHTING] + [("C", c) for c in C_CURVE]
 for j, (fac, val) in enumerate(rows_ind):
     hit = (e_all[fac] == val).to_numpy()
     ax.scatter(np.flatnonzero(hit), np.full(hit.sum(), j), s=8, color=OI["purple"] if fac == "label" else OI["orange"] if fac == "weighting" else OI["green"])
@@ -483,12 +495,12 @@ ax.set_yticks(range(len(rows_ind)), [f"{fac}: {val}" for fac, val in rows_ind], 
 ax.invert_yaxis()
 ax.set_xlabel("specification (rank of the E-ALL estimate)")
 fig.tight_layout()
-plots.savefig(fig, "S9_specification_curve", caption="Specification curve (extension). 60 specifications = 5 training labels x 3 weighting "
-              "schemes x 4 values of C. Top: ΔROC-AUC (S − M1) on E-ALL with conservative 95 % CI, sorted; middle: E-SCREEN in the same "
+plots.savefig(fig, "S9_specification_curve", caption=f"Specification curve (extension). {len(grid)} specifications = 5 training labels x 3 weighting "
+              f"schemes x {len(C_CURVE)} values of C. Top: ΔROC-AUC (S − M1) on E-ALL with conservative 95 % CI, sorted; middle: E-SCREEN in the same "
               "order; bottom: which choices define each specification. Line colour = H2b(a) verdict (grey inconclusive, green "
               "equivalent, red refuted); grey band = ±SESOI 0.01.")
 plt.show()
-S9["specification_curve"] = dict(n=60, summary=cs.round(5).to_dict("index"),
+S9["specification_curve"] = dict(n=len(grid), summary=cs.round(5).to_dict("index"),
                                  verdicts=curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_dict("index"))
 
 # %% [markdown]
@@ -916,7 +928,7 @@ print("care-contact items, single-feature AUC (E-ALL vs E-SCREEN):"); print(care
 
 cbS = NOISE_CB["S"].summary.drop(index="noise_n01")
 unstable = cbS[(cbS["ci_excludes_0"]) & (cbS["sign_flip_rate"] > 0.10)]
-print(f"coefficients of S whose CI excludes 0 but flip sign in > 10 % of {C.N_BOOT_COEF} refits: {len(unstable)}; "
+print(f"coefficients of S whose CI excludes 0 but flip sign in > 10 % of {B_COEF9} refits: {len(unstable)}; "
       f"max flip rate among CI-excluding-0 coefficients {cbS.loc[cbS['ci_excludes_0'], 'sign_flip_rate'].max():.3f}")
 
 # %%
@@ -993,8 +1005,8 @@ summ = []
 for pop in ("E-ALL", "E-SCREEN"):
     r0 = S9["reference"][pop]
     summ.append(dict(check="reference (stored folds)", pop=pop, est_min=r0["est"], est_max=r0["est"], lo=r0["lo"], hi=r0["hi"], verdicts=r0["h2b"]))
-    for nm, d in (("10 CV seeds", seeds), ("16 sensitivity specs", sens[sens["spec"] != "reference (S7)"]),
-                  ("60-spec curve", curve), ("strata x PSU grouped CV", gcv_tab[gcv_tab["folds"] != "stored stratified"]),
+    for nm, d in ((f"{len(SEED_FOLDS)} CV seeds", seeds), (f"{len(SENS)} sensitivity specs", sens[sens["spec"] != "reference (S7)"]),
+                  (f"{len(grid)}-spec curve", curve), ("strata x PSU grouped CV", gcv_tab[gcv_tab["folds"] != "stored stratified"]),
                   ("IPW (evaluation; fit + evaluation)", ipw_tab)):
         a, b, lo, hi, v = _rng(d, pop)
         summ.append(dict(check=nm, pop=pop, est_min=a, est_max=b, lo=lo, hi=hi, verdicts=v))
@@ -1030,7 +1042,7 @@ axes[1].legend(handles=[Line2D([], [], color=OI["blue"], lw=3, label="range of p
 fig.suptitle("S − M1 across every robustness check: small, positive, never pinned against the SESOI", fontsize=11)
 fig.tight_layout()
 plots.savefig(fig, "S9_robustness_summary", caption="Range of ΔROC-AUC (S − M1) point estimates (blue) and envelope of the 95 % CIs (grey) for each "
-              "family of robustness checks: stored folds, 10 CV seeds, 16 one-at-a-time specifications, 60-specification curve, "
+              f"family of robustness checks: stored folds, {len(SEED_FOLDS)} CV seeds, {len(SENS)} one-at-a-time specifications, {len(grid)}-specification curve, "
               "strata x PSU grouped CV, inverse-probability weighting and MNAR delta adjustment; E-ALL left, E-SCREEN right.")
 plt.show()
 S9["summary"] = dict(table=summ.round(5).to_dict("records"), all_inconclusive=all_incon)
