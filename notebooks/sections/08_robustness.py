@@ -1666,7 +1666,8 @@ S9["postaudit"] = PA.jsonable(dict(
 
 # --- decision-register rows (appended after DR-S9-15 in §9.13)
 def _reg_pa(i, typ, fnd, ref, val, dec, alt, hyp, loop):
-    return dict(dr_id=f"DR-S9-{i}", stage="S9", date=today, type=typ, finding=fnd, evidence_ref=ref, evidence_value=val, decision=dec,
+    # The register is append-only: each post-audit row names the earlier rows it supersedes or qualifies.
+    return dict(dr_id=f"DR-S9-{i}", stage="S9", date=today, type=typ, finding=fnd, evidence_ref=ref, evidence_value=val, decision=f"{dec}. {loop}",
                 alternatives_rejected=alt, hyp_id=hyp, status="decided", check_verdict="PASS",
                 check_note="post-audit, post-lock; approximate check (§9.12)", loop_ref=loop, change_request="", commit="")
 
@@ -1674,32 +1675,44 @@ REG_PA = pd.DataFrame([
     _reg_pa(16, "postaudit_holdout", "Hold-out rows took part in the full-cohort §4/§5 design diagnostics (before the split existed)",
             "results/S9/postaudit_holdout_overlap.csv; postaudit_linearity_train.csv; postaudit_interactions_train.csv; postaudit_vif_train.csv",
             PA_SUM.loc[0, "result"], "Call §9.11 an internal hold-out check, not an independent validation; keep its numbers; add limitation L16",
-            "re-splitting or re-scoring the hold-out", "H2a;H2b;H2c", "DR-S6-12"),
+            "re-splitting or re-scoring the hold-out", "H2a;H2b;H2c",
+            "Qualifies DR-S6-12 and DR-S7-01 (the §4/§5 design statistics used the full cohort before the split) and the 'independent check' wording of the original §9.11 / DR-S9-15"),
     _reg_pa(17, "postaudit_tuning", "C0 was chosen once on the whole training part, not nested in the outer folds",
             "results/S9/postaudit_nested_c.csv", PA_SUM.loc[1, "result"],
             "Keep C0 and the 'same model for every arm' rule; report the nested check; add limitation L17",
-            "re-running §7 with per-fold tuning (breaks the freeze)", "H2b", "DR-S7-04;DR-S9-06"),
+            "re-running §7 with per-fold tuning (breaks the freeze)", "H2b",
+            "Supersedes DR-S7-04 (tuning optimism now bounded by a nested check) and the earlier 'nil optimism' wording of DR-S9-06 (corrected in place: arm fairness, not nesting)"),
     _reg_pa(18, "postaudit_interval", "The §7.11 SD-ratio interval re-draws stored bootstrap replicates: Monte Carlo error, not sampling uncertainty",
             "results/S9/postaudit_ratio_outer.csv; results/S7/coef_stability.csv", PA_SUM.loc[2, "result"],
             "Withdraw the B3-b and H2b(c) verdicts as 'not testable with this design (post-audit)'; keep the ratios as descriptive; "
             "hypotheses.md unchanged; B3 and H2b hypothesis-level verdicts unchanged",
-            "keeping the locked-rule verdicts; editing the locked file", "B3;H2b", "DR-S7-11"),
+            "keeping the locked-rule verdicts; editing the locked file", "B3;H2b",
+            "Supersedes DR-S7-11 (B3-b 'refuted' withdrawn: Monte Carlo interval) and the H2b(c) sub-verdict of the §7 scoreboard; the stored locked labels are kept for traceability"),
     _reg_pa(19, "postaudit_fairness", "§8.8 reweighing used unweighted-count weights multiplied by survey weights: group and label only partly independent",
             "results/S9/postaudit_reweighing_eod.csv; postaudit_reweighing_auc.csv; postaudit_reweighing_spread.csv", PA_SUM.loc[3, "result"],
             "Describe the §8.8 arm as partial reweighing; the corrected weighted-count arm gives the same picture; 'not adopted' stands",
-            "replacing the stored §8 arm", "", "DR-S8-07;DR-S8-08"),
+            "replacing the stored §8 arm", "",
+            "Qualifies DR-S8-07 and DR-S8-08 (arm as run is partial reweighing; corrected arm agrees, decision unchanged)"),
     _reg_pa(20, "postaudit_stability", "The M1 coefficient bootstrap stops at the iteration limit; early stopping shrinks the BMI SD",
             "results/S9/postaudit_m1_coef.csv", PA_SUM.loc[4, "result"],
             "Correct the sign of L13 and of the §7 'optimiser noise' wording; attribute the stability edge of S to scaling (P09); locked M1 kept",
-            "replacing M1 after the lock", "H2b", "DR-S7-14;DR-S7-16"),
+            "replacing M1 after the lock", "H2b",
+            "Supersedes DR-S7-14 ('optimiser noise' wording: early stopping shrinks, not inflates, the M1 BMI SD); complements DR-S7-16"),
     _reg_pa(21, "postaudit_baseline", "M1 keeps the blanket 7/9 sentinel recode (P02 off) in its features and training label",
             "results/S9/postaudit_m1c.csv", PA_SUM.loc[5, "result"],
-            "Keep M1 as the locked naive-minimal baseline; report S − M1c as a post-lock comparison", "redefining the primary baseline", "H2b", "DR-S6-01;DR-S6-02"),
+            "Keep M1 as the locked naive-minimal baseline; report S − M1c as a post-lock comparison", "redefining the primary baseline", "H2b",
+            "Qualifies DR-S6-01 and DR-S6-02 (M1 is naive-minimal: blanket sentinel recode; H2b(a) reading unchanged with M1c)"),
 ])
 print(f"stored metrics_S9.json['postaudit'] and {len(REG_PA)} register rows (DR-S9-16 to DR-S9-21); post-audit runtime {PA_SECONDS:.0f} s")
 
 # %% [markdown]
-# **So what.** SOWHAT_PLACEHOLDER
+# **So what.** No issue changes a locked verdict or a headline number, but three change how results are read. The hold-out
+# is an *internal* check: 901 of its rows (155 positives) entered the §4 non-linearity tests, yet the training part alone
+# gives the same design (7/7 non-linearity, 11/12 interaction classifications). Nesting C changes nothing (C0 chosen
+# in 5/5 folds). The B3-b and H2b(c) verdicts are withdrawn: the approximate sampling interval of the B3 ratio (about
+# 1.0–2.1) is far wider than its Monte Carlo interval (1.23–1.50). Weighted-count reweighing and M1 with the codebook
+# recode (S − M1c +0.007 [−0.001, +0.014]) leave the conclusions unchanged. Early stopping *shrinks* M1's BMI SD (0.288
+# against 0.336 converged); the stability edge of S is scaling (scaled-M1 ratio 0.76).
 
 # %% [markdown]
 # ## 13 Outputs

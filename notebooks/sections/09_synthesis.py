@@ -329,6 +329,18 @@ PA_SUBS = pd.DataFrame([dict(hyp_id=h, sub=sub, estimate=r["est"], interval=f"[{
                                                         f"{PA9['ratio_outer']['ratio_H2b_c_converged']['outer_q975']:.2f}] (converged M1)" if PA9 else "")))
                         for h, sub in sorted(WITHDRAWN) for _, r in prim[(prim["hyp_id"] == h) & (prim["sub"] == sub)].iterrows()])
 show(PA_SUBS, 2)
+# Verdict counts over the primary sub-claims with a verdict of their own (rows deferred to or tested in another section
+# are skipped): locked labels versus the post-audit status. Hypothesis-level counts are unchanged (asserted above).
+_pv = prim[prim["verdict"].isin(C.VERDICTS)]
+SUB_COUNTS = dict(locked={k: int(v) for k, v in _pv["verdict"].value_counts().items()},
+                  post_audit=pd.Series([("not testable (post-audit)" if (h_, s_) in WITHDRAWN else v_)
+                                        for h_, s_, v_ in zip(_pv["hyp_id"], _pv["sub"], _pv["verdict"])]).value_counts().astype(int).to_dict())
+print(f"primary sub-claim verdicts, locked labels: {SUB_COUNTS['locked']} -> post-audit: {SUB_COUNTS['post_audit']}")
+if C.IS_FINAL:   # the counts quoted in the text below
+    assert SUB_COUNTS["locked"] == {"supported": 18, "inconclusive": 5, "refuted": 3}, SUB_COUNTS
+    assert SUB_COUNTS["post_audit"] == {"supported": 18, "inconclusive": 4, "refuted": 2, "not testable (post-audit)": 2}, SUB_COUNTS
+S10["subclaim_verdict_counts"] = SUB_COUNTS
+S10["withdrawn_subclaims"] = [dict(hyp_id=r["hyp_id"], sub=r["sub"], locked_verdict=r["locked_verdict"], status=r["post_audit_status"]) for _, r in PA_SUBS.iterrows()]
 # Scoreboard column with the post-audit status and the locked label of each withdrawn sub-claim.
 SCORE["post_audit"] = SCORE["hyp_id"].map({h: "; ".join(f"{s_} not testable (post-audit); locked verdict {r['verdict']}"
                                                          for h_, s_ in sorted(WITHDRAWN) if h_ == h
@@ -443,13 +455,17 @@ S10["h2b"] = dict(subs={k: dict(est=r["est"], lo=r["lo"], hi=r["hi"], verdict=r[
 
 # %% [markdown]
 # **So what.** Of 17 hypotheses, 10 are supported, 1 is mixed (B3), 6 are inconclusive (B4, B5, H2b, H2c, H3, P14) and
-# none is refuted overall – but refuted *sub-claims* (H2b-Brier, B3 stability) stay visible. "Supported" is dominated by
+# none is refuted overall; these hypothesis counts are the same before and after the post-audit correction. At sub-claim
+# level the correction moves two labels: B3-b (locked *refuted*) and H2b(c) (locked *inconclusive*) become *not testable
+# (post-audit)*, so the primary sub-claims go from 18 supported / 5 inconclusive / 3 refuted to 18 / 4 / 2 plus 2 not
+# testable (table above). Refuted sub-claims that stay visible: H2b-Brier and B3-c. "Supported" is dominated by
 # `analysis_seen` hypotheses; among the six genuine pre-registrations only B6a, B6b and the tree probe B2t are
-# supported, while H2b, H2c and H3 are inconclusive. H2b by its parts: (a) AUC +0.008 [0.000, 0.016], MDD 0.011 > SESOI
-# – underpowered, not null; (b) Brier refuted (S − M1 +0.074; a different contrast from the B6a block effect S − S−B6a,
-# +0.076), entirely from class weights (S−B6a vs M1: −0.002); (c) SD ratio
-# ≈ 2.0 straddles 2. Post lock, a converged or scaled M1 leaves (a) unchanged. Systematic preparation buys fidelity and
-# some stability, not discrimination.
+# supported. H2b by its parts: (a) AUC +0.008 [0.000, 0.016], MDD 0.011 > SESOI – underpowered, not null; (b) Brier
+# refuted (S − M1 +0.074; a different contrast from the B6a block effect S − S−B6a, +0.076), entirely from class weights
+# (S−B6a vs M1: −0.002); (c) not testable: the BMI SD ratio 1.98 is descriptive, a converged M1 gives 2.21 and a scaled
+# M1 0.76 on the same resamples, so the stability edge of S is scaling. Post lock and post audit, a converged or scaled
+# M1, a nested C and M1 with the codebook recode (M1c, +0.007 [−0.001, +0.014]) all leave (a) inconclusive.
+# Systematic preparation buys fidelity and, through scaling, coefficient stability – not discrimination.
 
 # %%
 # Forest plot of the paired AUC differences of the locked sub-claims against the +/-0.01 SESOI band.
@@ -1625,8 +1641,8 @@ today = date.today().isoformat()
 # disagree with the notebook.
 reg = pd.DataFrame([
     dict(dr_id="DR-S10-01", type="scoreboard", finding="Every locked hypothesis has one verdict under its locked rule",
-         evidence_ref="results/S10/scoreboard.csv; figures/S10_scoreboard_forest.png", evidence_value=f"verdicts {VCOUNT}; genuine pre-registrations {VCOUNT_PRE}",
-         decision="Report all 17 with estimate, CI, SESOI, MDD and sub-verdicts; refuted sub-claims stay visible", alternatives_rejected="reporting supported hypotheses only",
+         evidence_ref="results/S10/scoreboard.csv; figures/S10_scoreboard_forest.png", evidence_value=f"verdicts {VCOUNT}; genuine pre-registrations {VCOUNT_PRE}; primary sub-claims locked {SUB_COUNTS['locked']} -> post-audit {SUB_COUNTS['post_audit']}",
+         decision="Report all 17 with estimate, CI, SESOI, MDD and sub-verdicts; refuted sub-claims stay visible; B3-b and H2b(c) shown as not testable (post-audit) next to their locked labels", alternatives_rejected="reporting supported hypotheses only",
          hyp_id="all", check_verdict="PASS", check_note=f"locked rules re-applied to {n_ok} stored S7 sub-claims reproduce the stored verdicts"),
     dict(dr_id="DR-S10-02", type="postlock_interpretation", finding="H3 wording 'misses most' is ambiguous (row-wise or column-wise)",
          evidence_ref="results/S8/h3_contrasts.csv; §8.6", evidence_value=f"column-wise elements {lm['element_verdicts']}; row-wise lowest stratum {lm['row_wise_min']}",
