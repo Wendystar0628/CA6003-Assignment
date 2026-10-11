@@ -1,20 +1,14 @@
 # %% [markdown]
-# # §7 Experiments and Block Ablation (Stage S7)
+# # §7 Experiments and Block Ablation
 #
-# Here the model is used as a **measuring instrument** for the data-preparation decisions of §6. One
-# estimator (L2 logistic regression with C frozen) is applied to every arm on the same stored folds, and
-# each block is judged against its locked hypothesis with paired intervals. Results are reported on two
-# populations with equal weight:
+# The model is used as a **measuring instrument** for the preparation decisions of §6: one estimator (L2
+# logistic regression, C frozen) is applied to every arm on the same stored folds, and each block is judged
+# against its locked hypothesis with paired intervals. Two populations get equal weight:
 #
-# * **E-ALL** – everyone in the training part, label `L_comb` (84 % of the positives already know they have
-#   diabetes);
+# * **E-ALL** – the whole training part, label `L_comb` (84 % of the positives already know their diagnosis);
 # * **E-SCREEN** – people *not* told they have diabetes, positive = HbA1c ≥ 6.5 % (the screening use case).
 #
-# The 20 % hold-out is **not** evaluated here; its single use belongs to S9 after `exp-freeze`.
-#
-# Contents: 1 splits · 2 data-justified model choice · 3 C0 · 4 arms run · 5 leak gate · 6 baselines on
-# E-SCREEN · 7 cumulative path · 8 leave-one-block-out · 9 E-ALL vs E-SCREEN · 10 PR and calibration ·
-# 11 coefficient stability · 12 verdicts · 13 storage
+# The 20 % hold-out is **not** evaluated here; its single use is §9.11, after `exp-freeze`.
 
 # %%
 import sys, pathlib
@@ -23,7 +17,7 @@ ROOT = next(p for p in [_here, *_here.parents] if (p / "src" / "config.py").exis
 sys.path.insert(0, str(ROOT))
 from src import config as C, plots, results_io as R
 
-import json, time, warnings
+import json, textwrap, time, warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -32,7 +26,16 @@ from scipy import stats
 
 from src import nhanes_io as io, labels as L, prep as P, evalkit as ek
 
-pd.set_option("display.width", 170, "display.max_columns", 30, "display.max_colwidth", 70)
+from IPython.display import display
+pd.set_option("display.width", 150, "display.max_columns", 30, "display.max_colwidth", 60)
+
+
+def show(df, digits=3):
+    """Display a table as HTML (long text wraps; keeps the text output narrow)."""
+    display(df.style.hide(axis="index").format(precision=digits, na_rep="")
+            .set_properties(**{"text-align": "left", "white-space": "normal"}))
+
+
 OUT = C.RESULTS_DIR / "S7"
 OUT.mkdir(parents=True, exist_ok=True)
 import os
@@ -48,10 +51,9 @@ print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, coeff
 # %% [markdown]
 # ## 1 Splits
 # **Why.** Every arm must be scored on identical folds, otherwise paired differences mix model effects with
-# split noise. The hold-out (label × race stratified, 20 %) and the repeated stratified folds are generated
-# once by `evalkit`, stored with SHA-256 hashes and re-verified on every run. Folds are stratified on the
-# four 3 × 3 strata (uncontrolled / controlled / undiagnosed / non-diabetic) so that each fold holds a fair
-# share of the 152 undiagnosed cases that define E-SCREEN.
+# split noise. The hold-out (20 %, label × race stratified; created once at its first use in §6, DR-S6-12) and the
+# repeated stratified folds are stored with SHA-256 hashes and re-verified on every run. Folds are stratified on
+# the four label strata so that each fold holds a fair share of the 152 undiagnosed cases that define E-SCREEN.
 
 # %%
 raw = P.raw_cohort()
@@ -76,22 +78,21 @@ print(f"folds: {len(folds)} = {folds.n_splits} x {folds.n_repeats}, hash {folds.
 print(f"hold-out test SEQN SHA-256 {hold['sha256_test_seqn'][:16]}...")
 per_fold = pd.DataFrame([{"fold": i, "n_test": len(t), "pos_eall": int(y[t].sum()), "pos_escreen": int(y_esc[t][esc[t]].sum())}
                          for i, (_, t) in enumerate(folds)])
-print(per_fold.describe().loc[["min", "mean", "max"], ["n_test", "pos_eall", "pos_escreen"]].round(1).to_string())
+display(per_fold.describe().loc[["min", "mean", "max"], ["n_test", "pos_eall", "pos_escreen"]].round(1))
 S7["splits"] = dict(n_train=n, n_holdout=len(te), n_pos_eall=int(y.sum()), n_escreen=int(esc.sum()),
                     n_pos_escreen=int(y_esc[esc].sum()), folds_hash=folds.hash, folds_file=folds.path.name,
                     holdout_sha256=hold["sha256_test_seqn"], pos_escreen_per_fold_min=int(per_fold["pos_escreen"].min()))
 
 # %% [markdown]
-# **So what.** Each fold holds about 155 E-ALL positives but only about 24 E-SCREEN positives. That is why the
-# protocol scores E-SCREEN on the pooled out-of-fold vector (paired bootstrap), not fold by fold, and why most
-# E-SCREEN verdicts are expected to be inconclusive. The hold-out hash is printed so that S9 can prove it was
-# untouched.
+# **So what.** Each fold holds about 155 E-ALL positives but only about 24 E-SCREEN positives. E-SCREEN is
+# therefore scored on the pooled out-of-fold vector (paired bootstrap), not fold by fold, and most E-SCREEN
+# verdicts are expected to be inconclusive. The hold-out hash is printed so that §9.11 can prove it was untouched.
 
 # %% [markdown]
 # ## 2 Data-justified model choice
-# **Why.** Only basic interpretable models are allowed (logistic regression and shallow trees). Within that constraint each
-# modelling choice is tied to a diagnostic number from §4 (the S4 model-justification table) – and the reason for *not*
-# choosing an alternative.
+# **Why.** Only basic interpretable models are allowed (logistic regression and shallow trees). Within that constraint
+# each modelling choice is tied to a diagnostic number from the §4 model-justification table, with the reason for *not*
+# choosing the alternative.
 
 # %%
 S4dir = C.RESULTS_DIR / "S4"
@@ -99,10 +100,10 @@ lin = pd.read_csv(S4dir / "linearity_tests.csv")
 inter = pd.read_csv(S4dir / "interaction_tests.csv")
 daj = pd.read_csv(S4dir / "daj_table.csv")
 vif4 = pd.read_csv(S4dir / "vif_table.csv")
-print("S4 RCS linearity tests (4 knots vs linear, df 2):")
-print(lin[["label", "n", "n_events", "chi2", "p", "nonlinear"]].round(4).to_string(index=False))
-print("\nS4 interaction tests (primary spec A):")
-print(inter[inter["spec"] == "A_primary"][["term", "chi2", "df", "p", "verdict"]].round(4).to_string(index=False))
+print("§4 RCS linearity tests (4 knots vs linear, df 2):")
+display(lin[["label", "n", "n_events", "chi2", "p", "nonlinear"]].round(4))
+print("§4 interaction tests (primary spec A):")
+display(inter[inter["spec"] == "A_primary"][["term", "chi2", "df", "p", "verdict"]].round(4))
 sx = inter[inter["term"] == "sex_x_bmi"].set_index("spec")["p"].round(3).to_dict()
 epv_den = {t: P.build_pipeline(P.ARMS["S"], t)[:-1].fit_transform(X[t]).shape[1] for t in (1, 2)}
 epv = {t: round(y.sum() / k, 1) for t, k in epv_den.items()}
@@ -127,26 +128,24 @@ choice = pd.DataFrame([
     ("thresholds / leakage", "clinical cut-points and leakage need inspection", "depth-3 tree (min leaf 50) as a probe only", "tree as main model (step functions, unstable)"),
 ], columns=["diagnostic", "evidence (S4 / S7)", "decision", "why not the alternative"])
 choice.to_csv(OUT / "model_choice.csv", index=False)
-print(choice.to_string(index=False))
+show(choice)
 S7["model_choice"] = dict(linearity=lin.set_index("label")[["chi2", "p"]].round(4).to_dict("index"),
                           sex_x_bmi_p_by_spec=sx, epv=epv, n_params=epv_den)
 
 # %% [markdown]
-# **So what.** Age, BMI and both lipids bend significantly, so the main model is a GLM with spline terms rather than
-# a linear logit; the linear version stays as the ablation arm *S-linear*. Race × BMI and Asian × BMI are not
-# detected (underpowered – "not detected" is not "absent"). One caveat is reported, not hidden: S4 found
-# sex × BMI significant in its primary specification (p printed above) but not in the minimal or spline
-# specifications; because the result depends on the specification, no interaction term is added and the point is
-# listed as a limitation. With about 18 events per parameter, overfitting risk is modest; L2 mainly stabilises
-# correlated anthropometrics. Redundancy is handled as in the S4 model-justification table: in-fold iterative VIF > 10 pruning with
-# BMI and waist protected (P05), which removes only weight (§6.5); height, hip and arm therefore stay in S.
+# **So what.** Age, BMI and both lipids bend significantly, so the main model uses spline terms; the linear version
+# stays as the ablation arm *S-linear*. Race × BMI and Asian × BMI are not detected (underpowered: "not detected" is
+# not "absent"). Sex × BMI is significant in §4's primary specification only (p by specification printed above), so
+# no interaction term is added and the point is a limitation. With about 18 events per parameter overfitting risk is
+# modest; L2 mainly stabilises the correlated anthropometrics. In-fold VIF > 10 pruning with BMI and waist protected
+# (P05) removes only weight (§6.5).
 
 # %% [markdown]
 # ## 3 Regularisation strength C0
 # **Why.** A fair minimal-versus-systematic comparison requires the *same model* in every arm. C is therefore chosen once – by
 # `LogisticRegressionCV(Cs=[0.01, 0.1, 1, 10])`, inner 5-fold ROC-AUC, on the S arm of Tier 1 with its class and
 # survey weights – and then frozen for every arm. Choosing it on S favours S slightly (the other arms do not get
-# their own tuning); M0 with its own C is an S9 sensitivity.
+# their own tuning); M0 and M1 with their own C are a §9.4 sensitivity.
 
 # %%
 from sklearn.linear_model import LogisticRegressionCV
@@ -169,10 +168,9 @@ print(f"C0 = {C0} (frozen for all arms and tiers)")
 S7["C0"] = dict(C0=C0, inner_cv_auc=cv_auc.to_dict())
 
 # %% [markdown]
-# **So what.** The inner-CV AUC is almost flat across C (differences in the third decimal), so the choice of C is not a
-# lever for the results below; C0 is used for every arm. The flatness also limits the optimistic bias of tuning on S.
-# Disclosure: C0 is selected once on the whole training part, i.e. not nested inside the outer CV folds; with an inner
-# AUC range of only about 0.003 across C the resulting optimism is negligible.
+# **So what.** The inner-CV AUC is almost flat across C (range about 0.003), so C is not a lever for the results below
+# and the optimism of tuning on S is small. Disclosure: C0 is selected once on the whole training part, not nested
+# inside the outer folds; with so flat a curve the resulting optimism is negligible.
 
 # %% [markdown]
 # ## 4 Running the arms
@@ -197,7 +195,8 @@ assert all(np.isfinite(v).all() for v in PM.values())
 for r in runs:   # no hold-out row can appear: OOF rows index the training part only
     assert r["oof"]["row"].max() < n and r["oof"].groupby("repeat")["row"].nunique().eq(n).all()
 print(f"{len(jobs)} arm x tier x model runs, {sum(len(f) for f in [folds]) * len(jobs)} fits, {time.time() - t0:.0f} s wall")
-print(diag[diag["n_convergence_warnings"] > 0].to_string(index=False))
+print("runs with solver non-convergence (folds at the iteration limit):")
+display(diag[diag["n_convergence_warnings"] > 0].round(1))
 S7["runs"] = dict(n_runs=len(jobs), wall_seconds=time.time() - t0,
                   convergence=diag[diag["n_convergence_warnings"] > 0][["arm", "tier", "model", "n_convergence_warnings"]].to_dict("records"))
 
@@ -250,19 +249,18 @@ def arm_row(key):
 
 arm_metrics = pd.DataFrame([arm_row(k) for k in OOF]).merge(diag, on=["arm", "tier", "model"])
 arm_metrics.to_csv(OUT / "arm_metrics.csv", index=False)
-show = ["arm", "model", "eall_auc", "eall_auc_lo", "eall_auc_hi", "escr_auc", "escr_auc_lo", "escr_auc_hi",
-        "eall_brier", "escr_recall_spec80", "eall_cal_slope", "n_convergence_warnings"]
+cols_show = ["arm", "model", "eall_auc", "eall_auc_lo", "eall_auc_hi", "escr_auc", "escr_auc_lo", "escr_auc_hi",
+             "eall_brier", "escr_recall_spec80", "eall_cal_slope", "n_convergence_warnings"]
 main_arms = ["M0", "M1", "S", "T1-minus-care", "S-linear", "S+WHtR"]
 tab = arm_metrics[(arm_metrics["tier"] == 1) & arm_metrics["arm"].isin(main_arms)]
 print("Tier 1, main arms (all arms and Tier 2: results/S7/arm_metrics.csv):")
-print(tab[show].round(3).to_string(index=False))
+display(tab[cols_show].round(3))
 
 # %% [markdown]
-# **So what.** The table is the raw material for everything below; the paired comparisons that follow are what
-# decides. Three patterns are already visible: the naive arm M0 reaches an E-ALL AUC near 0.96 that collapses once the
-# availability rule is applied; all admissible arms sit in a narrow band; and every arm loses discrimination when
-# moved from E-ALL to E-SCREEN. Only the unscaled arms (M0, M1, cumulative steps before B5, S−B5) hit the
-# iteration limit, which is itself a cost of skipping scaling.
+# **So what.** The paired comparisons below decide; three patterns are already visible. The naive arm M0 reaches
+# an E-ALL AUC near 0.96 that collapses once the availability rule is applied; all admissible arms sit in a narrow
+# band; and every arm loses discrimination on E-SCREEN. Only the unscaled arms (M0, M1, the cumulative steps before
+# B5, S−B5) stop at the solver's iteration limit – a cost of skipping scaling, examined post lock in §7.12.1.
 
 # %% [markdown]
 # ### Comparison engine
@@ -374,7 +372,7 @@ for arm in ("M0", "M1", "S"):
     roots[arm] = dict(root_feature=root, variable=rv, role=role, threshold=float(tree.tree_.threshold[0]),
                       level2=[names[tree.tree_.feature[c]] for c in (tree.tree_.children_left[0], tree.tree_.children_right[0])
                               if tree.tree_.feature[c] >= 0])
-print(pd.DataFrame(roots).T.to_string())
+show(pd.DataFrame(roots).T.rename_axis("arm").reset_index())
 from sklearn.tree import export_text
 m0_pipe = P.build_pipeline(P.ARMS["M0"], 1, model="tree").fit(X[1], P.training_label(raw_tr, P.ARMS["M0"]))
 did040_fill = m0_pipe.named_steps["impute"].fill_["DID040"]
@@ -423,20 +421,14 @@ plots.savefig(fig, "S7_tree_m0", caption="Decision tree (depth 3, min leaf 50) f
 plt.show()
 
 # %% [markdown]
-# **So what.** The availability rule removes the "too-good-to-be-true" signal: on E-ALL the AUC falls by about 0.13 –
-# the largest effect in the study – with an interval far beyond the 0.05 magnitude locked for B2/H2a. This
-# **deterioration is the correct outcome**: what M0 exploited is treatment and diagnosis history, i.e. the label leaking
-# back in. The tree makes this concrete: its root split is a *treatment* item ("taking diabetic pills"), followed by prior
-# glucose testing and age at diagnosis – not a single risk factor. The age-at-diagnosis splits are the most instructive:
-# the item is asked only of people already diagnosed, the naive median imputation fills everyone else with the value
-# printed above, and the tree simply separates "exactly the imputed value" (= never diagnosed) from any real age
-# (thresholds just below and above it). **Imputation has turned skip-pattern missingness into a code for the label.**
-# The leaked tree is also *worse* for screening than the honest one: its E-SCREEN AUC is below that of the M1 tree
-# (printed above), because diagnosis traces say nothing about the undiagnosed. On the M1 and S frames the root becomes
-# "told high blood pressure" (BPQ020), an admissible but care-contact item, followed by waist circumference.
-# The drop is smaller on E-SCREEN because people who know they have diabetes (where treatment items are most
-# telling) are not in E-SCREEN; what remains there comes from prediabetes counselling, glucose-test history and fasting
-# glucose (DIQ160, DIQ180, LBXGLU) – exactly the care traces the screening use case cannot have.
+# **So what.** The availability rule removes the "too-good-to-be-true" signal: E-ALL AUC falls by about 0.13, far
+# beyond the 0.05 locked for B2/H2a. This **deterioration is the correct outcome** – M0 exploited treatment and
+# diagnosis history, i.e. the label leaking back in. The M0 tree's root is a *treatment* item, followed by prior
+# glucose testing and age at diagnosis. Age at diagnosis is asked only of the diagnosed; median imputation fills
+# everyone else with the printed constant, and the tree splits just below and above it. **Imputation has turned
+# skip-pattern missingness into a code for the label.** The leaked tree is even *worse* for screening than the M1
+# tree (E-SCREEN AUCs printed), and the drop is smaller on E-SCREEN, because the treatment items mark the already
+# diagnosed.
 
 # %% [markdown]
 # ## 6 Baselines on E-SCREEN
@@ -475,7 +467,7 @@ for name, key in [("BL0 (prior)", ("BL0", 1, "dummy")), ("BL-ADAlite (points)", 
                           escr_recall_spec80=ms["recall_at_spec"], eall_auc=roc_auc_score(y, p)))
 baselines = pd.DataFrame(base_rows)
 baselines.to_csv(OUT / "baselines_escreen.csv", index=False)
-print(baselines.round(3).to_string(index=False))
+show(baselines, 3)
 print(f"BL0 per-fold AUC (E-ALL): all exactly {bl0_fold.iloc[0]:.3f}; E-SCREEN prevalence {y_esc[esc].mean():.3f} = BL0 PR-AUC level")
 h2c3 = cmp_("S", "BL-ADAlite", 1, "roc_auc", "E-SCREEN", pb=ada_score, label="H2c(iii)")
 s_vs_adalr = cmp_("S", "BL-ADAlite-LR", 1, "roc_auc", "E-SCREEN", pb=PM[("BL-ADAlite-LR", 1, "lr")], label="S vs ADA-LR")
@@ -492,20 +484,17 @@ S7["baselines"] = baselines.set_index("model").to_dict("index")
 S7["ada_missing_answers"] = miss
 
 # %% [markdown]
-# **So what.** BL0 sits exactly at AUC 0.500 in every fold (asserted; its pooled E-SCREEN AUC is marginally below 0.5,
-# the known artefact of pooling fold-wise priors) and at the prevalence for PR-AUC, so the evaluation code has no built-in
-# optimism. The five-item reduced ADA score reaches an E-SCREEN AUC of about 0.73 with integer points and no fitting; the
-# systematic model is better by about 0.05 with an interval that excludes 0 (H2c-iii). Two details matter for the
-# interpretation. First, refitting the ADA items by logistic regression on `L_comb` (BL-ADAlite-LR) moves them in opposite
-# directions on the two populations: indistinguishable from the points on E-ALL (interval includes 0) but lower on
-# E-SCREEN by about 0.02 with an interval that just excludes 0 (paired differences printed above). Weights learned from a
-# label dominated by known diabetics do not transfer well to screening. Second, ADA-lite is missing two items, so the
-# margin over it likely overstates what a complete ADA test would concede.
+# **So what.** BL0 sits at AUC 0.500 in every fold (asserted) and at the prevalence for PR-AUC, so the evaluation has
+# no built-in optimism. The reduced ADA score reaches an E-SCREEN AUC of about 0.73 with integer points and no
+# fitting; S is better by about 0.05 with a CI excluding 0 (H2c-iii). The one-shot hold-out does not replicate this
+# margin (§9.11), and ADA-lite lacks two items, so the margin likely overstates what a complete ADA test would concede.
+# Refitting the ADA items on `L_comb` (BL-ADAlite-LR) leaves E-ALL unchanged but *lowers* E-SCREEN AUC by about 0.02:
+# weights learned from a label dominated by known diabetics do not transfer to screening.
 
 # %% [markdown]
 # ## 7 Cumulative path M0 → S
 # **Why.** The cumulative path shows how the AUC moves as blocks are added in the pre-specified order. Increments depend
-# on the order, so they are descriptive; verdicts come from leave-one-block-out (section 8).
+# on the order, so they are descriptive; verdicts come from leave-one-block-out (§7.8).
 
 # %%
 cum_rows = []
@@ -518,7 +507,7 @@ for t in (1, 2):
             cum_rows.append(r)
 cum = pd.DataFrame(cum_rows)
 cum.to_csv(OUT / "cumulative_path.csv", index=False)
-print(cum[cum["tier"] == 1][["pop", "step", "est", "lo", "hi", "interval", "mdd"]].round(4).to_string(index=False))
+show(cum[cum["tier"] == 1][["pop", "step", "est", "lo", "hi", "interval", "mdd"]], 4)
 
 fig, axes = plt.subplots(2, 2, figsize=(12, 8.2), gridspec_kw={"height_ratios": [1, 0.9]})
 labels_ = ["M0", "+B2 (=M1)", "+B1", "+B3", "+B4", "+B5", "+B6a", "+B6b (=S)"]
@@ -555,9 +544,9 @@ plots.savefig(fig, "S7_waterfall", caption="Waterfall of the ROC-AUC along the c
 plt.show()
 
 # %% [markdown]
-# **So what.** After the leak gate, every block moves the AUC by less than the 0.01 SESOI on E-ALL, and each step is of
-# the same size as its own MDD. The systematic pipeline does not "buy" discrimination; its value lies elsewhere
-# (fidelity, stability, calibration), which is what the block hypotheses predicted and what the following sections test.
+# **So what.** After the leak gate every block moves E-ALL AUC by less than the 0.01 SESOI, each step about the size of
+# its own MDD. The systematic pipeline does not "buy" discrimination; its value lies in fidelity, stability and
+# calibration, which is what the block hypotheses predicted and what §7.8–§7.11 test.
 
 # %% [markdown]
 # ## 8 Leave-one-block-out
@@ -579,7 +568,7 @@ for t in (1, 2):
 lobo = pd.DataFrame(lobo_rows)
 lobo.to_csv(OUT / "lobo.csv", index=False)
 v_ = lobo[(lobo["tier"] == 1) & (lobo["metric"] == "roc_auc")]
-print(v_[["pop", "block", "est", "lo", "hi", "interval", "mdd"]].round(4).to_string(index=False))
+show(v_[["pop", "block", "est", "lo", "hi", "interval", "mdd"]], 4)
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.6), sharey=True)
 order = [lab for _, _, lab in lobo_pairs]
@@ -602,17 +591,16 @@ plots.savefig(fig, "S7_lobo", caption="Leave-one-block-out ΔROC-AUC = AUC(arm w
 plt.show()
 
 # %% [markdown]
-# **So what.** Apart from B2 (whose negative sign is the leakage being removed), the block effects on discrimination
-# are small; their intervals decide between "equivalent" (inside the grey band) and "inconclusive" (crossing it).
-# The striking line is **care items** (S, which keeps "told high blood pressure / high cholesterol", minus the arm
-# without them): keeping them helps on E-ALL but *hurts* on E-SCREEN. The care-contact items help to recognise people
-# the health system already knows, which is not the screening task.
+# **So what.** Apart from B2 (negative because adding the rule removes leakage), block effects on discrimination are
+# small; their intervals decide between "equivalent" (inside the grey band) and "inconclusive" (crossing it). The
+# striking line is **care items** ("told high blood pressure / high cholesterol"): keeping them helps on E-ALL but
+# *hurts* on E-SCREEN. They help to recognise people the health system already knows, which is not the screening task.
 
 # %% [markdown]
 # ## 9 E-ALL vs E-SCREEN
 # **Why.** 84 % of the `L_comb` positives already know their diagnosis, so an AUC on E-ALL largely measures how well a
-# model recognises *known* patients – people who carry traces of care (blood-pressure treatment, cholesterol checks,
-# weight advice). The screening question is E-SCREEN. The gap between the two is a headline result (H2c).
+# model recognises *known* patients, who carry traces of care. The screening question is E-SCREEN. The gap between the
+# two is the pre-registered H2c(i).
 
 # %%
 rng = np.random.default_rng(ek.derive_seed(C.SEED_MASTER, "S7", "H2c-i"))
@@ -634,7 +622,8 @@ print(f"S (Tier 1): AUC E-ALL {roc_auc_score(y, pS):.3f} - E-SCREEN {roc_auc_sco
 neg_eall, neg_escr = set(np.flatnonzero(y == 0)), set(np.flatnonzero(esc & (y_esc == 0)))
 assert neg_eall == neg_escr, "E-ALL and E-SCREEN must share the same negatives"
 print(f"same {len(neg_eall):,} negatives in both populations; positives: E-ALL {int(y.sum())} (all L_comb), "
-      f"E-SCREEN {int(y_esc[esc].sum())} (undiagnosed only); gap lower bound {h2c1['lo']:.3f} vs pre-registered magnitude 0.03")
+      f"E-SCREEN {int(y_esc[esc].sum())} (undiagnosed only)")
+print(f"gap lower bound {h2c1['lo']:.3f} vs pre-registered magnitude 0.03")
 
 pairs = [("M0", 1, "lr"), ("M1", 1, "lr"), ("S", 1, "lr"), ("S-linear", 1, "lr"), ("T1-minus-care", 1, "lr"),
          ("S+WHtR", 1, "lr"), ("S", 2, "lr"), ("BL-ADAlite-LR", 1, "lr"), ("BL-ADAlite", 1, "points")]
@@ -646,7 +635,7 @@ for k in pairs:
 dumb = pd.DataFrame(dumb)
 dumb["gap"] = dumb["eall"] - dumb["escr"]
 dumb.to_csv(OUT / "eall_vs_escreen.csv", index=False)
-print(dumb.round(3).to_string(index=False))
+show(dumb, 3)
 
 fig, ax = plt.subplots(figsize=(8.5, 4.8))
 for i, r in dumb.iterrows():
@@ -667,19 +656,18 @@ plots.savefig(fig, "S7_eall_vs_escreen", caption="ROC-AUC on E-ALL (blue, L_comb
 plt.show()
 
 # %% [markdown]
-# **So what.** The two populations share exactly the same negatives (asserted); only the positives differ. The gap is
-# therefore a pure **spectrum (case-mix) effect**: known diabetics, with treatment, care contacts and higher HbA1c, are
-# easier to rank above the negatives than the undiagnosed. For the systematic model the gap is about 0.055; its lower
-# bound (printed, about 0.028) lies just below the pre-registered magnitude of 0.03, so a gap of exactly that size is not
-# excluded although the rule's point-estimate criterion is met. The smaller gaps of T1-minus-care and the ADA-lite score
-# are the mirror image: the less a model relies on care-contact traces, the less it loses. A whole-sample AUC therefore
-# overstates screening value – the label composition, not the model, sets the headline number.
+# **So what.** The two populations share exactly the same negatives (asserted); only the positives differ, so the gap
+# is pure **spectrum bias** (Ransohoff & Feinstein 1978): known diabetics, with treatment, care contacts and higher
+# HbA1c, are easier to rank than the undiagnosed. For S the gap is about 0.055 (H2c-i supported); its lower bound
+# (about 0.028) sits just below the pre-registered 0.03. The smaller gaps of T1-minus-care and ADA-lite are the mirror
+# image: the less a model relies on care traces, the less it loses. A whole-sample AUC overstates screening value –
+# the label composition, not the model, sets the headline number.
 
 # %% [markdown]
 # ## 10 Precision–recall and calibration
-# **Why.** AUC ignores prevalence and calibration. E-SCREEN has a prevalence of about 3 %, so precision is the binding
-# constraint in screening, and a model trained on `L_comb` (17 %) is miscalibrated there by design. Class weights
-# (B6a) inflate probabilities further.
+# **Why.** AUC ignores prevalence and calibration. E-SCREEN has a prevalence of about 3 %, so precision binds in
+# screening, and a model trained on `L_comb` (17 %) is miscalibrated there by design; class weights (B6a) inflate
+# probabilities further.
 
 # %%
 from sklearn.metrics import precision_recall_curve
@@ -717,22 +705,20 @@ plots.savefig(fig, "S7_pr_calibration", caption="Top: precision-recall curves (a
 plt.show()
 cal = pd.DataFrame(cal_rows)
 cal.to_csv(OUT / "calibration.csv", index=False)
-print(cal.round(3).to_string(index=False))
+show(cal, 3)
 
 # %% [markdown]
-# **So what.** On E-ALL the precision–recall curves of the admissible models are close together; on E-SCREEN average
-# precision is only about 0.1 against a prevalence of about 0.03 – a screening tool built on these items would mostly flag
-# people without diabetes. The calibration panels show the price of class weights: S predicts on average far above the
-# observed prevalence, whereas S−B6a (no class weights) is close to the diagonal on E-ALL. On E-SCREEN every model
-# over-predicts, because it was trained on a population in which 17 % are positive, most of them already diagnosed.
+# **So what.** On E-SCREEN average precision is only about 0.1 against a prevalence of about 0.03: a screening tool
+# built on these items would mostly flag people without diabetes. The calibration panels show the price of class
+# weights – S predicts far above the observed prevalence, while S−B6a (no class weights) is close to the diagonal on
+# E-ALL. On E-SCREEN every model over-predicts, having been trained where 17 % are positive.
 
 # %% [markdown]
 # ## 11 Coefficient stability
 # **Why.** Discrimination can hide unstable explanations: collinear anthropometrics share the BMI signal differently in
-# every resample. The nonparametric bootstrap of the whole pipeline (B = 500 in FINAL; 30 in the FAST re-run mode, where the
-# Monte Carlo intervals of the ratios are correspondingly wider) measures this. BMI is compared
-# per standard deviation across the arms in which it enters linearly (S is represented by S-linear, see
-# `hypotheses.md`); B3b compares S-linear−B3 with S-linear, H2b compares M1 with S-linear.
+# every resample. A nonparametric bootstrap of the whole pipeline (B = 500 in FINAL, 30 in FAST) measures this. BMI is
+# compared per SD across the arms in which it enters linearly (S is represented by S-linear, as locked); B3-b compares
+# S-linear−B3 with S-linear, H2b(c) compares M1 with S-linear.
 
 # %%
 coef_arms = ["M1", "cum+B1", "cum+B3", "S-linear-B3", "S-linear"]
@@ -757,7 +743,7 @@ for arm in coef_arms:
                           share_flip_gt_10pct=float((s["sign_flip_rate"] > 0.10).mean())))
 coef_tab = pd.DataFrame(coef_rows)
 coef_tab.to_csv(OUT / "coef_stability.csv", index=False)
-print(coef_tab.round(3).to_string(index=False))
+show(coef_tab, 3)
 
 def sd_ratio(arm_a, arm_b, n_rs=2000):
     """SD(BMI per SD) of arm_a over arm_b with a Monte Carlo interval from resampling the B bootstrap replicates.
@@ -783,17 +769,17 @@ for d in (ratio_b3, ratio_h2b, ratio_cum):
     print(f"SD ratio BMI {d['a']} / {d['b']}: {d['ratio']:.2f}, Monte Carlo interval [{d['lo']:.2f}, {d['hi']:.2f}] "
           f"(B = {B_COEF}) -> {v_ratio(d)}")
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5.2), gridspec_kw={"width_ratios": [1, 1.4]})
+fig, axes = plt.subplots(1, 2, figsize=(14, 8), gridspec_kw={"width_ratios": [1, 1.3]})
 ax = axes[0]
 for i, r in coef_tab.iterrows():
     ax.errorbar(r["bmi_coef_per_sd"], i, xerr=[[r["bmi_coef_per_sd"] - r["bmi_q_low"]], [r["bmi_q_high"] - r["bmi_coef_per_sd"]]],
-                fmt="o", color=C.OKABE_ITO["blue"], capsize=3)
-    ax.text(r["bmi_q_high"] + 0.05, i, f"SD {r['bmi_sd_per_sd']:.2f}; flips {r['bmi_sign_flip']:.0%}", va="center", fontsize=8)
+                fmt="o", color=C.OKABE_ITO["blue"], capsize=4, ms=7)
+    ax.text(r["bmi_q_high"] + 0.05, i, f"SD {r['bmi_sd_per_sd']:.2f}\nflips {r['bmi_sign_flip']:.0%}", va="center", fontsize=11)
 ax.axvline(0, color="k", lw=0.8)
-ax.set_yticks(range(len(coef_tab)), [f"{a}\n({x})" for a, x in zip(coef_tab["arm"], coef_tab["anthro_in_model"])], fontsize=8)
+ax.set_yticks(range(len(coef_tab)), [f"{a}\n({x})" for a, x in zip(coef_tab["arm"], coef_tab["anthro_in_model"])], fontsize=10)
 ax.invert_yaxis()
-ax.set_xlabel("BMI coefficient per SD (log-odds), 95 % bootstrap interval")
-ax.set_title("BMI coefficient across arms")
+ax.set_xlabel("BMI coefficient per SD (log-odds), 95 % interval", fontsize=11)
+ax.set_title("BMI coefficient across arms", fontsize=13)
 cbS, _ = CB["S-linear"]
 ref_levels = {f"{v}_{float(cl[v].mode().iloc[0]) if pd.api.types.is_numeric_dtype(cl[v]) else cl[v].mode().iloc[0]}"
               for v in P.categorical_columns() if v in cl.columns and cl[v].notna().any()}
@@ -802,14 +788,15 @@ s = disp.reindex(disp["coef"].abs().sort_values(ascending=False).index)[:22]
 ax = axes[1]
 for i, (nm, r) in enumerate(s.iterrows()):
     colr = C.OKABE_ITO["vermillion"] if r["sign_flip_rate"] > 0.10 else C.OKABE_ITO["green"]
-    ax.errorbar(r["coef"], i, xerr=[[r["coef"] - r["q_low"]], [r["q_high"] - r["coef"]]], fmt="o", color=colr, capsize=2, ms=4)
+    ax.errorbar(r["coef"], i, xerr=[[r["coef"] - r["q_low"]], [r["q_high"] - r["coef"]]], fmt="o", color=colr, capsize=3, ms=6)
 ax.axvline(0, color="k", lw=0.8)
-ax.set_yticks(range(len(s)), [P.plain_label(c) for c in s.index], fontsize=7)
+ax.set_yticks(range(len(s)), [P.plain_label(c)[:38] for c in s.index], fontsize=11)
 ax.invert_yaxis()
-ax.set_xlabel("coefficient (scaled design), 95 % bootstrap interval")
-ax.set_title("S-linear: 22 largest coefficients (red = sign flips > 10 %)")
+ax.tick_params(axis="x", labelsize=10)
+ax.set_xlabel("coefficient (scaled design), 95 % interval", fontsize=11)
+ax.set_title("S-linear: 22 largest coefficients\n(red = sign flips in > 10 % of refits)", fontsize=13)
 fig.suptitle(f"Pruning stabilises BMI only in unscaled fits (×{ratio_cum['ratio']:.1f}); inside the scaled L2 pipeline "
-             f"×{ratio_b3['ratio']:.1f} (B3-b {v_ratio(ratio_b3)})", fontsize=11)
+             f"×{ratio_b3['ratio']:.1f} (B3-b {v_ratio(ratio_b3)})", fontsize=13)
 fig.tight_layout()
 plots.savefig(fig, "S7_coef_forest", caption="Left: bootstrap distribution (point = full-data fit, bar = 2.5-97.5 percentile) of the BMI coefficient per SD in the arms "
               "where BMI enters linearly, with the anthropometric columns present in each arm. Right: the 22 largest coefficients of S-linear "
@@ -819,26 +806,19 @@ plt.show()
 S7["coef_stability"] = dict(table=coef_tab.set_index("arm").to_dict("index"), ratio_B3=ratio_b3, ratio_H2b=ratio_h2b, ratio_cumulative=ratio_cum)
 
 # %% [markdown]
-# **So what.** Where weight, height and BMI enter together the BMI coefficient is shared with its formula partners. In the
-# naive, unscaled arms (M1, cum+B1) this is severe: intervals that cross zero and sign flips in about one resample in
-# eight. Removing weight (B3) in the same unscaled setting shrinks the BMI SD by a factor of about 3 (cum+B1 / cum+B3),
-# and the systematic model is about twice as stable as M1 – but the interval of that ratio straddles the pre-registered
-# factor 2, so H2b-c is inconclusive rather than supported. *Inside* the systematic pipeline, scaling and the L2 penalty
-# already do much of the stabilising: the B3-specific ratio (S-linear−B3 / S-linear) is only about 1.4 and its interval
-# excludes 2, so B3-b is **refuted**. The pre-registered sign-flip criterion (B3-c) turned out to be a poor metric: after
-# pruning, the *height* coefficient is close to zero (it carries no signal once BMI is present), and a near-zero
-# coefficient flips sign in about half of the resamples by construction – the BMI coefficient itself no longer flips.
-# This is reported as a refutation of B3-c, with the mechanism, not explained away. The discrimination of all these
-# arms is the same (section 8); only the stability of the explanation differs – the measurement-instrument use of ML.
-# The intervals of the SD ratios are *Monte Carlo* intervals: they resample the B bootstrap replicates and therefore
-# shrink as B grows (FINAL B = 500); they quantify simulation error, not sampling uncertainty of the ratio itself.
+# **So what.** Where weight, height and BMI enter together, BMI shares its signal with its formula partners: in the
+# unscaled arms (M1, cum+B1) its intervals cross zero and it flips sign in about one resample in eight. M1 is about
+# twice as unstable as S-linear, but that ratio's interval straddles the locked factor 2 (H2b-c inconclusive). Inside
+# the scaled L2 pipeline pruning adds little: the B3 ratio is about 1.4 with an interval excluding 2 (B3-b
+# **refuted**). B3-c fails for a mechanical reason – after pruning the near-zero *height* coefficient flips in about
+# half of the resamples by construction. Discrimination is the same in all these arms (§7.8); only the stability of
+# the explanation differs. The ratio intervals are Monte Carlo intervals (simulation error, not sampling uncertainty).
 
 # %% [markdown]
-# ### Post-hoc exploratory: how much of the stability comes from the penalty?
-# **Why.** *Not pre-registered; added after an independent audit, does not change any verdict.* Two readings above depend
-# on the fitting regime: the B3 ratio is computed under the frozen penalty C0, and the unscaled ratios (cum+B1/cum+B3,
-# M1/S-linear) come from fits that stop at the iteration limit. Re-running the B3 contrast at weaker penalties shows how
-# much of the stabilisation the L2 penalty already provides.
+# ### Post-hoc: penalty and stability
+# **Why.** *Not pre-registered; added after an independent audit; no verdict changes.* The B3 ratio is computed under the
+# frozen C0, and the unscaled ratios come from fits that stop at the iteration limit. Re-running the B3 contrast at
+# weaker penalties shows how much stabilisation the L2 penalty already provides.
 
 # %%
 C_grid = [C0, 1.0, 100.0, 1e4]
@@ -860,28 +840,24 @@ c_sens = pd.DataFrame(cs_rows)
 c_sens.to_csv(OUT / "posthoc_c_sensitivity.csv", index=False)
 conv = diag[(diag["tier"] == 1) & (diag["model"] == "lr") & diag["arm"].isin(["M1", "cum+B1", "cum+B3"])]
 print(f"post-hoc, scaled arms, B = {B_s} per C (per-SD BMI coefficient):")
-print(c_sens.round(3).to_string(index=False))
+show(c_sens, 3)
 print("unscaled arms behind the larger ratios - CV folds ending at the iteration limit: "
       + ", ".join(f"{a} {k}/{len(folds)}" for a, k in zip(conv["arm"], conv["n_convergence_warnings"])))
 S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_nonconvergence=dict(zip(conv["arm"], conv["n_convergence_warnings"].astype(int))),
                                    n_folds=len(folds), note="post hoc, exploratory, no verdict change")
 
 # %% [markdown]
-# **So what (exploratory).** With the frozen penalty the pruning step adds little stability; as the penalty is relaxed
-# towards an unpenalised fit the ratio grows several-fold (table above). The L2 penalty and pruning are therefore partly
-# *substitutes*: either one tames the weight–height–BMI collinearity. The large unscaled ratios (cum+B1/cum+B3, and the
-# M1/S-linear ratio behind H2b-c) must be read with care: those pipelines hit the iteration limit in every CV fold, so
-# part of their coefficient spread is optimiser noise rather than collinearity – they are confounded by
-# non-convergence and are not used to argue for B3.
+# **So what (exploratory).** As the penalty is relaxed towards an unpenalised fit the B3 ratio grows several-fold, so
+# the L2 penalty and pruning are partly *substitutes*. The large unscaled ratios (cum+B1/cum+B3; M1/S-linear behind
+# H2b-c) come from fits that hit the iteration limit in every fold: part of their spread is optimiser noise, so they
+# are not used to argue for B3.
 
 # %% [markdown]
 # ## 12 Verdicts
-# **Why.** Each locked hypothesis gets exactly one verdict from the locked rules: the primary evaluation is E-ALL,
-# Tier 1; E-SCREEN and Tier 2 can only turn a decisive verdict into "mixed" if they contradict it. The verdict lines
-# printed below are generated from the results. The interpretation that follows refers to the FINAL run stored in this
-# notebook (5 × 5 CV, B = 1000, coefficient B = 500); a FAST re-run (5 × 2, B = 100, coefficient B = 30) reproduces every leakage,
-# equivalence and class-weight verdict, but borderline ones (B3-b, B5-a, H2b) can move between "inconclusive" and a
-# decisive verdict.
+# **Why.** Each locked hypothesis gets exactly one verdict from its locked rule: the primary evaluation is E-ALL, Tier 1;
+# E-SCREEN and Tier 2 can only turn a decisive verdict into "mixed" by contradicting it. Verdict lines are generated
+# from the results. A FAST re-run (5 × 2, B = 100) reproduces every leakage, equivalence and class-weight verdict;
+# borderline ones (B3-b, B5-a, H2b) can move between "inconclusive" and a decisive verdict.
 
 # %%
 def lrtest_splines(tier=1):
@@ -905,7 +881,8 @@ def lrtest_splines(tier=1):
     return dict(chi2=chi2, df=df_, p=float(stats.chi2.sf(chi2, df_)))
 
 lrt = {t: lrtest_splines(t) for t in (1, 2)}
-print(f"B5(d) LR test splines vs linear: {lrt}")
+for t_, r_ in lrt.items():
+    print(f"B5(d) LR test splines vs linear, Tier {t_}: chi2 {r_['chi2']:.1f}, df {r_['df']}, p {r_['p']:.2g}")
 
 def get(a, b, metric="roc_auc", pop="E-ALL", tier=1, **kw):
     return cmp_(a, b, tier, metric, pop, label="verdict", **kw)
@@ -1013,9 +990,9 @@ sb.to_csv(OUT / "scoreboard_detail.csv", index=False)
 final.to_csv(OUT / "scoreboard.csv", index=False)
 prim = sb[(sb["role"] == "primary") & ~sb["verdict"].str.startswith("tested")]
 print("primary sub-verdicts (E-ALL Tier 1 unless stated; secondary rows in results/S7/scoreboard_detail.csv):")
-print(prim[["hyp_id", "sub", "pop", "est", "lo", "hi", "mdd", "sesoi", "verdict"]].round(4).to_string(index=False))
+show(prim[["hyp_id", "sub", "pop", "est", "lo", "hi", "mdd", "sesoi", "verdict"]], 4)
 print()
-print(final.to_string(index=False))
+show(final)
 print()
 def _fmt_sub(r):
     if pd.isna(r.get("est")):
@@ -1025,7 +1002,8 @@ def _fmt_sub(r):
 for _, f in final.iterrows():
     subs = prim[prim["hyp_id"] == f["hyp_id"]]
     if len(subs):
-        print(f"{f['hyp_id']}: {f['verdict'].upper()} | " + "; ".join(_fmt_sub(r) for _, r in subs.iterrows()))
+        print(textwrap.fill(f"{f['hyp_id']}: {f['verdict'].upper()} | " + "; ".join(_fmt_sub(r) for _, r in subs.iterrows()),
+                            width=140, subsequent_indent="      "))
 pure = []
 for pop in ("E-ALL", "E-SCREEN"):
     for metric in ("roc_auc", "brier"):
@@ -1035,59 +1013,112 @@ for pop in ("E-ALL", "E-SCREEN"):
                          diff=r["est"], lo=r["lo"], hi=r["hi"]))
 pure = pd.DataFrame(pure)
 print("\nexploratory 'pure preparation' contrast S-B6a (S without class weights) vs M1, Tier 1 (not a locked hypothesis):")
-print(pure.round(4).to_string(index=False))
+show(pure, 4)
 S7["pure_preparation_S_B6a_vs_M1"] = pure.to_dict("records")
 S7["scoreboard"] = final.set_index("hyp_id").to_dict("index")
 S7["scoreboard_detail"] = sb.round(5).to_dict("records")
 S7["lr_test_splines"] = lrt
 
 # %% [markdown]
-# **So what.** Reading of the verdicts (numbers in the tables above):
+# **So what.** Reading of the verdicts (numbers above; FINAL run):
 #
-# * **Leakage (H2a, B2, B2t) – supported everywhere.** The availability rule costs about 0.13 AUC on E-ALL and about 0.07
-#   on E-SCREEN; the naive tree's first split is a treatment item. This is a *correct deterioration*.
-# * **Fidelity, redundancy, missingness, survey weights (B1, B3-a, B4-a, B6b) – equivalence for AUC.** Repairing the data
-#   matters for what the data *mean* (6 label flips, 939 non-exercisers, 2,003 wiped values), not for discrimination.
-#   "Equivalent" is a finding: these steps can be justified on fidelity grounds without a performance argument.
-# * **B4-b (calibration for missing income) – inconclusive**, with an MDD several times the SESOI: about 120 people per
-#   fold have missing income, too few to detect a 0.005 Brier change; §6 had already shown that income missingness is
-#   almost unrelated to the label.
-# * **B3 (redundancy) – mixed.** Same AUC (supported), but the stability claims fail inside the scaled L2 pipeline (SD
-#   ratio about 1.4, refuted) and the flip criterion is dominated by a near-zero height coefficient (refuted, see
-#   section 11). The stabilising value of pruning is real for naive unscaled fits (ratio about 3) – L2 + scaling make it
-#   largely redundant. A refutation that teaches where the protection actually comes from.
-# * **B5 (representation) – inconclusive overall.** Its primary sub-claim holds on E-ALL Tier 1 (|calibration slope − 1|
-#   smaller by about 0.04, CI excluding 0) and the spline terms are strongly supported by the likelihood-ratio test,
-#   but the block's AUC gain (about +0.007) has a CI that crosses the SESOI, and the calibration gain is not confirmed on
-#   E-SCREEN or Tier 2. The calibration gain is measured with class weights switched on in both arms and mostly reflects
-#   the solver converging once the features are scaled (S−B5 is unscaled and stops at the iteration limit in every fold),
-#   not a better functional form. Splines are kept because of the likelihood-ratio evidence and the S4 linearity tests,
-#   not because of the AUC.
-# * **B6a (class weights) – supported on all three sub-claims**: same AUC, Brier worse by about 0.07, balanced accuracy at
-#   0.5 better by about 0.14. Class weighting is a threshold choice in disguise and should be replaced by an explicit
-#   threshold.
-# * **H2b (M1 vs S, the headline "minimal vs systematic") – inconclusive, best read as three sub-verdicts:**
-#   (a) AUC +0.008 [0.000, 0.016] – underpowered rather than null: the MDD (about 0.011) exceeds the SESOI of 0.01, so
-#   neither "equivalent" nor "better" can be established; (b) Brier **refuted** – S is worse by about 0.07, entirely
-#   because of the class weights of B6a; (c) BMI coefficient-SD ratio about 2.0 with a Monte Carlo interval straddling 2
-#   (and confounded by non-convergence of the unscaled M1). A strict conjunctive reading (every sub-claim must hold) would
-#   fail H2b on the Brier sub-claim; the locked combination rule yields "inconclusive", and no verdict is changed after the
-#   lock. The cleaner, exploratory "pure preparation" contrast S−B6a vs M1 (printed above) shows what systematic
-#   preparation does without class weights: a small AUC gain on E-ALL (below the SESOI; on E-SCREEN the interval includes
-#   0) and no Brier cost – the calibration loss of S comes from the class weights alone. Systematic
-#   preparation does not buy discrimination; it buys fidelity and – partly – stability, and one optional step (class
-#   weights) costs calibration.
-# * **H2c** – E-ALL overstates screening discrimination (gap about 0.06, supported); removing care-contact items lowers
-#   E-ALL (supported) but *raises* E-SCREEN by about 0.02 with a CI that excludes 0 yet reaches below the SESOI, so the
-#   pre-registered "unchanged" sub-claim is inconclusive and the hypothesis as a whole is inconclusive; S beats the
-#   reduced ADA score on E-SCREEN (supported).
-# * Verdicts that depend on E-SCREEN are limited by about 25 positives per fold: wherever the MDD exceeds the SESOI an
-#   inconclusive verdict means "underpowered", not "no effect".
+# | Block / hypothesis | Verdict | Reading |
+# |---|---|---|
+# | H2a, B2, B2t leakage | supported | the rule costs about 0.13 AUC on E-ALL – a *correct deterioration* |
+# | B1, B4-a, B6b fidelity, missingness, survey weights | equivalent AUC | repairs change what the data *mean*, not discrimination |
+# | B3 redundancy | mixed | same AUC; stability gain small inside scaled L2 (B3-b, B3-c refuted) |
+# | B5 representation | inconclusive | calibration gain mostly solver convergence after scaling; splines kept on the LR test |
+# | B6a class weights | supported | same AUC, Brier worse by about 0.07: a threshold choice in disguise |
+# | H2b minimal vs systematic | inconclusive | (a) AUC +0.008 [0.000, 0.016], MDD > SESOI (underpowered); (b) Brier refuted by class weights alone; (c) SD ratio straddles 2 |
+# | H2c recognition vs screening | inconclusive | (i) gap supported; (ii) care items lower E-ALL but *raise* E-SCREEN; (iii) S > ADA-lite |
+#
+# Without class weights (S−B6a vs M1, exploratory) systematic preparation gains a little AUC and costs no calibration.
+# Where the MDD exceeds the SESOI, "inconclusive" means underpowered, not "no effect".
 
 # %% [markdown]
-# ## 13 Storage
-# **Why.** S8 (fairness, 3 × 3 matrix) and S9 (robustness, hold-out) re-use the out-of-fold predictions instead of
-# refitting; every number on the slides must come from stored artefacts.
+# ### POST-LOCK sensitivity: M1 convergence and scaling
+# **Why.** *POST-LOCK – not pre-registered, added after the final audit; no locked verdict is changed.* The minimal arm
+# of H2b has two weaknesses: M1 stops at the solver's iteration limit in every fold, and without scaling its L2 penalty
+# acts unevenly on columns in different units. Three variants of M1 are refitted on the same stored folds with the
+# frozen C0: (i) the same solver with `max_iter` raised from 5,000 to 100,000; (ii) the same penalised likelihood solved
+# to its exact optimum (Newton–Cholesky solver); (iii) M1 plus scaling only (P09). Each is compared with S and with
+# S−B6a by the §7.4.1 engine. The results go to `results/S7/postlock_m1_sensitivity.csv`, never into the OOF file.
+
+# %%
+from sklearn.exceptions import ConvergenceWarning
+
+POSTLOCK = {"M1 stored (lbfgs, max_iter 5,000)": None,
+            "M1 lbfgs, max_iter 100,000": (P.ARMS["M1"], {"model__max_iter": 100_000}),
+            "M1 exact optimum (newton-cholesky)": (P.ARMS["M1"], {"model__solver": "newton-cholesky"}),
+            "M1 + scaling only (P09)": ({**P.ARMS["M1"], "P09": True}, {})}
+
+
+def run_postlock(cfg, params):
+    """OOF predictions of an M1 variant on the stored folds; solver warnings counted inside the worker."""
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always", ConvergenceWarning)
+        oof = ek.cv_predict(lambda: P.build_pipeline(cfg, 1, C_=C0).set_params(**params), X[1],
+                            P.training_label(raw_tr, cfg), folds, fit_params=P.fit_params(cfg, raw_tr))
+    return oof, sum(issubclass(x.category, ConvergenceWarning) for x in w)
+
+
+t0 = time.time()
+todo = {k: v for k, v in POSTLOCK.items() if v is not None}
+res_pl = dict(zip(todo, Parallel(n_jobs=min(N_JOBS, len(todo)))(delayed(run_postlock)(*v) for v in todo.values())))
+conv_pl = {"M1 stored (lbfgs, max_iter 5,000)": int(diag.query("arm == 'M1' and tier == 1 and model == 'lr'")["n_convergence_warnings"].iloc[0])}
+pl_rows = []
+for name in POSTLOCK:
+    key = ("M1", 1, "lr") if POSTLOCK[name] is None else (name, 1, "lr")
+    if POSTLOCK[name] is not None:                  # temporary entry for the comparison engine, removed below
+        OOF[key], PM[key] = res_pl[name][0], ek.mean_oof(res_pl[name][0], n)
+        conv_pl[name] = int(res_pl[name][1])
+    try:
+        for a in ("S", "S-B6a"):
+            for pop in ("E-ALL", "E-SCREEN"):
+                for metric, s_ in (("roc_auc", C.SESOI["roc_auc"]), ("brier", 0.005)):
+                    r = compare(a, key[0], 1, metric, pop)
+                    yy, m = pop_of(pop)
+                    pl_rows.append(dict(variant=name, a=a, pop=pop, metric=metric, folds_not_converged=conv_pl[name],
+                                        n_folds=len(folds), value_variant=METRIC_FN[metric](yy[m], PM[key][m]),
+                                        value_a=METRIC_FN[metric](yy[m], PM[(a, 1, "lr")][m]), est=r["est"], lo=r["lo"],
+                                        hi=r["hi"], interval=r["interval"], mdd=r["mdd"], verdict_equivalence=v_equiv(r["lo"], r["hi"], s_)))
+    finally:
+        if POSTLOCK[name] is not None:
+            del OOF[key], PM[key]
+assert all(k[0] not in POSTLOCK for k in OOF), "post-lock variants must not reach the OOF file"
+PL = pd.DataFrame(pl_rows)
+PL.to_csv(OUT / "postlock_m1_sensitivity.csv", index=False)
+h2b_ref = PL.query("variant == 'M1 stored (lbfgs, max_iter 5,000)' and a == 'S' and pop == 'E-ALL' and metric == 'roc_auc'").iloc[0]
+pl_eall = PL.query("a == 'S' and pop == 'E-ALL' and metric == 'roc_auc'").set_index("variant")
+h2b_same = bool((pl_eall["verdict_equivalence"] == h2b_ref["verdict_equivalence"]).all())
+print(f"POST-LOCK (not pre-registered): {len(todo)} M1 variants x {len(folds)} folds, {time.time() - t0:.0f} s")
+for k_, v_ in conv_pl.items():
+    print(f"   {k_:<38} folds stopped at a solver limit: {v_}/{len(folds)}")
+show(PL.query("pop == 'E-ALL'")[["variant", "a", "metric", "folds_not_converged", "value_variant", "value_a", "est", "lo", "hi",
+                                  "mdd", "verdict_equivalence"]], 4)
+show(PL.query("pop == 'E-SCREEN' and metric == 'roc_auc'")[["variant", "a", "value_variant", "value_a", "est", "lo", "hi",
+                                                             "verdict_equivalence"]], 4)
+print("H2b(a) (S - M1, E-ALL AUC, equivalence +-0.01) under each M1 variant:")
+for k_, r_ in pl_eall.iterrows():
+    print(f"   {k_:<38} {r_['est']:+.4f} [{r_['lo']:+.4f}, {r_['hi']:+.4f}] -> {r_['verdict_equivalence']}")
+print(f"H2b(a) conclusion unchanged: {h2b_same}")
+S7["postlock_m1_sensitivity"] = dict(note="POST-LOCK sensitivity, not pre-registered; no verdict changed",
+                                     folds_not_converged=conv_pl, n_folds=len(folds), h2b_a_unchanged=h2b_same,
+                                     rows=PL.round(6).to_dict("records"))
+
+# %% [markdown]
+# **So what (post lock).** Raising `max_iter` alone does not make M1 converge (the solver then stops at its
+# function-evaluation limit in 7 of 25 folds). Solved exactly, or with scaling added, M1 converges in every fold and its
+# AUC rises by less than 0.001. S − M1 shrinks from +0.008 [0.000, 0.016] to about +0.007 [−0.001, +0.015]: still
+# positive, small and neither excluding nor inside ±0.01, so **the H2b(a) conclusion is unchanged** – the lower bound
+# merely moves from 0 to just below it. The Brier gap remains the class-weight effect of S; S−B6a is level with every
+# M1 variant (ΔBrier about −0.002). The locked M1 stays the primary minimal arm: it is what a naive analyst would fit.
+
+# %% [markdown]
+# ## 13 Outputs
+# **Why.** §8 and §9 re-use the out-of-fold predictions instead of refitting, and every slide number must come from
+# stored artefacts: `results/oof_predictions.parquet`, `results/S7/*.csv`, `results/metrics_S7.json` and the §7
+# decision-register fragment (`governance/register/S7.csv`, listed below).
 
 # %%
 lab_cols = cl[["SEQN", "L_comb", "L_self", "L_A1c", "y_escreen", "in_escreen", "stratum_3x3"]].copy()
@@ -1132,6 +1163,6 @@ S7["runtime_seconds"] = time.time() - T_START
 R.save_section("S7", S7)
 reg_path = C.GOVERNANCE_DIR / "register" / "S7.csv"
 if reg_path.exists():
-    print(pd.read_csv(reg_path)[["dr_id", "type", "decision"]].to_string(index=False, max_colwidth=100))
+    show(pd.read_csv(reg_path)[["dr_id", "type", "decision"]])
 print(f"saved results/metrics_S7.json; section runtime {S7['runtime_seconds']:.0f} s ({C.NB_MODE})")
 print(json.dumps(S7["headline"], indent=1, default=float))
