@@ -385,8 +385,7 @@ S8["overall_tpr_eall_t1"] = rec_check
 
 # %% [markdown]
 # ## 4 E-SCREEN
-# **Why.** E-SCREEN is the use-case population. The same metrics are computed at specificity 0.80 on its negatives;
-# with 127 positives most groups fall below 30 positives and receive no verdict.
+# **Why.** The same audit on the use-case population (specificity 0.80 on E-SCREEN negatives; read in §8.11).
 
 # %%
 PERMs, NULLs = permutation_block("E-SCREEN", 1)
@@ -403,14 +402,10 @@ S8["eod_escreen_t1"] = ETs.round(5).to_dict("records")
 S8["permutation_escreen_t1"] = PERMs.round(5).to_dict("records")
 S8["overall_tpr_escreen_t1"] = rec_s
 
-# %% [markdown]
-# **So what.** Only the sex contrast is reportable on E-SCREEN: undiagnosed **women are found less often than men** (EOD
-# about −0.17), but the CI includes 0 and the permutation p is about 0.09. The race gaps look larger than on E-ALL but
-# rest on 11–24 positives per group with CIs wider than 0.30. "Not reportable" means "not measurable", not "fair".
 
 # %% [markdown]
 # ## 5 Tier 2 summary
-# **Why.** Tier 2 adds total and HDL cholesterol; if lipids carry group-specific information the gaps could change.
+# **Why.** Does adding total and HDL cholesterol (Tier 2) change the gaps? (read in §8.11)
 
 # %%
 GT2, ET2 = tables("E-ALL", 2)
@@ -428,10 +423,6 @@ print(f"largest change of any EOD from Tier 1 to Tier 2: {max_shift:.3f}")
 S8["tier2_summary"] = dict(eod=ET2.round(5).to_dict("records"), permutation=PERM2.round(5).to_dict("records"),
                            max_abs_eod_shift=max_shift)
 
-# %% [markdown]
-# **So what.** Lipids move every gap by less than its CI (largest shift printed) and the NH Asian gap is unchanged (about
-# −0.18); the borderline low-access gap grows and its CI then excludes 0. The direction of the audit is robust to the
-# tier; Tier 1 remains primary.
 
 # %% [markdown]
 # ## 6 3 × 3 label matrix
@@ -660,8 +651,7 @@ S8["reweighing"] = dict(auc=RWT.round(5).to_dict("records"), eod=RWE.round(5).to
                         weight_range={a: [float(w.min()), float(w.max())] for a, w in RW_W.items()})
 
 # %% [markdown]
-# **So what.** Reweighing is an instructive null. Race weights are not close to 1 (NH Black cases down-weighted to about
-# 0.7), yet every ΔAUC interval lies inside ±0.01. The gaps do not close either: race reweighing leaves the NH Asian gap
+# **So what.** Reweighing is an instructive null. Race weights range 0.70–1.16 (NH Black cases down-weighted most), yet every ΔAUC interval lies inside ±0.01. The gaps do not close either: race reweighing leaves the NH Asian gap
 # where it was and *widens* the NH Black gap (CI excluding 0), because it removes the prevalence difference that made
 # Black cases easier to find. Insurance and low-access reweighing narrow their gaps by about 0.04–0.05 with CIs including
 # 0. Reweighing acts on the label–group association; the gaps of §8.3 come from features and from the diagnosis
@@ -771,10 +761,8 @@ plt.show()
 
 # %% [markdown]
 # ## 10 Group-specific thresholds
-# **Why.** The obvious "fix" for a TPR gap is a lower threshold for the disadvantaged group (Hardt et al. 2016). It is
-# **not** implemented (DR-S8-02): (i) it needs race at prediction time, which the availability rule excludes; (ii) it
-# equalises TPR only by raising that group's false positives or lowering others' TPR ("levelling down"); (iii) with about
-# 40 Asian cases the threshold would be unstable. Point (iii) is quantified here.
+# **Why.** A group-specific threshold (Hardt et al. 2016) is **not** implemented (DR-S8-02: it needs race at prediction
+# time and equalises TPR by "levelling down"); its instability with about 40 Asian cases is quantified here.
 
 # %%
 def asian_threshold(w=None):
@@ -802,17 +790,11 @@ print(f"Asian FPR: {fpr_overall_a:.3f} at the shared threshold -> {fpr_a:.3f} at
       f"(95 % CI {GTHR['fpr_asian_at_own_ci'][0]:.3f}-{GTHR['fpr_asian_at_own_ci'][1]:.3f})")
 S8["group_threshold_counterfactual"] = GTHR
 
-# %% [markdown]
-# **So what.** Matching the White TPR would need a markedly lower Asian threshold, raising their false-positive rate by
-# about 40 %, and the threshold itself has a wide interval (about 40 cases). One threshold is kept for everybody; the
-# Asian gap is treated as a **measurement** problem (§8.9) and a **data** problem (too few Asian cases), not patched at
-# the decision step.
 
 # %% [markdown]
 # ## 11 Fairness–performance trade-off
-# **Why.** A mitigation is only worth adopting if it narrows the targeted gap without costing discrimination. Each arm
-# is placed on one plane: ΔAUC against S on E-ALL versus the change in the absolute TPR gap of its target group, with a
-# "no practical change" box of |ΔAUC| < 0.01 and |Δ gap| < 0.05.
+# **Why.** A mitigation is worth adopting only if it narrows its target gap without costing discrimination: ΔAUC vs the
+# change in the target group's |TPR gap|, with a "no practical change" box of |ΔAUC| < 0.01 and |Δ gap| < 0.05.
 
 # %%
 wh_auc = compare_auc(OOF[("S+WHtR", 1, "lr")], OOF[("S", 1, "lr")], "E-ALL", tag="whtr")
@@ -849,9 +831,12 @@ f85 = plots.savefig(fig, "S8_tradeoff", caption="F8-5. Fairness-performance plan
 plt.show()
 
 # %% [markdown]
-# **So what.** All four mitigations cost no discrimination (every ΔAUC CI inside ±0.01), and none demonstrably helps: the
-# targeted gaps move by −0.05 to +0.02 with intervals crossing zero and wider than ±0.05. There is no trade-off to manage
-# because there is no demonstrated benefit; the honest summary is "cheap, harmless, not shown to help".
+# **So what – screening audit and mitigation nulls (§8.4, §8.5, §8.10, §8.11).** On E-SCREEN only the sex contrast is
+# reportable: undiagnosed women are found less often than men (EOD about −0.17, CI includes 0, permutation p about
+# 0.09); race gaps rest on 11–24 positives ("not measurable", not "fair"). Tier 2 lipids move every gap by less than its
+# CI. An Asian-specific threshold matching the White TPR would raise Asian false positives by about 40 % and is itself
+# unstable. All four mitigations cost no AUC, and none demonstrably helps (gap changes −0.05 to +0.02, intervals wider
+# than ±0.05): "cheap, harmless, not shown to help".
 
 # %% [markdown]
 # ## 12 Within-group calibration

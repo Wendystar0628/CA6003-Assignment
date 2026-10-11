@@ -102,10 +102,8 @@ S9["reference"] = {r["pop"]: {k: r[k] for k in ("auc_a", "auc_b", "est", "lo", "
 # %% [markdown]
 # ## 2 Negative and positive controls
 # ### 2.1 Label permutation
-# **Why.** If the procedure leaked label information (preprocessing fitted on test rows, label-derived weights, a fold
-# bug), a model trained on *permuted* labels would still score above 0.5 (Ojala & Garriga 2010). Each permutation
-# shuffles the training label, refits on the same folds and records the mean per-fold AUC; acceptance: null mean in
-# [0.495, 0.505]. Features stay attached to their rows, so this **cannot** detect feature leakage – that is §9.9's job.
+# **Why.** A model refitted on *permuted* labels must score 0.5 if the procedure leaks nothing (Ojala & Garriga 2010);
+# acceptance: null mean in [0.495, 0.505]. It cannot detect feature leakage – that is §9.9's job.
 
 # %%
 t0 = time.time()
@@ -140,14 +138,10 @@ plots.savefig(fig, "S9_permutation_null", caption="F9-1. Mean per-fold ROC-AUC o
 plt.show()
 S9["permutation"] = perm_tab.set_index("arm").to_dict("index")
 
-# %% [markdown]
-# **So what.** Both null distributions are centred on 0.5 and no permutation comes near the observed AUC: the CV, the
-# in-fold preprocessing and the weights do not leak label information. This is a statement about the procedure only.
 
 # %% [markdown]
 # ### 2.2 Pure-noise feature
-# **Why.** An appended N(0, 1) column must look like noise: a coefficient interval covering 0, no AUC change, never chosen
-# by the depth-3 tree.
+# **Why.** An appended N(0, 1) column must look like noise (interval covering 0, no AUC change, never a tree split).
 
 # %%
 rng = np.random.default_rng(RB.seed("noise"))
@@ -179,14 +173,10 @@ show(noise_tab, 4)
 assert noise_tab["ci_covers_0"].all() and (noise_tab["tree3_uses"] == 0).all()
 S9["noise_feature"] = noise_tab.set_index("arm").to_dict("index")
 
-# %% [markdown]
-# **So what.** In both arms the noise coefficient ranks near the bottom, its interval covers 0, the AUC is unchanged
-# within ±0.01 and no depth-3 tree splits on it.
 
 # %% [markdown]
 # ### 2.3 Positive control
-# **Why.** Negative controls show the procedure is not optimistic; a positive control shows it is not blind. A synthetic
-# column z = d·y + N(0, 1) with known AUC 0.60 must be recovered and its increment detected in M1 and S.
+# **Why.** A synthetic column z = d·y + N(0, 1) with known AUC 0.60 must be recovered and its increment detected.
 
 # %%
 ctx.extras["pos_control"] = RB.signal_feature(ctx.y, RB.POS_CONTROL_AUC, seed_=RB.seed("positive-control"))
@@ -204,16 +194,11 @@ assert z_auc[1] <= RB.POS_CONTROL_AUC <= z_auc[2], "positive-control AUC not rec
 assert pos_tab.loc[pos_tab["pop"] == "E-ALL", "detected"].all(), "positive control not detected on E-ALL"
 S9["positive_control"] = dict(z_auc=z_auc, rows=pos_tab.to_dict("records"))
 
-# %% [markdown]
-# **So what.** The AUC of z is recovered and its increment is detected in both arms (interval excluding 0). The increment
-# is only a few thousandths: a new risk factor with univariate AUC 0.60 adds little on top of age, adiposity and blood
-# pressure.
 
 # %% [markdown]
 # ## 3 Seed stability
-# **Why.** A verdict that flips when only the fold assignment changes belongs to one lucky split, not to the data. Ten
-# seeds derived from `SEED_MASTER` generate new repeated stratified folds and bootstrap streams (hold-out, data and C0
-# fixed). Acceptance: the same H2b(a) verdict under all ten (FAST: the first five).
+# **Why.** Ten seeds derived from `SEED_MASTER` draw new folds and bootstrap streams (FAST: five); the H2b(a) verdict must
+# not depend on them.
 
 # %%
 def prefetch(items):
@@ -261,10 +246,6 @@ plots.savefig(fig, "S9_seed_stability", caption=f"F9-3. ΔROC-AUC (S − M1, Tie
 plt.show()
 S9["seeds"] = dict(n=len(SEED_FOLDS), stable_eall=bool(seed_stable), summary=seed_sum.to_dict("index"))
 
-# %% [markdown]
-# **So what.** Across the ten seeds the estimate moves only in the third decimal and every interval keeps straddling
-# +0.01, so the E-ALL verdict is the same in all runs. It stays *inconclusive* for a structural reason: the true
-# difference sits close to the SESOI itself.
 
 # %% [markdown]
 # ## 4 Sensitivity table
@@ -395,8 +376,7 @@ S9["sensitivity"] = dict(n_specs=len(SENS), eall_same_verdict=n_same, eall_rows=
 
 # %% [markdown]
 # ## 5 Specification curve
-# **Why.** A specification curve (Simonsohn et al. 2020) crosses the choices that matter most, so that their interactions
-# cannot hide a different answer: 5 labels × 3 weighting schemes × 4 values of C = **60 specifications** (FAST: 30).
+# **Why.** A specification curve (Simonsohn et al. 2020) crosses label × weighting × C: 60 specifications (FAST: 30).
 
 # %%
 import itertools
@@ -460,16 +440,10 @@ plt.show()
 S9["specification_curve"] = dict(n=len(grid), summary=cs.round(5).to_dict("index"),
                                  verdicts=curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_dict("index"))
 
-# %% [markdown]
-# **So what.** All 60 combinations put S *ahead* of M1 on E-ALL, most with an interval excluding 0, but none clears the
-# SESOI with confidence and none sits inside ±0.01: every verdict is *inconclusive*. Weighting both arms alike moves the
-# median to about the SESOI, and the HbA1c-only label gives the largest gaps. The H2b(a) verdict is what the whole garden
-# of forking paths says – a small, consistent advantage of S whose size cannot be pinned against 0.01.
 
 # %% [markdown]
 # ## 6 Survey-cluster cross-validation
-# **Why.** NHANES samples counties (PSUs) within strata, so ordinary folds put neighbours on both sides of a split.
-# `StratifiedGroupKFold` with groups = stratum × PSU keeps each survey cluster inside one fold.
+# **Why.** Folds grouped by stratum × PSU keep each survey cluster on one side of every split.
 
 # %%
 groups = (ctx.cl[C.STRATA].astype(int) * 10 + ctx.cl[C.PSU].astype(int)).to_numpy()
@@ -492,9 +466,6 @@ print(f"AUC of S, grouped minus stratified folds: E-ALL {dS['E-ALL']:+.4f}, E-SC
 S9["grouped_cv"] = dict(n_clusters=int(len(np.unique(groups))), table=gcv_tab.round(5).to_dict("records"),
                         auc_S_grouped_minus_stratified=dS)
 
-# %% [markdown]
-# **So what.** Holding whole clusters out changes the AUC of S by only a few thousandths and leaves the S − M1 verdict
-# unchanged: the cross-validated numbers are not inflated by cluster sharing.
 
 # %% [markdown]
 # ## 7 Missing HbA1c: inverse-probability weights and delta adjustment
@@ -962,10 +933,14 @@ plt.show()
 S9["summary"] = dict(table=summ.round(5).to_dict("records"), all_inconclusive=all_incon)
 
 # %% [markdown]
-# **So what.** Every check agrees: on E-ALL S is ahead of M1 by roughly 0.005–0.015 AUC; apart from the depth-4 tree
-# (DR-S9-13) the intervals stay above about −0.01, and none clears +0.01. The robust reading of H2b(a) is "**S is at
-# least as good as M1 and probably slightly better, by an amount that cannot be distinguished from 0.01**" – *robust
-# verdict, imprecise effect*. On E-SCREEN the same direction holds with intervals about twice as wide.
+# **So what – controls and stability (§9.2–§9.7).** The procedure is neither optimistic nor blind: permutation nulls
+# centre on 0.5, the noise column is ignored (interval covers 0, no tree split) and the AUC-0.60 control is recovered and
+# detected (only a few thousandths of AUC on top of age, adiposity and blood pressure). For S − M1 every check agrees:
+# ten seeds move the estimate only in the third decimal; all 60 curve specifications put S ahead, none clears or sits
+# inside ±0.01; PSU-grouped folds change the AUC of S by a few thousandths; IPW and MNAR leave it unchanged. On E-ALL
+# S leads by roughly 0.005–0.015 and, apart from the depth-4 tree (DR-S9-13), no interval falls below about −0.01. The
+# robust reading of H2b(a) is "**S is at least as good as M1 and probably slightly better, by an amount that cannot be
+# distinguished from 0.01**" – *robust verdict, imprecise effect*; on E-SCREEN intervals are about twice as wide.
 
 # %%
 # decision-register rows of §9 (written and listed in §9.12 Outputs)
@@ -1299,13 +1274,14 @@ else:
     print(S9["holdout"]["status"])
 
 # %% [markdown]
-# **So what.** The one-shot hold-out (1,146 adults, 194 positives; E-SCREEN 977 adults, 25 positives) confirms the
-# cross-validated picture and changes no verdict. **No optimism:** no arm × population row is more than 2 SE below CV; on
-# E-ALL every model scores slightly *higher* (S 0.851 [0.823, 0.878] vs CV 0.836), and so does the unfitted ADA-lite
-# score, so the hold-out sample is slightly easier. **Contrasts:** S − M1 is +0.004 [−0.007, +0.014] on E-ALL and −0.005
-# on E-SCREEN (inconclusive, as in CV); the leak gate M1 − M0 replicates on E-ALL (−0.117, supported); S − ADA-lite on
-# E-SCREEN is +0.029 [−0.037, +0.098] – **the CV margin does not replicate** (inconclusive). **Calibration:** S
-# over-predicts by design (CITL −1.72); on E-SCREEN every model over-predicts. Nothing was re-tuned.
+# **So what.** The one-shot hold-out (1,146 adults, 194 positives; E-SCREEN 977 adults, 25 positives) changes no
+# verdict. **No optimism:** no arm × population row is more than 2 SE below CV; on E-ALL every model scores slightly
+# *higher* (S 0.851 [0.823, 0.878] vs CV 0.836), as does the unfitted ADA-lite score, so the hold-out sample is
+# slightly easier. **Contrasts:** the leak gate M1 − M0 replicates on E-ALL (−0.117, supported); S − M1 is +0.004
+# [−0.007, +0.014] on E-ALL and −0.005 on E-SCREEN (inconclusive, as in CV); the recognition gap of S has the same
+# direction and size (+0.060 vs +0.055) but is not separately testable with 25 screening positives; S − ADA-lite is
+# +0.029 [−0.037, +0.098] – **the CV margin does not replicate**. **Calibration:** S over-predicts by design (CITL −1.72).
+# Nothing was re-tuned.
 
 # %% [markdown]
 # ## 12 Outputs

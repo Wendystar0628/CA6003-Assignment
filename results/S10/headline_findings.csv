@@ -21,4 +21,4 @@ F3 Label and measurement bias,6,"calibration O:E by race NH White 0.88, NH Black
 "HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",4,§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52
 "HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",5,"§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}"
 "HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",6,leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072
-"HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",7,one-shot hold-out: same direction and size for arm S (not separately testable with 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)
+"HEADLINE Whole-sample AUC measures recognition of known diabetes, not screening",7,"hold-out, arm S: same direction and size (not separately testable, 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"

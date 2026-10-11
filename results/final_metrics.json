@@ -12030,7 +12030,7 @@
       "section": "S10",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T09:37:26+00:00"
+      "written_utc": "2026-10-11T10:10:07+00:00"
     },
     "mode": "FINAL",
     "h2b": {
@@ -12246,7 +12246,7 @@
         "§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52",
         "§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}",
         "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072",
-        "one-shot hold-out: same direction and size for arm S (not separately testable with 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"
+        "hold-out, arm S: same direction and size (not separately testable, 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"
       ]
     },
     "findings": {
@@ -12694,6 +12694,6 @@
       "DR-S10-13",
       "DR-S10-11"
     ],
-    "runtime_seconds": 0.9207425117492676
+    "runtime_seconds": 0.9254350662231445
   }
 }

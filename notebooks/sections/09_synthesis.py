@@ -601,7 +601,7 @@ HEAD_LINES = [
 ]
 if HO_OK:
     s_all, s_scr = HOM.loc[("S", 1, "E-ALL"), "roc_auc"], HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"]
-    HEAD_LINES.append(("one-shot hold-out: same direction and size for arm S (not separately testable with 25 screening positives)",
+    HEAD_LINES.append(("hold-out, arm S: same direction and size (not separately testable, 25 screening positives)",
                        f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)"))
 print("\nHEADLINE – whole-sample AUC measures recognition of known diabetes, not screening; distinct evidence lines:")
 for a, b in HEAD_LINES:

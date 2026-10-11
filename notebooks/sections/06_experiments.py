@@ -422,23 +422,19 @@ plt.show()
 
 # %% [markdown]
 # **So what.** The availability rule removes the "too-good-to-be-true" signal: E-ALL AUC falls by about 0.13, far
-# beyond the 0.05 locked for B2/H2a. This **deterioration is the correct outcome** – M0 exploited treatment and
-# diagnosis history, i.e. the label leaking back in. The M0 tree's root is a *treatment* item, followed by prior
-# glucose testing and age at diagnosis. Age at diagnosis is asked only of the diagnosed; median imputation fills
-# everyone else with the printed constant, and the tree splits just below and above it. **Imputation has turned
-# skip-pattern missingness into a code for the label.** The leaked tree is even *worse* for screening than the M1
-# tree (E-SCREEN AUCs printed), and the drop is smaller on E-SCREEN, because the treatment items mark the already
-# diagnosed.
+# beyond the 0.05 locked for B2/H2a. This **deterioration is the correct outcome** – M0 exploited inadmissible items
+# (treatment, diagnosis history, glucose testing), i.e. the label leaking back in. The tree's root is a *treatment*
+# item; its age-at-diagnosis splits sit just below and above the median-imputed constant given to everyone never
+# asked the question. **Imputation has turned skip-pattern missingness into a code for the label.** The leaked tree is
+# even *worse* for screening than the M1 tree, and the drop is smaller on E-SCREEN, because these items mark the
+# already diagnosed.
 
 # %% [markdown]
 # ## 6 Baselines on E-SCREEN
-# **Why.** A model is only interesting if it beats what a clinician already has. The reduced ADA risk test (Bang et al.
-# 2009) is the natural comparator on E-SCREEN, the screening population it was designed for. Mapping: age 0/1/2/3 for
-# <40/40–49/50–59/≥60; male +1; told high blood pressure (BPQ020) +1; physically inactive (no leisure-time moderate or
-# vigorous sessions, PAD790Q = PAD810Q = 0) +1; BMI 0/1/2/3 for <25/25–29.9/30–39.9/≥40. Family history and
-# gestational diabetes are not asked in 2021–23, so the score is **reduced (2 items missing)** and the published cut-off
-# is not used; AUC and recall at specificity 0.80 are compared instead. BL-ADAlite-LR refits weights to the same items
-# (trained on `L_comb` like every arm); BL0 is the no-information prior.
+# **Why.** A model is only interesting if it beats what a clinician already has: the reduced ADA risk test (Bang et al.
+# 2009) – age 0–3, male +1, told high blood pressure +1, physically inactive +1, BMI 0–3 points. Family history and
+# gestational diabetes are not asked in 2021–23, so the score is **reduced** and compared by AUC and recall at
+# specificity 0.80, not by its cut-off. BL-ADAlite-LR refits the same items on `L_comb`; BL0 is the no-information prior.
 
 # %%
 from sklearn.dummy import DummyClassifier
