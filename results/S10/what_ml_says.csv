@@ -1,0 +1,13 @@
+property,probe,reading,number,grade
+Skip-logic leakage,leak gate M0 → M1; depth-3 tree root,the naive model's high AUC is a questionnaire-design artefact,"AUC 0.961 → 0.828; ΔAUC -0.131 [-0.148, -0.114]; root DIQ070",E2
+Imputation artefact,M0 tree level-2 split,a tree learns an imputation constant as if it were biology,DID040 86% missing → 50; tree E-SCREEN AUC 0.633 vs 0.701,E1
+Blanket sentinel cleaning,per-variable vs blanket recode,cleaning itself destroys information and labels,"1,496 valid cells; 29/721 HbA1c positives; 6/971 L_comb flips",E1
+Structural redundancy,bootstrap SD of the BMI coefficient,"redundancy destabilises explanation, not prediction; L2 + scaling absorb most of it","SD ratio unscaled 2.87, inside scaled L2 1.36; ΔAUC B3 +0.0019",E3
+Spectrum / label composition,same predictions scored on E-ALL and E-SCREEN,whole-sample AUC measures recognition of known diabetes,"S 0.836 vs 0.781; gap +0.055 [+0.028, +0.086]",E2
+Care traces,T1-minus-care ablation on both populations,contact-with-care items help recognition and hinder screening,"E-ALL -0.016; E-SCREEN +0.019 [+0.004, +0.034]",E3
+Label is a measurement,3 × 3 label matrix; treatment masking,each label misses different people; no label lets these features find the undiagnosed,masking 250/819 (30.5%); recall Undiagnosed 0.50/0.56/0.52,E3
+Diagnosis gap by access,model TPR diagnosed vs undiagnosed; group decomposition,the model inherits who has been diagnosed,"TPR diagnosed 0.70 vs undiagnosed 0.52; r(group TPR, care-trace share) 0.63",E3
+BMI measurement bias,single-feature AUC WHtR vs BMI; Asian TPR gap,BMI under-measures adiposity in Asian adults; the full model only partly compensates,"Asian gain +0.137 vs White +0.049; EOD Asian -0.184 [-0.343, -0.014]",E3 (Asian cells exploratory)
+Calibration across groups,observed : expected by race,"a race-blind model is calibrated on average, not within race","O:E NH White 0.88, NH Black 1.30, NH Asian 1.35, Mexican American 1.39",E3
+Procedure credibility,label permutation; positive control,no procedural leakage; weak real signal is detectable (does not exclude feature leakage),"null mean M1 0.5015, S 0.5014; synthetic AUC-0.60 feature detected (4/4)",E1
+Missing HbA1c,IPW and delta-adjusted (MNAR) prevalence; S − M1 under MNAR,missingness is not ignorable in principle but barely moves prevalence or the comparison,"prevalence 14.1% (MAR) to 15.1% at odds ratio 20; Manski [13.9%, 18.1%]",E3

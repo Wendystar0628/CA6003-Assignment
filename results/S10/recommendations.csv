@@ -1,0 +1,7 @@
+rec,because
+Use an explicit decision threshold instead of balanced class weights,class weights leave AUC unchanged (+0.0006) but worsen Brier by 0.076; the gain in balanced accuracy at 0.5 is a threshold effect
+Recalibrate on the screening population before any screening use,without class weights the E-SCREEN calibration intercept is -1.78 (slope 0.69); within-race O:E from 0.88 to 1.39
+"Exclude care-trace items (told hypertension, told high cholesterol) from screening models","removing them raises E-SCREEN AUC by 0.019 [0.004, 0.034]"
+Report the screening population (E-SCREEN) next to any whole-sample AUC,the whole-sample AUC is 0.055 higher for the same predictions
+Test measurement-aware features (WHtR) in larger Asian samples before adopting them,"single-feature gain is clear (+0.088) but the model-level TPR change +0.025 [-0.042, +0.071] rests on 40 positives"
+Do not deploy as a clinical tool; do not describe it as fair,"cross-sectional US data, not validated prospectively; one fairness criterion at one threshold"

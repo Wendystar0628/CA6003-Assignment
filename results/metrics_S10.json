@@ -1,0 +1,521 @@
+{
+  "_meta": {
+    "section": "S10",
+    "nb_mode": "FAST",
+    "seed_master": 20261011,
+    "written_utc": "2026-10-11T05:34:18+00:00"
+  },
+  "mode": "FAST",
+  "h2b": {
+    "subs": {
+      "(a) AUC": {
+        "est": 0.00791,
+        "lo": 1e-05,
+        "hi": 0.0158,
+        "verdict": "inconclusive",
+        "mdd": 0.01118
+      },
+      "(b) Brier": {
+        "est": 0.07392,
+        "lo": 0.06647,
+        "hi": 0.08138,
+        "verdict": "refuted",
+        "mdd": 0.01055
+      },
+      "(c) BMI SD ratio": {
+        "est": 1.98187,
+        "lo": 1.80482,
+        "hi": 2.17077,
+        "verdict": "inconclusive",
+        "mdd": null
+      }
+    },
+    "pure_preparation": [
+      {
+        "pop": "E-ALL",
+        "metric": "roc_auc",
+        "S_B6a": 0.8353165729052254,
+        "M1": 0.8284525660412184,
+        "diff": 0.007332867558757137,
+        "lo": 5.7283367045601365e-05,
+        "hi": 0.014608451750468671
+      },
+      {
+        "pop": "E-ALL",
+        "metric": "brier",
+        "S_B6a": 0.11005295518167475,
+        "M1": 0.11188990398716958,
+        "diff": -0.0018306190971882797,
+        "lo": -0.0036279363578679124,
+        "hi": -3.3301836508646977e-05
+      },
+      {
+        "pop": "E-SCREEN",
+        "metric": "roc_auc",
+        "S_B6a": 0.7781935059535997,
+        "M1": 0.7722657599242174,
+        "diff": 0.005927746029382286,
+        "lo": -0.009409417794406839,
+        "hi": 0.021409742517409906
+      },
+      {
+        "pop": "E-SCREEN",
+        "metric": "brier",
+        "S_B6a": 0.055210023233026186,
+        "M1": 0.056061927339955735,
+        "diff": -0.0008519041069295491,
+        "lo": -0.0021826827282387046,
+        "hi": 0.0004793800110157751
+      }
+    ],
+    "verdict": "inconclusive"
+  },
+  "headline": {
+    "finding": "Whole-sample AUC measures recognition of known diabetes, not screening",
+    "n_evidence_lines": 6,
+    "lines": [
+      "pre-registered spectrum gap (H2c-i, supported): +0.055 [+0.028, +0.086]",
+      "care-trace ablation changes sign between populations (H2c-ii): E-ALL -0.016 vs E-SCREEN +0.019",
+      "ADA items refitted on L_comb lose screening AUC: -0.018 [-0.032, -0.002]",
+      "§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52",
+      "§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}",
+      "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072"
+    ]
+  },
+  "findings": {
+    "F1 Leakage and naive cleaning": [
+      "leak gate ΔAUC -0.131 [-0.148, -0.114] (E-SCREEN -0.072)",
+      "M0 tree splits on DIQ070 then on DID040 = median 50 (86% missing); tree E-SCREEN AUC M0 0.633 < M1 0.701",
+      "blanket recode destroys 1,496 valid cells; 29 vs 6 label flips (HbA1c-only vs frozen L_comb)",
+      "§9 leak hunt on admissible arms: not triggered (max single-feature AUC 0.706)"
+    ],
+    "F2 Fallacies and measurement of performance": [
+      "insurance gap +5.3 → +0.7 pp after age standardisation (attenuation)",
+      "Asian − White -0.8 → +2.1 pp, both CIs include 0",
+      "BMI is a mediator in the DAG; 4 of 6 Simpson sign flips come from mediator stratifiers",
+      "spectrum gap E-ALL − E-SCREEN +0.055 [+0.028, +0.086]",
+      "care-trace reversal: E-ALL -0.016, E-SCREEN +0.019 [+0.004, +0.034]"
+    ],
+    "F3 Label and measurement bias": [
+      "treatment masking 250/819 = 30.5% (165 on medication)",
+      "undiagnosed risk difference uninsured − insured +23.2 pp [6.2, 40.1]",
+      "3 × 3 matrix: H3 inconclusive; Undiagnosed is the lowest-recall stratum for every training label",
+      "NH Asian TPR gap -0.184 [-0.343, -0.014], race permutation p 0.035",
+      "WHtR − BMI single-feature gain difference Asian − White +0.088 [+0.038, +0.111]",
+      "calibration O:E by race NH White 0.88, NH Black 1.30, NH Asian 1.35, Mexican American 1.39"
+    ]
+  },
+  "holdout": {
+    "available": false,
+    "status": "not evaluated: exp-freeze tag missing"
+  },
+  "verdict_counts": {
+    "supported": 10,
+    "refuted": 0,
+    "equivalent": 0,
+    "inconclusive": 6,
+    "mixed": 1
+  },
+  "verdict_counts_prereg_none": {
+    "supported": 3,
+    "refuted": 0,
+    "equivalent": 0,
+    "inconclusive": 3,
+    "mixed": 0
+  },
+  "scoreboard": [
+    {
+      "hyp_id": "H1a",
+      "family": "RQ1 (S5)",
+      "metric": "Risk difference uninsured minus insured in the undiagnosed share, with jackknife or logit ",
+      "direction": "difference greater than 0",
+      "sesoi_locked": "lower CI bound above 0",
+      "estimate": 23.157836,
+      "ci_low": 6.23501,
+      "ci_high": 40.080662,
+      "unit": "pp",
+      "interval": "jackknife (df 15)",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "",
+      "prior_exposure": "analysis_seen",
+      "source": "§5 (S5)",
+      "note": "uninsured share itself exploratory (Korn-Graubard width ≥ 0.30)"
+    },
+    {
+      "hyp_id": "H1b",
+      "family": "RQ1 (S4)",
+      "metric": "Crude and age-standardised risk difference in L_comb prevalence (US 2000 three-band standa",
+      "direction": "attenuation towards 0",
+      "sesoi_locked": "standardised difference below +2 pp or CI includes 0",
+      "estimate": 0.685457,
+      "ci_low": -2.559181,
+      "ci_high": 3.930096,
+      "unit": "pp",
+      "interval": "jackknife (df 15)",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "",
+      "prior_exposure": "analysis_seen",
+      "source": "§4 (S4); verdict applied in §10",
+      "note": "crude +5.3 pp [+1.8, +8.8] -> age-standardised; attenuation, not reversal"
+    },
+    {
+      "hyp_id": "H2a",
+      "family": "RQ2 / B1 (S7)",
+      "metric": "ΔROC-AUC (M0 minus M1) on E-ALL, repeated CV, corrected t and paired bootstrap (the more c",
+      "direction": "M0 higher",
+      "sesoi_locked": "0.05",
+      "estimate": 0.13084,
+      "ci_low": 0.1138,
+      "ci_high": 0.14788,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.02412,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "AUC M0-M1: supported",
+      "prior_exposure": "analysis_seen",
+      "source": "§7 (S7)",
+      "note": "primary: M0 - M1, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "H2b",
+      "family": "RQ2 / M1 vs S (S7)",
+      "metric": "ΔROC-AUC, ΔBrier, ratio of bootstrap SD of coefficients (M1 over S) on E-ALL",
+      "direction": "equivalence for AUC and Brier; coefficient SD ratio at least 2",
+      "sesoi_locked": "0.01 AUC; 0.005 Brier; ratio 2",
+      "estimate": 0.00791,
+      "ci_low": 1e-05,
+      "ci_high": 0.0158,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.01118,
+      "underpowered": true,
+      "verdict": "inconclusive",
+      "sub_verdicts": "(a) AUC: inconclusive; (b) Brier: refuted; (c) BMI SD ratio: inconclusive",
+      "prior_exposure": "none",
+      "source": "§7 (S7)",
+      "note": "primary: S - M1, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "H2c",
+      "family": "RQ2 / E-ALL vs E-SCREEN (S7)",
+      "metric": "(i) AUC(E-ALL) minus AUC(E-SCREEN) for T1; (ii) ΔAUC of T1-minus-care against T1 on each p",
+      "direction": "(i) positive; (ii) E-ALL falls, E-SCREEN unchanged; (iii) T1 higher",
+      "sesoi_locked": "0.03 for (i); 0.01 for (ii) and (iii)",
+      "estimate": 0.05518,
+      "ci_low": 0.02838,
+      "ci_high": 0.08629,
+      "unit": "AUC",
+      "interval": "bootstrap",
+      "mdd": 0.04,
+      "underpowered": true,
+      "verdict": "inconclusive",
+      "sub_verdicts": "(i) AUC E-ALL - E-SCREEN (S): supported; (ii) minus care, E-ALL: supported; (ii) minus care, E-SCREEN: inconclusive; (iii) S - ADA-lite, E-SCREEN: supported",
+      "prior_exposure": "none",
+      "source": "§7 (S7)",
+      "note": "primary: S - S, E-ALL minus E-SCREEN, Tier 1"
+    },
+    {
+      "hyp_id": "H3",
+      "family": "RQ3 (S8)",
+      "metric": "Recall at specificity 0.80, rows train label (L_self, L_A1c, L_comb), columns stratum (D-u",
+      "direction": "pattern as stated",
+      "sesoi_locked": "gaps below 0.05 are reported as equivalent",
+      "estimate": -0.01575,
+      "ci_low": -0.07874,
+      "ci_high": 0.02802,
+      "unit": "recall",
+      "interval": "paired bootstrap",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "inconclusive",
+      "sub_verdicts": "E1: inconclusive; E2: inconclusive; E3: inconclusive",
+      "prior_exposure": "none",
+      "source": "§8 (S8)",
+      "note": "primary shown: E3 worst-cell gap L_comb − L_self; column-wise reading (see §10.3)"
+    },
+    {
+      "hyp_id": "H4a",
+      "family": "RQ4 (S5)",
+      "metric": "Difference in proportion with BMI below 25 among diabetes cases (Asian minus White) with C",
+      "direction": "Asian higher",
+      "sesoi_locked": "20 pp",
+      "estimate": 43.891699,
+      "ci_low": 29.820593,
+      "ci_high": 57.693664,
+      "unit": "pp",
+      "interval": "Newcombe (recomputed from counts)",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "",
+      "prior_exposure": "analysis_seen",
+      "source": "§5 (S5)",
+      "note": "24/47 Asian vs 35/488 White diabetics with BMI < 25; Asian cell exploratory"
+    },
+    {
+      "hyp_id": "H4b",
+      "family": "RQ4 (S5, S8)",
+      "metric": "AUC gain WHtR minus BMI (single feature) by group; difference of gains",
+      "direction": "Asian gain larger",
+      "sesoi_locked": "0.01 AUC (difference of gains)",
+      "estimate": 0.088187,
+      "ci_low": 0.038012,
+      "ci_high": 0.111205,
+      "unit": "AUC",
+      "interval": "PSU cluster bootstrap",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "single feature (§5): supported; model level (§8, secondary): inconclusive (+0.0051 [-0.0037, +0.0134])",
+      "prior_exposure": "descriptive_seen",
+      "source": "§5 (S5), §8 (S8)",
+      "note": "gain Asian +0.137 vs White +0.049"
+    },
+    {
+      "hyp_id": "B1",
+      "family": "B1 integrity (P01+P02)",
+      "metric": "ΔROC-AUC S − (S−B1)",
+      "direction": "none (equivalence)",
+      "sesoi_locked": "0.01",
+      "estimate": 0.00192,
+      "ci_low": -0.00106,
+      "ci_high": 0.00489,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.00421,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "(a) AUC: supported",
+      "prior_exposure": "analysis_seen",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B1, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B2",
+      "family": "B2 admissibility (P03), leak gate",
+      "metric": "ΔROC-AUC M1 − M0 (leak gate); S − (S−B2) reported",
+      "direction": "lower",
+      "sesoi_locked": "0.05",
+      "estimate": -0.13084,
+      "ci_low": -0.14788,
+      "ci_high": -0.1138,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.02412,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "(a) AUC M1-M0: supported",
+      "prior_exposure": "prototype_seen",
+      "source": "§7 (S7)",
+      "note": "primary: M1 - M0, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B2t",
+      "family": "B2 admissibility, tree probe",
+      "metric": "Root-split variable of `DecisionTreeClassifier(max_depth=3, min_samples_leaf=50)`, trainin",
+      "direction": "as stated",
+      "sesoi_locked": "–",
+      "estimate": null,
+      "ci_low": null,
+      "ci_high": null,
+      "unit": "",
+      "interval": "",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "root split: supported",
+      "prior_exposure": "none",
+      "source": "§7 (S7)",
+      "note": "primary: M0 root DIQ070_2.0 (leak); M1 root BPQ020_2.0, training part, Tier 1"
+    },
+    {
+      "hyp_id": "B3",
+      "family": "B3 redundancy (P04+P05)",
+      "metric": "(a) ΔROC-AUC S − (S−B3); (b) ratio of bootstrap SDs of the per-SD BMI coefficient, arm S-l",
+      "direction": "(a) none; (b) ratio above 1; (c) lower with B3",
+      "sesoi_locked": "0.01 AUC; SD ratio 2",
+      "estimate": 0.00188,
+      "ci_low": -0.00176,
+      "ci_high": 0.00551,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.00514,
+      "underpowered": false,
+      "verdict": "mixed",
+      "sub_verdicts": "(a) AUC: supported; (b) BMI SD ratio: refuted; (c) max sign-flip rate: refuted",
+      "prior_exposure": "prototype_seen",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B3, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B4",
+      "family": "B4 missingness (P06+P07)",
+      "metric": "(a) ΔROC-AUC S − (S−B4); (b) ΔBrier S − (S−B4) among rows with missing INDFMPIR (paired bo",
+      "direction": "(a) none; (b) lower",
+      "sesoi_locked": "0.01 AUC; 0.005 Brier",
+      "estimate": 0.00024,
+      "ci_low": -0.00189,
+      "ci_high": 0.00237,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.00301,
+      "underpowered": true,
+      "verdict": "inconclusive",
+      "sub_verdicts": "(a) AUC: supported; (b) Brier, PIR missing: inconclusive",
+      "prior_exposure": "descriptive_seen",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B4, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B5",
+      "family": "B5 representation (P08+P09+P10+P13)",
+      "metric": "(a) Δ|calibration slope − 1| S − (S−B5), paired bootstrap (primary); (b) ΔROC-AUC S − (S−B",
+      "direction": "(a) lower; (b), (c) higher",
+      "sesoi_locked": "0.01 AUC",
+      "estimate": -0.03905,
+      "ci_low": -0.0681,
+      "ci_high": -0.01001,
+      "unit": "|slope−1|",
+      "interval": "corrected_t",
+      "mdd": 0.0411,
+      "underpowered": false,
+      "verdict": "inconclusive",
+      "sub_verdicts": "(a) |cal slope - 1|: supported; (b) AUC block: inconclusive; (c) AUC splines: supported; (d) LR test splines: supported; (e) tree P08/P09: supported",
+      "prior_exposure": "descriptive_seen",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B5, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B6a",
+      "family": "B6a class weight (P11)",
+      "metric": "(a) ΔROC-AUC S − (S−B6a); (b) ΔBrier; (c) Δbalanced accuracy at threshold 0.5",
+      "direction": "(a) none; (b) higher (worse); (c) higher",
+      "sesoi_locked": "0.01 AUC; 0.005 Brier; 0.05 balanced accuracy",
+      "estimate": 0.00057,
+      "ci_low": -0.00169,
+      "ci_high": 0.00284,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.00321,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "(a) AUC: supported; (b) Brier: supported; (c) balanced accuracy at 0.5: supported",
+      "prior_exposure": "none",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B6a, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "B6b",
+      "family": "B6b survey weight (P12)",
+      "metric": "ΔROC-AUC S − (S−B6b), unweighted metric; weighted AUC reported",
+      "direction": "non-inferiority",
+      "sesoi_locked": "0.01",
+      "estimate": -0.00272,
+      "ci_low": -0.00622,
+      "ci_high": 0.00078,
+      "unit": "AUC",
+      "interval": "corrected_t",
+      "mdd": 0.00495,
+      "underpowered": false,
+      "verdict": "supported",
+      "sub_verdicts": "(a) unweighted AUC: supported",
+      "prior_exposure": "none",
+      "source": "§7 (S7)",
+      "note": "primary: S - S-B6b, E-ALL, Tier 1"
+    },
+    {
+      "hyp_id": "P14",
+      "family": "WHtR arm (P14)",
+      "metric": "(a) ΔROC-AUC (S+WHtR) − S (S7); (b) Asian ΔTPR at specificity 0.80 (S8, exploratory)",
+      "direction": "(a) none; (b) higher",
+      "sesoi_locked": "0.01 AUC; 0.05 TPR",
+      "estimate": 0.025,
+      "ci_low": -0.04167,
+      "ci_high": 0.07143,
+      "unit": "TPR",
+      "interval": "PSU cluster bootstrap",
+      "mdd": null,
+      "underpowered": false,
+      "verdict": "inconclusive",
+      "sub_verdicts": "(a) ΔAUC -0.0009 [-0.0028, +0.0009]: supported; (b) NH Asian ΔTPR: inconclusive",
+      "prior_exposure": "descriptive_seen",
+      "source": "§7 (a), §8 (b)",
+      "note": "§7 interim entry was 'supported (part (b) deferred to S8)'; §8 combined verdict used"
+    }
+  ],
+  "claims": {
+    "n": 24,
+    "grades": {
+      "E3": 10,
+      "E2": 7,
+      "E1": 5,
+      "E4": 2
+    },
+    "n_headline": 6,
+    "n_downgraded": 0,
+    "max_words": 25
+  },
+  "limitations": {
+    "n": 15,
+    "borderline_auc_items": [
+      {
+        "hyp_id": "B5",
+        "sub": "(b) AUC block",
+        "pop": "E-ALL",
+        "lo": 0.00244,
+        "hi": 0.01074,
+        "margin": 0.00074
+      },
+      {
+        "hyp_id": "H2b",
+        "sub": "(a) AUC",
+        "pop": "E-ALL",
+        "lo": 1e-05,
+        "hi": 0.0158,
+        "margin": 1e-05
+      }
+    ]
+  },
+  "postlock_notes": [
+    {
+      "item": "H3 reading",
+      "note": "'Misses most' is read column-wise: within a diabetes stratum, which training label has the lowest recall (coded in fairness.h3_elements before the matrix was viewed). The row-wise reading – which stratum each label misses most – is secondary: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}.",
+      "consequence": "H3 inconclusive under the column-wise reading; the row-wise pattern is reported as a descriptive finding"
+    },
+    {
+      "item": "P14 verdict",
+      "note": "§7 entered P14 as 'supported' with part (b) deferred; §8 combined (a) and (b)",
+      "consequence": "scoreboard uses the §8 combined verdict: inconclusive"
+    },
+    {
+      "item": "H1b verdict",
+      "note": "§4 reported crude and standardised differences but no verdict line",
+      "consequence": "locked rule applied here: standardised +0.69 pp [-2.56, +3.93] < +2 pp and below crude -> supported"
+    }
+  ],
+  "h1b_verdict": "supported",
+  "h4a_newcombe_pp": [
+    43.8917,
+    29.8206,
+    57.6937
+  ],
+  "register_ids": [
+    "DR-S10-01",
+    "DR-S10-02",
+    "DR-S10-03",
+    "DR-S10-04",
+    "DR-S10-05",
+    "DR-S10-06",
+    "DR-S10-07",
+    "DR-S10-08",
+    "DR-S10-09",
+    "DR-S10-10",
+    "DR-S10-11"
+  ],
+  "runtime_seconds": 0.7594470977783203
+}
