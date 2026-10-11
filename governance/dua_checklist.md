@@ -1,6 +1,6 @@
 # Data use checklist: NCHS Data User Agreement, disclosure controls, weights and presentation standards
 
-Stage S2. Scope: NHANES August 2021 – August 2023 public-use files (suffix `_L`), 16 files listed in `data/nhanes_2021_2023/README.md`.
+Notebook §2. Scope: NHANES August 2021 – August 2023 public-use files (suffix `_L`), 16 files listed in `data/nhanes_2021_2023/README.md`.
 Sources: NCHS Data User Agreement <https://www.cdc.gov/nchs/policy/data-user-agreement.html>; DEMO_L documentation <https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.htm>; NHANES weighting tutorial <https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx>; cycle overview <https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewbrief.aspx?Cycle=2021-2023>.
 
 ## 1 Data User Agreement obligations
@@ -21,11 +21,11 @@ Recorded in `config/variable_spec.csv` (`top_code`, `note`) and turned into flag
 
 | Control | Variable | Handling in this project |
 |---|---|---|
-| Age top-coded at 80 ("80 years of age and over") | `RIDAGEYR` | `age_top` flag (321 cohort members, computed in §3 of `02_profiling`) |
+| Age top-coded at 80 ("80 years of age and over") | `RIDAGEYR` | `age_top` flag (321 cohort members, computed in §3.6) |
 | Income-to-poverty ratio top-coded at 5 | `INDFMPIR` | `pir_top` flag (1,282, 22.4 %); missing ratio flagged `pir_miss` (734, 12.8 %) |
 | Household size top-coded at 7 | `DMDHHSIZ` | column not loaded (minimisation) |
 | Pregnancy status only for women 20–44 | `RIDEXPRG` | cohort excludes `RIDEXPRG = 1` (37); `RIDEXPRG = 3` "cannot ascertain" (21) kept, flagged `preg_unknown` |
-| Masked variance units: 15 strata, 30 PSUs | `SDMVSTRA`, `SDMVPSU` | delete-one-PSU jackknife, national df = 15 (S4 `survey.py`) |
+| Masked variance units: 15 strata, 30 PSUs | `SDMVSTRA`, `SDMVPSU` | delete-one-PSU jackknife, national df = 15 (`src/survey.py`, checked in §4.2) |
 
 ## 3 Weight selection
 
@@ -68,5 +68,5 @@ Implemented in `src/survey.py` (`nchs_flags`, `korn_graubard_ci`, `domain_df`).
 | DUA obligations 1–5 mapped to project practice | done |
 | Disclosure controls recorded in spec and flagged in cohort | done |
 | Weight map and zero-weight semantics | done |
-| Presentation standards wired into `survey.py` | owned by S4 |
-| Hash verification at every run | done (`02_profiling`, item 0) |
+| Presentation standards wired into `survey.py` | done (§4.2, §4.5) |
+| Hash verification at every run | done (§0.4, §2.1) |

@@ -1,7 +1,7 @@
 # %% [markdown]
-# # §1 Problem and governance (Stages S1–S2)
+# # §1 Problem and governance
 #
-# This section states what is asked, of whom, and under which rules. It fixes the use case, the training target, the two evaluation populations, the feature-availability rule, the research questions with their hypotheses, and the governance obligations that come with the data. The text of the scope lives in `governance/S1_scope.md` and `governance/hypotheses.md`; this notebook renders those documents and **recomputes every number they contain** from the raw files, so a statement can never drift away from the data.
+# This section states what is asked, of whom, and under which rules: use case, training target, the two evaluation populations, the feature-availability rule, research questions and hypotheses, and the obligations that come with the data. The text lives in `governance/S1_scope.md`, `governance/hypotheses.md` and `governance/datasheet.md`; the notebook renders it and **recomputes every number it contains** from the raw files.
 
 # %%
 import sys, pathlib
@@ -22,6 +22,7 @@ pd.set_option("display.width", 150, "display.max_colwidth", 80, "display.max_row
 GOV = C.GOVERNANCE_DIR
 SCOPE_MD = (GOV / "S1_scope.md").read_text(encoding="utf-8")
 HYP_MD = (GOV / "hypotheses.md").read_text(encoding="utf-8")
+DATASHEET_MD = (GOV / "datasheet.md").read_text(encoding="utf-8")
 
 
 def md_section(text, heading):
@@ -47,6 +48,12 @@ def md_table(text, heading=None):
     return pd.DataFrame(data, columns=header)
 
 
+def to_md(df):
+    """DataFrame as a markdown pipe table (rendered by display(Markdown(...)); avoids wide text output)."""
+    rows = [list(map(str, df.columns))] + [[str(v) for v in r] for r in df.itertuples(index=False)]
+    return "\n".join(["| " + " | ".join(rows[0]) + " |", "|" + "---|" * len(rows[0])] + ["| " + " | ".join(r) + " |" for r in rows[1:]])
+
+
 # %% [markdown]
 # ## Analysis cohort
 #
@@ -62,7 +69,7 @@ assert len(cohort) == 5730
 assert funnel["n"].tolist() == [11933, 7809, 6064, 5767, 5730]
 
 # %% [markdown]
-# **So what.** The cohort has 5,730 adults, reached through the funnel 11,933 → 7,809 → 6,064 → 5,767 → 5,730 that the process document fixes. Everything that follows is computed on these rows.
+# **So what.** The cohort has 5,730 adults, reached through the funnel 11,933 → 7,809 → 6,064 → 5,767 → 5,730 (asserted). Everything that follows is computed on these rows.
 
 # %% [markdown]
 # ## Research question and use case
@@ -85,7 +92,7 @@ rule = md_table(SCOPE_MD, "Variable availability")
 rule["tier"] = rule["admissible"]
 display(rule.drop(columns="tier"))
 
-# Hard requirements of the rule (process doc S1 step 3)
+# Hard requirements of the rule (governance/S1_scope.md, feature-availability rule)
 MUST_BE_N = ["LBXGH", "LBXGLU", "DIQ010", "DIQ050", "DIQ070", "DID040", "DID060", "DIQ160", "DIQ180"]
 MUST_BE_T1 = ["RIDAGEYR", "RIAGENDR", "BMXBMI", "BMXWAIST", "whtr", "bp_sys_mean", "bp_dia_mean", "BPQ020", "BPQ080", "SMQ020"]
 MUST_BE_T2 = ["LBXTC", "LBDHDD"]
@@ -117,7 +124,7 @@ print("admissible but flagged as care-contact traces (T1-minus-care arm):", care
 assert set(care) == {"BPQ020", "BPQ080"}
 
 # %% [markdown]
-# **So what.** The rule rejects 14 variables: nine glycaemic or diagnosis-related ones (HbA1c, fasting glucose, the diagnosis item itself, insulin and pill use, age at diagnosis, insulin duration, "told prediabetes", "glucose tested in the past three years"), two fasting-subsample lipids (triglycerides, LDL), and race, insurance and usual place of care, which are kept as audit variables only. It admits 13 Tier-1 inputs and 2 Tier-2 lipids. The variable specification built from the codebooks (Stage S2) agrees with this table on every shared variable; it marks eight further variables with role `leak` (the diagnosis consequences and the fasting glucose) and flags exactly BPQ020 and BPQ080 as care-contact traces. Because the decision is made by rule and not per variable, any later reviewer can re-derive it.
+# **So what.** The rule rejects 14 variables: nine glycaemic or diagnosis-related items (HbA1c, fasting glucose, the diagnosis itself, its treatments and consequences, "told prediabetes", "glucose tested"), two fasting-subsample lipids, and race, insurance and usual place of care, which stay audit variables only. It admits 13 Tier-1 inputs and 2 Tier-2 lipids. The codebook-based variable specification (§2) agrees on every shared variable and flags exactly BPQ020 and BPQ080 as care-contact traces. Because the decision is made by rule, any reviewer can re-derive it.
 
 # %% [markdown]
 # ## Evaluation populations
@@ -186,12 +193,12 @@ f_comp = plots.savefig(fig, "S1_label_composition",
 plt.show(); print("saved", f_comp)
 
 # %% [markdown]
-# **So what.** Of the 971 positives, 819 (84.3 %) had already reported a diagnosis; only 152 are undiagnosed. E-ALL therefore rewards recognising known patients, while E-SCREEN (152 positives against 4,759 negatives) is the population in which a screening aid has something to find. Weighting matters for prevalence: 16.9 % unweighted against 14.0 % with the examination-blood weights, mainly because older adults are over-represented in the sample. The gap between model performance on E-ALL and on E-SCREEN is reported as a finding in its own right, not as noise. With only 152 positives, many E-SCREEN contrasts will be *inconclusive*; that is stated in advance.
+# **So what.** Of the 971 positives, 819 (84.3 %) had already reported a diagnosis; only 152 are undiagnosed. E-ALL therefore rewards recognising known patients, while E-SCREEN (152 positives, 4,759 negatives) is where a screening aid has something to find. Prevalence is 16.9 % unweighted but 14.0 % weighted, mainly because older adults are over-represented in the sample. The E-ALL – E-SCREEN performance gap is reported as a finding in its own right. With 152 positives, many E-SCREEN contrasts will be *inconclusive*; that is stated in advance.
 
 # %% [markdown]
 # ## Research questions and hypotheses
 #
-# **Why.** Four questions organise the whole project, and each hypothesis has a metric, a direction, a magnitude, a smallest effect of interest (SESOI), a falsifier and an honest record of whether the data had been seen. The hypotheses are read from `governance/hypotheses.md`, which Stage S6 locks with a SHA-256 before any ablation is run.
+# **Why.** Four questions organise the whole project, and each hypothesis has a metric, a direction, a magnitude, a smallest effect of interest (SESOI), a falsifier and an honest record of whether the data had been seen. The hypotheses are read from `governance/hypotheses.md`, which §6.11 locks with a SHA-256 before any ablation is run.
 #
 # | RQ | Question |
 # |---|---|
@@ -215,7 +222,7 @@ rq_map = hyp.assign(rq=hyp["rq_or_block"].str.extract(r"(RQ\d)")[0]).groupby("rq
 display(rq_map.rename("hypotheses").to_frame())
 
 # %% [markdown]
-# **So what.** Eight hypotheses cover the four questions (H1a, H1b → RQ1; H2a–H2c → RQ2; H3 → RQ3; H4a, H4b → RQ4) and every one carries all seven fields. Honesty about exposure matters more than the label: four hypotheses are `analysis_seen` (the pattern was observed in the earlier profiling), one is `descriptive_seen`, and only the three experimental ones (H2b, H2c, H3) are genuine pre-registrations. Stages S3–S5 are described as confirmation of observed patterns, never as pre-registered tests.
+# **So what.** Eight hypotheses cover the four questions (H1a, H1b → RQ1; H2a–H2c → RQ2; H3 → RQ3; H4a, H4b → RQ4), each with all seven fields. Four are `analysis_seen` (the pattern was observed in pilot profiling), one is `descriptive_seen`, and only the three experimental ones (H2b, H2c, H3) are genuine pre-registrations. §3–§5 therefore present confirmations of observed patterns, never pre-registered tests.
 
 # %% [markdown]
 # ## ADA-lite baseline
@@ -224,7 +231,7 @@ display(rq_map.rename("hypotheses").to_frame())
 
 # %%
 ada = md_table(SCOPE_MD, "ADA-lite baseline")
-display(ada)
+display(Markdown(to_md(ada)))
 n_avail = int((ada["Status"] == "available").sum())
 n_miss = int(ada["Status"].str.contains("missing").sum())
 print(f"ADA-lite items available: {n_avail} of {len(ada)}; missing: {n_miss}")
@@ -246,11 +253,13 @@ for stem in ["MCQ_L", "DIQ_L"]:
 ev = pd.DataFrame(evidence)
 display(ev)
 ctx = [codebook_text("DIQ_L")[max(0, m.start() - 60): m.end() + 80] for m in re.finditer("during pregnancy", codebook_text("DIQ_L"))]
-print("context of 'during pregnancy' in DIQ_L:", ctx[:2])
+print("context of 'during pregnancy' in DIQ_L:")
+for t in ctx[:2]:
+    print("  ...", t.strip()[:120], "...")
 assert ev.query("`search term` in ['family history','blood relative','gestational']")["hits"].sum() == 0
 
 # %% [markdown]
-# **So what.** Five of the seven items exist (age, sex, hypertension history, measured BMI, recreational physical activity); family history and gestational diabetes do not occur in the MCQ_L or DIQ_L codebooks (zero hits for each search term). The only mention of pregnancy in DIQ_L is the exclusion wording of the diagnosis question itself. The baseline is reported under the name ADA-lite, and the open point that the published AUC of Bang 2009 is quoted as 0.79 or 0.83 in different sources is flagged for verification against the original paper.
+# **So what.** Five of the seven items exist (age, sex, hypertension history, measured BMI, leisure-time activity); family history and gestational diabetes do not occur in the MCQ_L or DIQ_L codebooks (zero hits per search term), and the only pregnancy wording in DIQ_L is the exclusion clause of the diagnosis question. The baseline is therefore called ADA-lite. Only the verified abstract figures of Bang et al. (2009) are used, qualitatively (§9.8.3); no published AUC is used.
 
 # %% [markdown]
 # ## Novelty statement
@@ -268,9 +277,11 @@ print("novelty statement: no priority or superlative words;", len(novelty.split(
 # %% [markdown]
 # ## Data user agreement and disclosure controls
 #
-# **Why.** NHANES public-use files are released under the NCHS Data User Agreement. Compliance is part of the method: it forbids some analyses (linkage with other individual-level data) and shapes others (how small groups are reported). Each obligation is mapped to what the project does.
+# **Why.** NHANES public-use files are released under the NCHS Data User Agreement. Compliance is part of the method: it forbids some analyses (linkage with other individual-level data) and shapes others (how small groups are reported). The datasheet summary (Gebru et al. 2021 format) states provenance, ethics approval and consent; the table maps each obligation to what the project does.
 
 # %%
+display(Markdown(md_section(DATASHEET_MD, "Summary")))
+assert "Protocol #2021-05" in DATASHEET_MD and "informed consent" in DATASHEET_MD
 dua = md_table(SCOPE_MD, "Data user agreement obligations")
 display(dua)
 assert len(dua) == 5
@@ -303,7 +314,7 @@ assert (strata_n, psu_n) == (15, 30) and hh_max == 7
 assert preg_known["RIDAGEYR"].between(20, 44).all()
 
 # %% [markdown]
-# **So what.** 321 adults (5.6 %) are top-coded at age 80 and 1,282 (22.4 %) at an income ratio of 5, with another 734 (12.8 %) missing, so the income variable is both capped and incomplete; the corresponding indicators are kept next to the values. The variance units are masked (15 strata, 30 PSUs, df = 15), which is why every design-based interval in this project uses the jackknife with these 15 degrees of freedom and why small domains are flagged. No part of the analysis tries to undo these controls or to link records to anything else; external checks use published aggregates only.
+# **So what.** The data were collected under NCHS ethics approval with informed consent, and the DUA obligations are met by design. 321 adults (5.6 %) are top-coded at age 80 and 1,282 (22.4 %) at an income ratio of 5, with 734 (12.8 %) missing, so income is both capped and incomplete; indicators are kept next to the values. Masked variance units (15 strata, 30 PSUs) give every design-based interval 15 jackknife degrees of freedom. Nothing tries to undo these controls or link records; external checks use published aggregates only.
 
 # %% [markdown]
 # ## Data minimisation
@@ -323,7 +334,7 @@ assert (mcols["decision"] == "drop").sum() == tot_drop
 MIN_STATUS = {"raw_columns": tot_raw, "kept": tot_kept, "dropped": tot_drop}
 
 # %% [markdown]
-# **So what.** Of 175 raw columns in the 16 files, 78 are kept and 97 are dropped (55 %) because the specification gives them no analytic role: quasi-identifiers such as country of birth and years of residence, military service, household-size details, measurement-comment codes and unrelated MCQ items. Every dropped column has a stated reason in `minimisation_columns.csv`, and the loader discards them immediately after reading, so downstream code cannot use them by accident.
+# **So what.** Of 175 raw columns in the 16 files, 78 are kept and 97 (55 %) are dropped because they have no analytic role: quasi-identifiers (country of birth, years of residence), military service, household details, comment codes and unrelated MCQ items. Each dropped column has a stated reason, and the loader discards them right after reading, so downstream code cannot use them by accident.
 
 # %% [markdown]
 # ## Response rates and representativeness
@@ -364,12 +375,12 @@ f_age = plots.savefig(fig, "S1_sample_vs_weighted_age",
 plt.show(); print("saved", f_age)
 
 # %% [markdown]
-# **So what.** Adults aged 60 and over are 46.2 % of the sample but 31.4 % of the weighted population, so unweighted figures overstate prevalence (16.9 % against 14.0 %); the Kish design effect of 1.55 means the 5,730 adults carry roughly the information of 3,700 simple-random-sample adults before clustering is considered. Interview (34.6 %) and examination (25.7 %) response rates are low, and the cycle has no oversampling, so subgroups such as Asian adults (315 in the cohort, 50 with `L_comb`) are thin: their results are reported with intervals and labelled exploratory. The weights adjust for known covariates only; if participation depends on health, as the interview-versus-examination comparison in Stage S5 suggests, some bias remains and is acknowledged as a limitation rather than corrected.
+# **So what.** Adults aged 60+ are 46.2 % of the sample but 31.4 % of the weighted population, so unweighted figures overstate prevalence (16.9 % vs 14.0 %); the Kish design effect of 1.55 leaves the 5,730 adults with the information of roughly 3,700 simple-random-sample adults. Response is low (34.6 % interview, 25.7 % examination) and nothing is oversampled, so subgroups such as Asian adults (315, 50 with `L_comb`) are thin and reported as exploratory. Weights adjust for known covariates only; health-dependent participation (§5.6) remains a stated limitation.
 
 # %% [markdown]
-# ## Scope decisions
+# ## Outputs
 #
-# The decisions of this section are recorded in `governance/register/S1.csv`; the table lists them with the self-check verdict (a re-computation of the key counts above).
+# Decisions of this section (`governance/register/S1.csv`, with self-check verdicts) and the stored results (`results/metrics_S1.json`, `results/S1/`).
 
 # %%
 reg_path = GOV / "register" / "S1.csv"

@@ -1,6 +1,6 @@
 # S1 Scope: problem, populations, availability rule and governance
 
-Status: drafted in S1, target frozen at the end of S5 (`target-freeze`). Numbers below are the verified facts of `docs/development_process.md` section 8; section `01_scope_governance.py` recomputes every one of them from the raw files and asserts them. Items marked **[to verify]** are literature points not yet checked against the primary source.
+Status: drafted in §1, target frozen at the end of §5 (`target-freeze`). §1 of the notebook recomputes every number below from the raw files and asserts it. Literature points are stated only at the strength that was checked against a primary source (see "Literature checks" at the end).
 
 ## Research question and use case
 
@@ -40,7 +40,7 @@ A feature is admissible only if all hold: (1) it can be obtained at the screenin
 
 ### Variable availability
 
-The authoritative per-variable record is `config/variable_spec.csv` (Stage S2); section 1 compares the two and asserts that they agree.
+The authoritative per-variable record is `config/variable_spec.csv` (§2); §1.3 compares the two and asserts that they agree.
 
 | variable | file | meaning | admissible | reason |
 |---|---|---|---|---|
@@ -74,7 +74,7 @@ The authoritative per-variable record is `config/variable_spec.csv` (Stage S2); 
 | LBXTC | TCHOL_L | total cholesterol | T2 | same-visit lipid panel |
 | LBDHDD | HDL_L | HDL cholesterol | T2 | same-visit lipid panel |
 
-Raw weight, height, hip and arm circumference are available but removed as structurally redundant with BMI and waist (VIF 95.7 and 97.6, Stage S4). That is a *preparation* decision, not an availability decision.
+Raw weight, height, hip and arm circumference are available but removed as structurally redundant with BMI and waist (VIF 95.7 and 97.6, §4.9). That is a *preparation* decision, not an availability decision.
 
 ## ADA-lite baseline
 
@@ -86,11 +86,11 @@ This cycle has no questions on family history of diabetes or gestational diabete
 | Sex | RIAGENDR | available |
 | History of hypertension | BPQ020 | available |
 | Body mass index | BMXBMI (measured) | available |
-| Physical activity | PAQ recreational items converted to minutes per week; >= 150 minutes counts as active (threshold under review) | available |
+| Physical activity | PAQ leisure-time items; inactive = no moderate and no vigorous sessions (PAD790Q = PAD810Q = 0) | available |
 | Family history of diabetes | none in MCQ_L or DIQ_L | **missing** |
 | Gestational diabetes | none in the 2021-23 files | **missing** |
 
-Comparison on E-SCREEN: AUC as primary metric; sensitivity and positive predictive value at the same screened fraction as Bang (35 %) as secondary. The published AUC of Bang 2009 is quoted as 0.79 or 0.83 in different sources **[to verify against the original paper]**, and the outcome there is fasting glucose >= 126 mg/dL, not HbA1c.
+Comparison on E-SCREEN: AUC as primary metric and recall at a fixed specificity as secondary (§7.6). Only the figures in the abstract of Bang et al. (2009) are used (cut-off >= 5 points: sensitivity 79 %, specificity 67 %; checked in §9.8.3). AUC values of 0.79 or 0.83 that circulate in secondary sources were not verified against the full text and are not used. The outcome there is fasting glucose >= 126 mg/dL, not HbA1c, so the comparison is qualitative.
 
 ## Research questions
 
@@ -101,11 +101,11 @@ Comparison on E-SCREEN: AUC as primary metric; sensitivity and positive predicti
 | RQ3 | The 3 x 3 label matrix: how does the training label (self-report, HbA1c, combined) change who is detected? | H3 |
 | RQ4 | Measurement bias of BMI in Asian adults and the WHtR repair | H4a, H4b |
 
-The hypotheses (metric, direction, magnitude, SESOI, falsifier, `prior_exposure`, weights) are in `governance/hypotheses.md`. Only experimental hypotheses of S7/S8 claim genuine pre-registration; the others carry the exposure level honestly.
+The hypotheses (metric, direction, magnitude, SESOI, falsifier, `prior_exposure`, weights) are in `governance/hypotheses.md`. Only the experimental hypotheses of §7/§8 claim genuine pre-registration; the others carry the exposure level honestly.
 
 ## Novelty statement
 
-This project does not claim to discover that Asian adults develop diabetes at lower BMI, or that undiagnosed diabetes is linked to limited contact with health care; both are established. Its contribution is a combination applied to the 2021-2023 NHANES cycle with fixed basic models: an audit of the label as a measurement, a feature-availability rule that defines leakage, the quantified cost of blanket data cleaning, design-aware evaluation, and pre-registered paired ablations, triangulated against the published NCHS Data Brief 516 and a reduced ADA risk baseline. We have not found this integration in the literature we consulted **[to verify]**.
+This project does not claim to discover that Asian adults develop diabetes at lower BMI, or that undiagnosed diabetes is linked to limited contact with health care; both are established. Its contribution is a combination applied to the 2021-2023 NHANES cycle with fixed basic models: an audit of the label as a measurement, a feature-availability rule that defines leakage, the quantified cost of blanket data cleaning, design-aware evaluation, and pre-registered paired ablations, triangulated against the published NCHS Data Brief 516 and a reduced ADA risk baseline. We have not found this integration in the literature we consulted; this is a statement about our search, not a priority claim.
 
 ## Governance
 
@@ -125,7 +125,7 @@ Age is top-coded at 80, income-to-poverty ratio at 5, household size at 7; pregn
 
 ### Data minimisation
 
-Only variables listed as `include` in the specification are retained; the loader drops the other columns immediately and writes `results/S2/minimisation_report.csv` (columns kept and dropped per file). Excluded groups (child-only items, country of birth and years of residence, military service, unrelated MCQ items) are listed with a reason. Reference points: GDPR Article 5(1)(b)-(c) purpose limitation and data minimisation as the standard of good practice; for Singapore the PDPA purpose-limitation obligation applies, which has no separate minimisation principle **[to verify the PDPC advisory guidelines]**.
+Only variables listed as `include` in the specification are retained; the loader drops the other columns immediately and writes `results/S2/minimisation_report.csv` (columns kept and dropped per file). Excluded groups (child-only items, country of birth and years of residence, military service, unrelated MCQ items) are listed with a reason. Reference points: GDPR Article 5(1)(b)-(c) (purpose limitation, data minimisation) as the standard of good practice. The Singapore PDPA has a Purpose Limitation Obligation (section 18) and a Retention Limitation Obligation (section 25) but no obligation named "data minimisation"; we apply the stricter GDPR principle.
 
 ### Survey weights and representativeness
 
@@ -140,10 +140,10 @@ Variance by delete-one-PSU jackknife (national df = 15; subdomain df = number of
 
 ## Plausibility checks
 
-No target interval for performance is set in advance. The leakage loop L3 is triggered only for admissible arms (M1, S): T1 AUC above 0.90 on E-ALL, or any admissible single feature (age excepted) with AUC above 0.75.
+No target interval for performance is set in advance. The leak hunt (§9.9) is triggered only for admissible arms (M1, S): T1 AUC above 0.90 on E-ALL, or any admissible single feature (age excepted) with AUC above 0.75.
 
-## Open items
+## Literature checks
 
-* Bang 2009: AUC (0.79 or 0.83) and BMI score table **[to verify]**.
-* NCHS presentation standard (Parker 2017): exact thresholds taken from secondary descriptions **[to verify]**.
-* The physical-activity threshold (150 minutes per week) for the ADA-lite activity item is under review in S2/S3.
+* Bang et al. (2009): the abstract figures (cut-off >= 5, sensitivity 79 %, specificity 67 %) are used; the AUC is not used (§9.8.3). The item points of the score are applied as described in §7.6.
+* NCHS presentation standards (Parker et al. 2017): the project applies a simplified rule set (n < 30, effective n < 30, 95 % CI width >= 0.30, domain df < 8 lead to a flag; see `governance/dua_checklist.md`, section 4). It is not a full implementation of the standard, which also has relative-width and complementary-proportion criteria.
+* ADA-lite activity item: defined as "no leisure-time moderate or vigorous activity", matching the yes/no question of the published score, not a minutes threshold.
