@@ -618,7 +618,7 @@ for nm, wcol in (("WTPH2YR (blood non-response adjusted)", C.WEIGHT_PHLEB), ("WT
 prev_tab = pd.DataFrame(prev_rows)
 show(prev_tab, 4)
 # The WTPH2YR prevalence must reproduce the 14.0 % reported in §1 (tolerance 0.15 percentage points).
-assert abs(prev_tab.loc[0, "est"] - 0.140) < 0.0015, "WTPH2YR prevalence must reproduce 14.0 % (process doc §8)"
+assert abs(prev_tab.loc[0, "est"] - 0.140) < 0.0015, "WTPH2YR prevalence must reproduce 14.0 % (the §1 weighted prevalence)"
 
 # Two uses of IPW: weights in the evaluation only (weighted AUC) and in both fit and evaluation (Spec.ipw=True
 # multiplies the fit weights).
