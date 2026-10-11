@@ -29,7 +29,7 @@ Group metrics and gaps
     :func:`label_matrix` (recall at specificity 0.80 on the common non-diabetic negatives,
     AUC per cell) and :func:`h3_elements` (pre-registered ordering of hypothesis H3).
 Mitigation
-    :func:`reweighing_weights` (Kamiran & Calders 2012), :func:`cv_predict_reweighed`,
+    :func:`reweighing_weights` (Kamiran & Calders 2012; partial once multiplied by survey weights), :func:`cv_predict_reweighed`,
     :func:`access_pipeline` (audit-only arm with insurance / usual-place features).
 
 Small cells
@@ -480,7 +480,11 @@ def h3_elements(lm: dict, sesoi: float = C.SESOI["group_tpr_gap"]) -> pd.DataFra
 def reweighing_weights(groups, y) -> np.ndarray:
     """Kamiran & Calders (2012) reweighing: w(g, y) = P(g) P(y) / P(g, y), empirical shares.
 
-    After weighting, group and label are independent in the training data.  Unknown groups
+    The shares are UNWEIGHTED counts, so these weights alone make group and label independent
+    in the unweighted training data.  If they are multiplied by survey weights afterwards (as
+    :func:`cv_predict_reweighed` does), independence holds only partly in the weighted data;
+    a version computed from survey-weighted counts is checked in the S9 post-audit corrections.
+    Unknown groups
     (NaN) form their own group, so no row is dropped.  Weights have mean 1 by construction.
     """
     g = pd.Series(np.asarray(groups, dtype=object)).fillna("__missing__").astype(str).to_numpy()
@@ -497,6 +501,8 @@ def cv_predict_reweighed(make_pipe, X, y, folds, groups, *, base_weight=None, n_
 
     sample_weight = base_weight (e.g. normalised WTPH2YR of arm S, P12) x w(g, y) from the fold's
     training rows, renormalised to mean 1; passed to the final estimator as ``model__sample_weight``.
+    w(g, y) comes from unweighted counts, so the product with the survey weights makes group and
+    label only PARTLY independent (a partial reweighing; see :func:`reweighing_weights`).
     Returns ``repeat, fold, row, prob`` like ``evalkit.cv_predict``.
     """
     from joblib import Parallel, delayed

@@ -11,7 +11,7 @@
 #    kinds of diabetes, plus an access-proxy audit arm.
 # 3. **Mitigation** (§8.8–§8.12) – reweighing, the WHtR fix (P14-b), group thresholds, the trade-off and calibration.
 #
-# Everything uses the out-of-fold predictions of the **training part** on the §7 folds; the hold-out is not read. Race,
+# Everything uses the out-of-fold predictions of the **training part** on the §7 folds; the internal hold-out is not read. Race,
 # insurance and access never enter a prediction model (§1 availability rule): they are audit variables only.
 
 # %%
@@ -65,7 +65,7 @@ raw = P.raw_cohort()
 clean = L.add_labels(io.build_cohort())
 # Guard: raw and clean must list the same participants in the same order.
 assert (raw["SEQN"].to_numpy() == clean["SEQN"].to_numpy()).all()
-# Stored stratified hold-out; only the training part (tr) is used here, the hold-out is never read.
+# Stored stratified hold-out; only the training part (tr) is used here, the hold-out is not read in this section.
 tr, te = ek.make_holdout(clean)
 raw_tr = raw.iloc[tr].reset_index(drop=True)
 cl = clean.iloc[tr].reset_index(drop=True)
@@ -671,9 +671,12 @@ S8["access_audit"] = dict(coefs=ACC.round(5).to_dict("records"), diffs=ACCD.roun
 
 # %% [markdown]
 # ## 8 Reweighing
-# **Why.** Reweighing (Kamiran & Calders 2012) gives each training row the weight w(g, y) = P(g)·P(y) / P(g, y), making
-# group and label independent in the weighted data. It is applied inside every training fold on top of arm S's survey
-# weights, so the comparison with S is paired. Race (pre-specified) and, as extensions, insurance and low access are
+# **Why.** Reweighing (Kamiran & Calders 2012) gives each training row the weight w(g, y) = P(g)·P(y) / P(g, y), computed
+# from *unweighted* counts; on its own this would make group and label independent. Here the weights are then multiplied
+# by arm S's survey weights inside every training fold (so the comparison with S is paired), which means independence
+# holds only partly in the weights actually fitted: this is a **partial reweighing**. A correctly weighted version
+# (reweighing computed from survey-weighted counts) is checked in §9 (post-audit corrections); its conclusion, that
+# reweighing is not adopted, is unchanged. Race (pre-specified) and, as extensions, insurance and low access are
 # reweighed. ΔAUC uses the §7.4.1 engine; gap changes are paired bootstrap differences of EOD.
 
 # %%
@@ -777,9 +780,10 @@ S8["reweighing"] = dict(auc=RWT.round(5).to_dict("records"), eod=RWE.round(5).to
 
 # %% [markdown]
 # **So what.** Reweighing is an instructive null. Race weights range 0.70–1.16 (NH Black cases down-weighted most), yet every ΔAUC interval lies inside ±0.01. The gaps do not close either: race reweighing leaves the NH Asian gap
-# where it was and *widens* the NH Black gap (CI excluding 0), because it removes the prevalence difference that made
-# Black cases easier to find. Insurance and low-access reweighing narrow their gaps by about 0.04–0.05 with CIs including
-# 0. Reweighing acts on the label–group association; the gaps of §8.3 come from features and from the diagnosis
+# where it was and *widens* the NH Black gap (CI excluding 0), probably because it narrows the prevalence difference
+# that made Black cases easier to find (survey weights alone leave a race spread in positive rate of about 11 points;
+# the fitted product of reweighing and survey weights leaves about 4, so independence is only partial). Insurance and low-access reweighing narrow their gaps by about 0.04–0.05 with CIs including
+# 0. Reweighing (in this partial form) acts on the label–group association; the gaps of §8.3 come from features and from the diagnosis
 # component of the label.
 
 # %% [markdown]
@@ -1191,13 +1195,15 @@ reg = [
          finding="Race reweighing changes neither AUC nor the Asian gap and widens the NH Black gap",
          evidence_ref="results/S8/reweighing_auc.csv; results/S8/reweighing_eod.csv",
          evidence_value=f"w range race {rw_rng['race']}; dAUC {rw_auc.loc['S+RW(race)', 'est']:+.4f} ({rw_auc.loc['S+RW(race)', 'lo']:+.4f}, {rw_auc.loc['S+RW(race)', 'hi']:+.4f})",
-         decision="Not adopted; reported as a null mitigation", alternatives_rejected="Race as a model feature (S9 sensitivity only)",
+         decision="Not adopted; reported as a null mitigation. Partial reweighing: weights from unweighted counts multiplied by survey weights, so group and label are only partly independent in the fitted weighting; a correctly weighted version is checked in S9 (post-audit corrections) and the conclusion is unchanged",
+         alternatives_rejected="Race as a model feature (S9 sensitivity only)",
          status="decided", check_verdict="PASS"),
     dict(dr_id="DR-S8-08", type="mitigation",
          finding="Insurance and low-access reweighing: AUC unchanged, targeted gaps narrow slightly with CIs including 0",
          evidence_ref="results/S8/reweighing_auc.csv; results/S8/reweighing_eod.csv; results/S8/tradeoff.csv",
          evidence_value=f"w range insurance {rw_rng['insurance']}, low access {rw_rng['low_access']}; dAUC {rw_auc.loc['S+RW(insurance)', 'est']:+.4f} / {rw_auc.loc['S+RW(low_access)', 'est']:+.4f}",
-         decision="Not adopted (no demonstrated benefit); extension item complete", alternatives_rejected="Adopting on point estimates",
+         decision="Not adopted (no demonstrated benefit); extension item complete. Partial reweighing (unweighted-count weights x survey weights, independence only partly achieved); corrected version checked in S9 post-audit corrections, conclusion unchanged",
+         alternatives_rejected="Adopting on point estimates",
          status="decided", check_verdict="PASS"),
     dict(dr_id="DR-S8-09", type="hypothesis_test",
          finding="WHtR raises NH Asian TPR in point estimate only; PSU-cluster interval crosses 0",
