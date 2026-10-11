@@ -1,25 +1,12 @@
 # %% [markdown]
-# # §9 Robustness and Credibility (Stage S9)
+# # §9 Robustness and Credibility
 #
-# §7 reached its verdicts on one set of folds, one label definition, one imputation rule and one
-# regularisation strength. This section asks how much of that is **procedure** and how much is **data**:
-#
-# * **controls** – does the evaluation produce AUC 0.5 when there is nothing to find (label permutation,
-#   pure-noise feature), and does it find a signal of known size (positive control)?
-# * **stability** – does the headline comparison S − M1 keep its verdict under other CV seeds, 16
-#   pre-specified analysis variations, a 60-specification curve, survey-cluster folds and a
-#   missing-not-at-random scenario for HbA1c?
-# * **external validity** – do our population numbers line up with the published NCHS Data Brief 516?
-# * **leak hunt (loop L3)** – could any admissible feature be a disguised label?
-# * **hold-out** – the 20 % hold-out is evaluated **once**, only after the `exp-freeze` tag.
-#
-# All work before section 11 uses the training part only (4,584 rows). Headline comparison throughout:
-# ΔAUC(S − M1), the "minimal vs systematic" contrast of hypothesis H2b(a) (locked rule: *supported* =
-# equivalence within ±0.01; §7 verdict *inconclusive*).
-#
-# Contents: 1 reference · 2 controls · 3 seeds · 4 sensitivity table · 5 specification curve · 6 survey-cluster
-# CV · 7 missing HbA1c (IPW, delta) · 8 external validity · 9 leak hunt · 10 pre-hold-out summary ·
-# 11 one-shot hold-out · 12 storage
+# §7 reached its verdicts on one set of folds, one label, one imputation rule and one C. This section asks how much of
+# that is **procedure** and how much is **data**: negative and positive controls (§9.2), seed, specification, cluster
+# and missing-data stability of the headline contrast (§9.3–§9.7), external validity against NCHS Data Brief 516
+# (§9.8), a leak hunt for disguised labels among the admissible features (§9.9) and the one-shot hold-out (§9.11, after
+# the `exp-freeze` tag). Everything before §9.11 uses the training part only (4,584 rows). The headline contrast is
+# ΔAUC(S − M1), H2b(a) (locked rule: *supported* = equivalence within ±0.01; §7 verdict *inconclusive*).
 
 # %%
 import sys, pathlib
@@ -37,7 +24,15 @@ from scipy import stats
 from src import nhanes_io as io, labels as L, prep as P, evalkit as ek, survey as sv, robustness as RB
 from src.robustness import Spec
 
-pd.set_option("display.width", 170, "display.max_columns", 30, "display.max_colwidth", 60)
+from IPython.display import display
+pd.set_option("display.width", 150, "display.max_columns", 30, "display.max_colwidth", 60)
+
+
+def show(df, digits=3):
+    """Display a table as HTML (long text wraps; keeps the text output narrow)."""
+    display(df.style.hide(axis="index").format(precision=digits, na_rep="")
+            .set_properties(**{"text-align": "left", "white-space": "normal"}))
+
 warnings.filterwarnings("ignore", category=UserWarning)
 os.environ.setdefault("PYTHONWARNINGS", "ignore")
 OUT = C.RESULTS_DIR / "S9"
@@ -92,7 +87,7 @@ def pair(spec_a, spec_b, folds=None, *, tag, label="L_comb", rows=None, use_t=Tr
 
 ref = pair(Spec("S"), Spec("M1"), tag="reference")
 ref_df = pd.DataFrame(ref)
-print(ref_df[["pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "mdd", "h2b"]].round(4).to_string(index=False))
+show(ref_df[["pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "mdd", "h2b"]], 4)
 s7_ref = next(r for r in S7m["scoreboard_detail"] if r["hyp_id"] == "H2b" and r["sub"] == "(a) AUC" and r["pop"] == "E-ALL" and r["tier"] == 1)
 if C.IS_FINAL:   # identical folds, model and engine -> identical numbers
     assert abs(ref[0]["est"] - s7_ref["est"]) < 5e-5 and abs(ref[0]["hi"] - s7_ref["hi"]) < 5e-5, (ref[0]["est"], s7_ref)
@@ -100,20 +95,17 @@ print(f"S7 stored (FINAL): {s7_ref['est']:+.4f} [{s7_ref['lo']:+.4f}, {s7_ref['h
 S9["reference"] = {r["pop"]: {k: r[k] for k in ("auc_a", "auc_b", "est", "lo", "hi", "interval", "mdd", "h2b")} for r in ref}
 
 # %% [markdown]
-# **So what.** In FINAL mode the reference reproduces §7 to the fourth decimal (asserted): S is better than M1
-# by about +0.008 AUC on E-ALL, but the interval runs from about 0 to about +0.016 – it neither excludes a
-# 0.01 difference nor sits inside ±0.01, so H2b(a) is *inconclusive*. The question for every check below is
-# whether this verdict – not the point estimate – survives.
+# **So what.** In FINAL mode the reference reproduces §7 to the fourth decimal (asserted): S is ahead of M1 by about
+# +0.008 AUC on E-ALL with an interval from about 0 to +0.016, so H2b(a) is *inconclusive*. The question for every check
+# below is whether this verdict – not the point estimate – survives.
 
 # %% [markdown]
 # ## 2 Negative and positive controls
 # ### 2.1 Label permutation
-# **Why.** If the evaluation procedure leaked label information (preprocessing fitted on test rows, weights
-# derived from the label, a fold bug), a model trained on *permuted* labels would still score above 0.5. Each
-# permutation shuffles the training label of the whole training part, refits on the same folds and records
-# the mean per-fold AUC (`evalkit.permutation_auc`, Ojala & Garriga 2010). Acceptance: null mean in
-# [0.495, 0.505]. Features stay attached to their rows, so this test **cannot** detect feature leakage – that
-# is the job of the leak hunt (section 9).
+# **Why.** If the procedure leaked label information (preprocessing fitted on test rows, label-derived weights, a fold
+# bug), a model trained on *permuted* labels would still score above 0.5 (Ojala & Garriga 2010). Each permutation
+# shuffles the training label, refits on the same folds and records the mean per-fold AUC; acceptance: null mean in
+# [0.495, 0.505]. Features stay attached to their rows, so this **cannot** detect feature leakage – that is §9.9's job.
 
 # %%
 t0 = time.time()
@@ -127,7 +119,7 @@ perm_tab = pd.DataFrame([dict(arm=a, observed=d["observed"], null_mean=d["null_m
                               in_band=RB.PERM_NULL_BAND[0] <= d["null_mean"] <= RB.PERM_NULL_BAND[1])
                          for a, d in PERM.items()])
 perm_tab.to_csv(OUT / "permutation.csv", index=False)
-print(perm_tab.round(4).to_string(index=False))
+show(perm_tab, 4)
 print(f"{sum(len(ctx.folds) * (d['n_perm'] + 1) for d in PERM.values())} fits in {time.time() - t0:.0f} s")
 assert perm_tab["in_band"].all(), "permutation null mean outside [0.495, 0.505]: procedural leakage suspected"
 
@@ -149,17 +141,13 @@ plt.show()
 S9["permutation"] = perm_tab.set_index("arm").to_dict("index")
 
 # %% [markdown]
-# **So what.** Both null distributions are centred on 0.5 (means printed above, inside the acceptance band) and
-# no permutation comes near the observed AUC (p is the smallest value attainable with this number of
-# permutations). The cross-validation, the in-fold preprocessing and the survey and class weights do not leak
-# label information into the score. This is a statement about the *procedure* only.
+# **So what.** Both null distributions are centred on 0.5 and no permutation comes near the observed AUC: the CV, the
+# in-fold preprocessing and the weights do not leak label information. This is a statement about the procedure only.
 
 # %% [markdown]
 # ### 2.2 Pure-noise feature
-# **Why.** A feature that is pure noise must look like noise to the model: an N(0, 1) column appended to the raw
-# frame should get a coefficient whose bootstrap interval covers 0, should not change the AUC, and should never
-# be chosen by the depth-3 tree. A model that "finds" signal in noise overfits; a pipeline that turns noise into
-# signal leaks.
+# **Why.** An appended N(0, 1) column must look like noise: a coefficient interval covering 0, no AUC change, never chosen
+# by the depth-3 tree.
 
 # %%
 rng = np.random.default_rng(RB.seed("noise"))
@@ -187,23 +175,18 @@ for arm in RB.ADMISSIBLE_ARMS:
                            n_trees=len(tr_)))
 noise_tab = pd.DataFrame(noise_rows)
 noise_tab.to_csv(OUT / "noise_feature.csv", index=False)
-print(noise_tab.round(4).to_string(index=False))
+show(noise_tab, 4)
 assert noise_tab["ci_covers_0"].all() and (noise_tab["tree3_uses"] == 0).all()
 S9["noise_feature"] = noise_tab.set_index("arm").to_dict("index")
 
 # %% [markdown]
-# **So what.** In both admissible arms the noise coefficient ranks near the bottom by |coefficient / bootstrap SD|,
-# its bootstrap interval covers 0, adding the column leaves the AUC unchanged within ±0.01, and none of the
-# depth-3 trees (one per training fold plus the full fit) splits on it. The depth-4 count is reported for
-# completeness: a deeper tree has more chances to chase noise, and that is one reason the protocol caps the
-# tree at depth 3.
+# **So what.** In both arms the noise coefficient ranks near the bottom, its interval covers 0, the AUC is unchanged
+# within ±0.01 and no depth-3 tree splits on it.
 
 # %% [markdown]
 # ### 2.3 Positive control
-# **Why.** Negative controls show the procedure is not too optimistic; a positive control shows it is not blind.
-# A synthetic column z = d·y + N(0, 1), with d = √2·Φ⁻¹(0.60), has a known population AUC of 0.60 – a weak but
-# real signal, independent of every other feature given the label. The procedure must (i) recover its AUC and
-# (ii) detect the increment when z is added to M1 and S (paired ΔAUC interval excluding 0).
+# **Why.** Negative controls show the procedure is not optimistic; a positive control shows it is not blind. A synthetic
+# column z = d·y + N(0, 1) with known AUC 0.60 must be recovered and its increment detected in M1 and S.
 
 # %%
 ctx.extras["pos_control"] = RB.signal_feature(ctx.y, RB.POS_CONTROL_AUC, seed_=RB.seed("positive-control"))
@@ -216,25 +199,21 @@ for arm in RB.ADMISSIBLE_ARMS:
                              hi=r["hi"], interval=r["interval"], detected=bool(r["lo"] > 0)))
 pos_tab = pd.DataFrame(pos_rows)
 pos_tab.to_csv(OUT / "positive_control.csv", index=False)
-print(pos_tab.round(4).to_string(index=False))
+show(pos_tab, 4)
 assert z_auc[1] <= RB.POS_CONTROL_AUC <= z_auc[2], "positive-control AUC not recovered"
 assert pos_tab.loc[pos_tab["pop"] == "E-ALL", "detected"].all(), "positive control not detected on E-ALL"
 S9["positive_control"] = dict(z_auc=z_auc, rows=pos_tab.to_dict("records"))
 
 # %% [markdown]
-# **So what.** The column's AUC is recovered (its interval contains the design value 0.60), and adding it raises
-# the E-ALL AUC of both arms with an interval that excludes 0, so a signal of this size would not be missed. The
-# increment is much smaller than 0.10 because the remaining features already rank most cases correctly – which
-# also calibrates expectations: a new risk factor with a univariate AUC of 0.60 buys only a few thousandths of
-# AUC on top of age, adiposity and blood pressure.
+# **So what.** The AUC of z is recovered and its increment is detected in both arms (interval excluding 0). The increment
+# is only a few thousandths: a new risk factor with univariate AUC 0.60 adds little on top of age, adiposity and blood
+# pressure.
 
 # %% [markdown]
 # ## 3 Seed stability
-# **Why.** A verdict that flips when only the random fold assignment changes is a property of one lucky split,
-# not of the data. Ten seeds derived from `SEED_MASTER` (`evalkit.derive_seed`) generate ten new repeated
-# stratified fold sets and bootstrap streams; the hold-out, the data, C0 and the final configuration stay fixed.
-# Acceptance: the H2b(a) verdict of S − M1 on E-ALL is the same under all ten seeds. (FAST re-run mode: the first
-# five of the ten seeds.)
+# **Why.** A verdict that flips when only the fold assignment changes belongs to one lucky split, not to the data. Ten
+# seeds derived from `SEED_MASTER` generate new repeated stratified folds and bootstrap streams (hold-out, data and C0
+# fixed). Acceptance: the same H2b(a) verdict under all ten (FAST: the first five).
 
 # %%
 def prefetch(items):
@@ -253,11 +232,11 @@ for k, f in SEED_FOLDS.items():
 seeds = pd.DataFrame(seed_rows)
 seeds.to_csv(OUT / "seed_stability.csv", index=False)
 print(f"{len(SEED_FOLDS)} seeds x 2 arms x {len(ctx.folds)} folds in {secs:.0f} s")
-print(seeds[["seed_index", "pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b"]].round(4).to_string(index=False))
+show(seeds[["seed_index", "pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b"]], 4)
 seed_sum = seeds.groupby("pop").agg(est_min=("est", "min"), est_max=("est", "max"), est_sd=("est", "std"),
                                     lo_min=("lo", "min"), hi_max=("hi", "max"),
                                     verdicts=("h2b", lambda v: ", ".join(f"{k} x{n}" for k, n in v.value_counts().items())))
-print(seed_sum.round(4).to_string())
+display(seed_sum.round(4))
 seed_stable = seeds.loc[seeds["pop"] == "E-ALL", "h2b"].nunique() == 1
 ref_v = S9["reference"]["E-ALL"]["h2b"]
 print(f"E-ALL verdict identical under all seeds: {seed_stable} (reference: {ref_v})")
@@ -283,25 +262,17 @@ plt.show()
 S9["seeds"] = dict(n=len(SEED_FOLDS), stable_eall=bool(seed_stable), summary=seed_sum.to_dict("index"))
 
 # %% [markdown]
-# **So what.** Across the ten seeds the point estimate of S − M1 moves only in the third decimal (min, max and SD
-# printed) and every interval keeps straddling +0.01, so the E-ALL verdict is the same in all ten runs. The verdict
-# is a property of the data, not of the split; and it stays *inconclusive* for a structural reason – the true
-# difference sits close to the SESOI itself, so no reasonable amount of resampling will put the interval on one
-# side of it.
+# **So what.** Across the ten seeds the estimate moves only in the third decimal and every interval keeps straddling
+# +0.01, so the E-ALL verdict is the same in all runs. It stays *inconclusive* for a structural reason: the true
+# difference sits close to the SESOI itself.
 
 # %% [markdown]
 # ## 4 Sensitivity table
-# **Why.** Many analysis choices were made once (label, weighting, imputation, tier, C, model, excluded race).
-# Each of the 16 pre-specified variations below changes **one** choice for **both** arms and recomputes
-# ΔAUC(S − M1) on E-ALL and E-SCREEN with the same engine:
-#
-# * labels SL1 (HbA1c only), SL2 (self-report only), SL3 (borderline positive), SL4 (treatment-aware) and SL5
-#   (NCHS definition incl. fasting glucose, fasting subsample only); training *and* E-ALL evaluation use the label,
-#   E-SCREEN keeps the screening definition;
-# * survey weights in the fit: unweighted for both arms, weighted for both arms (the reference weights S only);
-# * imputation: `IterativeImputer` instead of the median, and complete cases (rows without any missing Tier-1 input);
-# * Tier 2 (lipids); C ∈ {0.01, 1, 10} besides C0 = 0.1; depth-4 tree instead of logistic regression; race added
-#   as a feature (excluded by design in S1); M1 with its **own** tuned C (C0 was tuned on S, which favours S).
+# **Why.** Many analysis choices were made once. Each of 16 pre-specified variations changes **one** choice for **both**
+# arms and recomputes ΔAUC(S − M1) with the same engine: labels SL1 (HbA1c only), SL2 (self-report only), SL3 (borderline
+# positive), SL4 (treatment-aware), SL5 (NCHS incl. fasting glucose, fasting subsample); survey weights in neither or both
+# fits; `IterativeImputer` or complete cases; Tier 2; C ∈ {0.01, 1, 10}; a depth-4 tree; race as a feature (excluded by
+# design in §1); and M1 with its **own** tuned C.
 
 # %%
 from sklearn.linear_model import LogisticRegressionCV
@@ -366,7 +337,7 @@ sens = pd.DataFrame(sens_rows)
 sens["same_verdict_as_reference"] = [v == S9["reference"][p]["h2b"] for v, p in zip(sens["h2b"], sens["pop"])]
 sens.to_csv(OUT / "sensitivity_table.csv", index=False)
 print(f"{len(SENS)} specifications, {secs:.0f} s")
-print(sens[["spec", "pop", "n_eval", "n_pos", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b"]].round(4).to_string(index=False))
+show(sens[["spec", "pop", "n_eval", "n_pos", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b"]], 4)
 
 gate_own = pair(Spec("M1", C=OWN_C["M1"][0]), Spec("M0", C=OWN_C["M0"][0]), tag="gate-ownC")
 gate_c0 = pair(Spec("M1"), Spec("M0"), tag="gate-C0")
@@ -414,32 +385,18 @@ S9["sensitivity"] = dict(n_specs=len(SENS), eall_same_verdict=n_same, eall_rows=
                                      "mdd", "h2b"]].round(5).to_dict("records"))
 
 # %% [markdown]
-# **So what.** Reading the forest plot (numbers in the tables above):
-#
-# * **The E-ALL verdict does not move.** Every one of the 16 variations gives the same H2b(a) verdict as the reference
-#   (count printed above): the interval of S − M1 never lies inside ±0.01, and never wholly above +0.01. No variation
-#   produces an interval wholly below 0, i.e. S is never decisively *worse* than M1.
-# * **Labels and weighting move the estimate most.** Weighting *both* arms the same way (unweighted or survey-weighted)
-#   enlarges the S advantage to about +0.01 with an interval excluding 0 – part of the reference gap is S's own survey
-#   weighting costing it unweighted AUC (B6b). The label changes the size of the gap (HbA1c-only largest, NCHS SL5 on the
-#   fasting half smallest and widest), not its direction on E-ALL.
-# * **The depth-4 tree is the only model-class change, and it reverses the sign** (with a wide interval): for a tree the
-#   systematic steps (scaling, splines, one-hot rules) are irrelevant (B5-e), so S − M1 there only measures noise in two
-#   unstable trees – one more reason the tree is a probe, not the model.
-# * **The C0 bias is nil here.** Tuned on their own, M0 and M1 pick the same C as S (printed), so "M1 with its own C"
-#   reproduces the reference and the leak gate M1 − M0 is unchanged: the HR2 rule "same model for every arm" did not
-#   favour S or manufacture the leakage drop.
-# * **E-SCREEN**: all intervals are wide (about 25 positives per fold) and every verdict is inconclusive; point estimates
-#   range around zero, the screening value of the extra preparation is not established either way.
+# **So what.** **The E-ALL verdict does not move**: all 16 variations give the reference verdict, and no interval lies
+# wholly below 0. **Labels and weighting move the estimate most**: weighting both arms alike enlarges the S advantage to
+# about +0.01 (part of the reference gap is S's own survey weighting, B6b); the label changes the size of the gap, not
+# its direction. **The depth-4 tree reverses the sign** with a wide interval – for a tree the preparation steps are
+# irrelevant (B5-e), one more reason the tree is a probe. **The C0 bias is nil**: tuned on their own, M0 and M1 pick the
+# same C as S, so the "same model for every arm" rule neither favoured S nor manufactured the leak gate. On E-SCREEN every
+# verdict is inconclusive (about 25 positives per fold).
 
 # %% [markdown]
 # ## 5 Specification curve
-# **Why.** The sensitivity table changes one choice at a time; a specification curve (Simonsohn et al. 2020)
-# crosses the choices that the table showed to matter most, so that interactions between them cannot hide a
-# different answer. Grid: 5 training labels (L_comb, SL1–SL4) × 3 weighting schemes (as specified: S weighted and M1
-# unweighted; both unweighted; both weighted) × 4 values of C = **60 specifications**, each with ΔAUC(S − M1) and its
-# conservative CI on E-ALL and E-SCREEN. This extends, and does not replace, the core table. (FAST re-run mode: C ∈
-# {0.1, 10} only, 30 specifications; the stored FINAL outputs use the full grid.)
+# **Why.** A specification curve (Simonsohn et al. 2020) crosses the choices that matter most, so that their interactions
+# cannot hide a different answer: 5 labels × 3 weighting schemes × 4 values of C = **60 specifications** (FAST: 30).
 
 # %%
 import itertools
@@ -466,8 +423,8 @@ cs = curve.groupby("pop").agg(n=("est", "size"), est_median=("est", "median"), e
                               share_ci_above_0=("lo", lambda v: (v > 0).mean()),
                               share_ci_below_0=("hi", lambda v: (v < 0).mean()),
                               share_beyond_sesoi=("lo", lambda v: (v >= C.SESOI["roc_auc"]).mean()))
-print(cs.round(3).to_string())
-print(curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_string())
+display(cs.round(3))
+display(curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0))
 print("median E-ALL estimate by factor:")
 for fac in ("label", "weighting", "C"):
     print("  ", curve[curve["pop"] == "E-ALL"].groupby(fac)["est"].median().round(4).to_dict())
@@ -504,21 +461,15 @@ S9["specification_curve"] = dict(n=len(grid), summary=cs.round(5).to_dict("index
                                  verdicts=curve.groupby(["pop", "h2b"]).size().unstack(fill_value=0).to_dict("index"))
 
 # %% [markdown]
-# **So what.** All 60 combinations put S *ahead* of M1 on E-ALL, and in most of them the interval excludes 0
-# (shares printed) – the direction is robust. But no combination clears the SESOI with confidence, and none puts the
-# interval inside ±0.01, so every one of the 60 verdicts is the reference verdict, *inconclusive*. The factor medians
-# show what drives the size of the gap: the reference ("as specified": S survey-weighted, M1 not) sits at the low end,
-# because S's own survey weighting costs it some unweighted AUC (B6b); weighting both arms alike moves the median to
-# about the SESOI itself, and the HbA1c-only label (SL1) gives the largest gaps. On E-SCREEN the curve scatters around
-# small positive values with wide intervals. The H2b(a) verdict is not the product of one forking path; it is what the
-# whole garden of forking paths says – a small, consistent advantage of S whose size cannot be pinned against 0.01.
+# **So what.** All 60 combinations put S *ahead* of M1 on E-ALL, most with an interval excluding 0, but none clears the
+# SESOI with confidence and none sits inside ±0.01: every verdict is *inconclusive*. Weighting both arms alike moves the
+# median to about the SESOI, and the HbA1c-only label gives the largest gaps. The H2b(a) verdict is what the whole garden
+# of forking paths says – a small, consistent advantage of S whose size cannot be pinned against 0.01.
 
 # %% [markdown]
 # ## 6 Survey-cluster cross-validation
-# **Why.** NHANES samples counties (PSUs) within strata; people in the same PSU share geography, examination
-# logistics and season. Ordinary folds put neighbours on both sides of a split, which can flatter the AUC of features
-# that encode place. `StratifiedGroupKFold` with groups = stratum × PSU keeps each survey cluster inside one fold
-# (repeated with derived seeds), so the test fold always contains clusters the model has never seen.
+# **Why.** NHANES samples counties (PSUs) within strata, so ordinary folds put neighbours on both sides of a split.
+# `StratifiedGroupKFold` with groups = stratum × PSU keeps each survey cluster inside one fold.
 
 # %%
 groups = (ctx.cl[C.STRATA].astype(int) * 10 + ctx.cl[C.PSU].astype(int)).to_numpy()
@@ -534,7 +485,7 @@ gcv_tab = pd.DataFrame([dict(folds="stored stratified", **{k: r[k] for k in ("po
                        + [dict(folds="strata x PSU grouped", **{k: r[k] for k in ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b")}) for r in gcv])
 gcv_tab = gcv_tab.rename(columns={"auc_a": "auc_S", "auc_b": "auc_M1"})
 gcv_tab.to_csv(OUT / "grouped_cv.csv", index=False)
-print(gcv_tab.round(4).to_string(index=False))
+show(gcv_tab, 4)
 dS = {p: gcv_tab.query("folds == 'strata x PSU grouped' and pop == @p")["auc_S"].iloc[0] - gcv_tab.query("folds == 'stored stratified' and pop == @p")["auc_S"].iloc[0]
       for p in ("E-ALL", "E-SCREEN")}
 print(f"AUC of S, grouped minus stratified folds: E-ALL {dS['E-ALL']:+.4f}, E-SCREEN {dS['E-SCREEN']:+.4f}")
@@ -542,25 +493,19 @@ S9["grouped_cv"] = dict(n_clusters=int(len(np.unique(groups))), table=gcv_tab.ro
                         auc_S_grouped_minus_stratified=dS)
 
 # %% [markdown]
-# **So what.** Holding whole survey clusters out changes the AUC of S by only a few thousandths (printed): the
-# admissible features do not exploit place-specific structure, so the cross-validated numbers are not inflated by
-# cluster sharing. The S − M1 verdict is the same under grouped folds. Grouped folds are less balanced (fold sizes and
-# E-SCREEN positives vary more, printed above), which is why they are a check rather than the primary design.
+# **So what.** Holding whole clusters out changes the AUC of S by only a few thousandths and leaves the S − M1 verdict
+# unchanged: the cross-validated numbers are not inflated by cluster sharing.
 
 # %% [markdown]
 # ## 7 Missing HbA1c: inverse-probability weights and delta adjustment
-# **Why.** The cohort keeps only examined adults *with* an HbA1c value. §3 showed the missingness is not MCAR
-# (NH Black OR about 1.85; register DR-S3-04), and §5 bounded the prevalence with Manski bounds (DR-S5-08); both
-# deferred two sensitivity analyses to this stage:
+# **Why.** The cohort keeps only examined adults *with* an HbA1c value. §3 showed this missingness is not MCAR (NH Black
+# OR about 1.85, DR-S3-04) and §5 bounded the prevalence (Manski, DR-S5-08); both deferred two analyses to here:
 #
-# 1. **MAR given covariates – inverse-probability weighting (IPW).** The S3 missingness model is refitted on examined,
-#    non-pregnant adults (the population the cohort is drawn from); each cohort member gets a stabilised weight
-#    P(observed) / P(observed | x). Used (a) for the prevalence and (b) for ΔAUC(S − M1), weighting evaluation only or
-#    fit and evaluation.
-# 2. **MNAR – delta adjustment (pattern mixture).** People without HbA1c who report diabetes are positive anyway. For
-#    the others, the MAR probability of HbA1c ≥ 6.5 (a logit on the S3 covariates fitted on the E-SCREEN rows of the
-#    training part) is shifted by δ on the log-odds scale: δ = 0 is MAR, δ = log 3 means three-fold odds among the
-#    unmeasured. Manski-type bounds (all undetermined negative / all positive) bracket every δ.
+# 1. **MAR – inverse-probability weighting (IPW).** The §3 missingness model gives each cohort member a stabilised
+#    weight P(observed) / P(observed | x), used for the prevalence and for ΔAUC(S − M1).
+# 2. **MNAR – delta adjustment.** People without HbA1c who report diabetes are positive; for the others the MAR
+#    probability of HbA1c ≥ 6.5 is shifted by δ on the log-odds scale (δ = log 3: three-fold odds among the
+#    unmeasured). Manski bounds bracket every δ.
 
 # %%
 ex = RB.examined_population()
@@ -571,7 +516,7 @@ or_obs = pd.DataFrame({"OR_missing": np.exp(-obs_fit.params), "ci_low": np.exp(-
 s3_or = pd.read_csv(C.RESULTS_DIR / "S3" / "missingness_or.csv", index_col=0)
 or_cmp = or_obs.join(s3_or[["OR"]].rename(columns={"OR": "OR_missing_S3"}))
 print(f"examined non-pregnant adults {len(ex):,}; without HbA1c {int(miss.sum())} ({miss.mean():.1%}); cohort {int((~miss).sum()):,}")
-print(or_cmp.round(3).to_string())
+display(or_cmp.round(3))
 assert int((~miss).sum()) == io.COHORT_N
 assert abs(or_cmp.loc["NH Black", "OR_missing"] - or_cmp.loc["NH Black", "OR_missing_S3"]) < 0.1   # same model, 37 fewer rows
 p_obs = pd.Series(obs_fit.predict(), index=ex["SEQN"].to_numpy())
@@ -580,8 +525,8 @@ coh = ctx.clean.copy()
 coh["ipw"] = ipw_all.reindex(coh["SEQN"]).to_numpy()
 coh["w_mec_ipw"] = coh[C.WEIGHT_MEC] * coh["ipw"]
 ctx.ipw = coh["ipw"].to_numpy()[ctx.train_idx]
-print(f"stabilised IPW in the cohort: min {coh['ipw'].min():.3f}, median {coh['ipw'].median():.3f}, max {coh['ipw'].max():.3f}; "
-      f"Kish deff {sv.kish_deff(coh['ipw']):.3f}")
+print(f"stabilised IPW in the cohort: min {coh['ipw'].min():.3f}, median {coh['ipw'].median():.3f}, "
+      f"max {coh['ipw'].max():.3f}; Kish deff {sv.kish_deff(coh['ipw']):.3f}")
 
 prev_rows = []
 for nm, wcol in (("WTPH2YR (blood non-response adjusted)", C.WEIGHT_PHLEB), ("WTMEC2YR (complete case)", C.WEIGHT_MEC),
@@ -589,13 +534,13 @@ for nm, wcol in (("WTPH2YR (blood non-response adjusted)", C.WEIGHT_PHLEB), ("WT
     wp = sv.weighted_prop(coh, "L_comb", weight=wcol)
     prev_rows.append(dict(weighting=nm, est=wp["est"], ci_low=wp["ci_low"], ci_high=wp["ci_high"], df=wp["df"]))
 prev_tab = pd.DataFrame(prev_rows)
-print(prev_tab.round(4).to_string(index=False))
+show(prev_tab, 4)
 assert abs(prev_tab.loc[0, "est"] - 0.140) < 0.0015, "WTPH2YR prevalence must reproduce 14.0 % (process doc §8)"
 
 ipw_cmp = pair(Spec("S"), Spec("M1"), tag="ipw-eval", w=ctx.ipw) + pair(Spec("S", ipw=True), Spec("M1", ipw=True), tag="ipw-fit", w=ctx.ipw)
 ipw_tab = pd.DataFrame([dict(variant=v, **{k: r[k] for k in ("pop", "auc_a", "auc_b", "est", "lo", "hi", "interval", "h2b")})
                         for v, r in zip(["IPW evaluation"] * 2 + ["IPW fit + evaluation"] * 2, ipw_cmp)])
-print(ipw_tab.round(4).to_string(index=False))
+show(ipw_tab, 4)
 
 # %%
 import statsmodels.api as sm
@@ -617,7 +562,7 @@ DELTAS = np.array([-1.0, -0.5, 0.0, 0.5, 1.0, np.log(3), 1.5, 2.0, 3.0])
 w_obs = coh[C.WEIGHT_MEC].to_numpy()
 w_m = ex[C.WEIGHT_MEC].to_numpy()[miss_idx]
 dprev = RB.delta_prevalence(coh["L_comb"].to_numpy(), w_obs, miss_self, p_mar, w_m, DELTAS)
-print(dprev.round(4).to_string(index=False))
+show(dprev, 4)
 print(f"complete case (MEC) {dprev.attrs['complete_case']:.4f}; Manski bounds [{dprev.attrs['manski_low']:.4f}, {dprev.attrs['manski_high']:.4f}] "
       f"(S5: [{pd.read_csv(C.RESULTS_DIR / 'S5' / 'manski_bounds.csv').iloc[0]['lower']:.4f}, "
       f"{pd.read_csv(C.RESULTS_DIR / 'S5' / 'manski_bounds.csv').iloc[0]['upper']:.4f}])")
@@ -645,7 +590,7 @@ dauc = pd.concat(dauc, ignore_index=True)
 dprev.to_csv(OUT / "mnar_delta_prevalence.csv", index=False)
 dauc.to_csv(OUT / "mnar_delta_auc.csv", index=False)
 pd.concat([prev_tab.assign(kind="prevalence"), ipw_tab.assign(kind="dAUC S-M1")]).to_csv(OUT / "ipw.csv", index=False)
-print(dauc.round(4).to_string(index=False))
+show(dauc, 4)
 print(f"E-ALL S - M1 across all delta and Manski scenarios: {dauc.loc[dauc['pop'] == 'E-ALL', 'diff'].min():+.4f} to "
       f"{dauc.loc[dauc['pop'] == 'E-ALL', 'diff'].max():+.4f} (complete-case pooled {S9['reference']['E-ALL']['est']:+.4f})")
 
@@ -686,28 +631,19 @@ S9["mnar"] = dict(n_examined=int(len(ex)), n_missing=int(miss.sum()), n_missing_
                   delta_auc=dauc.round(5).to_dict("records"))
 
 # %% [markdown]
-# **So what.** Three results close the deferred register items DR-S3-04 and DR-S5-08:
-#
-# * **MAR (IPW).** Re-weighting the complete cases to the examined population changes the weighted prevalence by about a
-#   tenth of a percentage point (table above) – the same size as the WTPH2YR non-response adjustment that S5 found, so the
-#   official blood weight already absorbs the covariate-driven part of the missingness. IPW moves ΔAUC(S − M1) by less than
-#   0.001 and leaves the verdict unchanged.
-# * **MNAR (delta).** Even if people without HbA1c had several times the odds of an elevated value (δ up to log 20), the
-#   prevalence stays well inside the Manski band, and about 4–5 % missingness is too little to lift it to the DB516 value
-#   unless almost every unmeasured person were diabetic (tipping point printed). The 14.0 % vs 15.8 % gap is therefore a
-#   *definition* gap (section 8), not a missing-data artefact.
-# * **Model comparison.** Adding the people without HbA1c to the evaluation set with labels drawn under any δ from
-#   −1 to 3 shifts ΔAUC(S − M1) by about 0.001 or less on E-ALL and E-SCREEN. Only the Manski "all positive" extreme – every
-#   one of the undetermined people diabetic, a prevalence far beyond any plausible MNAR mechanism – moves it noticeably
-#   (to about +0.004 on E-ALL and about −0.004 on E-SCREEN, printed), still inside ±0.01. MNAR remains untestable from
-#   these data; what is shown is that no plausible MNAR mechanism of this size changes the conclusions.
+# **So what.** This closes DR-S3-04 and DR-S5-08. **MAR:** IPW changes the weighted prevalence by about a tenth of a
+# point – as much as the WTPH2YR non-response adjustment already absorbs – and moves ΔAUC(S − M1) by less than 0.001.
+# **MNAR:** even at many-fold odds among the unmeasured the prevalence stays inside the Manski band; 4–5 % missingness
+# cannot lift it to DB516's 15.8 % (tipping point printed), so that gap is a *definition* gap (§9.8.2). **Model
+# comparison:** labels drawn under any δ from −1 to 3 shift ΔAUC(S − M1) by about 0.001; only the Manski "all
+# positive" extreme moves it noticeably, still inside ±0.01.
 
 # %% [markdown]
 # ## 8 External validity
 # ### 8.1 V1: NCHS Data Brief 516
 # **Why.** An external anchor tests the whole data path (loading, XPT repair, sentinels, weights, jackknife) against a
-# number we did not produce. S4 reproduced the official diabetes prevalence of NCHS Data Brief 516 (Aug 2021–Aug 2023,
-# fasting subsample, WTSAF2YR) for 27 published estimates. That replication is **cited, not re-run** here.
+# number we did not produce. §4 reproduced 27 published estimates of NCHS Data Brief 516; that replication is cited,
+# not re-run.
 
 # %%
 db = pd.read_csv(C.RESULTS_DIR / "S4" / "db516_replication.csv")
@@ -737,16 +673,14 @@ plt.show()
 
 # %% [markdown]
 # **So what.** Every published estimate is reproduced to within 0.05 percentage points and every pair of intervals
-# overlaps (counts printed). The data path from raw XPT files to survey-weighted estimates is therefore externally
-# validated; differences elsewhere cannot be blamed on loading or weighting errors.
+# overlaps: the data path is externally validated.
 
 # %% [markdown]
 # ### 8.2 V2: why our prevalence is 14.0 % and not 15.8 %
-# **Why.** The training target `L_comb` has a weighted prevalence of 14.0 % (WTPH2YR), below DB516's 15.8 %. Before
-# S9 the pre-registered explanation was: our label has no fasting-glucose criterion, and our sample is the HbA1c
-# sample, not the fasting subsample. That explanation is now **decomposed** with jackknife intervals on the same
-# replicate structure: (A) `L_comb` in the cohort with WTPH2YR → (B) `L_comb` in the fasting subsample with WTSAF2YR
-# (sample effect) → (C) the DB516 definition, `L_comb` or fasting glucose ≥ 126 mg/dL (definition effect).
+# **Why.** `L_comb` has a weighted prevalence of 14.0 % (WTPH2YR), below DB516's 15.8 %. The pre-registered explanation –
+# no fasting-glucose criterion, and the HbA1c sample instead of the fasting subsample – is decomposed with jackknife
+# intervals: (A) cohort, WTPH2YR → (B) fasting subsample, WTSAF2YR (sample effect) → (C) DB516 definition with fasting
+# glucose ≥ 126 mg/dL (definition effect).
 
 # %%
 cohort_all = ctx.clean.copy()
@@ -780,26 +714,20 @@ v2 = pd.DataFrame({"quantity": ["A L_comb, cohort, WTPH2YR", "B L_comb, fasting 
                    "est_pct": est_ * 100, "ci_low": (est_ - tcrit * se_) * 100, "ci_high": (est_ + tcrit * se_) * 100})
 fpg_only = int(((sl_all["SL5"] == 1) & (cohort_all["L_comb"] == 0)).sum())
 v2.to_csv(OUT / "v2_prevalence_gap.csv", index=False)
-print(v2.round(2).to_string(index=False))
+show(v2, 2)
 print(f"fasting subsample n = {int(fm.sum()):,}; people positive only through fasting glucose: {fpg_only}")
 assert abs(est_[0] - 0.140) < 0.0015 and abs(est_[2] * 100 - S4m["total"]) < 0.01
 
 # %% [markdown]
-# **So what.** The gap is almost entirely a **definition** effect: in the fasting subsample our `L_comb` gives about
-# the same prevalence as in the full cohort (the sample effect is small, interval printed), while adding the
-# fasting-glucose criterion lifts it to the DB516 value (the people positive *only* through fasting glucose are counted
-# above). The 14.0 % is therefore not a failed replication but a narrower label: `L_comb` misses people whose only
-# abnormal test is fasting glucose. This is exactly why SL5 is one of the sensitivity labels (section 4), and section 7
-# showed that missing HbA1c cannot explain the gap either.
+# **So what.** The gap is almost entirely a **definition** effect: the sample effect is small, while adding the
+# fasting-glucose criterion lifts the prevalence to the DB516 value. 14.0 % is not a failed replication but a narrower
+# label that misses people whose only abnormal test is fasting glucose – why SL5 is a sensitivity label (§9.4).
 
 # %% [markdown]
 # ### 8.3 ADA-lite vs Bang et al. 2009 (qualitative)
-# **Why.** The reduced ADA risk score is the clinical comparator on E-SCREEN. Its published performance is a natural
-# yardstick, but only a qualitative one: our version lacks two of the seven items (family history, gestational
-# diabetes), our outcome is HbA1c ≥ 6.5 % among people not told they have diabetes, and the population is 2021–23.
-# What the Bang et al. (2009) abstract reports (verified): cut-off ≥ 5 points, sensitivity 79 %, specificity 67 %. AUC
-# values of 0.79 / 0.83 that circulate for development / validation data are **not verified** against the full text
-# and are not used.
+# **Why.** The published ADA test is only a qualitative yardstick: ADA-lite lacks two of seven items, our outcome is
+# HbA1c-based and the population is 2021–23. Verified from the Bang et al. (2009) abstract: cut-off ≥ 5, sensitivity
+# 79 %, specificity 67 %; circulating AUC values are not verified and not used.
 
 # %%
 ada_tr = P.ada_lite_items(ctx.cl)
@@ -814,7 +742,7 @@ ada_tab = pd.DataFrame(ada_rows)
 bl = S7m["baselines"]["BL-ADAlite (points)"]
 print(f"ADA-lite (5 of 7 items, max 9 of 11 points) on training-part E-SCREEN: AUC {bl['escr_auc']:.3f} "
       f"[{bl['lo']:.3f}, {bl['hi']:.3f}], recall at specificity 0.80 {bl['escr_recall_spec80']:.3f} (S7)")
-print(ada_tab.round(3).to_string(index=False))
+show(ada_tab, 3)
 print("Bang et al. 2009 (abstract): cut-off >= 5 of 11 points, sensitivity 0.79, specificity 0.67; AUC: not verified")
 S9["external"] = dict(db516=dict(n_estimates=len(db), max_abs_diff_pp=float(db["diff_pp"].abs().max()),
                                  kg_matches=int(db["kg_matches_nchs_ci"].sum()), ci_overlap=int(db["ci_overlap"].sum())),
@@ -823,24 +751,18 @@ S9["external"] = dict(db516=dict(n_estimates=len(db), max_abs_diff_pp=float(db["
                                     bang_2009_abstract="cut-off >= 5: sensitivity 0.79, specificity 0.67; AUC unverified"))
 
 # %% [markdown]
-# **So what.** At the published cut-off (≥ 5) the reduced score reaches a sensitivity of about 0.70 at a specificity of
-# about 0.62 on our E-SCREEN rows (table above) – below Bang's 0.79 / 0.67, as expected when two items worth up to two
-# points are missing (lowering the cut-off to ≥ 4 buys sensitivity at a large cost in specificity). With a different
-# outcome definition, a missing-item score and an unverified published AUC, the honest statement is qualitative:
-# ADA-lite behaves like a plausibly weakened version of the published test, which makes it a fair but conservative
-# comparator; S beats it on E-SCREEN by about 0.05 AUC (§7, H2c-iii).
+# **So what.** At cut-off ≥ 5 ADA-lite reaches about 0.70 sensitivity at 0.62 specificity, below Bang's 0.79 / 0.67, as
+# expected with two items missing. It is a fair but conservative comparator, so S's §7 margin over it is likely
+# overstated (limitation L06).
 
 # %% [markdown]
-# ## 9 Leak hunt (loop L3)
+# ## 9 Leak hunt
 # **Why.** The permutation test cannot see feature leakage, and the availability rule was applied from the
-# specification, not from the data. Loop L3 asks the data directly whether an *admissible* feature behaves like a
-# disguised label. Pre-registered triggers (admissible arms M1 and S only; age exempt as a known strong risk factor):
-# T1 E-ALL AUC > 0.90; any single admissible feature with AUC > 0.75; permutation failure; unstable coefficients. Exit
-# condition: all top-10 features of S pass the availability proof and the permutation test passes; at most two rounds.
-#
-# Steps: (1) single-feature AUC scan, (2) depth-1 trees, (3) `is_missing`-indicator AUCs (skip-pattern leakage),
-# (4) availability proof for the ten most important features of S, (5) T1-minus-care contrast. The non-admissible M0
-# columns are scanned too, as a built-in check that the scans *can* find leakage.
+# specification, not from the data. The leak hunt asks the data whether an *admissible* feature behaves like a disguised
+# label. Pre-registered triggers (M1 and S; age exempt): E-ALL AUC > 0.90; a single admissible feature with AUC > 0.75;
+# permutation failure; unstable coefficients. Exit: all top-10 features of S pass the availability proof and the
+# permutation test passes; at most two rounds. The non-admissible M0 columns are scanned too, to show that the scans
+# *can* find leakage.
 
 # %%
 spec_v = P._spec_by_var()
@@ -867,7 +789,7 @@ single["status"] = single["variable"].map(status)
 single["admissible"] = single["status"].str.startswith("admissible")
 single["trigger"] = single["admissible"] & (single["auc_oriented"] > RB.L3_SINGLE_FEATURE_AUC) & ~single["variable"].isin(RB.AGE_EXEMPT)
 single.to_csv(OUT / "leak_single_feature_auc.csv", index=False)
-print(single.head(25)[["variable", "status", "kind", "coverage", "auc_oriented", "auc_escreen", "trigger"]].round(3).to_string(index=False))
+show(single.head(25)[["variable", "status", "kind", "coverage", "auc_oriented", "auc_escreen", "trigger"]], 3)
 print(f"admissible features above {RB.L3_SINGLE_FEATURE_AUC} (age exempt): {single.loc[single['trigger'], 'variable'].tolist()}")
 print(f"non-admissible M0 columns above {RB.L3_SINGLE_FEATURE_AUC}: "
       f"{single.loc[~single['admissible'] & (single['auc_oriented'] > RB.L3_SINGLE_FEATURE_AUC), 'variable'].tolist()}")
@@ -880,7 +802,7 @@ miss_scan["status"] = miss_scan["variable"].map(status)
 miss_scan["admissible"] = miss_scan["status"].str.startswith("admissible")
 miss_scan["trigger"] = miss_scan["admissible"] & (miss_scan["auc_oriented"] > RB.L3_SINGLE_FEATURE_AUC)
 miss_scan.to_csv(OUT / "leak_missing_indicator_auc.csv", index=False)
-print(miss_scan.head(12)[["variable", "status", "n_missing", "prev_if_missing", "prev_if_present", "auc_oriented", "trigger"]].round(3).to_string(index=False))
+show(miss_scan.head(12)[["variable", "status", "n_missing", "prev_if_missing", "prev_if_present", "auc_oriented", "trigger"]], 3)
 print(f"admissible is_missing indicators above {RB.L3_SINGLE_FEATURE_AUC}: {miss_scan.loc[miss_scan['trigger'], 'variable'].tolist()}; "
       f"largest admissible: {miss_scan[miss_scan['admissible']].iloc[0]['variable']} "
       f"{miss_scan[miss_scan['admissible']].iloc[0]['auc_oriented']:.3f}")
@@ -898,14 +820,12 @@ d1_tab = pd.DataFrame(d1).T
 d1_tab["root_variable"] = d1_tab["root_full_fit"].map(RB.base_variable)
 d1_tab["root_status"] = d1_tab["root_variable"].map(status)
 d1_tab.to_csv(OUT / "leak_depth1_tree.csv")
-print(d1_tab.to_string())
+display(d1_tab)
 
 # %% [markdown]
-# **So what (scans).** The scans work – among the *non-admissible* M0 columns they flag the treatment and
-# diagnosis-history items far above 0.75 and a depth-1 tree on M0 splits on one of them – and they find nothing
-# among the admissible ones: the strongest admissible single feature (printed) stays below the 0.75 trigger, the
-# `is_missing` indicators of admissible items are close to 0.5 (no skip-pattern leakage), and the depth-1 trees of M1
-# and S split on an admissible item with a stump AUC far below the full model. Age is exempt by design but is reported.
+# **So what (scans).** The scans work – among the non-admissible M0 columns they flag treatment and diagnosis-history
+# items far above 0.75 – and find nothing among the admissible ones: the strongest admissible feature stays below
+# 0.75, admissible `is_missing` indicators are close to 0.5, and the depth-1 trees of M1 and S split on admissible items.
 
 # %%
 pipe_S = {t: RB.fit_full(ctx, Spec("S", tier=t)) for t in (1, 2)}
@@ -917,14 +837,14 @@ for t in (1, 2):
     proof.append(top.merge(pf, on="variable").assign(tier=t))
 proof = pd.concat(proof, ignore_index=True)
 proof.to_csv(OUT / "leak_top10_availability.csv", index=False)
-print(proof[["tier", "variable", "sd_contribution", "sources", "instrument", "admissible", "care_contact", "verdict"]].round(3).to_string(index=False))
+show(proof[["tier", "variable", "sd_contribution", "sources", "instrument", "admissible", "care_contact", "verdict"]], 3)
 top_pass = bool((proof["verdict"] == "PASS").all())
 print(f"top-10 availability proof: {'all PASS' if top_pass else 'FAIL: ' + str(proof.loc[proof['verdict'] != 'PASS', 'variable'].tolist())}")
 
 care = pair(Spec("T1-minus-care"), Spec("S"), tag="minus-care")
 care_items = single.set_index("variable").loc[list(P.CARE_ITEMS), ["auc_oriented", "auc_escreen"]]
 print("T1-minus-care - S: " + "; ".join(f"{r['pop']} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}]" for r in care))
-print("care-contact items, single-feature AUC (E-ALL vs E-SCREEN):"); print(care_items.round(3).to_string())
+display("care-contact items, single-feature AUC (E-ALL vs E-SCREEN):"); print(care_items.round(3))
 
 cbS = NOISE_CB["S"].summary.drop(index="noise_n01")
 unstable = cbS[(cbS["ci_excludes_0"]) & (cbS["sign_flip_rate"] > 0.10)]
@@ -948,11 +868,11 @@ log = pd.DataFrame([
          triggered=not top_pass),
     dict(check="T1-minus-care vs S (informative, no trigger)", value="; ".join(f"{r['pop']} {r['est']:+.3f}" for r in care), triggered=False),
 ])
-log["action"] = np.where(log["triggered"], "L3 round: re-examine feature, back to S7/S6", "none")
+log["action"] = np.where(log["triggered"], "leak-hunt round: re-examine feature, back to §6/§7", "none")
 log.to_csv(OUT / "leak_hunt_log.csv", index=False)
-print(log.to_string(index=False))
+show(log)
 L3_TRIGGERED = bool(log["triggered"].any())
-print(f"L3 loop triggered: {L3_TRIGGERED} -> {'rounds needed' if L3_TRIGGERED else 'exit condition met in round 0 (no re-run of S7)'}")
+print(f"leak hunt triggered: {L3_TRIGGERED} -> {'rounds needed' if L3_TRIGGERED else 'exit condition met in round 0 (no re-run of §7)'}")
 S9["leak_hunt"] = dict(triggered=L3_TRIGGERED, log=log.to_dict("records"), top10=proof[["tier", "variable", "sd_contribution", "verdict"]].round(5).to_dict("records"),
                        depth1=d1_tab[["root_full_fit", "root_variable", "oof_auc_eall", "oof_auc_escreen"]].to_dict("index"),
                        strongest_admissible=dict(variable=best_adm["variable"], auc=best_adm["auc_oriented"]),
@@ -979,22 +899,16 @@ plots.savefig(fig, "S9_single_feature_auc", caption="F9-5. Univariate ROC-AUC of
 plt.show()
 
 # %% [markdown]
-# **So what.** Loop L3 is **not triggered** (log above): the admissible arms stay far below an E-ALL AUC of 0.90, no
-# admissible feature other than the exempt age exceeds 0.75, the permutation test passed, and each of the ten most
-# important features of S – in Tier 1 and Tier 2 – passes the point-of-care availability proof (questionnaire, body
-# measures, blood pressure, and in Tier 2 the same-visit lipid panel; none is a glycaemic test, a consequence of
-# diagnosis or a component of the label). The exit condition is met in round 0, so S7 is not re-run.
-#
-# One honest caveat survives the hunt. Two admissible items, "told high blood pressure" (BPQ020) and "told high
-# cholesterol" (BPQ080), are **care-contact traces**: they are legitimately available before a glucose test, but
-# they are more informative for people already in care. The T1-minus-care contrast (printed) shows the consequence –
-# removing them costs AUC on E-ALL but not on E-SCREEN. This is not leakage under the availability rule; it is the
-# mechanism behind the E-ALL vs E-SCREEN gap (H2c) and is reported as such.
+# **So what.** The leak hunt is **not triggered**: the admissible arms stay far below 0.90, no admissible feature except
+# the exempt age exceeds 0.75, and each of the ten most important features of S (Tier 1 and 2) passes the point-of-care
+# availability proof. The exit condition is met in round 0, so §7 is not re-run. One caveat survives: "told high blood
+# pressure" and "told high cholesterol" are **care-contact traces** – admissible, but more informative for people
+# already in care; removing them costs AUC on E-ALL but not on E-SCREEN. That is the mechanism of H2c, not leakage.
 
 # %% [markdown]
 # ## 10 Pre-hold-out summary
-# **Why.** Before the experiment is frozen, every robustness result for the headline contrast S − M1 is put on one
-# scale, so that the robustness grade of the claim (S10, `claims.csv`) can be read off one table and one figure.
+# **Why.** Before the freeze, every robustness result for S − M1 is put on one scale, so that the robustness grade of the
+# claim (§10.7) can be read off one table and one figure.
 
 # %%
 def _rng(d, pop):
@@ -1015,7 +929,7 @@ for pop in ("E-ALL", "E-SCREEN"):
                      lo=dd["diff_lo"].min(), hi=dd["diff_hi"].max(), verdicts="n/a (no CI)"))
 summ = pd.DataFrame(summ)
 summ.to_csv(OUT / "robustness_summary.csv", index=False)
-print(summ.round(4).to_string(index=False))
+show(summ, 4)
 fam_v = {pop: pd.concat([seeds.loc[seeds["pop"] == pop, "h2b"], sens.loc[(sens["pop"] == pop) & (sens["spec"] != "reference (S7)"), "h2b"],
                          curve.loc[curve["pop"] == pop, "h2b"], gcv_tab.loc[(gcv_tab["pop"] == pop) & (gcv_tab["folds"] != "stored stratified"), "h2b"],
                          ipw_tab.loc[ipw_tab["pop"] == pop, "h2b"]]) for pop in ("E-ALL", "E-SCREEN")}
@@ -1048,18 +962,13 @@ plt.show()
 S9["summary"] = dict(table=summ.round(5).to_dict("records"), all_inconclusive=all_incon)
 
 # %% [markdown]
-# **So what.** Every check agrees with every other: on E-ALL the systematic pipeline is ahead of the minimal one by
-# roughly 0.005–0.015 AUC; apart from the depth-4 tree (a different model class, see DR-S9-13) the intervals stay above
-# about −0.01, and none of them clears +0.01 – so the robust reading of
-# H2b(a) is "**S is at least as good as M1 and probably slightly better, by an amount that cannot be distinguished from
-# the 0.01 threshold**", which is what *inconclusive* means under the locked equivalence rule. On E-SCREEN the same
-# direction holds with intervals about twice as wide. The robustness grade of the claim is therefore *robust verdict,
-# imprecise effect*; nothing here licenses calling S "better" or "equivalent".
-
-# %% [markdown]
-# ### Decision register (S9)
+# **So what.** Every check agrees: on E-ALL S is ahead of M1 by roughly 0.005–0.015 AUC; apart from the depth-4 tree
+# (DR-S9-13) the intervals stay above about −0.01, and none clears +0.01. The robust reading of H2b(a) is "**S is at
+# least as good as M1 and probably slightly better, by an amount that cannot be distinguished from 0.01**" – *robust
+# verdict, imprecise effect*. On E-SCREEN the same direction holds with intervals about twice as wide.
 
 # %%
+# decision-register rows of §9 (written and listed in §9.12 Outputs)
 from datetime import date
 today = date.today().isoformat()
 def _f(r, k=3):
@@ -1071,7 +980,7 @@ reg = pd.DataFrame([
          evidence_ref="results/S9/permutation.csv; figures/S9_permutation_null.png",
          evidence_value=f"null mean M1 {PERM['M1']['null_mean']:.4f}, S {PERM['S']['null_mean']:.4f} ({C.N_PERM} permutations); p = {PERM['S']['p_value']:.3f}",
          decision="Evaluation procedure accepted; feature leakage delegated to the L3 leak hunt", alternatives_rejected="sklearn permutation_test_score (no sample weights per fold, no fixed folds)",
-         hyp_id="", status="decided", check_verdict="PASS", check_note="band [0.495, 0.505]", loop_ref="L3"),
+         hyp_id="", status="decided", check_verdict="PASS", check_note="band [0.495, 0.505]", loop_ref="leak hunt §9.9"),
     dict(dr_id="DR-S9-02", type="negative_control", finding="An N(0,1) noise column is treated as noise",
          evidence_ref="results/S9/noise_feature.csv",
          evidence_value="; ".join(f"{r['arm']}: coef/SD {r['coef_per_sd']:+.3f} [{r['q_low']:+.3f}, {r['q_high']:+.3f}], dAUC {r['dAUC_eall']:+.4f}, depth-3 trees using it {r['tree3_uses']}/{r['n_trees']}" for _, r in noise_tab.iterrows()),
@@ -1094,9 +1003,9 @@ reg = pd.DataFrame([
          alternatives_rejected="reporting only the reference specification", hyp_id="H2b", status="decided",
          check_verdict="PASS" if n_same == len(eall) else "PARTIAL", check_note="E-SCREEN all inconclusive (wide CIs)", loop_ref=""),
     dict(dr_id="DR-S9-06", type="tuning", finding="Arm-specific tuning of C gives M0 and M1 the same C as S",
-         evidence_ref="notebook 08 section 4",
+         evidence_ref="§9.4; results/S9/sensitivity_table.csv",
          evidence_value=f"own C: M0 {OWN_C['M0'][0]}, M1 {OWN_C['M1'][0]} (C0 {ctx.C0}); leak gate own C E-ALL {_f(gate_own[0])}",
-         decision="The C0-on-S optimism disclosed in DR-S7-04 is nil in practice; HR2 'same model' rule kept", alternatives_rejected="per-arm tuning as primary design",
+         decision="The C0-on-S optimism disclosed in DR-S7-04 is nil in practice; 'same model for every arm' rule kept", alternatives_rejected="per-arm tuning as primary design",
          hyp_id="H2a;H2b", status="decided", check_verdict="PASS", check_note="closes the S9 item of DR-S7-04", loop_ref=""),
     dict(dr_id="DR-S9-07", type="sensitivity", finding="60-specification curve (label x weighting x C) agrees with the core table",
          evidence_ref="results/S9/specification_curve.csv; figures/S9_specification_curve.png",
@@ -1125,7 +1034,7 @@ reg = pd.DataFrame([
          decision="Report 14.0 % as the prevalence of L_comb, not of NCHS-defined diabetes; no change to the frozen label",
          alternatives_rejected="calling the gap a failed replication", hyp_id="", status="decided", check_verdict="PASS", check_note="", loop_ref=""),
     dict(dr_id="DR-S9-11", type="validation", finding="ADA-lite vs Bang 2009 comparable only qualitatively",
-         evidence_ref="notebook 08 section 8.3",
+         evidence_ref="§9.8.3",
          evidence_value=f"ADA-lite E-SCREEN AUC {bl['escr_auc']:.3f}; cut-off >= 5 sens {ada_tab.loc[2, 'sensitivity']:.2f}, spec {ada_tab.loc[2, 'specificity']:.2f} vs Bang 0.79 / 0.67",
          decision="Quote only the verified abstract figures; Bang AUC 0.79/0.83 marked unverified and not used",
          alternatives_rejected="quantitative comparison with the published AUC", hyp_id="H2c", status="decided", check_verdict="PASS",
@@ -1134,9 +1043,9 @@ reg = pd.DataFrame([
          evidence_ref="results/S9/leak_hunt_log.csv; leak_single_feature_auc.csv; leak_missing_indicator_auc.csv; leak_top10_availability.csv; figures/S9_single_feature_auc.png",
          evidence_value=f"T1 E-ALL AUC M1 {t1_auc['M1']:.3f}, S {t1_auc['S']:.3f}; strongest admissible single feature {best_adm['variable']} {best_adm['auc_oriented']:.3f}; "
                         f"top-10 availability {int((proof['verdict'] == 'PASS').sum())}/{len(proof)} PASS; only removed leak columns exceed 0.75",
-         decision="Exit condition met in round 0; no re-run of S7. Care-contact items (BPQ020, BPQ080) kept but reported as the mechanism of the E-ALL/E-SCREEN gap",
+         decision="Exit condition met in round 0; no re-run of §7. Care-contact items (BPQ020, BPQ080) kept but reported as the mechanism of the E-ALL/E-SCREEN gap",
          alternatives_rejected="dropping BPQ020/BPQ080 from the main model (they pass the availability rule)", hyp_id="H2c", status="decided",
-         check_verdict="PASS" if not L3_TRIGGERED else "FAIL", check_note=f"T1-minus-care - S: E-ALL {_f(care[0], 4)}, E-SCREEN {_f(care[1], 4)}", loop_ref="L3"),
+         check_verdict="PASS" if not L3_TRIGGERED else "FAIL", check_note=f"T1-minus-care - S: E-ALL {_f(care[0], 4)}, E-SCREEN {_f(care[1], 4)}", loop_ref="leak hunt §9.9"),
     dict(dr_id="DR-S9-13", type="model_choice", finding="A depth-4 tree reverses the sign of S - M1 with a wide interval",
          evidence_ref="results/S9/sensitivity_table.csv",
          evidence_value="depth-4 tree S - M1 E-ALL " + _f(sens[(sens['spec'] == 'depth-4 tree') & (sens['pop'] == 'E-ALL')].iloc[0], 4),
@@ -1155,33 +1064,28 @@ for c in ("change_request", "commit"):
 reg = reg[["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision", "alternatives_rejected", "hyp_id",
            "status", "check_verdict", "check_note", "loop_ref", "change_request", "commit"]]
 REG_PATH = C.GOVERNANCE_DIR / "register" / "S9.csv"
-print(reg[["dr_id", "type", "check_verdict", "evidence_value"]].to_string(index=False, max_colwidth=110))
+print(f"{len(reg)} decision-register rows prepared (listed in §9.12)")
 
 # %% [markdown]
 # ## 11 One-shot hold-out evaluation
-# **Why.** Everything above re-used the training part; repeated looks at the same data, however disciplined, can
-# drift towards what works. The 20 % hold-out (1,146 adults, stratified by label × race, created once in S7 and never
-# read since) is the only fully independent check. Rules fixed before looking: it is evaluated **once, after the
-# `exp-freeze` tag**; arms BL0, BL-ADAlite (points), BL-ADAlite-LR, M0, M1, S and T1-minus-care (Tier 1; M0, M1 and S also
-# Tier 2) are refitted on the whole training part with the frozen configuration; thresholds for recall at
-# specificity 0.80 come from the training part; a hold-out AUC more than 2 standard errors below its CV estimate is
-# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged.
+# **Why.** Everything above re-used the training part; repeated looks can drift towards what works. The 20 % hold-out
+# (1,146 adults, label × race stratified, created once at its first use in §6, DR-S6-12, and never read since) is the only
+# independent check. Rules fixed before looking: evaluated **once, after the `exp-freeze` tag**; the arms are refitted on
+# the whole training part with the frozen configuration; thresholds come from the training part; a hold-out AUC more
+# than 2 SE below CV is reported, **not** answered by re-tuning.
 #
-# **The evaluation has already happened, once** (FINAL mode, 2026-10-11, after the tag; the time stamp is printed
-# below). What this notebook does with the hold-out therefore depends on the run mode:
+# **What runs here.** The one-shot evaluation took place once (FINAL mode, 2026-10-11, after the tag). A FINAL execution
+# is a **deterministic re-execution, not a second look**: a gate opens only if C0, the fold hash and the hold-out hash
+# recomputed now equal the frozen values and the five modelling files (`config`, `prep`, `evalkit`, `labels`,
+# `nhanes_io`) are byte-identical to the tag; the refitted AUCs must then equal the logged ones (asserted), so nothing can
+# be tuned. A FAST run only displays the stored results. The tag's facts travel with the notebook as
+# `results/S9/exp_freeze_record.json` (inlined in §0.0, like the §6 pre-registration lock).
 #
-# * **FINAL mode – deterministic reproduction, not a second look.** The gate opens only if the frozen facts of the tag
-#   are reproduced: C0, the fold-file hash and the hold-out SEQN hash recomputed in this run must equal the frozen
-#   values, and the modelling code (`config`, `prep`, `evalkit`, `labels`, `nhanes_io`) must be byte-identical to the
-#   tagged version. The same frozen models are then refitted with the same seeds and the AUCs are **asserted equal**
-#   to the logged one-shot results; nothing can be tuned, and a different number stops the notebook.
-# * **FAST mode – no refit.** The stored one-shot results are displayed and stored unchanged, clearly labelled.
-#
-# A single `.ipynb` has no git history, so the facts of the tag (commit, time stamp, C0, fold hash, hold-out hash,
-# module hashes) travel with the notebook as a frozen record, `results/S9/exp_freeze_record.json`, written once
-# from git and inlined in §0.0 (like the pre-registration lock of §6.11). In a git checkout the record is
-# re-derived from the tag and asserted equal. Expected precision: AUC SE about 0.017 on E-ALL and about 0.05 on
-# E-SCREEN (about 25 positives).
+# **Disclosure.** The hold-out harness in `src/robustness.py` was written *after* the `exp-freeze` tag and is not among
+# the five hashed files: the gate before the first run, the frozen record and the reproduction asserts after it (so that
+# a notebook without git history can re-execute the run). It holds no modelling choice – it checks frozen facts, calls
+# the hashed modelling code and compares numbers. The log records the first run and the number of executions; every
+# later execution reproduced the first exactly.
 
 # %%
 HOLDOUT_LOG = OUT / "holdout_log.json"
@@ -1208,9 +1112,12 @@ gate = {"FINAL mode": C.IS_FINAL,
         "one-shot log present (re-execution = reproduction)": STORED or (REC is None and prev is None)}
 RELEASED = all(gate.values())
 if REC is not None:
-    print(f"frozen record: tag {REC['tag']} on commit {REC['tag_commit'][:12]} (created {REC['tag_created']}); "
-          f"C0 {REC['frozen']['C0']}, folds {REC['frozen']['folds_hash'][:12]}..., hold-out {REC['frozen']['holdout_sha256'][:12]}...; "
-          f"one-shot run {REC['one_shot']['first_run_utc']} ({REC['one_shot']['nb_mode']}); source: {'git tag (record verified)' if TAG_OK else 'record shipped with the notebook'}")
+    print(f"frozen record: tag {REC['tag']} on commit {REC['tag_commit'][:12]} (created {REC['tag_created']})")
+    print(f"   C0 {REC['frozen']['C0']}, folds {REC['frozen']['folds_hash'][:12]}..., hold-out {REC['frozen']['holdout_sha256'][:12]}...")
+    print(f"   one-shot run {REC['one_shot']['first_run_utc']} ({REC['one_shot']['nb_mode']}); "
+          f"source: {'git tag (record verified)' if TAG_OK else 'record shipped with the notebook'}")
+    if prev is not None:
+        print(f"   executions on record before this run: {prev['n_executions']} (first {prev['first_run_utc']}, last {prev['last_run_utc']})")
 print(f"this run: C0 {CURRENT['C0']}, folds {CURRENT['folds_hash'][:12]}... ({C.NB_MODE} folds), hold-out {CURRENT['holdout_sha256'][:12]}...")
 for k, v in gate.items():
     print(f"  {'PASS' if v else 'FAIL'}  {k}")
@@ -1274,7 +1181,7 @@ if RELEASED:
     pts = ho["arm"] == "BL-ADAlite"                 # an integer score, not a probability: no Brier / calibration
     ho.loc[pts, ["brier", "cal_slope", "cal_citl"]] = np.nan
     ho["flag_2se_below_cv"] = ho["gap_in_se"] < -2
-    print(ho[SHOW_HO].round(3).to_string(index=False))
+    show(ho[SHOW_HO], 3)
 
     def ho_pair(a, b, pop, rule):
         """Paired hold-out bootstrap A - B with the locked rule of the hypothesis it belongs to."""
@@ -1298,7 +1205,7 @@ if RELEASED:
                       + [ho_pair(("M1", 1), ("M0", 1), p, "lower by >= 0.05") for p in ("E-ALL", "E-SCREEN")]
                       + [ho_pair(("T1-minus-care", 1), ("S", 1), p, "descriptive") for p in ("E-ALL", "E-SCREEN")]
                       + [ho_pair(("S", 1), ("BL-ADAlite", 1), "E-SCREEN", "higher by >= 0.01")])
-    print(hp.round(4).to_string(index=False))
+    show(hp, 4)
     print("CV (this run) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
 elif STORED:   # FAST mode (or a closed gate): show the logged one-shot results, never refit
     ho = pd.read_csv(HOLDOUT_CSV)
@@ -1309,8 +1216,8 @@ elif STORED:   # FAST mode (or a closed gate): show the logged one-shot results,
     print(f"STORED ONE-SHOT HOLD-OUT RESULTS - evaluated once in {prev['nb_mode_first_run']} mode on {prev['first_run_utc']}, "
           f"{prev['n_test']:,} adults, SHA-256 {prev['sha256_test_seqn'][:16]}...; NOT re-executed in this {C.NB_MODE} run"
           + ("; tables verified against the frozen record" if REC is not None else ""))
-    print(ho[SHOW_HO].round(3).to_string(index=False))
-    print(hp.round(4).to_string(index=False))
+    show(ho[SHOW_HO], 3)
+    show(hp, 4)
     print(f"CV (this run, {C.NB_MODE}) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
 
 # %%
@@ -1392,35 +1299,18 @@ else:
     print(S9["holdout"]["status"])
 
 # %% [markdown]
-# **So what.** The one-shot hold-out (1,146 adults, 194 L_comb positives; E-SCREEN 977 adults, 25 positives; SHA-256
-# verified and logged) confirms the cross-validated picture and does not change a single verdict.
-# * **No optimism.** None of the 20 arm × population rows is more than 2 SE below its CV estimate (0 flags). On E-ALL
-#   every model scores slightly *higher* on the hold-out than in CV (+0.45 to +1.55 SE; S Tier 1 0.851 [0.823, 0.878]
-#   vs CV 0.836, M1 0.848 vs 0.828). The unfitted integer ADA-lite score is also 0.018 higher, so most of this is
-#   the hold-out sample being slightly easier, not extra training rows. On E-SCREEN the gaps run from −0.39 to +1.14 SE,
-#   and with 25 positives each interval is about ±0.08 wide.
-# * **Headline contrast.** S − M1 on the hold-out is +0.0035 [−0.0070, +0.0138] on E-ALL (Tier 2 +0.0095 [−0.0010,
-#   +0.0197]) and −0.0053 [−0.0289, +0.0159] on E-SCREEN: *inconclusive* everywhere, as in CV (+0.0079 and +0.0085).
-#   The hold-out does not license calling S "better" or "equivalent".
-# * **Other contrasts.** Removing the leaky items (M1 − M0) costs −0.117 [−0.145, −0.092] on E-ALL (*supported*,
-#   lower by at least 0.05) but only −0.037 [−0.117, +0.047] on E-SCREEN (*inconclusive*). S vs the ADA-lite points score
-#   on E-SCREEN is +0.029 [−0.037, +0.098] (*inconclusive*). Dropping the care-contact items costs −0.010 on E-ALL
-#   but not on E-SCREEN (+0.018), the same pattern as the leak hunt.
-# * **Calibration and thresholds.** M1 is close to calibrated on E-ALL (slope 1.07, CITL 0.11, Brier 0.107). S ranks as
-#   well but over-predicts by design (balanced class weights: CITL −1.72, Brier 0.171), so its probabilities are not
-#   risks. On E-SCREEN every model over-predicts (CITL M1 −1.96, BL-ADAlite-LR −1.98, S −3.81), because all of them
-#   were fitted to the E-ALL prevalence; calibration plots show this as curves well below the diagonal. At the training-derived specificity-0.80 thresholds, the fitted models reach a hold-out specificity of 0.80–0.83, and
-#   recall is 0.67 (M1) and 0.70 (S) on E-ALL but 0.48 for both (12 of 25) on E-SCREEN.
-#
-# Nothing was re-tuned after these numbers were seen. A FINAL-mode re-execution of this notebook must reproduce them
-# exactly (asserted against `results/S9/holdout_metrics.csv` and `holdout_pairs.csv`); a FAST-mode run shows the same
-# stored one-shot numbers without refitting (labelled as such in the output above).
+# **So what.** The one-shot hold-out (1,146 adults, 194 positives; E-SCREEN 977 adults, 25 positives) confirms the
+# cross-validated picture and changes no verdict. **No optimism:** no arm × population row is more than 2 SE below CV; on
+# E-ALL every model scores slightly *higher* (S 0.851 [0.823, 0.878] vs CV 0.836), and so does the unfitted ADA-lite
+# score, so the hold-out sample is slightly easier. **Contrasts:** S − M1 is +0.004 [−0.007, +0.014] on E-ALL and −0.005
+# on E-SCREEN (inconclusive, as in CV); the leak gate M1 − M0 replicates on E-ALL (−0.117, supported); S − ADA-lite on
+# E-SCREEN is +0.029 [−0.037, +0.098] – **the CV margin does not replicate** (inconclusive). **Calibration:** S
+# over-predicts by design (CITL −1.72); on E-SCREEN every model over-predicts. Nothing was re-tuned.
 
 # %% [markdown]
-# ## 12 Storage
-# **Why.** S10 (claims and robustness grades) and S11 (notebook, slides) read every number from stored artefacts:
-# `results/metrics_S9.json`, the tables in `results/S9/`, the F9 figures and the S9 decision-register fragment
-# (written from the FINAL run, so that the register always carries the numbers of the committed notebook).
+# ## 12 Outputs
+# **Why.** §10 and the slides read every number from stored artefacts: `results/metrics_S9.json`, the tables in
+# `results/S9/`, the F9 figures and the §9 decision-register fragment (written from the FINAL run, listed below).
 
 # %%
 if RELEASED and "metrics" in S9["holdout"]:
@@ -1437,6 +1327,7 @@ if RELEASED and "metrics" in S9["holdout"]:
         decision="Report hold-out numbers as they are; no re-tuning", alternatives_rejected="re-tuning after seeing the hold-out",
         hyp_id="H2a;H2b;H2c", status="decided", check_verdict="PASS", check_note=f"first run {S9['holdout']['log']['first_run_utc']}",
         loop_ref="", change_request="", commit="")])], ignore_index=True)
+show(reg[["dr_id", "type", "check_verdict", "decision"]])
 if C.IS_FINAL:
     reg.to_csv(REG_PATH, index=False)
     print(f"wrote {REG_PATH.relative_to(C.ROOT).as_posix()} ({len(reg)} rows)")

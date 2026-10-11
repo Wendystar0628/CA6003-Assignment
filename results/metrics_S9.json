@@ -3,13 +3,15 @@
     "section": "S9",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T05:35:17+00:00"
+    "written_utc": "2026-10-11T08:52:25+00:00"
   },
   "mode": "FINAL",
   "cv": "5x5",
   "n_boot": 1000,
   "n_perm": 100,
   "n_boot_coef": 500,
+  "n_seeds": 10,
+  "n_curve": 60,
   "reference": {
     "E-ALL": {
       "auc_a": 0.8359179848541551,
@@ -1563,10 +1565,11 @@
     }
   },
   "holdout": {
+    "status": "re-executed in FINAL mode: reproduces the one-shot run",
     "log": {
       "first_run_utc": "2026-10-11T05:35:17+00:00",
-      "last_run_utc": "2026-10-11T05:35:17+00:00",
-      "n_executions": 1,
+      "last_run_utc": "2026-10-11T08:52:25+00:00",
+      "n_executions": 2,
       "sha256_test_seqn": "616fd0590bec7b9256cd9704f62dfcd147f31d83a56b1f6969e1d613010659c3",
       "n_test": 1146,
       "exp_freeze_commit": "37a2387af1b6bf7bf3ed3aa4b192e5f817e5c738",
@@ -1592,11 +1595,12 @@
       },
       "gate": {
         "FINAL mode": true,
-        "exp-freeze tag exists": true,
+        "frozen record (exp-freeze) available": true,
         "C0 = frozen": true,
         "folds_hash = frozen": true,
         "holdout_sha256 = frozen": true,
-        "modelling sources unchanged since tag (5 files)": true
+        "modelling sources identical to the tag (5 files)": true,
+        "one-shot log present (re-execution = reproduction)": true
       }
     },
     "metrics": [
@@ -2212,5 +2216,5 @@
     "DR-S9-14",
     "DR-S9-15"
   ],
-  "runtime_seconds": 930.6482815742493
+  "runtime_seconds": 725.3771622180939
 }
