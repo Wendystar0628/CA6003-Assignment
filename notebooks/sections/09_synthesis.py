@@ -1717,6 +1717,13 @@ reg = reg[REG_COLS]
 show(reg[["dr_id", "type", "check_verdict", "decision"]])
 REG_PATH = C.GOVERNANCE_DIR / "register" / "S10.csv"
 if C.IS_FINAL:
+    # The register is append-only: a row already on file keeps its original date unless its content changed.
+    if REG_PATH.exists():
+        old_reg = pd.read_csv(REG_PATH, dtype=str, keep_default_na=False).set_index("dr_id")
+        for i, r in reg.iterrows():
+            if r["dr_id"] in old_reg.index and all(str(r[c]) == old_reg.loc[r["dr_id"], c] for c in reg.columns
+                                                   if c not in ("dr_id", "date") and c in old_reg.columns):
+                reg.at[i, "date"] = old_reg.loc[r["dr_id"], "date"]
     # Only a FINAL run overwrites the committed register fragment.
     reg.to_csv(REG_PATH, index=False)
     print(f"wrote {REG_PATH.relative_to(C.ROOT).as_posix()} ({len(reg)} rows)")
