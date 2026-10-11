@@ -32,7 +32,10 @@ print("repository root (relative checks only):", ROOT.name)
 # **Why.** The pinned versions in `requirements.txt` were resolved once; the table compares them with what is actually running. A mismatch is not necessarily an error, but it has to be visible.
 
 # %%
+# Compare the versions pinned in requirements.txt with the libraries actually imported in this run.
+# Reads requirements.txt and package metadata; asserts that no required package is missing.
 PINNED = {}
+# Keep only "name==version" lines; text after "#" is a comment in requirements.txt.
 for line in (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines():
     line = line.split("#")[0].strip()
     if "==" in line:
@@ -49,12 +52,14 @@ for pkg in PACKAGES:
         installed = "missing"
     pinned = PINNED.get(pkg.lower(), "-")
     rows.append({"package": pkg, "pinned": pinned, "installed": installed,
+                 # "-" = not pinned, so there is nothing to compare against.
                  "status": "ok" if pinned in ("-", installed) else "differs"})
 env = pd.DataFrame(rows)
 display(env)
 print(f"Python {platform.python_version()} on {platform.system()} {platform.release()}")
 
 # The estimators and statistics used later must be importable: fail here, not in §7.
+# Import the estimators now so that a broken install fails in §0, not in the model sections.
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import SplineTransformer
@@ -71,6 +76,8 @@ print(f"{n_diff} package(s) differ from the pinned version" if n_diff else "all 
 # **Why.** Resampling counts dominate run time. `NB_MODE` (environment variable, default `FAST`) switches them together. The base sizes live in `src/config.py`; three sections reduce some of them further in FAST mode to keep a re-run short, and the second table lists those effective sizes exactly as the code uses them (each section also prints its sizes when it starts).
 
 # %%
+# Show the resampling sizes of the active run mode next to the documented FAST/FINAL values.
+# Reads src/config.py; asserts the active config matches the mode it claims to be.
 import os
 modes = pd.DataFrame({
     "config setting": ["CV splits x repeats", "bootstrap replicates (N_BOOT)", "coefficient bootstrap (N_BOOT_COEF)",
@@ -80,6 +87,8 @@ modes = pd.DataFrame({
     f"active ({C.NB_MODE})": [f"{C.CV_SPLITS} x {C.CV_REPEATS}", C.N_BOOT, C.N_BOOT_COEF, C.N_PERM, C.N_ROBUSTNESS_SEEDS],
 })
 display(modes)
+# Guard against a hand-edited config: FAST and FINAL must keep the documented sizes
+# (CV repeats, N_BOOT, N_BOOT_COEF, N_PERM), otherwise the stored FINAL numbers are not reproducible.
 expected = {"FAST": (2, 100, 100, 20), "FINAL": (5, 1000, 500, 100)}[C.NB_MODE]
 assert (C.CV_REPEATS, C.N_BOOT, C.N_BOOT_COEF, C.N_PERM) == expected, "config sizes do not match the documented mode"
 
@@ -95,6 +104,7 @@ EFFECTIVE = pd.DataFrame([
     ("§9.5", "specification-curve specifications", 30, 60, "FAST uses C in {0.1, 10} only"),
 ], columns=["where", "resampling step", "FAST", "FINAL", "note"])
 display(EFFECTIVE)
+# os.cpu_count() can return None, so fall back to 2; workers leave two cores free for the OS and the kernel.
 N_CPU = os.cpu_count() or 2
 print(f"NB_MODE = {C.NB_MODE}; holdout fraction {C.HOLDOUT_FRAC:.0%}; SESOI ROC-AUC {C.SESOI['roc_auc']}")
 print(f"logical CPU cores here: {N_CPU}; parallel workers: min(12, cores - 2) = {min(12, max(1, N_CPU - 2))} in §7-§8, "
@@ -111,6 +121,8 @@ print(f"logical CPU cores here: {N_CPU}; parallel workers: min(12, cores - 2) = 
 # **Why.** One shared seed would couple every random step (an extra bootstrap call would move the folds). Each consumer instead gets `evalkit.derive_seed(SEED_MASTER, *tags)` – a `SeedSequence` of the master seed and `crc32` of its name – so its stream depends only on the master seed and its own name, on every machine.
 
 # %%
+# Derive one reproducible seed per random consumer and test the properties the design relies on.
+# Reads C.SEED_MASTER; asserts determinism, distinctness and sensitivity to master seed and tag order.
 from src import evalkit as ek
 
 # Tags exactly as the later sections use them (section, purpose, ...).
@@ -121,7 +133,8 @@ seed_table = pd.DataFrame({
 })
 display(seed_table)
 
-# Properties the design relies on.
+# Properties the design relies on: (1) same inputs give the same seed, (2) different consumers never share
+# a stream, (3) the master seed matters, (4) tag order matters (so ("a","b") and ("b","a") differ).
 again = [ek.derive_seed(C.SEED_MASTER, *t) for t in TAGS]
 assert again == seed_table["integer_seed"].tolist(), "derivation is not deterministic"
 assert seed_table["integer_seed"].nunique() == len(TAGS), "two consumers share a seed"
@@ -142,15 +155,20 @@ print(f"SEED_MASTER = {C.SEED_MASTER}; {len(TAGS)} example consumers, all distin
 # **Why.** The 16 NHANES files in `data/nhanes_2021_2023/raw/` are unmodified CDC downloads (downloaded 2026-10-10). `MANIFEST.sha256` stores one SHA-256 per file; a single changed byte (an editor re-save, a line-ending conversion, a truncated download) changes the hash. The check runs twice, independently: with `hashlib` here and through the project loader.
 
 # %%
+# Verify every raw NHANES file against MANIFEST.sha256 with hashlib and check that each has a codebook.
+# Reads data/nhanes_2021_2023/raw and the manifest; asserts all hashes match and no file is missing.
+# Parse the manifest ("<sha256>  <filename>", sha256sum format) into {filename: lowercase digest}.
 def read_manifest(path):
     entries = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         digest, name = line.split(None, 1)
+        # sha256sum marks binary-mode files with a leading "*"; strip it so names match.
         entries[name.strip().lstrip("*")] = digest.lower()
     return entries
 
+# Hash a file in 1 MiB chunks so large files are never loaded into memory at once.
 def sha256_of(path, chunk=1 << 20):
     h = hashlib.sha256()
     with path.open("rb") as fh:
@@ -160,6 +178,7 @@ def sha256_of(path, chunk=1 << 20):
 
 manifest = read_manifest(C.MANIFEST)
 rows = []
+# One row per expected file; a missing file gets match=False rather than raising, so the table shows all problems.
 for stem in C.NHANES_FILES:
     fname = f"{stem}.xpt"
     p = C.RAW_DIR / fname
@@ -175,6 +194,7 @@ for stem in C.NHANES_FILES:
 integrity = pd.DataFrame(rows)
 display(integrity)
 
+# Both directions: no file without a hash and no hash without a file (catches added or dropped files).
 assert set(manifest) == {f"{s}.xpt" for s in C.NHANES_FILES}, "manifest and file list differ"
 assert integrity["match"].all(), integrity[~integrity["match"]]
 assert integrity["codebook"].all(), "codebook missing for a raw file"
@@ -182,7 +202,8 @@ print(f"{int(integrity['match'].sum())}/{len(integrity)} files match MANIFEST.sh
       f"total {integrity['size_kb'].sum() / 1024:.1f} MB; every file has a CDC codebook")
 
 # %%
-# Second, independent route through the project loader.
+# Repeat the integrity check through the project loader (download disabled, so it can only verify).
+# Raises if any raw file is missing or its hash differs.
 from src import nhanes_io
 status = nhanes_io.ensure_raw_data(download=False)
 print("nhanes_io.ensure_raw_data(download=False) ->", status if len(str(status)) < 300 else "ok")
@@ -196,6 +217,8 @@ print("nhanes_io.ensure_raw_data(download=False) ->", status if len(str(status))
 # **Why.** Every artefact has a fixed place; the cell checks that the governance files exist and that the register and GenAI-log headers match `governance/README.md`.
 
 # %%
+# Check that the repository layout and the governance files (register, GenAI log) are in place.
+# Reads the directory tree and governance/*.csv; asserts self-contained paths exist and headers are exact.
 LAYOUT = pd.DataFrame([
     ("config/", "variable_spec.csv: single source of truth for variables", "S2"),
     ("src/", "importable modules (config, plots, results_io, nhanes_io, survey, labels, prep, evalkit, ...)", "S0-S9"),
@@ -216,6 +239,7 @@ LAYOUT["availability"] = np.where(LAYOUT["exists"], "present",
 display(LAYOUT)
 assert LAYOUT.loc[LAYOUT["path"].isin(SELF_CONTAINED), "exists"].all(), LAYOUT[LAYOUT["availability"] == "MISSING"]
 
+# Expected column order of the decision-register fragments and the GenAI log (defined in governance/README.md).
 REGISTER_COLS = ["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision",
                  "alternatives_rejected", "hyp_id", "status", "check_verdict", "check_note", "loop_ref",
                  "change_request", "commit"]
@@ -223,6 +247,7 @@ GENAI_COLS = ["date", "tool_version", "purpose", "data_shared", "output_used_in"
 
 gov = C.GOVERNANCE_DIR
 checks = []
+# Exact list equality (not set equality): a reordered header would break the merge into Appendix A.1.
 for rel, cols in [("register/S0.csv", REGISTER_COLS), ("genai_log.csv", GENAI_COLS)]:
     df = pd.read_csv(gov / rel)
     checks.append({"artefact": f"governance/{rel}", "rows": len(df), "columns_ok": list(df.columns) == cols})
@@ -231,6 +256,7 @@ for rel in ["README.md", "devlog.md"]:
 gov_check = pd.DataFrame(checks)
 display(gov_check)
 assert gov_check["columns_ok"].all(), gov_check
+# Acceptance: both logs must already contain at least one entry (an empty log would mean nothing was recorded).
 reg0 = pd.read_csv(gov / "register/S0.csv")
 assert len(reg0) >= 1 and (pd.read_csv(gov / "genai_log.csv").shape[0] >= 1)
 print(f"S0 acceptance: register rows = {len(reg0)}, GenAI log rows = {pd.read_csv(gov / 'genai_log.csv').shape[0]}")
@@ -244,6 +270,7 @@ print(f"S0 acceptance: register rows = {len(reg0)}, GenAI log rows = {pd.read_cs
 # **Why.** After a freeze results may only be down-graded, never re-run until they look better; the tags let the history prove that the hypotheses preceded the ablations.
 
 # %%
+# List the freeze tags in the order results were locked (documentation table; nothing is computed).
 FREEZES = pd.DataFrame([
     ("scope-freeze", "end of S3", "variable scope and availability rule"),
     ("target-freeze", "end of S5", "label L_comb, populations E-ALL / E-SCREEN, 3x3 strata"),
@@ -255,6 +282,8 @@ FREEZES = pd.DataFrame([
 display(FREEZES)
 
 # %%
+# Save the setup facts (mode, seeds, verified files, package versions) for later sections and the appendix.
+# Writes the section metrics JSON and the environment table under results/.
 payload = {
     "mode": C.NB_MODE,
     "seed_master": C.SEED_MASTER,
