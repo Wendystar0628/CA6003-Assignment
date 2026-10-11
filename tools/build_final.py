@@ -650,7 +650,7 @@ MARKERS_PATH = [
     ("5/Treatment masking", "self-report and HbA1c disagree because treatment works"),
     ("5/Who is undiagnosed", "access to care decides who carries a diagnosis"),
     ("6/Hypotheses and pre-registration lock", "hypotheses locked before any ablation result"),
-    ("7/Leak gate", "minimal arm with and without treatment items"),
+    ("7/Leak gate", "minimal arm with and without inadmissible items (treatment, diagnosis history, glucose testing)"),
     ("7/E-ALL vs E-SCREEN", "recognition vs screening"),
     ("8/3 × 3 label matrix", "the training label decides who is missed"),
     ("9/One-shot hold-out", "untouched test set after the experiment freeze"),
