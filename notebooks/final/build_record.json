@@ -73,5 +73,5 @@
     "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
     "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
   },
-  "notebook_sha256": "f305a36218060d0fd59bb6a543b8a70a65c0de8a0cb842e73f06d7d4898cf314"
+  "notebook_sha256": "4f236e0597e7b1f14bb9f5a2f3b78479a477578f0fd9b4ca0dfe8268fd52b995 (file as stored in git, LF line endings)"
 }
