@@ -1,7 +1,7 @@
 # Label freeze (freeze point 2, tag `target-freeze`)
 
-Stage S5 · decision DR-S5-01 (target), DR-S5-09 (evaluation populations), DR-S5-10 (sensitivity labels) · loop L2.
-Evidence: `notebooks/sections/04_labels_bias.py` §5.1–§5.8, `results/metrics_S5.json`, `results/S5/*.csv`.
+§5 of the notebook · decisions DR-S5-01 (target), DR-S5-09 (evaluation populations), DR-S5-10 (sensitivity labels) · decision gate L2 (label revision).
+Evidence: notebook §5.1–§5.8, `results/metrics_S5.json`, `results/S5/*.csv`.
 
 Every definition below is **executable**: it names the function in `src/labels.py` that implements it, and
 section §5.8 recomputes the counts in the JSON block at the end of this file and asserts that they are equal.
@@ -9,11 +9,11 @@ If code and document ever disagree, the notebook fails.
 
 ## 1 Status and honesty statement
 
-- The L2 decision gate (C1–C4) was evaluated **after** looking at the data (S3–S5). It is a documented judgement,
-  not a pre-registered test (`prior_exposure = analysis_seen`). Only the S7/S8 experiment hypotheses are
+- The L2 decision gate (C1–C4) was evaluated **after** looking at the data (§3–§5). It is a documented judgement,
+  not a pre-registered test (`prior_exposure = analysis_seen`). Only the §7/§8 experiment hypotheses are
   pre-registered (`governance/hypotheses.md`, `prereg-lock`).
 - After this freeze, any change to the definitions below requires a decision-register row with a
-  `change_request`, re-opening L2 (at most one round) and a `fix` commit.
+  `change_request`, re-opening the L2 gate (at most one round) and a `fix` commit.
 
 ## 2 Population
 
@@ -54,7 +54,7 @@ y = escreen["y_escreen"]                   # = (LBXGH >= 6.5); 152 positives, 4,
 Borderline respondents (DIQ010 = 3) stay in E-SCREEN with their HbA1c outcome and are flagged
 (`borderline == 1`); 36 of them are positive. Rows outside E-SCREEN have `y_escreen = NaN`, so they cannot be
 scored by accident. Reason: 84 % of `L_comb` positives (819/971) are already diagnosed, so E-ALL largely
-measures recognition of known disease; E-SCREEN matches the screening use case (process doc §1.3).
+measures recognition of known disease; E-SCREEN matches the screening use case (§1.2).
 
 ## 5 3×3 label matrix (SL6)
 
@@ -67,7 +67,7 @@ measures recognition of known disease; E-SCREEN matches the screening use case (
 | `Undiagnosed` | `L_self == 0 and L_A1c == 1` (= E-SCREEN positives) | 152 |
 | `NonDiabetic` | `L_self == 0 and L_A1c == 0` (common negatives) | 4,759 |
 
-Procedure (S8): rows = training label ∈ {`L_self`, `L_A1c`, `L_comb`}; columns = the three positive strata; for
+Procedure (§8.6): rows = training label ∈ {`L_self`, `L_A1c`, `L_comb`}; columns = the three positive strata; for
 each cell, recall of that stratum against the common 4,759 `NonDiabetic` negatives at the threshold giving
 specificity 0.80 on those negatives (`C.SPEC_FIXED`); ROC-AUC secondary. Pre-registered shape: `L_self` misses
 `Undiagnosed` most, `L_A1c` misses `D_controlled` most, `L_comb` has the smallest worst-cell gap; differences
@@ -85,9 +85,9 @@ specificity 0.80 on those negatives (`C.SPEC_FIXED`); ROC-AUC secondary. Pre-reg
 | SL4 | `L_A1c OR (L_self AND diq070_universe AND (DIQ050 == 1 OR DIQ070 == 1))`; DIQ070 universe = `DIQ010 == 1`, or `DIQ010 == 3`, or (`DIQ010 == 2` and `DIQ160 == 1`). Pills reported by borderline (44) or prediabetic (41) respondents – plausibly metformin for prediabetes – do **not** create a case | WTPH2YR | 886 |
 | SL5 | NCHS definition: `L_self OR LBXGH >= 6.5 OR LBXGLU >= 126`, only on the fasting subsample (`WTSAF2YR > 0` and `LBXGLU` observed; `labels.fasting_mask`), NaN elsewhere | WTSAF2YR | 565 of 2,938 |
 | SL6 | 3×3 label matrix (section 5) | – | – |
-| SL7 | Permutation negative control: train on `L_comb` permuted within the training folds (`C.N_PERM` permutations); expected ROC-AUC ≈ 0.5 (S9) | – | – |
+| SL7 | Permutation negative control: train on `L_comb` permuted within the training folds (`C.N_PERM` permutations); expected ROC-AUC ≈ 0.5 (§9.2.1) | – | – |
 
-Use in later stages: S8 runs SL6; S9 re-evaluates the selected arm under SL1–SL5 and runs SL7.
+Use in later sections: §8.6 runs SL6; §9 re-evaluates the selected arm under SL1–SL5 (§9.4) and runs SL7 (§9.2.1).
 
 ## 7 Frozen counts (machine-checked by §5.8)
 

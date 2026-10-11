@@ -3,7 +3,7 @@
     "section": "S5",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T06:54:04+00:00"
+    "written_utc": "2026-10-11T08:25:18+00:00"
   },
   "labels": {
     "confusion": {
@@ -242,6 +242,35 @@
         "w_ci_low": 0.8426092087125479,
         "w_ci_high": 5.6207159623722145,
         "df": 15
+      }
+    },
+    "rd_df_sensitivity": {
+      "uninsured - insured": {
+        "rd_pp": 23.157835907921932,
+        "df_contrast_domain": 15,
+        "ci_low_pp": 6.235010286422246,
+        "ci_high_pp": 40.08066152942161,
+        "df_smaller_group": 9,
+        "ci_low_pp_conservative": 5.197246000849741,
+        "ci_high_pp_conservative": 41.118425814994126
+      },
+      "no usual place - usual place": {
+        "rd_pp": 19.935708936353603,
+        "df_contrast_domain": 15,
+        "ci_low_pp": -1.6054904701312185,
+        "ci_high_pp": 41.47690834283843,
+        "df_smaller_group": 9,
+        "ci_low_pp_conservative": -2.9264688878279053,
+        "ci_high_pp_conservative": 42.79788676053511
+      },
+      "NH Asian - NH White": {
+        "rd_pp": 15.622099842435725,
+        "df_contrast_domain": 15,
+        "ci_low_pp": -5.678259847488332,
+        "ci_high_pp": 36.92245953235978,
+        "df_smaller_group": 4,
+        "ci_low_pp_conservative": -12.123937835656792,
+        "ci_high_pp_conservative": 43.368137520528244
       }
     }
   },
@@ -670,7 +699,7 @@
       }
     },
     "known_dx_share_of_positives": 0.84346035015448,
-    "label_freeze_sha256": "3a28026c7ffafac8dde5da8c461b9246b8f1875dad78cf812e64d9ca216a6800"
+    "label_freeze_sha256": "a630b4f72389e16b26427de7f5050e06671454b8933ed673bbc8e22e6c536da6"
   },
   "hypotheses": {
     "H1a": {

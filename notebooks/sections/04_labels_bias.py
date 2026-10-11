@@ -1,20 +1,20 @@
 # %% [markdown]
-# # §5 Labels and Bias Audit (Stage S5)
+# # §5 Labels and bias audit
 #
-# A diabetes label is itself a measurement. Self-report records a past diagnosis and HbA1c records today's
-# glycaemia under whatever treatment the person receives; neither is "the truth". This section audits the label
-# layer and two further bias layers before the target is frozen (freeze point 2, `target-freeze`):
+# A diabetes label is itself a measurement: self-report records a past diagnosis, HbA1c today's glycaemia under
+# whatever treatment the person receives. This section audits the label and two further bias layers before the
+# target is frozen (`target-freeze`):
 #
-# | Step | Question | Output |
-# |---|---|---|
-# | 1 | How far do self-report and HbA1c agree? | confusion table, κ, PA/NA (`label_audit.csv`) |
-# | 2 | Does treatment hide diabetes from HbA1c? | treatment masking, A1c-by-medication figure |
-# | 3 | What does "undiagnosed" mean? | care contact of the undiagnosed |
-# | 4 | Who is undiagnosed? | risk differences, Korn–Graubard CIs, NCHS flags (`undiagnosed_by_group.csv`) |
-# | 5 | Does BMI measure adiposity equally for Asian adults? | BMI vs WHtR AUC by race (`bmi_race_roc.csv`) |
-# | 6 | Whom do the 5,730 represent? | sample vs weighted shares, response, exam selection (`representation.csv`) |
-# | 7 | Is HbA1c missing at random? | missingness by race, Manski bounds |
-# | 8 | Decision gate L2 and freeze | C1–C4, `L_comb`, E-SCREEN, 3×3 strata, SL1–SL7 (`governance/label_freeze.md`) |
+# | § | Question |
+# |---|---|
+# | 5.1 | How far do self-report and HbA1c agree? |
+# | 5.2 | Does treatment hide diabetes from HbA1c? |
+# | 5.3 | What does "undiagnosed" mean? |
+# | 5.4 | Who is undiagnosed? |
+# | 5.5 | Does BMI measure adiposity equally for Asian adults? |
+# | 5.6 | Whom do the 5,730 represent? |
+# | 5.7 | Is HbA1c missing at random? |
+# | 5.8 | Does the label pass the decision gate L2 (label revision), and what is frozen? |
 #
 # All findings here were obtained after looking at the data (`prior_exposure = analysis_seen`); they motivate,
 # but do not count as, pre-registered tests.
@@ -35,6 +35,8 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from IPython.display import Markdown, display
+from scipy import stats
 from sklearn.metrics import roc_auc_score
 
 from src import evalkit as E, labels as L, nhanes_io as NIO, survey as S
@@ -51,7 +53,7 @@ REG: list[dict] = []                     # -> governance/register/S5.csv
 
 
 def close(value, target, tol, what):
-    """Assert a recomputed number against the verified value of process doc §8 / S5 plan."""
+    """Assert a recomputed number against its verified reference value (independent earlier computation)."""
     assert abs(value - target) <= tol, f"{what}: got {value:.4f}, expected {target} ± {tol}"
 
 
@@ -154,15 +156,14 @@ register("DR-S5-02", "label_audit",
          f"{jk_agree['ci_high'][0]:.3f}); PA {unw['pa']:.3f}; NA {unw['na']:.3f}; sens {unw['sens']:.3f}; PPV {unw['ppv']:.3f}",
          "Use the union L_comb as training target; report PA/NA next to kappa; keep L_self and L_A1c as sensitivity labels SL2/SL1",
          "Single-instrument label (L_self or L_A1c) as target; kappa alone (prevalence-dependent)",
-         check_note="Confusion table, kappa, PA/NA, sens/PPV recomputed and asserted against process doc §8")
+         check_note="Confusion table, kappa, PA/NA, sens/PPV recomputed and asserted against the verified reference values")
 
 # %% [markdown]
 # **So what.** The two instruments agree on 93 % of adults, but agreement *on cases* is much weaker: κ = 0.699
-# (weighted 0.709, CI 0.665–0.752, "substantial" on the Landis–Koch scale only just), PA = 0.739 against
+# (weighted 0.709, CI 0.665–0.752, only just "substantial" on the Landis & Koch 1977 scale), PA = 0.739 against
 # NA = 0.959. Self-report detects 78.9 % of HbA1c-positive adults, and only 69.5 % of self-reported diabetics
-# are HbA1c-positive on the day of the exam. Each single instrument misses a large part of the union:
-# `L_self` misses 152/971 = 15.7 % of `L_comb` positives and `L_A1c` misses 250/971 = 25.7 %. The disagreement
-# is structured, not random noise; steps 2–3 show why.
+# are HbA1c-positive on the exam day. `L_self` misses 152/971 = 15.7 % of `L_comb` positives and `L_A1c` misses
+# 250/971 = 25.7 %. The disagreement is structured, not noise; §5.2–§5.3 show why.
 
 # %% [markdown]
 # ## 2 Treatment masking
@@ -225,7 +226,7 @@ register("DR-S5-03", "label_bias",
 # (66 %) take insulin or pills; among all 694 treated patients 23.8 % are "controlled". The remaining 85 are
 # untreated, 50 of them in the prediabetes range (5.7–6.4 %), consistent with lifestyle-controlled or
 # early disease. An HbA1c-only label would therefore count successful treatment as absence of disease: this is
-# the *D_controlled* column of the 3×3 label matrix in S8.
+# the *D_controlled* column of the 3×3 label matrix (§8.6).
 
 # %% [markdown]
 # ## 3 What "undiagnosed" means
@@ -283,11 +284,11 @@ register("DR-S5-04", "label_semantics",
 
 # %% [markdown]
 # **So what.** Borderline respondents are almost seven times as likely to be HbA1c-positive as those answering
-# "no" (16.9 % vs 2.5 %). An estimated 62.5 % (KG 53.5–70.9 %, WTPH2YR) of undiagnosed adults in the population
-# had a blood-sugar test in the past three years (in the sample 104 of 152, 68 %); 36 of the 152 (24 %) were told
-# they were borderline and 48 were told they had prediabetes. "Undiagnosed" is therefore
-# mostly a diagnosis and communication gap, not a lack of any contact. This is also why DIQ160 and DIQ180 are
-# excluded as features: they record the result of a glucose test, which the screening use case comes before.
+# "no" (16.9 % vs 2.5 %). An estimated 62.5 % (KG 53.5–70.9 %, WTPH2YR) of undiagnosed adults had a blood-sugar
+# test in the past three years (sample: 104 of 152); 36 of the 152 were told they were borderline and 48 that
+# they had prediabetes. "Undiagnosed" is therefore mostly a diagnosis and communication gap, not a lack of any
+# contact. DIQ160 and DIQ180 are excluded as features because they record the result of a glucose test, which
+# the screening use case precedes.
 
 # %% [markdown]
 # ## 4 Who is undiagnosed
@@ -299,8 +300,9 @@ register("DR-S5-04", "label_semantics",
 # containing it). An estimate with n or effective n < 30, an absolute CI width ≥ 0.30, or a CI width > 0.05 with
 # a relative width > 130 % is labelled *exploratory, does not meet NCHS standard*; df < 8 additionally triggers
 # NCHS statistical review.
-# The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife, df = domain df) rather than a
-# small-cell proportion.
+# The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife) rather than a small-cell
+# proportion. Its df is that of the domain on which the contrast is estimated (both groups together); a
+# conservative check with the smaller group's own df follows.
 
 # %%
 d["undx"] = 1.0 - d["L_self"]
@@ -360,22 +362,39 @@ for name, (e, lo, hi) in {"uninsured - insured": (23.2, 6.2, 40.1), "no usual pl
     close(RD.loc[name, "rd_pp"], e, 0.06, name); close(RD.loc[name, "ci_low_pp"], lo, 0.06, name + " low")
     close(RD.loc[name, "ci_high_pp"], hi, 0.06, name + " high")
 
+# Degrees of freedom of the contrast. The jackknife uses the domain "group a or group b", which here spans all
+# strata (df shown above). The smaller group alone has fewer df (uninsured: 9), so as a conservative check the
+# same standard error is combined with the t-quantile of the smaller group's domain df.
+rd_df = []
+for name, col, a, b, la, lb in contrasts:
+    r_ = RD.loc[name]
+    se_ = (r_["ci_high_pp"] - r_["ci_low_pp"]) / (2 * stats.t.ppf(0.975, r_["df"]))
+    df_min = int(min(P.loc[la, "df"], P.loc[lb, "df"]))
+    t_min = stats.t.ppf(0.975, df_min)
+    rd_df.append({"contrast": name, "rd_pp": r_["rd_pp"], "df_contrast_domain": int(r_["df"]), "ci_low_pp": r_["ci_low_pp"],
+                  "ci_high_pp": r_["ci_high_pp"], "df_smaller_group": df_min,
+                  "ci_low_pp_conservative": r_["rd_pp"] - t_min * se_, "ci_high_pp_conservative": r_["rd_pp"] + t_min * se_})
+rd_df = pd.DataFrame(rd_df)
+display(rd_df.round(1))
+RDC = rd_df.set_index("contrast")
+assert RDC.loc["uninsured - insured", "df_smaller_group"] == 9
+assert RDC.loc["uninsured - insured", "ci_low_pp_conservative"] > 0      # H1a rule holds with either df
+
 # %% [markdown]
 # **Adjusted models.** The risk differences above are crude. To check whether they survive confounding, each
 # exposure gets **its own** logistic model of "undiagnosed" among the HbA1c-positive adults, with the adjustment
-# set that the S4 DAG (back-door criterion, `results/S4/dag_adjustment_sets.csv`) identifies for that exposure:
+# set that the DAG of §4.8 (back-door criterion) identifies for that exposure:
 #
-# | Exposure | Adjustment set (S4 DAG) | Not adjusted for, and why |
+# | Exposure | Adjustment set (§4.8 DAG) | Not adjusted for, and why |
 # |---|---|---|
 # | uninsured | age, sex, SES (PIR + missing-PIR indicator) | usual place of care: a *mediator* (insurance → usual care → diagnosis) |
 # | no usual place of care | age, sex, SES (PIR + missing-PIR indicator) | insurance: an ancestor of usual care whose back-door paths are already closed by age and SES |
 # | NH Asian (vs NH White) | age, sex | SES and BMI: *mediators* of race (race → SES / adiposity → diagnosis) |
 #
 # PIR is missing for some adults, so it enters as median-filled value plus the indicator `pir_miss`. Each model
-# is fitted unweighted (model-based CI) and WTPH2YR-weighted (delete-one-PSU jackknife on the full design, the
-# domain formed by zero weights). Both are reported because they disagree in places. A mutually adjusted model
-# (all exposures plus BMI in one equation, as in an earlier draft) is not used: it would adjust insurance for its
-# own mediator and present every coefficient as if it were an effect.
+# is fitted unweighted (model-based CI) and WTPH2YR-weighted (delete-one-PSU jackknife, domain by zero weights);
+# both are reported because they disagree in places. A mutually adjusted model is not used: it would adjust
+# insurance for its own mediator and present every coefficient as if it were an effect.
 
 # %%
 RACE_LEVELS = ["NH White", *[r for r in RACE.values() if r != "NH White"]]
@@ -421,7 +440,7 @@ assert LT["n"].tolist() == [719, 721, 721]
 excl = lambda lo, hi: lo > 1 or hi < 1   # noqa: E731
 LT["unweighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["ci_low"], LT["ci_high"])]
 LT["weighted_excludes_1"] = [excl(lo, hi) for lo, hi in zip(LT["w_ci_low"], LT["w_ci_high"])]
-print(LT[["unweighted_excludes_1", "weighted_excludes_1"]])
+display(LT[["unweighted_excludes_1", "weighted_excludes_1"]])
 assert (LT[["OR", "OR_w"]] > 1).all().all()          # every exposure points in the same direction as its crude RD
 assert LT.loc["uninsured", "unweighted_excludes_1"] and LT.loc["uninsured", "weighted_excludes_1"]
 assert not LT.loc["NH Asian", "unweighted_excludes_1"] and not LT.loc["NH Asian", "weighted_excludes_1"]
@@ -479,25 +498,19 @@ register("DR-S5-05", "label_bias",
          f"{LT.loc['uninsured', 'w_ci_high']:.2f}); no usual place {LT.loc['no usual place', 'OR']:.2f} ({LT.loc['no usual place', 'ci_low']:.2f}, "
          f"{LT.loc['no usual place', 'ci_high']:.2f}), weighted {LT.loc['no usual place', 'OR_w']:.2f} ({LT.loc['no usual place', 'w_ci_low']:.2f}, "
          f"{LT.loc['no usual place', 'w_ci_high']:.2f})",
-         "Headline = risk difference with JK CI; proportions with KG CI and NCHS flag; insurance and access are audit/stratification variables only; S8 audits L_self vs L_comb by low_access",
+         "Headline = risk difference with JK CI (df of the contrast domain; conservative df of the smaller group also shown); proportions with KG CI and NCHS flag; insurance and access are audit/stratification variables only; S8 audits L_self vs L_comb by low_access",
          "Report small-cell proportions as headline; drop small groups; put insurance into the model; one mutually adjusted model "
          "(adjusts insurance for its mediator usual care; Table-2 fallacy)")
 
 # %% [markdown]
 # **So what.** Among HbA1c-positive adults, 43.0 % of the uninsured but 19.9 % of the insured do not know their
-# diagnosis: a risk difference of +23.2 pp (6.2, 40.1) whose interval excludes zero. Without a usual place of care
-# the difference is +19.9 pp (−1.6, 41.5) and for NH Asian versus NH White adults +15.6 pp (−5.7, 36.9); both
-# intervals include zero. All three group proportions are flagged by the NCHS presentation rules, so they are
-# *exploratory and do not meet the NCHS standard*; they are not headlines. In the DAG-guided models (one per
-# exposure), lacking insurance stays associated with being undiagnosed after adjusting for age, sex and income
-# (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1). For lacking a usual place of care the two fits disagree:
-# the unweighted CI excludes 1 (OR 2.8), the design-based weighted CI does not (OR 2.5, 0.9–7.1), so this
-# association is suggestive only. The Asian–White OR is imprecise in both fits; it is deliberately adjusted for
-# age and sex only, because in the S4 DAG income (SES) lies on the path from race to diagnosis, so adjusting for it
-# would remove part of the association being described. The
-# headline therefore remains the crude risk difference for insurance. Consequence for the label: `L_self`
-# systematically under-counts disease in groups with
-# poorer access, which is why the target is the union `L_comb` and why S8 compares training labels.
+# diagnosis: a risk difference of +23.2 pp (6.2, 40.1; df 15), which still excludes zero with the uninsured
+# group's own df of 9 (table above). For no usual place of care (+19.9 pp, −1.6 to 41.5) and NH Asian vs NH
+# White (+15.6 pp, −5.7 to 36.9) the intervals include zero, and all three group proportions are *exploratory*
+# under the NCHS rules. In the DAG-guided models, lacking insurance stays associated with being undiagnosed after
+# age, sex and income (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1); for no usual place the fits disagree
+# (weighted OR 2.5, 0.9–7.1), so that association is suggestive only. `L_self` thus under-counts disease where
+# access is poorer, which is why the target is the union `L_comb` and §8 compares training labels.
 
 # %% [markdown]
 # ## 5 BMI as a biased measurement of adiposity in Asian adults
@@ -718,28 +731,19 @@ register("DR-S5-06", "measurement_bias",
          f"{RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'auc']:+.3f} ({RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'ci_low']:.3f}, "
          f"{RO.loc[('NH Asian', 'WHtR − BMI (paired)'), 'ci_high']:.3f}) vs White {RO.loc[('NH White', 'WHtR − BMI (paired)'), 'auc']:+.3f}",
          "Pre-register P14 (WHtR replaces waist, BMI kept) as S8 mitigation arm with White control; Asian results exploratory (40 A1c-positive cases); no group-specific thresholds",
-         "Race-specific BMI cut-offs in the model; adding WHtR on top of waist (redundant); race x BMI interaction (undetectable, S4)",
+         "Race-specific BMI cut-offs in the model; adding WHtR on top of waist (redundant); race x BMI interaction (not detectable, §4.12)",
          hyp_id="H-P14")
 
 # %% [markdown]
 # **So what.** Half of the Asian diabetics (24/47, 51.1 %) have a "normal" BMI below 25, against 7.2 % of White
-# diabetics. In the BMI bands below 25 the sample prevalence among Asian adults is 12.1 % (< 23) and 17.5 %
-# (23–24.9) against 4.3 % and 3.3 % among White adults (weighted, as in the figure: 7.8 % vs 3.3 % and 14.0 % vs
-# 2.8 %). These band estimates rest on 44–107 Asian adults each and all four fail the NCHS presentation standard
-# (relative CI width > 130 % or absolute width ≥ 0.30, two with df < 8), so they are exploratory: they are
-# compatible with diabetes occurring at lower BMI in Asian adults but do not establish band-specific rates. The
-# Asian pattern is not even monotone: the 25–29.9 band is *lower* (11.5 % unweighted, 5.3 % weighted) than both
-# bands below 25, as expected from small cells. The
-# robust part of the evidence is the case-based BMI share above and the discrimination analysis below: BMI barely discriminates in Asian adults
-# (AUC 0.573), while waist (0.697) and WHtR (0.714) do. The paired WHtR − BMI gain is +0.137 in Asian adults
-# (bootstrap CI roughly 0.09–0.18) against +0.049 in White adults (CI roughly 0.04–0.06); the Asian-minus-White
-# difference in gain, +0.088, has a CI that excludes zero both with person-level and with PSU-level (design-aware)
-# resampling, the latter 0.035–0.116 (FINAL). (Exact bounds are printed above; they move
-# slightly between FAST, B = 100, and FINAL, B = 1,000.) A BMI ≥ 25 rule finds only 48.9 % of Asian cases
-# (White 92.8 %); lowering the cut-off to 23 (the ADA recommendation for Asian Americans) raises sensitivity to
-# 72.3 % at a specificity of only 35.7 %. The direction agrees with Araneta et al. (2015). With 40–50 Asian cases
-# this is a measurement *signal*, not a definitive estimate: it motivates the pre-registered WHtR arm (P14) in S8,
-# where WHtR replaces waist rather than being added.
+# diabetics. The BMI-band prevalences rest on 44–107 Asian adults each and all four fail the NCHS standard, so
+# they are exploratory (the Asian pattern is not even monotone). The robust evidence is the case-based BMI share
+# and discrimination: BMI barely discriminates in Asian adults (AUC 0.573), waist (0.697) and WHtR (0.714) do.
+# The paired WHtR − BMI gain is +0.137 in Asian against +0.049 in White adults; the difference, +0.088, excludes
+# zero with person-level and PSU-level resampling (PSU 0.035–0.116, FINAL). A BMI ≥ 25 rule finds 48.9 % of Asian
+# cases (White 92.8 %); the ADA cut-off of 23 for Asian Americans raises this to 72.3 % at a specificity of 35.7 %.
+# With 40–50 Asian cases this is a measurement *signal*, consistent with Araneta et al. (2015); it motivates the
+# pre-registered WHtR arm P14 (§8.9).
 
 # %% [markdown]
 # ## 6 Representation and response
@@ -770,10 +774,10 @@ close(RP.loc[("age", "60+"), "sample_share"], 0.462, 0.001, "60+ sample"); close
 close(RP.loc[("age", "20-39"), "sample_share"], 0.247, 0.001, "20-39 sample"); close(RP.loc[("age", "20-39"), "weighted_share"], 0.348, 0.001, "20-39 weighted")
 close(deff, 1.55, 0.01, "Kish deff")
 age_explained = R.load_section("S4")["prevalence"]["gap_explained_by_age"]   # S4: sample rates re-weighted to the population age mix
-print(f"S4: age structure explains {100 * age_explained:.0f}% of the {100 * (unw_prev - w_prev['est']):.1f} pp unweighted-weighted gap")
+print(f"§4.4: age structure explains {100 * age_explained:.0f}% of the {100 * (unw_prev - w_prev['est']):.1f} pp unweighted-weighted gap")
 close(age_explained, 0.84, 0.01, "share of gap explained by age (S4)")
 
-# Response rates are documented by NCHS, not derivable from public files (S2 provenance; NHANES 2021-2023
+# Response rates are documented by NCHS, not derivable from public files (§1.10; NHANES 2021-2023
 # overview brief, https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/overviewbrief.aspx?Cycle=2021-2023).
 RESPONSE = {"interview_unweighted": 0.346, "exam_unweighted": 0.257}
 print(f"documented response rates: interview {pct(RESPONSE['interview_unweighted'])}, exam {pct(RESPONSE['exam_unweighted'])}")
@@ -827,15 +831,12 @@ register("DR-S5-07", "representation",
          "Treat the unweighted sample as the population; claim national representativeness of model metrics")
 
 # %% [markdown]
-# **So what.** Adults aged 60+ make up 46.2 % of the sample but 31.4 % of the weighted population (20–39: 24.7 %
-# vs 34.8 %); race shares differ by at most about one percentage point because this cycle no longer oversamples by
-# race. The age skew is the main reason why the unweighted `L_comb` prevalence (16.9 %) exceeds the weighted 14.0 %:
-# re-weighting the sample rates to the population age mix closes about 84 % of the 2.9 pp gap (S4); the rest
-# reflects other weighting factors.
-# Unequal weights cost precision (Kish design effect 1.55, effective n ≈ 3,700). With response rates of 34.6 %
-# (interview) and 25.7 % (exam), selection matters: interview-only adults report diabetes less often (8.8 %)
-# than adults with an HbA1c result (11.7 %). Weights correct for known covariates such as age, not for
-# health-related participation, so model metrics describe the examined population.
+# **So what.** Adults aged 60+ are 46.2 % of the sample but 31.4 % of the weighted population; race shares differ
+# by at most about one point because this cycle no longer oversamples by race. Age structure explains about 84 %
+# of the 2.9 pp gap between unweighted (16.9 %) and weighted (14.0 %) `L_comb` prevalence (§4.4). With response
+# rates of 34.6 % and 25.7 %, selection matters: interview-only adults report diabetes less often (8.8 %) than
+# adults with an HbA1c result (11.7 %). Weights correct for known covariates, not for health-related
+# participation, so model metrics describe the examined population.
 
 # %% [markdown]
 # ## 7 HbA1c missingness bias
@@ -846,11 +847,11 @@ register("DR-S5-07", "representation",
 # Self-report is observed for most adults without HbA1c, so the bounds are sharper than the naive width m.
 
 # %%
-# Missingness by race on all examined adults (the S3 definition); Manski bounds below on the cohort universe
+# Missingness by race on all examined adults (the §3.7 definition); Manski bounds below on the cohort universe
 # (examined, non-pregnant adults).
 merged["a1c_missing"] = merged["LBXGH"].isna().astype(float)
 merged["race3"] = merged["RIDRETH3"].map(RACE)
-exam = adult & merged["RIDSTATR"].eq(2).to_numpy()                      # all examined adults (S3 definition)
+exam = adult & merged["RIDSTATR"].eq(2).to_numpy()                      # all examined adults (§3.7 definition)
 coh_univ = exam & ~merged["RIDEXPRG"].eq(1).to_numpy()                   # cohort universe: examined, not pregnant
 miss_rows = []
 for g in sorted(merged.loc[exam, "race3"].unique()):
@@ -898,7 +899,7 @@ register("DR-S5-08", "missingness",
          "results/S5/a1c_missingness.csv; results/S5/manski_bounds.csv",
          f"missing HbA1c: Black {pct(miss.loc['NH Black', 'missing_share'])} vs White {pct(miss.loc['NH White', 'missing_share'])}; "
          f"prevalence MEC {pct(prev_mec)} vs PH {pct(w_prev['est'])}; Manski width overall {manski.loc['all', 'width']:.3f}",
-         "Keep complete-case cohort with WTPH2YR; report Manski bounds; IPW sensitivity deferred to S9",
+         "Keep complete-case cohort with WTPH2YR; report Manski bounds; IPW sensitivity deferred to S9 (§9.7)",
          "Impute HbA1c (would impute the label); ignore missingness")
 
 # %% [markdown]
@@ -908,13 +909,13 @@ register("DR-S5-08", "missingness",
 # overall `L_comb` prevalence among examined non-pregnant adults lies between 13.9 % and 18.1 % (width 0.042,
 # narrower than the naive 0.049 because missing-HbA1c adults who self-report diabetes are known positives); for
 # NH Black adults the bounds are 21.5–28.4 % (width 0.069) against 12.4–15.9 % for NH White adults. The cohort stays complete-case
-# with WTPH2YR; an inverse-probability-weighting sensitivity check is assigned to S9.
+# with WTPH2YR; an inverse-probability-weighting sensitivity check follows in §9.7.
 
 # %% [markdown]
 # ## 8 Decision gate L2 and target freeze
 #
-# **Why.** Loop L2 (process doc §4) sends the project back to S1 if the label audit changes the question. Four
-# criteria decide whether `L_comb` can be frozen. They are evaluated **after** seeing the data (post-hoc), so they
+# **Why.** The decision gate L2 (label revision) sends the project back to the scope (§1) if the label audit
+# changes the question. Four criteria decide whether `L_comb` can be frozen. They are evaluated **after** seeing the data (post-hoc), so they
 # are a documented judgement, not a pre-registered test. The freeze then fixes the target, the second primary
 # evaluation population E-SCREEN, the 3×3 label-matrix strata and the sensitivity labels SL1–SL7, written as
 # executable definitions in `governance/label_freeze.md` (all point to `src/labels.py`).
@@ -944,7 +945,7 @@ gate = pd.DataFrame([
      "evidence": f"borderline positive (SL3): {int(sl['SL3'].sum())} positives vs {n_comb}",
      "verdict": "PASS (borderline negative + flagged; SL3 as sensitivity)"},
 ])
-print(gate.to_string(index=False))
+display(gate)
 assert c2_bad.empty and n_comb >= 500 and race_pos["L_comb"].min() >= 40 and race_pos.loc["NH Asian", "L_A1c"] >= 40
 assert int(sl["SL3"].sum()) == 1148
 close(c1["self_missed"], 0.157, 0.001, "C1 self missed"); close(c1["a1c_missed"], 0.257, 0.001, "C1 A1c missed")
@@ -1025,7 +1026,7 @@ register("DR-S5-01", "target_freeze",
          f"C3 Asian L_comb {int(race_pos.loc['NH Asian', 'L_comb'])}",
          "Freeze L_comb = DIQ010==1 or LBXGH>=6.5 on N=5,730 (tag target-freeze); any change requires a register entry and reopening L2",
          "Freeze L_self (misses 152 undiagnosed); freeze L_A1c (misses 250 controlled); borderline positive (SL3, kept as sensitivity)",
-         loop_ref="L2", check_note="Gate recomputed in section 5.8; post-hoc nature stated")
+         loop_ref="L2", check_note="Gate recomputed in §5.8; post-hoc nature stated")
 register("DR-S5-09", "evaluation_population",
          "84% of L_comb positives are already diagnosed, so E-ALL measures recognition of known disease",
          "governance/label_freeze.md; figures/S5_label_strata.png",
@@ -1041,25 +1042,21 @@ register("DR-S5-10", "sensitivity_labels",
          "Ad-hoc relabelling after seeing model results; DIQ070 pills as diabetes for all respondents (would count pills plausibly taken for prediabetes, e.g. metformin)")
 
 # %% [markdown]
-# **So what.** All four gate criteria pass; we state explicitly that this is a post-hoc judgement made after
-# seeing the data. Each single instrument misses a material share of the union (15.7 % and 25.7 %), no admissible
-# feature is part of the target, every race group has at least 40 positives (NH Asian: 50 under `L_comb`, exactly
-# 40 under `L_A1c`, so Asian results stay descriptive), and the borderline coding is handled by SL3 (1,148
-# positives). **`L_comb` is frozen** (`target-freeze`).
-#
-# The 971 positives split into 569 uncontrolled and 250 controlled known diabetics and 152 undiagnosed adults:
-# 84 % of all positives are already diagnosed, so an AUC on E-ALL largely measures recognition of known disease.
-# E-SCREEN (adults not reporting diabetes; 152 HbA1c-positive vs 4,759 negatives, borderline respondents kept
-# and flagged, 36 of them positive) is therefore a co-primary evaluation population, and S8 evaluates every
-# training label on each 3×3 column against the common 4,759 negatives. The sensitivity labels behave as
-# expected: the treatment-aware SL4 (886) sits between `L_A1c` and `L_comb`, and the NCHS definition SL5 on the
-# fasting subsample reproduces the published 15.8 % prevalence closely, which anchors our label pipeline to an
-# external benchmark.
+# **So what.** All four gate criteria pass, as a post-hoc judgement made after seeing the data: each single
+# instrument misses a material share of the union (15.7 % and 25.7 %), no admissible feature is part of the
+# target, every race group has at least 40 positives (NH Asian 50 under `L_comb`, exactly 40 under `L_A1c`, so
+# Asian results stay descriptive), and borderline coding is handled by SL3. **`L_comb` is frozen.** Of the 971
+# positives, 84 % are already diagnosed (569 uncontrolled, 250 controlled), so E-SCREEN (152 undiagnosed
+# positives vs 4,759 negatives) is co-primary, and §8.6 evaluates every training label on each 3×3 column. SL5
+# closely reproduces the published DB516 prevalence of 15.8 %, anchoring the label pipeline externally.
 
 # %% [markdown]
-# **Status of the S5 hypotheses.** Three entries of `governance/hypotheses.md` are checked in this section. All
-# three were written after the data had been analysed (`analysis_seen` / `descriptive_seen`), so a "supported"
-# verdict here confirms a reproduced description; it is not confirmatory evidence.
+# ## 9 Hypothesis status and outputs
+#
+# **Why.** Three entries of `governance/hypotheses.md` are checked in this section. All three were written after
+# the data had been analysed (`analysis_seen` / `descriptive_seen`), so "supported" here confirms a reproduced
+# description, not confirmatory evidence. The decision register (`governance/register/S5.csv`) and
+# `results/metrics_S5.json` are written at the end.
 
 # %%
 from statsmodels.stats.proportion import confint_proportions_2indep
@@ -1089,10 +1086,11 @@ hyp = pd.DataFrame([
      "verdict": "supported" if (g_as["auc"] > g_wh["auc"] and g_as["ci_low"] > g_wh["ci_low"] and np.quantile(psu_diff, .025) > 0) else "inconclusive",
      "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"},
 ])
-print(hyp.to_string(index=False))
+display(hyp)
 assert hyp["verdict"].tolist() == ["supported", "supported", "supported"]
 hyp.to_csv(OUT / "hypothesis_checks.csv", index=False)
 RES["hypotheses"] = hyp.set_index("hyp_id").to_dict("index")
+RES["undiagnosed_inequality"]["rd_df_sensitivity"] = rd_df.set_index("contrast").to_dict("index")
 for r in REG:   # link register rows to the hypotheses they inform
     r["hyp_id"] = {"DR-S5-05": "H1a", "DR-S5-06": "H4a; H4b", "DR-S5-09": "H2c; H3"}.get(r["dr_id"], r["hyp_id"])
 
@@ -1100,7 +1098,7 @@ for r in REG:   # link register rows to the hypotheses they inform
 _rows = [ln.split("|") for ln in (C.GOVERNANCE_DIR / "hypotheses.md").read_text(encoding="utf-8").splitlines()
          if ln.startswith("| H") and not ln.startswith("| hyp_id")]
 prior = {r[1].strip(): r[9].strip() for r in _rows if len(r) > 10}
-print("prior_exposure:", prior)
+display(pd.Series(prior, name="prior_exposure").to_frame().T)
 genuine = sorted(h for h, p in prior.items() if p == "none")
 print("genuinely pre-registered (prior_exposure = none):", genuine)
 assert {"H2b", "H2c", "H3"} <= set(genuine) and prior.get("H2a") == "analysis_seen"
@@ -1110,7 +1108,7 @@ assert {"H2b", "H2c", "H3"} <= set(genuine) and prior.get("H2a") == "analysis_se
 # diabetics) and H4b (larger WHtR gain in Asian adults) are reproduced with intervals that satisfy their
 # pre-stated rules, with the caveats printed above. Because the hypotheses were written after seeing these data,
 # they are recorded as *supported (analysis_seen)*. The genuinely pre-registered tests (`prior_exposure = none`)
-# are H2b, H2c and H3 in S7/S8; H2a (leakage gate) is `analysis_seen` and the WHtR arm P14 is `descriptive_seen`.
+# are H2b, H2c and H3 in §7–§8; H2a (leakage gate) is `analysis_seen` and the WHtR arm P14 is `descriptive_seen`.
 
 # %%
 reg_df = pd.DataFrame(REG).sort_values("dr_id").reset_index(drop=True)
@@ -1119,4 +1117,4 @@ reg_path.parent.mkdir(parents=True, exist_ok=True)
 reg_df.to_csv(reg_path, index=False, lineterminator="\n")
 R.save_section("S5", RES)
 print(f"{len(reg_df)} register rows -> {reg_path.relative_to(C.ROOT).as_posix()}; results -> results/metrics_S5.json")
-print(reg_df[["dr_id", "type", "decision"]].to_string(index=False))
+display(reg_df[["dr_id", "type", "decision"]])
