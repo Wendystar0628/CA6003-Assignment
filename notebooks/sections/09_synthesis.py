@@ -368,7 +368,7 @@ print(pd.DataFrame(POSTLOCK).to_string(index=False))
 lg = M["S7"]["leak_gate"]
 hl = M["S7"]["headline"]
 tm = M["S7"]["tree_m0"]
-rw = pd.DataFrame(get("S8:reweighing.eod")).set_index(["arm", "group"])
+rw = pd.DataFrame(get("S8:reweighing.eod")).set_index(["arm", "group"]).sort_index()
 blk = rw.loc[("S+RW(race)", "NH Black")]
 asn = rw.loc[("S+RW(race)", "NH Asian")]
 b6 = prim[prim["hyp_id"] == "B6a"].set_index("sub")
@@ -527,8 +527,8 @@ pc = pd.DataFrame(M["S9"]["positive_control"]["rows"])
 HO = M["S9"].get("holdout", {})
 HO_OK = "metrics" in HO
 if HO_OK:
-    HOM = pd.DataFrame(HO["metrics"]).set_index(["arm", "tier", "pop"])
-    HOP = pd.DataFrame(HO["pairs"]).set_index(["comparison", "pop"])
+    HOM = pd.DataFrame(HO["metrics"]).set_index(["arm", "tier", "pop"]).sort_index()
+    HOP = pd.DataFrame(HO["pairs"]).set_index(["comparison", "pop"]).sort_index()
 print(f"hold-out available: {HO_OK}" + ("" if HO_OK else f" ({HO.get('status', 'missing')})"))
 F = {
     "F1 Leakage and naive cleaning": [
@@ -582,9 +582,9 @@ S10["findings"] = F
 # the availability rule is stated) and over the Asian TPR gap (important but exploratory, 40 positives)
 # because it is (i) **non-obvious** – the standard practice of reporting one AUC on the whole sample hides it,
 # and it arises from label composition (84 % of positives already diagnosed), not from the model; (ii)
-# **pre-registered** (H2c, `prior_exposure = none`); (iii) carried by **six independent lines** from three
-# sections (a population contrast, a feature ablation that flips sign, a baseline refit, group TPRs, the label
-# matrix and the leak gate), plus the hold-out once evaluated; and (iv) **actionable**: report E-SCREEN next to
+# **pre-registered** (H2c, `prior_exposure = none`); (iii) carried by **six distinct lines of evidence** from
+# §7 and §8 (a population contrast, a feature ablation that flips sign, a baseline refit, group TPRs, the label
+# matrix and the leak gate), plus the hold-out of §9 where evaluated; and (iv) **actionable**: report E-SCREEN next to
 # E-ALL and keep care traces out of screening models. The leakage and naive-cleaning results (F1) and the
 # label and measurement biases (F3) are the other two video findings.
 
@@ -607,13 +607,16 @@ ada_p = bl["BL-ADAlite (points)"]
 ax.errorbar(ada_p["escr_auc"], j, xerr=[[ada_p["escr_auc"] - ada_p["lo"]], [ada_p["hi"] - ada_p["escr_auc"]]], fmt="o", color=OI["vermillion"], capsize=2)
 ax.plot(ada_p["eall_auc"], j, "o", color=OI["blue"])
 ax.plot([ada_p["escr_auc"], ada_p["eall_auc"]], [j, j], color=OI["grey"], lw=2, zorder=0)
+if HO_OK:
+    for pop_, col_ in (("E-ALL", OI["blue"]), ("E-SCREEN", OI["vermillion"])):
+        ax.plot(HOM.loc[("BL-ADAlite", 1, pop_), "roc_auc"], j - 0.25, "^", color=col_, mfc="white", ms=6)
 ax.set_yticks(range(j + 1), [l for _, _, l in ARMS_FIG] + ["ADA-lite points (5 of 7 items)"])
 ax.invert_yaxis()
 leg = [Line2D([], [], marker="o", ls="", color=OI["blue"], label="E-ALL (all adults, L_comb)"),
        Line2D([], [], marker="o", ls="", color=OI["vermillion"], label="E-SCREEN (not diagnosed, HbA1c ≥ 6.5)")]
 if HO_OK:
     leg.append(Line2D([], [], marker="^", ls="", color="k", mfc="white", label="one-shot hold-out"))
-ax.legend(handles=leg, fontsize=8, loc="upper left")
+ax.legend(handles=leg, fontsize=8, loc="lower right")
 ax.set(xlabel="ROC-AUC (95 % CI)", xlim=(0.6, 1.0), title="Recognition vs screening")
 fig.tight_layout()
 plots.savefig(fig, "S10_recognition_vs_screening", caption="F10-2. The same out-of-fold predictions scored on E-ALL (blue; all adults, 84 % of "
@@ -644,14 +647,18 @@ VSEG = {"V1": "0:00-1:30 scope and design", "V2": "1:30-2:15 cost of naive clean
 sm = M["S9"]["summary"]["table"]
 sm_e = {r["check"]: r for r in sm if r["pop"] == "E-ALL"}
 ROB_H2B = (f"10 seeds {sm_e['10 CV seeds']['verdicts']}; 16 specs {sm_e['16 sensitivity specs']['verdicts']}; "
-           f"60-spec curve {sm_e['60-spec curve']['verdicts']}; PSU-grouped CV and IPW inconclusive")
+           f"60-spec curve {sm_e['60-spec curve']['verdicts']}; PSU-grouped CV {sm_e['strata x PSU grouped CV']['verdicts']}; "
+           f"IPW {sm_e['IPW (evaluation; fit + evaluation)']['verdicts']}")
 ROB_LEAK = (f"own-C tuning gives the same gate {M['S9']['sensitivity']['leak_gate_own_C']['E-ALL']['est']:+.3f}; permutation null "
             f"{perm9['M1']['null_mean']:.3f}; leak hunt not triggered")
 ROB_NONE = "not varied in §9 (single specification)"
 db = M["S4"]["db516"]
 v2 = pd.DataFrame(M["S9"]["external"]["v2"]).set_index("quantity")
 v2d = v2.loc["definition effect C - B"]
-EXT_DB = f"NCHS DB516: reproduced {db['total']:.2f}/{db['diagnosed']:.2f}/{db['undiagnosed']:.2f} % vs published 15.8/11.3/4.5"
+ADA_ITEMS, ADA_MISS = get("S1:ada_lite.items"), get("S1:ada_lite.missing")
+PUB_DB516 = {"total": 15.8, "diagnosed": 11.3, "undiagnosed": 4.5}   # published NCHS Data Brief 516 (external reference)
+EXT_DB = (f"NCHS DB516: reproduced {db['total']:.2f}/{db['diagnosed']:.2f}/{db['undiagnosed']:.2f} % vs published "
+          f"{PUB_DB516['total']}/{PUB_DB516['diagnosed']}/{PUB_DB516['undiagnosed']}")
 sw = lambda r: f"{r['est']:+.3f} [{r['lo']:+.3f}, {r['hi']:+.3f}]"
 und = get("S5:undiagnosed_meaning.contact.blood test past 3 years (DIQ180=1)")
 pe = lambda h: HYP.loc[h, "prior"]
@@ -663,13 +670,25 @@ hx = h3c.loc[h3c["est"].abs().idxmax()]
 fx = flips[flips["role"] == "mediator"].iloc[0]
 oe_lo = min(cal.loc[g, "oe"] for g in ["NH Black", "NH Asian", "Mexican American"])
 oe_hi = max(cal.loc[g, "oe"] for g in ["NH Black", "NH Asian", "Mexican American"])
+std_tab = pd.read_csv(C.RESULTS_DIR / "S4" / "std_differences.csv")
+std_ins = std_tab[std_tab["contrast"] == "insured − uninsured"]["std"]
+std_asw = std_tab[std_tab["contrast"] == "NH Asian − NH White"]["std"]
+adj_u = get("S5:undiagnosed_inequality.adjusted_logit.uninsured")
+told_bl = get("S5:undiagnosed_meaning.contact.told borderline (DIQ010=3)")
+asian_pos_train = int(get("S8:group_sizes[group=NH Asian].pos_eall"))
+asian_n = int(get("S5:representation.shares.race|NH Asian.n"))
+uninsured_n = int(get("S5:undiagnosed_inequality.proportions.uninsured.n"))
+asian_whtr_n = int(get("S5:asian_bmi.auc.NH Asian|WHtR.n"))
+sum9 = {r["check"]: r["verdicts"] for r in M["S9"]["summary"]["table"] if r["pop"] == "E-ALL"}
+top10_pass = sum(r["verdict"] == "PASS" for r in M["S9"]["leak_hunt"]["top10"])
 
 CL = [
     dict(cid="C01", vs="V3", head=True, grade="E2", type="leakage", subj="The leak gate",
          prop=f"removing skip-logic and treatment items lowers E-ALL AUC by {-lg['T1_E-ALL']['est']:.2f}, and the excess was leakage",
          ev=["§7 paired CV leak gate (H2a/B2)", "§7 depth-3 tree root on a treatment item (B2t)", "§9 leak hunt on admissible arms", "§9 permutation null"]
             + (["§9 one-shot hold-out M1 − M0"] if HO_OK else []),
-         eff=f"ΔAUC M1 − M0 E-ALL {sw(lg['T1_E-ALL'])}; E-SCREEN {sw(lg['T1_E-SCREEN'])}", prereg=pe("H2a"), rob=ROB_LEAK, ext="none",
+         eff=f"ΔAUC M1 − M0 E-ALL {sw(lg['T1_E-ALL'])}; E-SCREEN {sw(lg['T1_E-SCREEN'])}", prereg=pe("H2a"),
+         rob=ROB_LEAK + (f"; hold-out {sw(HOP.loc[('M1 T1 - M0 T1', 'E-ALL')])}" if HO_OK else ""), ext="none",
          scope="training part, Tier 1, E-ALL", fals="CI of M1 − M0 reaching above −0.05", hyp="H2a;B2;B2t"),
     dict(cid="C02", vs="V3", head=False, grade="E1", type="data_artefact", subj="The naive tree",
          prop=f"median imputation turns age at diagnosis ({tm['did040_missing_share']:.0%} missing) into a constant {tm['did040_fill']:.0f} that the tree splits on",
@@ -677,7 +696,7 @@ CL = [
          prereg="none (tree probe B2t)", rob=ROB_NONE, ext="none", scope="M0 frame, training part", fals="M0 tree without a DID040 split", hyp="B2t"),
     dict(cid="C03", vs="V2", head=False, grade="E1", type="cleaning_cost", subj="The sentinel audit",
          prop=f"a blanket 7/9/77/99 recode destroys {s3['valid_cells_destroyed_cohort']:,} valid cells and {s3['a1c_positives_lost']} of {s3['a1c_positives']} HbA1c-positive labels",
-         ev=["§2 per-variable vs blanket recode counts", "§6 label rebuilt from naive data (965 vs 971 positives)"],
+         ev=["§2 per-variable vs blanket recode counts", f"§6 label rebuilt from naive data ({M['S6']['B1']['naive_lcomb_pos']} vs {s3['l_comb_positives']} positives)"],
          eff=f"{s3['valid_cells_destroyed_cohort']:,} cells; {s3['a1c_positives_lost']}/{s3['a1c_positives']}; L_comb flips {s3['l_comb_flips']}/{s3['l_comb_positives']}",
          prereg="analysis_seen", rob="deterministic count", ext="NHANES codebooks (sentinels only on questionnaire items)", scope="cohort 5,730",
          fals="a recount giving a different number", hyp="B1"),
@@ -689,7 +708,7 @@ CL = [
          prop=f"systematic preparation changes AUC by under {h2b.loc['(a) AUC', 'hi']:.3f}; equivalence stays unestablished (MDD {h2b.loc['(a) AUC', 'mdd']:.3f})",
          ev=["§7 paired CV H2b(a)", "§9 ten seeds", "§9 16-spec table", "§9 60-spec curve", "§9 PSU-grouped CV"] + (["§9 one-shot hold-out S − M1"] if HO_OK else []),
          eff=f"ΔAUC {sw(h2b.loc['(a) AUC'])}; Brier {h2b.loc['(b) Brier', 'est']:+.3f} (refuted, class weights); pure preparation ΔAUC {pp_.loc[('E-ALL', 'roc_auc'), 'diff']:+.3f}",
-         prereg=pe("H2b"), rob=ROB_H2B, ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
+         prereg=pe("H2b"), rob=ROB_H2B + (f"; hold-out {sw(HOP.loc[('S T1 - M1 T1', 'E-ALL')])} ({HOP.loc[('S T1 - M1 T1', 'E-ALL'), 'verdict']})" if HO_OK else ""), ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
     dict(cid="C06", vs="V7", head=False, grade="E2", type="deterioration", subj="Paired cross-validation",
          prop=f"balanced class weights worsen the Brier score by {b6.loc['(b) Brier', 'est']:.3f} at unchanged AUC; without them preparation costs no calibration",
          ev=["§7 paired CV B6a(b)", "§7 pure-preparation contrast S−B6a vs M1"], eff=f"ΔBrier {sw(b6.loc['(b) Brier'])}; without weights {pp_.loc[('E-ALL', 'brier'), 'diff']:+.4f}",
@@ -697,19 +716,21 @@ CL = [
     dict(cid="C07", vs="V7", head=True, grade="E2", type="spectrum", subj="Scoring arm S on E-SCREEN",
          prop=f"whole-sample AUC overstates screening discrimination by {hl['eall_minus_escreen_S_T1']['est']:.3f}; most positives were already diagnosed",
          ev=[a for a, _ in HEAD_LINES], eff=f"AUC {hl['auc_S_eall_T1']:.3f} vs {hl['auc_S_escreen_T1']:.3f}; gap {sw(hl['eall_minus_escreen_S_T1'])}",
-         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + ("; hold-out shows the same gap" if HO_OK else ""), ext="none",
+         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + (f"; hold-out gap {s_all - s_scr:+.3f}" if HO_OK else ""), ext="none",
          scope="US adults 2021-23; screening = not yet diagnosed", fals="gap CI including 0 in a new sample", hyp="H2c"),
     dict(cid="C08", vs="V7", head=True, grade="E3", type="care_traces", subj="The care-trace ablation",
          prop=f"removing hypertension-history items lowers E-ALL AUC by {-hl['minus_care_eall']['est']:.3f} yet raises E-SCREEN AUC by {hl['minus_care_escreen']['est']:.3f}",
          ev=["§7 paired ablation H2c(ii) on E-ALL", "§7 same ablation on E-SCREEN", "§9 leak hunt T1-minus-care contrast"]
             + (["§9 one-shot hold-out T1-minus-care − S"] if HO_OK else []),
          eff=f"E-ALL {sw(hl['minus_care_eall'])}; E-SCREEN {sw(hl['minus_care_escreen'])}", prereg=pe("H2c"),
-         rob="E-SCREEN CI excludes 0 but reaches below the SESOI", ext="none", scope="training part, Tier 1", fals="E-SCREEN difference CI including 0", hyp="H2c"),
+         rob="E-SCREEN CI excludes 0 but reaches below the SESOI" + (f"; hold-out same signs ({HOP.loc[('T1-minus-care T1 - S T1', 'E-ALL'), 'est']:+.3f} / "
+                                                                f"{HOP.loc[('T1-minus-care T1 - S T1', 'E-SCREEN'), 'est']:+.3f}, CIs include 0)" if HO_OK else ""), ext="none", scope="training part, Tier 1", fals="E-SCREEN difference CI including 0", hyp="H2c"),
     dict(cid="C09", vs="V7", head=False, grade="E2", type="baseline", subj="The E-SCREEN baseline comparison",
-         prop=f"arm S ranks undiagnosed cases better than the five-item ADA-lite points score, by {hl['S_minus_ADAlite_escreen']['est']:.3f} AUC",
+         prop=f"arm S ranks undiagnosed cases better than the {ADA_ITEMS - ADA_MISS}-item ADA-lite points score, by {hl['S_minus_ADAlite_escreen']['est']:.3f} AUC",
          ev=["§7 paired bootstrap H2c(iii)"] + (["§9 one-shot hold-out S − ADA-lite"] if HO_OK else []),
-         eff=f"ΔAUC {sw(hl['S_minus_ADAlite_escreen'])}", prereg=pe("H2c"), rob=ROB_NONE,
-         ext="Bang 2009 ADA risk test (qualitative only; ADA-lite lacks 2 of 7 items)", scope="E-SCREEN, training part", fals="CI including 0", hyp="H2c"),
+         eff=f"ΔAUC {sw(hl['S_minus_ADAlite_escreen'])}", prereg=pe("H2c"),
+         rob=(f"hold-out {sw(HOP.loc[('S T1 - BL-ADAlite T1', 'E-SCREEN')])}, same sign, about 25 positives" if HO_OK else ROB_NONE),
+         ext=f"Bang 2009 ADA risk test (qualitative only; ADA-lite lacks {ADA_MISS} of {ADA_ITEMS} items)", scope="E-SCREEN, training part", fals="CI including 0", hyp="H2c"),
     dict(cid="C10", vs="V7", head=False, grade="E3", type="deterioration", subj="Refitting ADA-lite items on L_comb",
          prop=f"this diagnosis-dominated label lowers screening AUC by {-ada['est']:.3f} versus the points score",
          ev=["§7 paired bootstrap ADA-LR vs points"], eff=f"ΔAUC E-SCREEN {sw(ada)}", prereg="none (not locked)", rob=ROB_NONE,
@@ -718,14 +739,14 @@ CL = [
          prop=f"the insured-minus-uninsured prevalence gap shrinks from {ins['crude']:+.1f} to {ins['std']:+.1f} pp: age confounding, not a reversal",
          ev=["§4 jackknife crude vs standardised difference", "§4 age-band differences"],
          eff=f"crude {ins['crude']:+.1f} [{ins['crude_ci'][0]:+.1f}, {ins['crude_ci'][1]:+.1f}] -> std {ins['std']:+.1f} [{ins['std_ci'][0]:+.1f}, {ins['std_ci'][1]:+.1f}] pp",
-         prereg=pe("H1b"), rob="6-band and internal standards give std ≤ +0.7 pp", ext="US 2000 standard population", scope="US adults 2021-23, weighted",
+         prereg=pe("H1b"), rob=f"three standards give std {std_ins.min():+.1f} to {std_ins.max():+.1f} pp", ext="US 2000 standard population", scope="US adults 2021-23, weighted",
          fals="standardised gap ≥ +2 pp with CI excluding 0", hyp="H1b"),
     dict(cid="C12", vs="V5", head=False, grade="E4", type="uncertainty", subj="Age standardisation",
          prop=f"the Asian-minus-White prevalence difference changes sign ({get('S4:standardisation.asian_white.crude'):+.1f} to {get('S4:standardisation.asian_white.std'):+.1f} pp), but both intervals include 0",
          ev=["§4 jackknife standardised difference"],
          eff=f"crude {get('S4:standardisation.asian_white.crude'):+.1f} [{get('S4:standardisation.asian_white.crude_ci')[0]:+.1f}, {get('S4:standardisation.asian_white.crude_ci')[1]:+.1f}]; "
              f"std {get('S4:standardisation.asian_white.std'):+.1f} [{get('S4:standardisation.asian_white.std_ci')[0]:+.1f}, {get('S4:standardisation.asian_white.std_ci')[1]:+.1f}] pp",
-         prereg="analysis_seen", rob="direction same under 6-band and internal standards", ext="none", scope="NH Asian n = 315 (exploratory)",
+         prereg="analysis_seen", rob=f"three standards give std {std_asw.min():+.1f} to {std_asw.max():+.1f} pp", ext="none", scope=f"NH Asian n = {asian_n} (exploratory)",
          fals="a CI excluding 0", hyp=""),
     dict(cid="C13", vs="V5", head=False, grade="E3", type="dag", subj="The DAG-guided Simpson scan",
          prop=f"BMI is a mediator, not a confounder, of race differences ({n_med_flip}/{len(flips)} flips involve mediators)",
@@ -733,16 +754,16 @@ CL = [
          prereg="analysis_seen", rob=f"bootstrap flip probabilities ≤ {flips['p_sign_differs'].max():.2f} (exploratory)", ext="none", scope="structural assumption", fals="a DAG in which BMI precedes race-related exposure", hyp=""),
     dict(cid="C14", vs="V6", head=True, grade="E1", type="label_bias", subj="The label audit",
          prop=f"{mask['below_6_5']} of {mask['self_reported']} self-reported diabetics ({mask['below_6_5_share']:.1%}) have HbA1c below 6.5, so an HbA1c-only label calls them negative",
-         ev=["§5 label cross-tabulation", "§5 medication split (165 treated)", "§8 3 × 3 matrix D-controlled column"],
+         ev=["§5 label cross-tabulation", f"§5 medication split ({mask['below_6_5_on_med']} treated)", "§8 3 × 3 matrix D-controlled column"],
          eff=f"{mask['below_6_5']}/{mask['self_reported']}; {mask['below_6_5_on_med']} on medication", prereg="analysis_seen", rob="deterministic count",
          ext="none", scope="cohort 5,730", fals="a recount giving a different number", hyp="H3"),
     dict(cid="C15", vs="V6", head=False, grade="E3", type="label_bias", subj="The risk-difference analysis",
          prop=f"uninsured adults with diabetes are more often undiagnosed, by {rd['rd_pp']:.1f} pp (weighted; uninsured share exploratory)",
          ev=["§5 jackknife risk difference", "§5 adjusted logit (age, sex, income)"], eff=f"RD {rd['rd_pp']:+.1f} pp [{rd['ci_low_pp']:.1f}, {rd['ci_high_pp']:.1f}]",
-         prereg=pe("H1a"), rob="adjusted OR 2.2 [1.2, 4.2]", ext="none", scope="adults with diabetes, weighted; uninsured n = 49", fals="RD CI including 0", hyp="H1a"),
+         prereg=pe("H1a"), rob=f"adjusted OR {adj_u['OR']:.1f} [{adj_u['ci_low']:.1f}, {adj_u['ci_high']:.1f}] (age, sex, income)", ext="none", scope=f"adults with diabetes, weighted; uninsured n = {uninsured_n}", fals="RD CI including 0", hyp="H1a"),
     dict(cid="C16", vs="V6", head=False, grade="E1", type="label_semantics", subj="The care-contact audit",
          prop=f"{und['n']} of {M['S5']['undiagnosed_meaning']['undiagnosed']} undiagnosed adults ({und['share']:.0%}) had a blood test within three years: a diagnosis gap, not only access",
-         ev=["§5 DIQ180 among the undiagnosed", "§5 told borderline 24 %"], eff=f"{und['n']}/{M['S5']['undiagnosed_meaning']['undiagnosed']}; weighted {und['w_est']:.0%} [{und['kg_low']:.0%}, {und['kg_high']:.0%}]",
+         ev=["§5 DIQ180 among the undiagnosed", f"§5 told borderline {told_bl['share']:.0%}"], eff=f"{und['n']}/{M['S5']['undiagnosed_meaning']['undiagnosed']}; weighted {und['w_est']:.0%} [{und['kg_low']:.0%}, {und['kg_high']:.0%}]",
          prereg="analysis_seen", rob="deterministic count", ext="none", scope="undiagnosed, cohort", fals="a recount giving a different number", hyp=""),
     dict(cid="C17", vs="V6", head=True, grade="E3", type="label_matrix", subj="The label matrix",
          prop=f"every label finds undiagnosed cases worst; switching labels moves recall by at most {max_lab_diff:.2f}",
@@ -753,12 +774,12 @@ CL = [
          prop=f"the model flags NH Asian adults with diabetes less often than White adults, TPR gap {eod.loc['NH Asian', 'eod']:+.2f}",
          ev=["§8 EOD with bootstrap CI and permutation null"], eff=f"EOD {eod.loc['NH Asian', 'eod']:+.3f} [{eod.loc['NH Asian', 'eod_lo']:+.3f}, {eod.loc['NH Asian', 'eod_hi']:+.3f}]; race p {get('S8:permutation_eall_t1[attribute=race].p_value'):.3f}",
          prereg="none (audit)", rob="Tier 2 gap " + f"{pd.DataFrame(M['S8']['tier2_summary']['eod']).set_index('group').loc['NH Asian', 'eod']:+.3f}",
-         ext="ADA advice to screen Asian Americans from BMI 23", scope="E-ALL, 40 Asian positives (exploratory)", fals="CI including 0 in a larger sample", hyp=""),
+         ext="ADA advice to screen Asian Americans from BMI 23", scope=f"E-ALL, {asian_pos_train} Asian positives (exploratory)", fals="CI including 0 in a larger sample", hyp=""),
     dict(cid="C19", vs="V6", head=False, grade="E3", type="measurement", subj="Single-feature discrimination",
          prop=f"WHtR outranks BMI more for Asian ({whtr_a:+.3f}) than White adults ({whtr_w:+.3f}), not in the full model",
          ev=["§5 paired single-feature AUC with PSU bootstrap", "§8 model-level WHtR arm (P14)"],
          eff=f"gain difference {gd['est']:+.3f} [{gd['psu_ci_low']:+.3f}, {gd['psu_ci_high']:+.3f}]; model level {mdl['est']:+.4f} [{mdl['lo']:+.4f}, {mdl['hi']:+.4f}]",
-         prereg=pe("H4b"), rob="person and PSU bootstrap agree", ext="ADA advice to screen Asian Americans from BMI 23", scope="NH Asian 296 with WHtR (exploratory)",
+         prereg=pe("H4b"), rob="person and PSU bootstrap agree", ext="ADA advice to screen Asian Americans from BMI 23", scope=f"NH Asian {asian_whtr_n} with WHtR (exploratory)",
          fals="gain difference CI including 0", hyp="H4b;P14"),
     dict(cid="C20", vs="V6", head=False, grade="E3", type="calibration", subj="Within-group calibration",
          prop="the race-blind model under-predicts for Black, Asian and Mexican American adults and over-predicts for White adults",
@@ -773,7 +794,7 @@ CL = [
          ev=["§9 100 label permutations", "§9 positive control"], eff=f"null mean M1 {perm9['M1']['null_mean']:.4f}, S {perm9['S']['null_mean']:.4f}",
          prereg="none (control)", rob="both arms", ext="none", scope="procedure only, not feature leakage", fals="null mean outside [0.495, 0.505]", hyp=""),
     dict(cid="C23", vs="V1", head=False, grade="E2", type="external", subj="Replicating NCHS Data Brief 516",
-         prop=f"our survey code reproduces published prevalence ({db['total']:.2f} vs 15.8 %) and our {v2.loc['A L_comb, cohort, WTPH2YR', 'est_pct']:.1f} % differs by label definition",
+         prop=f"our survey code reproduces published prevalence ({db['total']:.2f} vs {PUB_DB516['total']} %) and our {v2.loc['A L_comb, cohort, WTPH2YR', 'est_pct']:.1f} % differs by label definition",
          ev=["§4 DB516 replication (27 estimates)", "§9 V2 decomposition sample vs definition"],
          eff=f"max |diff| {db['max_abs_diff_pp']:.3f} pp; definition effect {v2d['est_pct']:+.2f} [{v2d['ci_low']:+.2f}, {v2d['ci_high']:+.2f}] pp",
          prereg="analysis_seen", rob=f"{db['kg_matches_published_ci']}/{db['n_estimates']} published CIs matched", ext=EXT_DB, scope="US adults 2021-23",
@@ -829,8 +850,8 @@ else:
     print("FAST run: governance/claims.csv not written (the committed ledger comes from the FINAL run)")
 
 # %% [markdown]
-# **So what.** The ledger holds 24 claims (25 once the hold-out is in): 5 deterministic counts (E1), 7 E2
-# claims with CIs that exclude 0, 10 E3 claims that are moderate or depend on a choice, and 2 exploratory
+# **So what.** The ledger holds 25 claims (24 if a re-run has no hold-out): 5 deterministic counts (E1), 8 E2
+# claims with CIs that exclude 0 (including the hold-out claim C25), 10 E3 claims that are moderate or depend on a choice, and 2 exploratory
 # (E4) claims about the Asian subgroup. All six headline claims have at least two independent evidence lines,
 # so none had to be downgraded; the minimal-vs-systematic claim (C05) is held at E3 because its effect is
 # imprecise even though its *verdict* is stable across 10 seeds, 16 sensitivity specifications and a
@@ -855,13 +876,13 @@ if HO_OK:
              ("S T1 - BL-ADAlite T1", "E-SCREEN"): hl["S_minus_ADAlite_escreen"]}
     hp["cv"] = [f"{CVREF[(c, p)]['est']:+.3f} [{CVREF[(c, p)]['lo']:+.3f}, {CVREF[(c, p)]['hi']:+.3f}]" if (c, p) in CVREF else "" for c, p in zip(hp["comparison"], hp["pop"])]
     hp["holdout"] = [f"{e:+.3f} [{l:+.3f}, {h:+.3f}]" for e, l, h in zip(hp["est"], hp["lo"], hp["hi"])]
-    hp["same_sign_as_cv"] = [(np.sign(e) == np.sign(CVREF[(c, p)]["est"])) if (c, p) in CVREF else np.nan for c, p, e in zip(hp["comparison"], hp["pop"], hp["est"])]
+    hp["same_sign_as_cv"] = [float(np.sign(e) == np.sign(CVREF[(c, p)]["est"])) if (c, p) in CVREF else np.nan for c, p, e in zip(hp["comparison"], hp["pop"], hp["est"])]
     print()
     print(hp[["comparison", "pop", "rule", "cv", "holdout", "verdict", "same_sign_as_cv"]].to_string(index=False))
     HOT.to_csv(OUT / "holdout_vs_cv.csv", index=False)
     hp.to_csv(OUT / "holdout_pairs_vs_cv.csv", index=False)
     S10["holdout"] = dict(available=True, n_rows=len(HOT), n_flag_2se=int(HOT["flag_2se_below_cv"].sum()),
-                          max_abs_gap_in_se=float(HOT["gap_in_se"].abs().max()), pairs_same_sign=int(hp["same_sign_as_cv"].fillna(False).sum()),
+                          max_abs_gap_in_se=float(HOT["gap_in_se"].abs().max()), pairs_same_sign=int(np.nansum(hp["same_sign_as_cv"])),
                           n_pairs_with_cv=int(hp["same_sign_as_cv"].notna().sum()), first_run_utc=HO["log"]["first_run_utc"])
     print(f"\n{S10['holdout']['n_flag_2se']} of {len(HOT)} arm x population rows lie > 2 SE below CV; largest |gap| {S10['holdout']['max_abs_gap_in_se']:.1f} SE; "
           f"{S10['holdout']['pairs_same_sign']}/{S10['holdout']['n_pairs_with_cv']} paired contrasts have the CV sign")
@@ -870,10 +891,16 @@ else:
     print(f"hold-out not available in this run: {S10['holdout']['status']}. The claims above are graded on cross-validation only.")
 
 # %% [markdown]
-# **So what.** See the printed comparison: the hold-out is the only check that did not re-use the training
-# part. It is reported as it came out – no setting was changed after it – and claims C01, C05, C07–C09 cite it
-# as an additional evidence line where it agrees in sign with cross-validation. On E-SCREEN (about 25
-# positives) it is a direction check only.
+# **So what.** The hold-out is the only check that did not re-use the training part, and it was reported as it
+# came out – no setting was changed after it. In the FINAL run no arm falls more than 2 SE below its
+# cross-validated AUC (largest gap 1.5 SE; the hold-out AUCs are, if anything, slightly higher, as expected for
+# models refitted on the whole training part). The two robust results replicate: the leak gate on E-ALL
+# (−0.117 [−0.144, −0.092], supported) and the recognition-versus-screening gap of arm S (0.851 vs 0.791, gap
+# +0.060 against +0.055 in CV). The small contrasts behave as their CV intervals predicted: S − M1 is
+# +0.004 [−0.007, +0.014] on E-ALL (inconclusive again) and changes sign on E-SCREEN (−0.005), which is what
+# "no detectable difference" looks like; the care-trace and ADA-lite contrasts keep their CV signs with
+# intervals that include 0 at about 25 hold-out positives. Claims C01, C05 and C07–C09 cite the hold-out as an
+# additional line; it upgrades no claim, and the hold-out E-SCREEN contrasts are direction checks only.
 
 # %% [markdown]
 # ## 9 Limitations register
@@ -883,7 +910,7 @@ else:
 # %%
 n_prior = HYP["prior"].value_counts().to_dict()
 conv = pd.DataFrame(M["S7"]["runs"]["convergence"])
-nonconv = conv[conv["n_convergence_warnings"] >= 24]
+nonconv = conv[conv["n_convergence_warnings"] >= 0.9 * get("S7:posthoc_c_sensitivity.n_folds")]   # failed in ≥ 90 % of folds
 # borderline verdicts: a CI bound within 0.002 AUC of a decision boundary (0 or ±SESOI) - a FAST re-run may print another verdict
 # decision boundaries of the locked rule: equivalence -> ±SESOI; non-inferiority -> −SESOI; directional -> 0.
 # A CI bound of an inconclusive sub-claim that touches 0 is also listed (it decides the "excludes 0" reading).
@@ -914,7 +941,7 @@ LIM = pd.DataFrame([
          claims_affected="C11, C15, C23, C24"),
     dict(lim_id="L03", threat="No racial or income oversampling in 2021-23",
          bias_direction="wide CIs for minorities, pushing verdicts towards inconclusive",
-         how_bounded=f"NH Asian 315 adults (50 positives) reported as exploratory with CIs; race {len(get('S8:group_sizes'))} group cells checked against n ≥ 30",
+         how_bounded=f"NH Asian {asian_n} adults ({asian_pos_train} positives in the training part) reported as exploratory with CIs; {len(get('S8:group_sizes'))} audit-group cells checked against n ≥ 30",
          claims_affected="C12, C18, C19, C20, C21"),
     dict(lim_id="L04", threat="Estimates that fail NCHS presentation standards",
          bias_direction="unstable point estimates in either direction",
@@ -924,9 +951,9 @@ LIM = pd.DataFrame([
          bias_direction="towards inconclusive; the E-SCREEN MDD for S − M1 is " + f"{esc_mdd:.3f}, above the SESOI",
          how_bounded="bootstrap-only intervals; E-SCREEN results stated as direction; spectrum gap tested with a paired row bootstrap",
          claims_affected="C05, C07, C08, C09, C10, C17"),
-    dict(lim_id="L06", threat="ADA-lite lacks 2 of 7 ADA items (family history, gestational diabetes not collected in 2021-23)",
+    dict(lim_id="L06", threat=f"ADA-lite lacks {ADA_MISS} of {ADA_ITEMS} ADA items (family history, gestational diabetes not collected in 2021-23)",
          bias_direction="understates the ADA score, so S − ADA-lite favours S",
-         how_bounded=f"ADA-lite compared with Bang 2009 only qualitatively (cut-off ≥ 5: sensitivity {pd.DataFrame(M['S9']['external']['ada_lite']['cutoffs']).set_index('cutoff').loc['>= 5', 'sensitivity']:.2f} vs 0.79 published)",
+         how_bounded=f"ADA-lite compared with Bang 2009 only qualitatively (ours at cut-off ≥ 5: sensitivity {pd.DataFrame(M['S9']['external']['ada_lite']['cutoffs']).set_index('cutoff').loc['>= 5', 'sensitivity']:.2f}; published: {M['S9']['external']['ada_lite']['bang_2009_abstract']})",
          claims_affected="C09, C10"),
     dict(lim_id="L07", threat="Label definition: one HbA1c measurement, self-report, treatment masking, no type 1 / type 2 split, no FPG",
          bias_direction="misclassification both ways; L_comb is below the NCHS definition by " + f"{v2d['est_pct']:.1f} pp (FPG cases)",
@@ -939,7 +966,7 @@ LIM = pd.DataFrame([
          bias_direction="compresses the oldest and richest; attenuates age and income gradients",
          how_bounded="top-code flags in block B4 (equivalent AUC)", claims_affected="C05, C11"),
     dict(lim_id="L10", threat="Generalisability: US civilian non-institutionalised adults; not Singapore",
-         bias_direction="unknown; ethnic mix and BMI cut-offs (23 / 27.5 in Singapore) differ",
+         bias_direction="unknown; ethnic mix, screening practice and BMI cut-off conventions differ",
          how_bounded="scope column of every claim; no transport claims", claims_affected="all"),
     dict(lim_id="L11", threat="Researcher degrees of freedom: analyses seen before hypotheses were written",
          bias_direction="optimistic verdicts for analysis_seen hypotheses",
@@ -949,11 +976,12 @@ LIM = pd.DataFrame([
          bias_direction="a FAST re-run (5 × 2 CV, B = 100) may print a different verdict for these items",
          how_bounded=f"committed notebook uses FINAL; {len(BORDER)} borderline AUC sub-claims: {border_txt or 'none'}",
          claims_affected="C05"),
-    dict(lim_id="L13", threat=f"Non-convergence: unscaled arms hit the iteration limit ({', '.join(sorted(set(nonconv['arm'])))}; 24-25 of 25 folds)",
+    dict(lim_id="L13", threat=f"Non-convergence: unscaled arms hit the iteration limit ({', '.join(sorted(set(nonconv['arm'])))}; "
+                             f"{nonconv['n_convergence_warnings'].min()}-{nonconv['n_convergence_warnings'].max()} of {get("S7:posthoc_c_sensitivity.n_folds")} folds)",
          bias_direction="inflates coefficient instability of M1, so the H2b SD ratio is partly an optimisation artefact",
          how_bounded="post hoc C sensitivity reported; stability claims graded E3; AUC unaffected", claims_affected="C05"),
     dict(lim_id="L14", threat="Permutation test detects procedural leakage only",
-         bias_direction="feature leakage would inflate AUC", how_bounded="availability rule plus L3 leak hunt (20/20 top features pass)", claims_affected="C01, C22"),
+         bias_direction="feature leakage would inflate AUC", how_bounded=f"availability rule plus L3 leak hunt ({top10_pass}/{len(M['S9']['leak_hunt']['top10'])} top features pass)", claims_affected="C01, C22"),
     dict(lim_id="L15", threat="Fairness audit uses one criterion (equal opportunity) at one threshold",
          bias_direction="other criteria (calibration, PPV) can disagree; small groups inflate variance",
          how_bounded="permutation null for gaps; within-group calibration reported; no claim that the model is fair", claims_affected="C18, C20, C21"),
@@ -1009,7 +1037,7 @@ REC = pd.DataFrame([
     dict(rec="Report the screening population (E-SCREEN) next to any whole-sample AUC",
          because=f"the whole-sample AUC is {hl['eall_minus_escreen_S_T1']['est']:.3f} higher for the same predictions"),
     dict(rec="Test measurement-aware features (WHtR) in larger Asian samples before adopting them",
-         because=f"single-feature gain is clear ({gd['est']:+.3f}) but the model-level TPR change {pb['est']:+.3f} [{pb['lo']:+.3f}, {pb['hi']:+.3f}] rests on 40 positives"),
+         because=f"single-feature gain is clear ({gd['est']:+.3f}) but the model-level TPR change {pb['est']:+.3f} [{pb['lo']:+.3f}, {pb['hi']:+.3f}] rests on {asian_pos_train} positives"),
     dict(rec="Do not deploy as a clinical tool; do not describe it as fair",
          because="cross-sectional US data, not validated prospectively; one fairness criterion at one threshold"),
 ])

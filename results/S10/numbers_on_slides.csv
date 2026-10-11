@@ -65,7 +65,11 @@ V7,permutation null mean (S),0.501,0.5013611778042592,S9:permutation.S.null_mean
 V7,DB516 total reproduced (%),15.79,15.786910949172617,S4:db516.total
 V7,DB516 diagnosed reproduced (%),11.30,11.299656829208393,S4:db516.diagnosed
 V7,DB516 undiagnosed reproduced (%),4.49,4.487254119964224,S4:db516.undiagnosed
+V7,hold-out AUC S E-ALL,0.851,0.8511,S9:holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc
+V7,hold-out AUC S E-SCREEN,0.791,0.79076,S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc
+V7,hold-out AUC M0 E-ALL,0.964,0.96437,S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc
+V7,hold-out AUC M1 E-ALL,0.848,0.84758,S9:holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc
 V8,hypotheses supported,10,10.0,S10:verdict_counts.supported
 V8,hypotheses inconclusive,6,6.0,S10:verdict_counts.inconclusive
 V8,hypotheses mixed,1,1.0,S10:verdict_counts.mixed
-V8,claims in ledger,24,24.0,S10:claims.n
+V8,claims in ledger,25,25.0,S10:claims.n

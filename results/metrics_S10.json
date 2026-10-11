@@ -1,11 +1,11 @@
 {
   "_meta": {
     "section": "S10",
-    "nb_mode": "FAST",
+    "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T05:34:18+00:00"
+    "written_utc": "2026-10-11T05:37:37+00:00"
   },
-  "mode": "FAST",
+  "mode": "FINAL",
   "h2b": {
     "subs": {
       "(a) AUC": {
@@ -72,14 +72,15 @@
   },
   "headline": {
     "finding": "Whole-sample AUC measures recognition of known diabetes, not screening",
-    "n_evidence_lines": 6,
+    "n_evidence_lines": 7,
     "lines": [
       "pre-registered spectrum gap (H2c-i, supported): +0.055 [+0.028, +0.086]",
       "care-trace ablation changes sign between populations (H2c-ii): E-ALL -0.016 vs E-SCREEN +0.019",
       "ADA items refitted on L_comb lose screening AUC: -0.018 [-0.032, -0.002]",
       "§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52",
       "§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}",
-      "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072"
+      "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072",
+      "one-shot hold-out: same gap for arm S: E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060)"
     ]
   },
   "findings": {
@@ -87,7 +88,8 @@
       "leak gate ΔAUC -0.131 [-0.148, -0.114] (E-SCREEN -0.072)",
       "M0 tree splits on DIQ070 then on DID040 = median 50 (86% missing); tree E-SCREEN AUC M0 0.633 < M1 0.701",
       "blanket recode destroys 1,496 valid cells; 29 vs 6 label flips (HbA1c-only vs frozen L_comb)",
-      "§9 leak hunt on admissible arms: not triggered (max single-feature AUC 0.706)"
+      "§9 leak hunt on admissible arms: not triggered (max single-feature AUC 0.706)",
+      "hold-out M1 − M0 -0.117 [-0.144, -0.092]"
     ],
     "F2 Fallacies and measurement of performance": [
       "insurance gap +5.3 → +0.7 pp after age standardisation (attenuation)",
@@ -106,8 +108,13 @@
     ]
   },
   "holdout": {
-    "available": false,
-    "status": "not evaluated: exp-freeze tag missing"
+    "available": true,
+    "n_rows": 20,
+    "n_flag_2se": 0,
+    "max_abs_gap_in_se": 1.54656,
+    "pairs_same_sign": 6,
+    "n_pairs_with_cv": 7,
+    "first_run_utc": "2026-10-11T05:35:17+00:00"
   },
   "verdict_counts": {
     "supported": 10,
@@ -449,10 +456,10 @@
     }
   ],
   "claims": {
-    "n": 24,
+    "n": 25,
     "grades": {
       "E3": 10,
-      "E2": 7,
+      "E2": 8,
       "E1": 5,
       "E4": 2
     },
@@ -517,5 +524,5 @@
     "DR-S10-10",
     "DR-S10-11"
   ],
-  "runtime_seconds": 0.7594470977783203
+  "runtime_seconds": 0.8013451099395752
 }
