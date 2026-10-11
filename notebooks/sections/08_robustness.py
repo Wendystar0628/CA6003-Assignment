@@ -685,7 +685,7 @@ S9["mnar"] = dict(n_examined=int(len(ex)), n_missing=int(miss.sum()), n_missing_
 #   unless almost every unmeasured person were diabetic (tipping point printed). The 14.0 % vs 15.8 % gap is therefore a
 #   *definition* gap (section 8), not a missing-data artefact.
 # * **Model comparison.** Adding the people without HbA1c to the evaluation set with labels drawn under any δ from
-#   −1 to 3 shifts ΔAUC(S − M1) by less than 0.001 on E-ALL and E-SCREEN. Only the Manski "all positive" extreme – every
+#   −1 to 3 shifts ΔAUC(S − M1) by about 0.001 or less on E-ALL and E-SCREEN. Only the Manski "all positive" extreme – every
 #   one of the undetermined people diabetic, a prevalence far beyond any plausible MNAR mechanism – moves it noticeably
 #   (to about +0.004 on E-ALL and about −0.004 on E-SCREEN, printed), still inside ±0.01. MNAR remains untestable from
 #   these data; what is shown is that no plausible MNAR mechanism of this size changes the conclusions.
