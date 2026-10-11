@@ -1,4 +1,4 @@
 hyp_id,estimate,rule,verdict,note
 H1a,"RD uninsured - insured +23.2 pp (6.2, 40.1)",lower CI bound > 0,supported,uninsured share exploratory (KG width >= 0.30)
 H4a,"BMI<25 among diabetics, Asian - White +43.9 pp (Newcombe 29.8, 57.7); weighted +43.4 pp (JK 23.2, 63.5)",difference >= 20 pp with CI above 20 pp,supported,47 Asian diabetics with BMI: exploratory
-H4b,"WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (person +0.045, +0.138; PSU +0.038, +0.111)",Asian gain larger and CIs not fully overlapping,supported,descriptive_seen; confirmatory test of the WHtR arm is P14 in S8
+H4b,"WHtR - BMI gain Asian +0.137 (0.093, 0.181) vs White +0.049 (0.039, 0.058); difference CI (person +0.044, +0.135; PSU +0.035, +0.116)",Asian gain larger and CIs not fully overlapping,supported,descriptive_seen; confirmatory test of the WHtR arm is P14 in S8

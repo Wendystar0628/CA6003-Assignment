@@ -1,9 +1,9 @@
 {
   "_meta": {
     "section": "S5",
-    "nb_mode": "FAST",
+    "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-10T18:44:58+00:00"
+    "written_utc": "2026-10-11T06:54:04+00:00"
   },
   "labels": {
     "confusion": {
@@ -336,60 +336,60 @@
       "NH Asian|BMI": {
         "n": 310,
         "auc": 0.5730927918453199,
-        "ci_low": 0.4892344894694618,
-        "ci_high": 0.6547245937689911
+        "ci_low": 0.48647685232014815,
+        "ci_high": 0.6629907044869482
       },
       "NH Asian|waist": {
         "n": 296,
         "auc": 0.6966521739130436,
-        "ci_low": 0.6144109100004751,
-        "ci_high": 0.7619178820885674
+        "ci_low": 0.6175232030250875,
+        "ci_high": 0.77026744257087
       },
       "NH Asian|WHtR": {
         "n": 296,
         "auc": 0.7138260869565217,
-        "ci_low": 0.6463304954096657,
-        "ci_high": 0.7761311288349332
+        "ci_low": 0.6399225263591063,
+        "ci_high": 0.7925582703420421
       },
       "NH Asian|WHtR − BMI (paired)": {
         "n": 296,
         "auc": 0.136695652173913,
-        "ci_low": 0.09734459898417192,
-        "ci_high": 0.18432410116190312
+        "ci_low": 0.09281922425973493,
+        "ci_high": 0.18110812921814223
       },
       "NH White|BMI": {
         "n": 3370,
         "auc": 0.7013977372271077,
-        "ci_low": 0.6758314183283464,
-        "ci_high": 0.7229211406286564
+        "ci_low": 0.6774811284168902,
+        "ci_high": 0.7240860173345631
       },
       "NH White|waist": {
         "n": 3274,
         "auc": 0.7514051560104191,
-        "ci_low": 0.7293749773494655,
-        "ci_high": 0.7750083758711761
+        "ci_low": 0.7291306126476464,
+        "ci_high": 0.7717127840125246
       },
       "NH White|WHtR": {
         "n": 3268,
         "auc": 0.7490899448779884,
-        "ci_low": 0.7276472030008295,
-        "ci_high": 0.7717365469446734
+        "ci_low": 0.7268245882800378,
+        "ci_high": 0.769527290396473
       },
       "NH White|WHtR − BMI (paired)": {
         "n": 3264,
         "auc": 0.048508729764931924,
-        "ci_low": 0.03800438236889836,
-        "ci_high": 0.05780004760152594
+        "ci_low": 0.038555504714482755,
+        "ci_high": 0.05841003319378438
       }
     },
     "gain_difference_asian_minus_white": {
       "est": 0.08818692240898107,
-      "ci_low": 0.044864547242255935,
-      "ci_high": 0.13801776382194078,
-      "psu_ci_low": 0.03801204715617937,
-      "psu_ci_high": 0.11120483681639687,
-      "psu_se": 0.02076547446391938,
-      "person_se": 0.02498786208241669
+      "ci_low": 0.04428992240490806,
+      "ci_high": 0.1347251986867184,
+      "psu_ci_low": 0.0348354588747348,
+      "psu_ci_high": 0.11623560315688644,
+      "psu_se": 0.021225557980224373,
+      "person_se": 0.02289133163841334
     },
     "cutoffs": {
       "NH Asian|BMI ≥ 25": {
@@ -417,7 +417,7 @@
         "cases": 488
       }
     },
-    "n_boot": 100
+    "n_boot": 1000
   },
   "representation": {
     "shares": {
@@ -686,7 +686,7 @@
       "note": "47 Asian diabetics with BMI: exploratory"
     },
     "H4b": {
-      "estimate": "WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (person +0.045, +0.138; PSU +0.038, +0.111)",
+      "estimate": "WHtR - BMI gain Asian +0.137 (0.093, 0.181) vs White +0.049 (0.039, 0.058); difference CI (person +0.044, +0.135; PSU +0.035, +0.116)",
       "rule": "Asian gain larger and CIs not fully overlapping",
       "verdict": "supported",
       "note": "descriptive_seen; confirmatory test of the WHtR arm is P14 in S8"
