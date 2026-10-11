@@ -1,19 +1,11 @@
 # %% [markdown]
-# # §2 Data profiling and quality audit (Stages S2–S3)
+# # §2 Data profiling and quality audit
 #
-# This section works out where the data can be trusted and where they cannot, and turns each finding into a recorded decision. It starts by re-checking the provenance and specification work of Stage S2 (hashes, codebook-derived specification, minimisation). The Stage S3 audit follows in nine numbered items:
+# This part works out where the data can be trusted and turns each finding into a recorded decision. §2.1 re-checks provenance, the codebook-derived specification and minimisation; the audit follows in §3:
 #
-# 1. XPT read artefact and zero-weight semantics
-# 2. Completeness, uniqueness and the sample funnel
-# 3. Per-variable sentinel map
-# 4. Cost of a blanket recode
-# 5. Consistency checks
-# 6. Top-coding
-# 7. Missing-data mechanism for HbA1c
-# 8. Outliers: a three-layer rule
-# 9. Data-quality dimension matrix
+# §3.1 XPT read artefact · §3.2 completeness and funnel · §3.3 sentinel map · §3.4 cost of a blanket recode · §3.5 consistency · §3.6 top-coding · §3.7 HbA1c missingness · §3.8 outliers · §3.9 quality matrix.
 #
-# Each item follows the same pattern: *why* the check is needed, the code that computes it, and *so what*, giving the computed numbers and the decision they support. Key numbers are asserted against reference values from an independent earlier computation, with a tolerance, so any drift fails loudly. Every number is stored in `results/metrics_S2.json` / `results/metrics_S3.json`, tables in `results/S3/`, and the decisions in `governance/register/S2.csv` and `S3.csv`.
+# Key numbers are asserted against reference values from an independent earlier computation, so any drift fails loudly. Results go to `results/metrics_S2.json` / `metrics_S3.json` and `results/S3/`, decisions to `governance/register/S2.csv` / `S3.csv`.
 
 # %%
 import sys, pathlib
@@ -101,9 +93,7 @@ print(f"included variables with codebook refusal/don't-know codes: {n_sentinel_v
 assert (cont_inc["sentinel_codes"] == "").all() and len(cont_inc) == 21 and n_sentinel_vars == 25
 
 # %% [markdown]
-# **So what.** All 16 raw files match their recorded hashes, so every number below comes from the CDC release dated 2026-10-10. The specification has one row for each of the 175 raw columns, and `verify_spec` finds no disagreement with the codebooks or the XPT headers. The loader keeps 78 columns and drops 97. Each dropped column has a stated reason: child-only items, country of birth and years in the US (quasi-identifiers), military service, household reference-person fields, SI-unit duplicates, unrelated MCQ items and duplicate weight columns.
-#
-# 25 included variables carry codebook refusal or don't-know codes, and all of them are questionnaire items. None of the 21 continuous laboratory and examination measures has such a code. The per-variable sentinel map therefore leaves every measurement untouched; item 4 shows why this matters.
+# **So what.** All 16 raw files match their recorded hashes (CDC public-use files of the August 2021 – August 2023 cycle, downloaded 2026-10-10). The specification has one row per raw column (175), and `verify_spec` finds no disagreement with the codebooks or XPT headers. The loader keeps 78 columns and drops 97, each with a stated reason. 25 included variables carry codebook refusal or don't-know codes, all questionnaire items; none of the 21 continuous laboratory and examination measures has one, so the per-variable sentinel map leaves every measurement untouched (§3.4 shows why this matters).
 
 # %%
 M2.update({
@@ -128,7 +118,9 @@ art_vars = art[art["n_artefact"] > 0].sort_values(["file", "n_artefact"], ascend
 display(art_vars.reset_index(drop=True))
 n_art = int(art_file.sum())
 files_hit = art_file[art_file > 0].index.tolist()
-print(f"artefact cells: {n_art:,} in {len(files_hit)} files {files_hit}; clean files: {art_file[art_file == 0].index.tolist()}")
+print(f"artefact cells: {n_art:,} in {len(files_hit)} files")
+print("  affected:", ", ".join(files_hit))
+print("  clean:   ", ", ".join(art_file[art_file == 0].index))
 art.to_csv(OUT / "xpt_artefacts.csv", index=False, lineterminator="\n")
 
 # demonstrate the NaN-preservation requirement on one affected file
@@ -171,11 +163,7 @@ assert zw.loc[0, "n"] == 3073 == zw.loc[0, "cross-check: RIDSTATR = 1 (interview
 assert zw.loc[1, "n"] == 449 and zero_in_cohort == 0
 
 # %% [markdown]
-# **So what.** The artefact affects 13,676 cells in 9 of the 16 files: DEMO, GHB, GLU, TCHOL, HDL, TRIGLY, INQ, SMQ and PAQ. BMX, BPXO, DIQ, BPQ, MCQ, HIQ and HUQ are clean. Most of the affected cells are weights or frequencies whose true value is 0. Examples are the 3,073 zero exam weights and the 4,413 people with zero vigorous-activity sessions (`PAD810Q`).
-#
-# On `PAQ_L` the `mask` repair keeps the NaN count unchanged. The `where` version would silently turn the missing cells into zeros, which reads as "no physical activity" for people who never answered. After the repair no value with 0 < |x| < 10⁻¹⁰ remains in any file.
-#
-# The zero weights carry meaning. The 3,073 rows with `WTMEC2YR = 0` are exactly the 3,073 interview-only participants (`RIDSTATR = 1`), and `WTPH2YR = 0` marks the 449 people without a blood sample. Every cohort member has a positive `WTPH2YR`. **Decision (DR-S3-01):** repair the artefact with `mask` at load time (`nhanes_io.fix_xpt`). Zero weights become NaN before any weighted analysis (`nhanes_io.zero_weights_to_nan`).
+# **So what.** The artefact affects 13,676 cells in 9 of the 16 files, mostly weights or frequencies whose true value is 0 (e.g. 3,073 zero exam weights, 4,413 zero vigorous-activity sessions). On `PAQ_L` the `mask` repair keeps the NaN count unchanged; the `where` version would turn non-answers into "no physical activity". No value with 0 < |x| < 10⁻¹⁰ remains. The zero weights carry meaning: the 3,073 `WTMEC2YR = 0` rows are exactly the interview-only participants, `WTPH2YR = 0` marks 449 people without a blood sample, and every cohort member has a positive `WTPH2YR`. **Decision (DR-S3-01):** repair with `mask` at load time; zero weights become NaN before any weighted analysis.
 
 # %%
 M3["xpt_artefact"] = {"cells": n_art, "files": files_hit, "n_files": len(files_hit),
@@ -216,7 +204,7 @@ f_funnel = plots.savefig(fig, "S3_funnel", caption="Sample funnel: DEMO_L partic
 plt.show(); print("saved", f_funnel)
 
 # %% [markdown]
-# **So what.** `SEQN` is unique in all 16 files, and each file is a subset of `DEMO_L`, so the left join neither duplicates nor drops anyone. The funnel matches the cohort definition step by step: 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (pregnant women removed). The largest selective step is the examination (1,745 adults lost). Together with the 25.7 % examination response rate it limits representativeness, which is why the quality matrix in item 9 rates credibility separately. The 297 examined adults without HbA1c are studied in item 7. The 21 women whose pregnancy status could not be ascertained are kept and flagged (`preg_unknown`), so a sensitivity analysis can drop them.
+# **So what.** `SEQN` is unique in all 16 files and each file is a subset of `DEMO_L`, so the left join neither duplicates nor drops anyone. The funnel is 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (not pregnant). The most selective step is the examination (1,745 adults lost), which, with the 25.7 % examination response rate, is why §3.9 rates credibility separately. The 297 examined adults without HbA1c are studied in §3.7; the 21 women with unascertainable pregnancy status are kept and flagged (`preg_unknown`).
 
 # %%
 M3["funnel"] = dict(zip(fun["step"], fun["n"].astype(int)))
@@ -266,15 +254,7 @@ n_sent_coh = int(sent["recoded_cohort"].fillna(0).sum())
 print(f"variables with codebook sentinels: {len(sent)}; cells recoded in the files: {int(sent['recoded_file'].sum()):,}; in the cohort: {n_sent_coh:,}")
 
 # %% [markdown]
-# **So what.** For each of the 25 variables with codebook sentinels, the number of recoded rows equals the frequency the codebook prints, so each recode is traceable to its CDC source. The map recodes 1,047 cells across the files and 562 in the cohort. The largest single item is `DIQ180` (prior blood test, 173 "don't know"), a label-audit variable rather than a predictor.
-#
-# The codes that look like sentinels but are categories stay untouched:
-#
-# - 213 borderline answers (`DIQ010 = 3`; 284 in the file);
-# - 34 people with more than one usual place of care (`HUQ030 = 3`);
-# - the 363 "Other race / multiracial" adults (`RIDRETH3 = 7`).
-#
-# **Decision (DR-S3-02):** recode refusal and don't-know codes per variable from the codebook (`apply_sentinels(mode="per_variable")`). There is no global list, and continuous measures are never recoded.
+# **So what.** For each of the 25 variables, the number of recoded rows equals the frequency the codebook prints, so every recode traces to its CDC source: 1,047 cells across the files, 562 in the cohort (largest: `DIQ180`, 173 "don't know", a label-audit variable). Codes that look like sentinels but are categories stay untouched: 213 borderline answers (`DIQ010 = 3`; 284 in the file), 34 people with more than one usual place of care (`HUQ030 = 3`) and 363 "Other race / multiracial" adults (`RIDRETH3 = 7`). **Decision (DR-S3-02):** recode per variable from the codebook; no global list, and continuous measures are never recoded.
 
 # %%
 M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sent["recoded_file"].sum()),
@@ -284,7 +264,7 @@ M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sen
 # %% [markdown]
 # ## 4 Cost of a blanket recode
 #
-# **Why.** A common shortcut is `df.replace([7, 9, 77, 99, 777, 999, 7777, 9999], np.nan)` across the whole table. It is also the "minimal" arm M0 of the experiments in Stage S6. The cost has to be measured rather than assumed. Every value the shortcut removes from a continuous measure is a valid measurement, because those variables have no refusal codes. Examples are a diastolic pressure of 77 mmHg, a weight of 99 kg and an HbA1c of 7.0 %. The damage is counted on the fixed cohort of 5,730 adults in three arms:
+# **Why.** A common shortcut is `df.replace([7, 9, 77, 99, 777, 999, 7777, 9999], np.nan)` across the whole table. It is also the "minimal" arm M0 of the experiments (§6.9). The cost has to be measured rather than assumed. Every value the shortcut removes from a continuous measure is a valid measurement, because those variables have no refusal codes. Examples are a diastolic pressure of 77 mmHg, a weight of 99 kg and an HbA1c of 7.0 %. The damage is counted on the fixed cohort of 5,730 adults in three arms:
 #
 # - **per-variable**: codebook codes only;
 # - **blanket**: the shortcut;
@@ -374,14 +354,7 @@ f_blank = plots.savefig(fig, "S3_blanket_recode_damage",
 plt.show(); print("saved", f_blank)
 
 # %% [markdown]
-# **So what.** On the same 5,730 adults, the blanket recode destroys **1,496 valid measurements** across the 20 continuous candidates. Most fall on diastolic pressure and pulse, where 77 and 99 are ordinary readings. Over the whole release the same 20 variables lose 2,472 values, a secondary count. The harm reaches the label:
-#
-# - All 29 HbA1c values it removes are 7.0 % (28) or 9.0 % (1), so every one is a true diabetic value. That is **29 of the 721 HbA1c-defined positives (4.0 %)** lost.
-# - Under the frozen `L_comb` only **6 of 971** positives flip, because the other 23 also report a diagnosis. Self-report hides the error, which makes it easy to miss.
-#
-# Applied to every numeric column, the shortcut also wipes categorical codes that are real categories. Examples are `RIDRETH3 = 7` (the 363 multiracial adults disappear as a group), 380 moderate-activity frequencies of 7 sessions (`PAD790Q`) and age 77.
-#
-# The benefit side is small. Restricting the shortcut to the six questionnaire items cleans just **57** genuine codes, so the shortcut's harm exceeds its gain by a factor of about 26. **Decision (DR-S3-02, evidence):** the per-variable map is the systematic arm. The blanket recode is kept only as the deliberately naive M0 arm in Stage S6, where its cost becomes measurable in model terms.
+# **So what (non-obvious finding of the profiling).** On the same 5,730 adults the blanket recode destroys **1,496 valid measurements** (mostly diastolic pressure and pulse, where 77 and 99 are ordinary readings; 2,472 in the whole release). The harm reaches the label: all 29 HbA1c values it removes are 7.0 % (28) or 9.0 % (1), i.e. **29 of 721 HbA1c-defined positives (4.0 %)**. Under `L_comb` only **6 of 971** positives flip, because the other 23 also report a diagnosis: self-report hides the error. Applied to every numeric column it also erases real categories (the 363 multiracial adults, `RIDRETH3 = 7`). Its benefit is **57** genuine codes, so harm exceeds gain about 26-fold. **Decision (DR-S3-02):** the per-variable map is the systematic arm; the blanket recode survives only as the naive M0 arm (§6.9).
 
 # %%
 M3["blanket_recode"] = {
@@ -444,14 +417,7 @@ assert univ.loc[0, ["answered", "DIQ010=1", "other"]].tolist() == [1081, 1081, 0
 assert univ.loc[1, ["DIQ010=1", "DIQ010=3", "DIQ010=2 & DIQ160=1", "other"]].tolist() == [1081, 282, 918, 0]
 
 # %% [markdown]
-# **So what.** The arithmetic holds:
-#
-# - BMI recomputed from weight and height matches the published value for all 8,471 valid triples (largest difference 0.050, which is rounding; none above 0.1).
-# - No reading has systolic ≤ diastolic pressure.
-# - Implausible pulse pressures are rare: below 20 mmHg in 5/2/3 cohort readings and 12/8/11 file readings; above 100 mmHg in 34/39/29 cohort readings. They are flagged, not changed: a wide pulse pressure is physiologically plausible in older adults (arterial stiffness).
-# - Four cohort members have a waist-to-height ratio above 1. They are flagged.
-#
-# The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people who report diabetes, so it is effectively a proxy of the label. `DIQ070` (oral medication) is also asked of 282 borderline respondents and of 918 non-diabetic respondents who were told they have prediabetes. Within the cohort, 41 non-diabetic and 44 borderline adults take glucose-lowering medication, plausibly metformin prescribed for prediabetes (the files do not name the drug). **Decision (DR-S3-06):** `DIQ050`/`DIQ070` are inadmissible as features (`admissible = N`). The treatment-aware sensitivity label in S5 may use them only inside this documented universe, and it must exclude prediabetes medication.
+# **So what.** The arithmetic holds: BMI recomputes for all 8,471 valid triples (largest difference 0.050, rounding), no reading has systolic ≤ diastolic, pulse pressures below 20 or above 100 mmHg are rare and flagged (wide pulse pressure is plausible in older adults), and four waist-to-height ratios above 1 are flagged. The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people reporting diabetes, so it is a label proxy; `DIQ070` (oral medication) is also asked of 282 borderline and 918 prediabetic respondents, and 41 non-diabetic plus 44 borderline cohort adults take glucose-lowering pills. **Decision (DR-S3-06):** both are inadmissible features; the treatment-aware sensitivity label (§5.8) may use them only inside this universe, excluding prediabetes medication.
 
 # %%
 M3["consistency"] = {"bmi_triples": len(v), "bmi_max_abs_diff": float(bmi_diff.max()), "bmi_diff_gt_0_1": int((bmi_diff > 0.1).sum()),
@@ -484,9 +450,7 @@ assert (age_top, pir_top, pir_miss) == (321, 1282, 734)
 assert close(prev_80, 0.262, 0.001) and close(prev_7079, 0.254, 0.001)
 
 # %% [markdown]
-# **So what.** 321 adults (5.6 %) are capped at age 80, and 1,282 (22.4 %) at an income ratio of 5. Another 734 (12.8 %) have no income ratio at all. The age cap hides little: unweighted `L_comb` prevalence is 26.2 % in the capped group against 25.4 % at ages 70–79, so risk has flattened by then. Age standardisation in 60+ bands is unaffected.
-#
-# The income variable is both capped and incomplete. **Decision (DR-S3-05):** keep the values and carry the flags `age_top`, `pir_top` and `pir_miss` next to them. Whether the flags enter the model is tested as ablation block B4 (P07 top-code flags, P06 missing indicator) in Stage S6.
+# **So what.** 321 adults (5.6 %) are capped at age 80 and 1,282 (22.4 %) at an income ratio of 5; another 734 (12.8 %) have no income ratio. The age cap hides little: unweighted `L_comb` prevalence is 26.2 % at the cap against 25.4 % at ages 70–79. **Decision (DR-S3-05):** keep the values and carry the flags `age_top`, `pir_top` and `pir_miss`; whether they help a model is tested as block B4 (§6.6).
 
 # %%
 M3["top_coding"] = {"age_top": age_top, "pir_top": pir_top, "pir_top_share": pir_top / len(coh),
@@ -562,14 +526,14 @@ plt.show(); print("saved", f_miss)
 #
 # Self-reported diabetes, the closest observable stand-in for the outcome, shows no association.
 #
-# The correct wording is narrow. **Given these covariates there is no evidence against MAR, and MNAR cannot be tested with these data.** **Decision (DR-S3-04):** this wording is used everywhere. WTPH2YR already contains NCHS's blood-sample non-response adjustment. A delta-adjustment / inverse-probability-weighting sensitivity analysis for MNAR is assigned to Stage S9. The model is descriptive and is not used for population inference.
+# The correct wording is narrow: **given these covariates there is no evidence against MAR, and MNAR cannot be tested with these data.** **Decision (DR-S3-04):** this wording is used everywhere; WTPH2YR already contains the NCHS blood-sample non-response adjustment, and an inverse-probability-weighting / delta-adjustment sensitivity analysis follows in §9.7.
 
 # %%
 M3["missingness"] = {"examined_adults": len(ex), "a1c_missing": int(y_miss.sum()), "a1c_missing_share": float(y_miss.mean()),
                      "llr_p": float(fit.llr_pvalue), "auc": float(auc_miss),
                      "odds_ratios": {k: {kk: float(vv) for kk, vv in r.items()} for k, r in or_tab.iterrows()},
                      "missing_share_by_race": miss_rate["missing_share"].to_dict(),
-                     "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in S9)"}
+                     "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in §9.7)"}
 
 # %% [markdown]
 # ## 8 Outliers: a three-layer rule
@@ -600,6 +564,18 @@ display(outl)
 outl.to_csv(OUT / "outlier_flags.csv", index=False, lineterminator="\n")
 review = int(outl["both_layers"].sum())
 print(f"layer 3 (manual review queue): {review} values flagged by both layers")
+
+# Layer 3: the value(s) flagged by both layers, with the measurements needed to judge them.
+both = pd.concat([coh.loc[((coh[v] < lo) | (coh[v] > hi)) & (robust_z(coh[v]).abs() > 3.5)].assign(var=v, value=lambda d, v=v: d[v])
+                  for v, (lo, hi) in LIMITS.items()])
+both["bmi_recomputed"] = (both["BMXWT"] / (both["BMXHT"] / 100) ** 2).round(1)
+display(both[["var", "value", "BMXWT", "BMXHT", "bmi_recomputed", "RIDAGEYR"]]
+        .rename(columns={"BMXWT": "weight_kg", "BMXHT": "height_cm", "RIDAGEYR": "age"}).reset_index(drop=True))
+assert len(both) == review == 1 and both["var"].iloc[0] == "BMXBMI"
+assert abs(both["bmi_recomputed"].iloc[0] - both["value"].iloc[0]) <= 0.1
+REVIEW_OUTCOME = (f"BMI {both['value'].iloc[0]:.1f} (weight {both['BMXWT'].iloc[0]:.1f} kg, height {both['BMXHT'].iloc[0]:.1f} cm) "
+                  "recomputes from the measured weight and height: plausible class III obesity, kept with its flag")
+print("layer-3 decision:", REVIEW_OUTCOME)
 
 def iqr_fence(s):
     q1, q3 = s.quantile([0.25, 0.75]); i = q3 - q1
@@ -637,16 +613,11 @@ f_iqr = plots.savefig(fig, "S3_iqr_fence_harm",
 plt.show(); print("saved", f_iqr)
 
 # %% [markdown]
-# **So what.** The hard limits flag almost nothing: 2 BMI values. The robust z-score layer already shows the problem with statistical rules on clinical data. It flags 462 HbA1c values, which are the diabetic tail, so it may only flag and never delete. Only one value is flagged by both layers and goes to manual review. Two results show what blind deletion would cost:
-#
-# - **HbA1c fence.** The upper fence is 6.8 %. It flags 542 rows, and 519 of them have HbA1c ≥ 6.5 %. Deleting them would remove **72 % of all HbA1c-defined diabetes cases**, so the "outliers" are the outcome.
-# - **Joint predictor fence.** A fence over five predictors (BMI, waist, first SBP reading, total cholesterol, HDL) deletes 512 rows (8.9 %). The deleted group has an HbA1c-positive share of 17.2 % against 12.1 % among those kept, so the deletion shifts the label distribution.
-#
-# **Decision (DR-S3-03):** keep every value. Layers 1–2 only add flags, and layer 3 reviews the few values flagged by both layers. Skewness is handled as an ablation in Stage S6 (block B5: Yeo-Johnson; winsorising as an alternative arm), not by deleting values.
+# **So what.** The hard limits flag 2 BMI values. The robust z-score flags 462 HbA1c values, which are the diabetic tail, so it may only flag. Exactly one value is flagged by both layers; the manual review (layer 3) finds a BMI of 74.8 that recomputes from measured weight (185.2 kg) and height (157.3 cm), a plausible class III obesity, so it is kept. Blind deletion would be costly: the HbA1c 1.5 × IQR fence (6.8 %) flags 542 rows, 519 of them with HbA1c ≥ 6.5 %, i.e. **72 % of all HbA1c-defined cases**; a joint fence over five predictors deletes 512 rows (8.9 %) whose HbA1c-positive share is 17.2 % against 12.1 % among those kept. **Decision (DR-S3-03):** keep every value; skewness is handled as block B5 (§6.7), not by deletion.
 
 # %%
 M3["outliers"] = {"layer_table": outl.set_index("var")[["layer1_outside_limits", "layer2_robust_z_gt_3.5", "both_layers"]].to_dict("index"),
-                  "manual_review": review,
+                  "manual_review": review, "manual_review_outcome": REVIEW_OUTCOME,
                   "a1c_iqr_fence_upper": float(hi_f), "a1c_iqr_flagged": n_fl, "a1c_iqr_flagged_positive": n_fl_pos,
                   "a1c_iqr_positive_share": n_fl_pos / int(la1c.sum()),
                   "joint_fence_vars": JOINT, "joint_fence_deleted": int(joint.sum()), "joint_fence_share": float(joint.mean()),
@@ -655,7 +626,7 @@ M3["outliers"] = {"layer_table": outl.set_index("var")[["layer1_outside_limits",
 # %% [markdown]
 # ## 9 Data-quality dimension matrix
 #
-# **Why.** The checks above are only useful if they add up to a judgement per quality dimension. The matrix uses the six DAMA UK dimensions (completeness, uniqueness, timeliness, validity, accuracy, consistency; DAMA UK 2013, cited from a third-party copy). It adds **credibility** from ISO/IEC 25012:2008 for what the files cannot show internally: low response rates and a self-reported label. Each dimension gets a metric, a threshold, the computed result and a verdict.
+# **Why.** The checks above must add up to a judgement per quality dimension. The matrix uses the six DAMA UK (2013) dimensions (completeness, uniqueness, timeliness, validity, accuracy, consistency) and adds **credibility** from ISO/IEC 25012 (2008) for what the files cannot show internally: low response rates and a self-reported label. Each dimension gets a metric, a threshold, the computed result and a verdict.
 
 # %%
 feat = inc[(inc["admissible"].isin(["T1", "T2"]))]["var"].tolist()
@@ -682,7 +653,7 @@ assert viol == 0
 
 resp_int, resp_mec = 0.346, 0.257   # NCHS cycle overview (not computable from the files)
 dq = pd.DataFrame([
-    ["Completeness", "max item missingness among T1/T2 features in cohort (excl. structural skips)", "<= 40 % (L1 trigger)",
+    ["Completeness", "max item missingness among T1/T2 features in cohort (excl. structural skips)", "<= 40 % (scope-revision trigger)",
      f"{item_miss.max():.1%} ({item_miss.idxmax()}); HbA1c missing in 4.9 % of examined adults, not MCAR", "pass with flags"],
     ["Uniqueness", "duplicate SEQN per file; files subset of DEMO_L", "0 duplicates",
      f"{int((~uniq['seqn_unique']).sum())} duplicates in 16 files; all subsets", "pass"],
@@ -690,8 +661,8 @@ dq = pd.DataFrame([
      "Aug 2021 - Aug 2023, one cycle; no drift test possible (no pooling)", "not assessable"],
     ["Validity", "values outside codebook range after per-variable recode; sentinel codes traceable", "0 out of range; 100 % traceable",
      f"{viol} of {checked:,} values out of range; {int(sent['traceable'].sum())}/{len(sent)} sentinel variables traceable; XPT artefact repaired ({n_art:,} cells)", "pass"],
-    ["Accuracy", "BMI recomputation; external anchor; label agreement", "|diff| <= 0.1; NCHS Data Brief 516 replication within 0.1 pp (§3)",
-     f"max BMI diff {bmi_diff.max():.3f}; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)", "pass for measures, limited for label"],
+    ["Accuracy", "BMI recomputation; external anchor; label agreement", "|diff| <= 0.1; NCHS Data Brief 516 replication within 0.1 pp (§4.3)",
+     f"max BMI diff {bmi_diff.max():.3f}; label accuracy limited: self-report vs HbA1c disagree (§5.1 kappa)", "pass for measures, limited for label"],
     ["Consistency", "SBP > DBP; skip-pattern universes; duplicate weight columns identical", "0 violations",
      f"SBP <= DBP: {int(pp_tab['SBP <= DBP'].sum())}; WHtR > 1: {whtr_gt1} flagged; DIQ050/DIQ070 universes as documented", "pass"],
     ["Credibility (ISO/IEC 25012)", "response rates; label source", "documented, not correctable",
@@ -715,14 +686,7 @@ f_dq = plots.savefig(fig, "S3_quality_matrix", caption="Verdict per data-quality
 plt.show(); print("saved", f_dq)
 
 # %% [markdown]
-# **So what.** The measurements are trustworthy once the two read-time problems are fixed (the XPT artefact and the per-variable sentinels):
-#
-# - every key is unique;
-# - every continuous value lies inside its codebook range;
-# - BMI recomputes;
-# - blood-pressure pairs are coherent.
-#
-# The weak points lie elsewhere. **Credibility** is limited: response rates are 34.6 % for the interview and 25.7 % for the examination, and the label partly rests on self-report. **Timeliness** cannot be assessed, because there is only one cycle. **Completeness** passes with flags. The highest item missingness among model features is in the income ratio and the activity minutes; the activity minutes are skip-pattern structural and not truly missing. HbA1c missingness is covariate-dependent (item 7). No variable triggers the L1 loop (more than 40 % item missingness, no variation, or a post-diagnosis variable among the admissible features), so the variable scope can be frozen. **Decision (DR-S3-07):** freeze the variable scope (`scope-freeze`). Carry credibility and label accuracy as stated limitations to S5 and S10.
+# **So what.** Once the two read-time problems are fixed (XPT artefact, per-variable sentinels) the measurements are trustworthy: keys are unique, every continuous value lies inside its codebook range, BMI recomputes and blood-pressure pairs are coherent. The weak points lie elsewhere: **credibility** is limited (response 34.6 % / 25.7 %, partly self-reported label), **timeliness** cannot be assessed (one cycle), and **completeness** passes with flags (HbA1c missingness is covariate-dependent, §3.7). No admissible variable meets the scope-revision trigger (> 40 % item missingness, no variation, or post-diagnosis content). **Decision (DR-S3-07):** freeze the variable scope (`scope-freeze`); carry credibility and label accuracy as limitations to §5 and §10.
 
 # %%
 M3["quality_matrix"] = dq.set_index("dimension")[["result", "verdict"]].to_dict("index")
@@ -730,9 +694,9 @@ M3["validity"] = {"continuous_values_checked": checked, "out_of_range": viol}
 M3["max_item_missing_feature"] = {"var": item_miss.idxmax(), "share": float(item_miss.max())}
 
 # %% [markdown]
-# ## Decisions and stored results
+# ## Outputs
 #
-# **Why.** Each decision above is written to the decision register with its evidence. The self-check is a re-computation, not a reading: every value in `evidence_value` comes from a variable computed in this run.
+# Decisions of §2–§3 with their evidence (`governance/register/S2.csv`, `S3.csv`; every `evidence_value` is filled from a variable computed in this run) and the stored metrics.
 
 # %%
 reg2 = write_register("S2", [
@@ -742,7 +706,7 @@ reg2 = write_register("S2", [
          alternatives_rejected="External validation by linking other micro-data (forbidden)", status="decided", check_verdict="PASS",
          check_note="Checklist re-read against the DUA page; quasi-identifiers confirmed absent from the loaded columns (minimisation report)"),
     dict(dr_id="DR-S2-02", stage="S2", date=TODAY, type="weights", finding="Each weight belongs to a sub-sample; zero weights mean 'not in sub-sample'",
-         evidence_ref="governance/dua_checklist.md §3; notebooks/sections/02_profiling.py item 1",
+         evidence_ref="governance/dua_checklist.md, section 3; §3.1",
          evidence_value=f"WTMEC2YR=0: {M3['zero_weights']['WTMEC2YR_0']}; WTPH2YR=0: {M3['zero_weights']['WTPH2YR_0']}; cohort WTPH2YR=0: {zero_in_cohort}",
          decision="WTPH2YR for every cohort analysis with HbA1c or lipids; WTSAF2YR only for DB516/SL5; WTINT2YR/WTMEC2YR for interview/exam-only descriptions; zero weights -> NaN; domains by zero weights, never row deletion",
          alternatives_rejected="WTMEC2YR for HbA1c analyses (ignores blood-sample non-response); unweighted descriptions", status="decided", check_verdict="PASS",
@@ -765,7 +729,7 @@ reg2 = write_register("S2", [
          decision="Verify hashes at the start of every profiling run; datasheet (Gebru) documents composition and preprocessing",
          alternatives_rejected="Trust the download", status="decided", check_verdict="PASS", check_note="Hashes and funnel recomputed in this run"),
     dict(dr_id="DR-S2-06", stage="S2", date=TODAY, type="coding", finding="Borderline diabetes (DIQ010=3) and uncertain pregnancy (RIDEXPRG=3) are legitimate but ambiguous codes",
-         evidence_ref="notebooks/sections/02_profiling.py items 2-3",
+         evidence_ref="§3.2–§3.3",
          evidence_value=f"DIQ010=3: {int(legit.loc[0, 'cohort'])} in cohort ({int(legit.loc[0, 'file'])} in file); RIDEXPRG=3: {preg3} in cohort",
          decision="Keep both; DIQ010=3 negative in L_self and flagged (S5 sensitivity SL3); RIDEXPRG=3 kept with flag preg_unknown for a sensitivity drop",
          alternatives_rejected="Recode as missing (loses 213 people with elevated risk); drop RIDEXPRG=3", status="decided", check_verdict="PASS",
@@ -773,7 +737,7 @@ reg2 = write_register("S2", [
 ])
 reg3 = write_register("S3", [
     dict(dr_id="DR-S3-01", stage="S3", date=TODAY, type="data_fix", finding="pandas reads stored zeros in XPT files as 5.4e-79; a where()-based repair turns NaN into 0",
-         evidence_ref="results/S3/xpt_artefacts.csv; item 1", evidence_value=f"{n_art:,} cells in {len(files_hit)} files; PAQ NaN {nan_before} kept by mask, {nan_wrong} after where",
+         evidence_ref="results/S3/xpt_artefacts.csv; §3.1", evidence_value=f"{n_art:,} cells in {len(files_hit)} files; PAQ NaN {nan_before} kept by mask, {nan_wrong} after where",
          decision="Repair with x.mask((|x|<1e-10) & x.notna(), 0.0) at load (nhanes_io.fix_xpt); zero weights -> NaN before weighting",
          alternatives_rejected="where(); leave artefact", status="decided", check_verdict="PASS",
          check_note="Residual 0<|x|<1e-10 = 0 in all files and NaN counts unchanged (asserts)"),
@@ -787,22 +751,23 @@ reg3 = write_register("S3", [
          evidence_ref="results/S3/outlier_flags.csv; figures/S3_iqr_fence_harm.png",
          evidence_value=f"A1c IQR fence {hi_f:.1f}: {n_fl} flagged, {n_fl_pos} with A1c>=6.5 ({n_fl_pos / la1c.sum():.0%} of positives); joint fence deletes {int(joint.sum())} rows, A1c+ share {prev_del:.1%} vs {prev_keep:.1%}",
          decision="Keep all values; three-layer rule (hard limits flag, robust z flag, manual review); transformation/winsorising only as S6 ablation (B5)",
-         alternatives_rejected="1.5xIQR deletion; z-score deletion", status="decided", check_verdict="PASS", check_note="542/519 and 512 recomputed and asserted"),
+         alternatives_rejected="1.5xIQR deletion; z-score deletion", status="decided", check_verdict="PASS",
+         check_note=f"542/519 and 512 recomputed and asserted; layer-3 review of {review} value: {REVIEW_OUTCOME}"),
     dict(dr_id="DR-S3-04", stage="S3", date=TODAY, type="missingness", finding="HbA1c missingness depends on race, income, age and examination completeness, not on self-reported diabetes",
          evidence_ref="results/S3/missingness_or.csv; figures/S3_missing_hba1c_or.png",
          evidence_value=f"{int(y_miss.sum())}/{len(ex)} missing; LLR p={fit.llr_pvalue:.1e}; AUC {auc_miss:.2f}; NH Black OR {or_tab.loc['NH Black', 'OR']:.2f} ({or_tab.loc['NH Black', 'ci_low']:.2f}, {or_tab.loc['NH Black', 'ci_high']:.2f}); self-report OR {or_tab.loc['self-reported diabetes', 'OR']:.2f}",
          decision="Wording: not MCAR; no evidence against MAR given covariates; MNAR untestable. Complete-case cohort with WTPH2YR (includes blood non-response adjustment); MNAR sensitivity (delta / IPW) in S9",
          alternatives_rejected="Little's MCAR test (normality, only rejects MCAR); multiple imputation of the label", status="decided", check_verdict="PASS",
-         check_note="Logit refitted in this run; ORs asserted against the reference values", loop_ref="S9 MNAR sensitivity"),
+         check_note="Logit refitted in this run; ORs asserted against the reference values", loop_ref="§9.7 MNAR sensitivity"),
     dict(dr_id="DR-S3-05", stage="S3", date=TODAY, type="top_coding", finding="Age capped at 80 and PIR at 5; PIR also missing",
-         evidence_ref="item 6", evidence_value=f"age_top {age_top}; pir_top {pir_top} ({pir_top / len(coh):.1%}); pir_miss {pir_miss} ({pir_miss / len(coh):.1%}); L_comb 80: {prev_80:.1%} vs 70-79: {prev_7079:.1%}",
+         evidence_ref="§3.6", evidence_value=f"age_top {age_top}; pir_top {pir_top} ({pir_top / len(coh):.1%}); pir_miss {pir_miss} ({pir_miss / len(coh):.1%}); L_comb 80: {prev_80:.1%} vs 70-79: {prev_7079:.1%}",
          decision="Keep values and carry flags age_top, pir_top, pir_miss; their model value tested in S6 block B4 (P06/P07)",
          alternatives_rejected="Treat caps as exact; drop PIR-missing rows (12.8 %)", status="decided", check_verdict="PASS", check_note="Counts and prevalences recomputed and asserted"),
     dict(dr_id="DR-S3-06", stage="S3", date=TODAY, type="leakage", finding="DIQ050 is asked only of diagnosed people; DIQ070 also of borderline and prediabetic respondents",
-         evidence_ref="item 5", evidence_value=f"DIQ050 universe {univ.loc[0, 'answered']} (all DIQ010=1); DIQ070: 1,081 / 282 / 918; cohort DIQ070=1: {d070}",
+         evidence_ref="§3.5", evidence_value=f"DIQ050 universe {univ.loc[0, 'answered']} (all DIQ010=1); DIQ070: 1,081 / 282 / 918; cohort DIQ070=1: {d070}",
          decision="DIQ050/DIQ070 inadmissible as features (spec admissible=N); usable only for the treatment-aware sensitivity label within the documented universe, excluding prediabetes medication",
          alternatives_rejected="Use DIQ070 as a feature (label proxy)", status="decided", check_verdict="PASS", check_note="Universes recomputed from DIQ_L and asserted"),
-    dict(dr_id="DR-S3-07", stage="S3", date=TODAY, type="scope", finding="No admissible variable triggers the L1 loop; quality is high for measures, limited for credibility and label",
+    dict(dr_id="DR-S3-07", stage="S3", date=TODAY, type="scope", finding="No admissible variable meets the scope-revision trigger; quality is high for measures, limited for credibility and label",
          evidence_ref="results/S3/quality_matrix.csv; figures/S3_quality_matrix.png",
          evidence_value=f"max item missingness {item_miss.max():.1%} ({item_miss.idxmax()}); validity {viol} out-of-range of {checked:,}; response 34.6 % / 25.7 %",
          decision="Freeze variable scope (scope-freeze); carry credibility and label accuracy as limitations to S5/S10",
@@ -815,10 +780,4 @@ R.save_section("S3", M3)
 print("saved", R.section_path("S2").name, R.section_path("S3").name, "| register rows:", len(reg2), len(reg3))
 
 # %% [markdown]
-# **So what.** Six S2 decisions and seven S3 decisions are recorded, each with a re-computed check, and all are marked PASS. The decisions that change later stages are these:
-#
-# - Stage S6 receives two contrasting cleaning arms: the per-variable map, and the blanket recode with a measured cost of 1,496 values.
-# - Stage S5 receives a documented universe for the treatment items and the MAR wording.
-# - Stage S9 receives the MNAR sensitivity analysis.
-#
-# The variable scope is frozen.
+# **So what.** Six §2 and seven §3 decisions are recorded, all PASS. They feed forward: §6 gets two contrasting cleaning arms (per-variable map vs blanket recode, measured cost 1,496 values), §5 the treatment-item universe and the MAR wording, §9.7 the MNAR sensitivity analysis. The variable scope is frozen.

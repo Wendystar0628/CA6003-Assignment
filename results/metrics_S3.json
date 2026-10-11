@@ -3,7 +3,7 @@
     "section": "S3",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T06:53:23+00:00"
+    "written_utc": "2026-10-11T08:17:08+00:00"
   },
   "xpt_artefact": {
     "cells": 13676,
@@ -289,7 +289,7 @@
       "Other Hispanic": 0.04234527687296417,
       "Other/Multi": 0.059278350515463915
     },
-    "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in S9)"
+    "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in §9.7)"
   },
   "outliers": {
     "layer_table": {
@@ -325,6 +325,7 @@
       }
     },
     "manual_review": 1,
+    "manual_review_outcome": "BMI 74.8 (weight 185.2 kg, height 157.3 cm) recomputes from the measured weight and height: plausible class III obesity, kept with its flag",
     "a1c_iqr_fence_upper": 6.800000000000001,
     "a1c_iqr_flagged": 542,
     "a1c_iqr_flagged_positive": 519,
@@ -359,7 +360,7 @@
       "verdict": "pass"
     },
     "Accuracy": {
-      "result": "max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)",
+      "result": "max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (§5.1 kappa)",
       "verdict": "pass for measures, limited for label"
     },
     "Consistency": {
