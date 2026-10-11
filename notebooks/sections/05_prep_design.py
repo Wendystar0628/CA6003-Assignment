@@ -6,7 +6,10 @@
 #
 # * **M0** – the naive analyst: every column except id/design/label, blanket recode of 7/9/77/99/…,
 #   median imputation, one-hot encoding, logistic regression. Leakage included.
-# * **M1** – M0 plus the availability rule only (P03). *Minimal but honest.*
+# * **M1** – M0 plus the availability rule only (P03). The *naive-minimal* baseline: it keeps the blanket
+#   "7/9 = missing" recode that a naive analyst would use (P02 off), so its training label and some feature cells
+#   carry the damage measured in §3; evaluation labels are always the clean ones. A comparison with the
+#   codebook recode switched on (M1c = M1 + P02) is given in §9 (post-audit corrections).
 # * **S** – all steps on (P14 WHtR stays a separate arm).
 #
 # The headline "minimal vs systematic" comparison is **M1 vs S** (same model); **M0 → M1 is the
@@ -41,7 +44,8 @@ S6 = {}
 # no sentinel recode) and the naive column set. The frozen evaluation label `L_comb` comes from the
 # per-variable cohort (§5). Descriptive design statistics below use the **training part** only: the
 # 20 % hold-out (label × race stratified, `evalkit.make_holdout`, created once and persisted) is not
-# looked at until the one-shot evaluation in §9.11.
+# used by any statistic in §6 and is kept out of all fitting; it is scored once, in §9.11 (the internal
+# hold-out check). Note that the §4/§5 diagnostics, which ran before the split existed, used all 5,730 adults.
 
 # %%
 # Load the raw (unrepaired) and the cleaned cohort, split off the persisted hold-out and build the naive
