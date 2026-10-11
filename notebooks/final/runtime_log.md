@@ -1,0 +1,8 @@
+# Runtime log
+
+Written by `tools/build_final.py --execute` (or from its output for a clean-copy build). One line per executed build.
+
+| date (UTC) | mode | commit | total (s) | per section (s) |
+|---|---|---|---|---|
+| 2026-10-11 07:56 | FAST | 961ae81 | 292 | §0 2, §1 1, §2 1, §3 3, §4 4, §5 4, §6 15, §7 88, §8 23, §9 148, §10 1, Appendix 0 |
+| 2026-10-11 07:56 | FINAL | 961ae81 | 1403 | §0 2, §1 1, §2 1, §3 3, §4 4, §5 20, §6 15, §7 570, §8 55, §9 727, §10 1, Appendix 0 |

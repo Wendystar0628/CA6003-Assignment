@@ -1,0 +1,58 @@
+{
+  "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
+  "stored_outputs_mode": "FINAL",
+  "source_commit": "961ae812d489627351515e627ae8637f25d52f73",
+  "built_utc": "2026-10-11T07:56:11+00:00",
+  "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same export",
+  "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
+  "runs": {
+    "FAST": {
+      "runtime_seconds": 292.0,
+      "per_section_seconds": {
+        "§0": 2.3,
+        "§1": 0.8,
+        "§2": 1.0,
+        "§3": 3.2,
+        "§4": 4.0,
+        "§5": 3.9,
+        "§6": 15.4,
+        "§7": 87.9,
+        "§8": 22.7,
+        "§9": 147.6,
+        "§10": 0.8,
+        "Appendix": 0.2
+      },
+      "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
+      "file_sha256": "a12d419aa7670de9d580cc00b41e3286ac3e5a83f3c104c8f2e4a041b6ee9b24",
+      "size_mb": 5.87,
+      "validation": "OK",
+      "final_ref": "30 reference quantities reproduced within tolerance (FAST mode)",
+      "n_errors": 0,
+      "n_stderr": 0
+    },
+    "FINAL": {
+      "runtime_seconds": 1403.0,
+      "per_section_seconds": {
+        "§0": 2.2,
+        "§1": 0.8,
+        "§2": 1.0,
+        "§3": 3.2,
+        "§4": 4.2,
+        "§5": 20.3,
+        "§6": 15.3,
+        "§7": 569.9,
+        "§8": 55.1,
+        "§9": 727.3,
+        "§10": 0.8,
+        "Appendix": 0.2
+      },
+      "code_cell_sha256": "4e0346ed950f50f824db1f8a799a00e3b302f85131fd3228f63b3572d16e91d2",
+      "file_sha256": "3d1704460fbf2b065a1bf86437453217a811583fd2e04364d1282e7cf4dcaab8",
+      "size_mb": 5.95,
+      "validation": "OK",
+      "final_ref": "30 reference quantities reproduced within tolerance (FINAL mode)",
+      "n_errors": 0,
+      "n_stderr": 0
+    }
+  }
+}
