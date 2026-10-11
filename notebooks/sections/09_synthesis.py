@@ -45,7 +45,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 OI = C.OKABE_ITO
 T_START = time.time()
 SECTIONS = ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9")
-SEC = {"S1": "§1", "S2": "§1", "S3": "§2", "S4": "§4", "S5": "§5", "S6": "§6", "S7": "§7", "S8": "§8", "S9": "§9", "S10": "§10"}
+SEC = {"S1": "§1", "S2": "§2", "S3": "§3", "S4": "§4", "S5": "§5", "S6": "§6", "S7": "§7", "S8": "§8", "S9": "§9", "S10": "§10"}
 S10 = {"mode": C.NB_MODE}
 print(f"mode {C.NB_MODE}; this section re-estimates nothing – it reads stored results only")
 
@@ -283,7 +283,7 @@ S10["h2b"] = dict(subs={k: dict(est=r["est"], lo=r["lo"], hi=r["hi"], verdict=r[
 # **So what.** Of 17 hypotheses, 10 are supported (B1, B2, B2t, B6a, B6b, H1a, H1b, H2a, H4a, H4b),
 # 1 is mixed (B3), 6 are inconclusive (B4, B5, H2b, H2c, H3, P14) and none is refuted overall – but
 # several *sub-claims* are refuted (H2b-Brier, B3 stability), which the sub-verdict column keeps visible.
-# The "supported" list is dominated by `analysis_seen` hypotheses that confirm patterns seen in §2–§5;
+# The "supported" list is dominated by `analysis_seen` hypotheses that confirm patterns seen in §3–§5;
 # among the six genuine pre-registrations, only B6a and B6b are supported (both about weighting), B2t is
 # supported as a tree probe, and H2b, H2c and H3 – the substantive experimental claims – are inconclusive.
 # H2b, read by its parts: (a) AUC +0.008 [0.000, 0.016] – the MDD (0.011) exceeds the SESOI (0.010), so the
@@ -653,8 +653,11 @@ VSEG = {"V1": "0:00-1:30 scope and design", "V2": "1:30-2:15 cost of naive clean
         "V7": "8:30-10:15 models and evaluation", "V8": "10:15-11:20 what ML says about the data"}
 sm = M["S9"]["summary"]["table"]
 sm_e = {r["check"]: r for r in sm if r["pop"] == "E-ALL"}
-ROB_H2B = (f"10 seeds {sm_e['10 CV seeds']['verdicts']}; 16 specs {sm_e['16 sensitivity specs']['verdicts']}; "
-           f"60-spec curve {sm_e['60-spec curve']['verdicts']}; PSU-grouped CV {sm_e['strata x PSU grouped CV']['verdicts']}; "
+pick = lambda suf: next(v for k, v in sm_e.items() if k.endswith(suf))   # labels carry the run's counts (FAST 5 seeds / 30 specs)
+N_SEEDS, N_CURVE = M["S9"]["seeds"]["n"], M["S9"]["specification_curve"]["n"]
+N_SENS = int(pick("sensitivity specs")["check"].split()[0])
+ROB_H2B = (f"{N_SEEDS} seeds {pick('CV seeds')['verdicts']}; {N_SENS} specs {pick('sensitivity specs')['verdicts']}; "
+           f"{N_CURVE}-spec curve {pick('-spec curve')['verdicts']}; PSU-grouped CV {sm_e['strata x PSU grouped CV']['verdicts']}; "
            f"IPW {sm_e['IPW (evaluation; fit + evaluation)']['verdicts']}")
 ROB_LEAK = (f"own-C tuning gives the same gate {M['S9']['sensitivity']['leak_gate_own_C']['E-ALL']['est']:+.3f}; permutation null "
             f"{perm9['M1']['null_mean']:.3f}; leak hunt not triggered")
@@ -703,7 +706,7 @@ CL = [
          prereg="none (tree probe B2t)", rob=ROB_NONE, ext="none", scope="M0 frame, training part", fals="M0 tree without a DID040 split", hyp="B2t"),
     dict(cid="C03", vs="V2", head=False, grade="E1", type="cleaning_cost", subj="The sentinel audit",
          prop=f"a blanket 7/9/77/99 recode destroys {s3['valid_cells_destroyed_cohort']:,} valid cells and {s3['a1c_positives_lost']} of {s3['a1c_positives']} HbA1c-positive labels",
-         ev=["§2 per-variable vs blanket recode counts", f"§6 label rebuilt from naive data ({M['S6']['B1']['naive_lcomb_pos']} vs {s3['l_comb_positives']} positives)"],
+         ev=["§3.3–§3.4 per-variable vs blanket recode counts", f"§6 label rebuilt from naive data ({M['S6']['B1']['naive_lcomb_pos']} vs {s3['l_comb_positives']} positives)"],
          eff=f"{s3['valid_cells_destroyed_cohort']:,} cells; {s3['a1c_positives_lost']}/{s3['a1c_positives']}; L_comb flips {s3['l_comb_flips']}/{s3['l_comb_positives']}",
          prereg="analysis_seen", rob="deterministic count", ext="NHANES codebooks (sentinels only on questionnaire items)", scope="cohort 5,730",
          fals="a recount giving a different number", hyp="B1"),
@@ -713,7 +716,7 @@ CL = [
          prereg=pe("B1"), rob="same verdict on E-SCREEN and Tier 2", ext="none", scope="training part", fals="CI wholly beyond ±0.01", hyp="B1"),
     dict(cid="C05", vs="V7", head=True, grade="E3", type="minimal_vs_systematic", subj="The M1-versus-S contrast",
          prop=f"systematic preparation changes AUC by under {h2b.loc['(a) AUC', 'hi']:.3f}; equivalence stays unestablished (MDD {h2b.loc['(a) AUC', 'mdd']:.3f})",
-         ev=["§7 paired CV H2b(a)", "§9 ten seeds", "§9 16-spec table", "§9 60-spec curve", "§9 PSU-grouped CV"] + (["§9 one-shot hold-out S − M1"] if HO_OK else []),
+         ev=["§7 paired CV H2b(a)", f"§9 {N_SEEDS} seeds", f"§9 {N_SENS}-spec table", f"§9 {N_CURVE}-spec curve", "§9 PSU-grouped CV"] + (["§9 one-shot hold-out S − M1"] if HO_OK else []),
          eff=f"ΔAUC {sw(h2b.loc['(a) AUC'])}; Brier {h2b.loc['(b) Brier', 'est']:+.3f} (refuted, class weights); pure preparation ΔAUC {pp_.loc[('E-ALL', 'roc_auc'), 'diff']:+.3f}",
          prereg=pe("H2b"), rob=ROB_H2B + (f"; hold-out {sw(HOP.loc[('S T1 - M1 T1', 'E-ALL')])} ({HOP.loc[('S T1 - M1 T1', 'E-ALL'), 'verdict']})" if HO_OK else ""), ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
     dict(cid="C06", vs="V7", head=False, grade="E2", type="deterioration", subj="Paired cross-validation",
@@ -857,7 +860,7 @@ else:
     print("FAST run: governance/claims.csv not written (the committed ledger comes from the FINAL run)")
 
 # %% [markdown]
-# **So what.** The ledger holds 25 claims (24 if a re-run has no hold-out): 5 deterministic counts (E1), 8 E2
+# **So what.** The ledger holds 25 claims (24 only if no hold-out record exists): 5 deterministic counts (E1), 8 E2
 # claims with CIs that exclude 0 (including the hold-out claim C25), 10 E3 claims that are moderate or depend on a choice, and 2 exploratory
 # (E4) claims about the Asian subgroup. All six headline claims have at least two independent evidence lines,
 # so none had to be downgraded; the minimal-vs-systematic claim (C05) is held at E3 because its effect is
@@ -964,7 +967,7 @@ LIM = pd.DataFrame([
          claims_affected="C09, C10"),
     dict(lim_id="L07", threat="Label definition: one HbA1c measurement, self-report, treatment masking, no type 1 / type 2 split, no FPG",
          bias_direction="misclassification both ways; L_comb is below the NCHS definition by " + f"{v2d['est_pct']:.1f} pp (FPG cases)",
-         how_bounded="union label; SL1-SL5 sensitivity labels in the 16-spec table (verdict unchanged); 3 × 3 matrix", claims_affected="C07, C14, C17, C23"),
+         how_bounded=f"union label; SL1-SL5 sensitivity labels in the {N_SENS}-spec table (verdict unchanged); 3 × 3 matrix", claims_affected="C07, C14, C17, C23"),
     dict(lim_id="L08", threat=f"HbA1c missing for {mnar['n_missing']} of {mnar['n_examined']} examined adults; MNAR untestable",
          bias_direction="if non-responders are sicker, prevalence understated",
          how_bounded=f"IPW and delta scenarios ({dp.loc[1.0, 'prevalence']:.1%}–{dp.iloc[-1]['prevalence']:.1%}); Manski bounds [{mnar['manski'][0]:.1%}, {mnar['manski'][1]:.1%}]",
@@ -977,7 +980,7 @@ LIM = pd.DataFrame([
          how_bounded="scope column of every claim; no transport claims", claims_affected="all"),
     dict(lim_id="L11", threat="Researcher degrees of freedom: analyses seen before hypotheses were written",
          bias_direction="optimistic verdicts for analysis_seen hypotheses",
-         how_bounded=f"prior_exposure stated per hypothesis ({', '.join(f'{k} {v}' for k, v in n_prior.items())}); 60-specification curve; verdicts unchanged after the lock",
+         how_bounded=f"prior_exposure stated per hypothesis ({', '.join(f'{k} {v}' for k, v in n_prior.items())}); {N_CURVE}-specification curve; verdicts unchanged after the lock",
          claims_affected="C03, C11, C12, C13, C14, C15, C16, C23"),
     dict(lim_id="L12", threat="FAST vs FINAL: verdicts with a CI bound near a decision boundary",
          bias_direction="a FAST re-run (5 × 2 CV, B = 100) may print a different verdict for these items",
