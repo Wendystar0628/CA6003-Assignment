@@ -1,1 +1,0 @@
-The three main experimental arms against the preparation blocks (blue = every step of the block is on) and the width of the Tier-1 design matrix. Source: results/S6/arm_table.csv, step_catalogue.csv and metrics_S6.json; all 19 arms and 15 steps are in figures/S6_arm_matrix.png.

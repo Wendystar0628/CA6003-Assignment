@@ -471,7 +471,7 @@ plt.show(); print("saved", f_age)
 # Decisions of this section (`governance/register/S1.csv`, with self-check verdicts) and the stored results (`results/metrics_S1.json`, `results/S1/`).
 
 # %%
-# Check the decision-register fragment for this section and store its numbers for later sections and slides.
+# Check the decision-register fragment for this section and store its numbers for later sections and the video.
 # Reads governance/register/S1.csv; writes results/metrics_S1.json and two small tables under results/S1.
 reg_path = GOV / "register" / "S1.csv"
 reg = pd.read_csv(reg_path)

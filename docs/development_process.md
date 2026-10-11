@@ -1177,7 +1177,7 @@ S10 的 claims、`numbers_on_slides.csv`；`notebooks/` 中各阶段 notebook、
    | 6 分 00 秒–8 分 30 秒 | 治疗掩盖 30.5%；未诊断风险差（标"exploratory"）与 68% 做过血糖检查；3×3 标签矩阵；Asian BMI 0.573 vs WHtR 0.714 |
    | 8 分 30 秒–10 分 15 秒 | 算法选择页（spline-LR + 浅树，据 S4 诊断，15 s）；M1 vs S 配对森林图（30 s）；E-ALL vs E-SCREEN（25 s）；DB516 15.79 vs 15.8、permutation≈0.5、ADA-lite（30 s） |
    | 10 分 15 秒–11 分 20 秒 | ML 告诉了数据什么；贡献页；limitation 与 ethics；GenAI 一句 |
-9. **幻灯片规则**：一页一图；标题为简短概括（≤6 词，不用句子），结论写在图下一行；字号 ≥18 pt；直接标注、CI 可见；Okabe–Ito 色盘；页脚写 n、是否加权、来源节号；图由 notebook 同一代码导出；每页数字均在 `numbers_on_slides.csv`。
+9. **画面规则（已更新：不使用幻灯片）**：讲解不用幻灯片，视频由后续单独制作；画面中出现的图直接取自 notebook，出现的数字均须在 `numbers_on_slides.csv`（文件名沿用）中且通过 §10.11 的 assert。原幻灯片目录 `slides/` 已删除。
 10. **录制**：尽早向讲师确认拼接多段录制是否算"single continuous video"。获准则可分段录制后硬切拼接；否则改用一次连续录制（Zoom 小组录制，共享屏幕，全员在画面），录制开始前定案。YouTube：Public；标题与描述含组号；处理完成、时长 ≤12 分钟；隐身窗口及另一设备验证；无版权音乐。
 11. **排练 L6**：冻结 5 之后做排练 1 与排练 2；连续两次总长 11 分 00 秒–11 分 40 秒 且每段在预算 ±10% 内。砍内容顺序：Asian 标准化页缩至 15 s → 68% 注释 → ADA-lite → 治理细节；不可砍：泄漏闸门、偏度、M1 vs S、标签偏差、贡献页。
 12. **Rubric 追溯矩阵**（`rubric_matrix.md`，每格指向 notebook 节与视频时间戳）：
@@ -1214,7 +1214,7 @@ S10 的 claims、`numbers_on_slides.csv`；`notebooks/` 中各阶段 notebook、
 1. `feat(S11): assemble final notebook from notebooks/ with inlined helpers` — 按 §0–§14 装配，helpers 与 spec 内联到 §4 Setup，共享对象名固定
 2. `feat(S11): add NB_MODE switch, FINAL_REF asserts and prereg hash cell` — FAST/FINAL 模式、`FINAL_REF` 容差 assert、§8 的 `hypotheses.md` SHA-256 与时间戳单元
 3. `docs(S11): add contribution table, GenAI declaration and rubric matrix` — §0 贡献表与 GenAI 声明模板、`rubric_matrix.md`（RB1–RB4、HR1–HR8）
-4. `docs(S11): add storyboard with timing and slide deck` — `storyboard.md`（含计时，目标 11 分 20 秒）与幻灯片，图由 notebook 同一代码导出
+4. ~~`docs(S11): add storyboard with timing and slide deck`~~ — 已取消：讲解不用幻灯片，视频后续单独制作
 5. `chore(S11): freeze content after clean-room pass` + tag `content-freeze` — 全新环境 / 全新 clone Restart & Run All 通过，`requirements.txt`、`runtime_log.md`，FINAL 输出已保存
 6. `docs(S11): record video link and final runtime log` — 成片与 YouTube 链接写入 §0（只改 markdown），`runtime_log.md` 终稿
 

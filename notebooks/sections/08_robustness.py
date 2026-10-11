@@ -1537,7 +1537,7 @@ else:
 
 # %% [markdown]
 # ## 12 Outputs
-# **Why.** §10 and the slides read every number from stored artefacts: `results/metrics_S9.json`, the tables in
+# **Why.** §10 and the video read every number from stored artefacts: `results/metrics_S9.json`, the tables in
 # `results/S9/`, the F9 figures and the §9 decision-register fragment (written from the FINAL run, listed below).
 
 # %%

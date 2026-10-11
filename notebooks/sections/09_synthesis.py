@@ -2,7 +2,7 @@
 # # §10 Synthesis and Interpretation
 #
 # This section turns the numbers of §1–§9 into **claims** with an honest strength, scope and falsifier. Nothing is
-# re-estimated: every value is read from the stored results (`results/metrics_S*.json`, `results/S*/`), and every slide
+# re-estimated: every value is read from the stored results (`results/metrics_S*.json`, `results/S*/`), and every video
 # number is re-read and asserted in §10.11. The models are treated as **measuring instruments** – a leak detector, a
 # coefficient-stability meter, a label-bias meter, a negative control – so the question is "what did the models reveal
 # about the data?", not "how good is the model?".
@@ -53,7 +53,7 @@ print(f"mode {C.NB_MODE}; this section re-estimates nothing – it reads stored 
 #
 # The helper `get("S7:headline.leak_gate_T1_eall.est")` resolves a *source key* – section, then a dotted path
 # into that section's metrics file; `name[k=v&k2=v2]` picks the one record of a list that matches. The same
-# keys are written next to every slide number in §10.11, so each number can be traced to its origin.
+# keys are written next to every video number in §10.11, so each number can be traced to its origin.
 
 # %%
 # Load the stored metrics of §1–§9 and define the `get` source-key helper used for every number below.
@@ -1267,9 +1267,9 @@ REC.to_csv(OUT / "recommendations.csv", index=False)
 # screening tool. Each recommendation follows from a measured effect.
 
 # %% [markdown]
-# ## 11 Numbers on slides
-# **Why.** Every number the video shows must come from a stored result. `results/S10/numbers_on_slides.csv` lists slide,
-# label, value and source key; after all sections are merged into `results/final_metrics.json`, every value is re-read
+# ## 11 Numbers quoted in the video
+# **Why.** Every number the video shows must come from a stored result. `results/S10/numbers_on_slides.csv` (file name kept) lists
+# video segment, label, value and source key; after all sections are merged into `results/final_metrics.json`, every value is re-read
 # and asserted, and key values are recomputed independently.
 
 # %%
@@ -1388,7 +1388,7 @@ NUM += [("V8", "hypotheses supported", "S10:verdict_counts.supported", "{:.0f}")
 # **Storage before the audit.** The §10 results are saved first, so that `collect()` can include them.
 
 # %%
-# Save the §10 results first, then resolve every slide number from the merged final_metrics.json.
+# Save the §10 results first, then resolve every video number from the merged final_metrics.json.
 # Writes results/metrics_S10.json, results/final_metrics.json and results/S10/numbers_on_slides.csv.
 S10["verdict_counts"] = {v: int(VCOUNT.get(v, 0)) for v in C.VERDICTS}
 S10["verdict_counts_prereg_none"] = {v: int(VCOUNT_PRE.get(v, 0)) for v in C.VERDICTS}
@@ -1405,7 +1405,7 @@ FM = R.collect()
 print(f"final_metrics.json: sections {list(FM)}")
 
 rows_ = []
-# `value` is the formatted string shown on the slide; `value_raw` keeps full precision for the audit below.
+# `value` is the formatted string quoted in the video; `value_raw` keeps full precision for the audit below.
 for slide, label, key, fmt in NUM:
     v = get(key, FM)
     rows_.append(dict(slide_id=slide, label=label, value=fmt.format(float(v)), value_raw=float(v), source_key=key))
@@ -1420,7 +1420,7 @@ print(NOS.groupby("slide_id").size().to_dict())
 # values are recomputed independently of the metrics files.
 
 # %%
-# Audit every slide number: re-read from disk, re-resolve the source key, then recompute key values
+# Audit every video number: re-read from disk, re-resolve the source key, then recompute key values
 # independently.
 # Reads final_metrics.json, numbers_on_slides.csv, out-of-fold predictions and stored result tables;
 # asserts equality.
@@ -1484,7 +1484,7 @@ if HO_OK:
                ("hold-out gap E-ALL minus E-SCREEN (arm S)",
                 float(ho_m.loc[("S", 1, "E-ALL"), "roc_auc"] - ho_m.loc[("S", 1, "E-SCREEN"), "roc_auc"]), 1e-4),
                ("hold-out S - ADA-lite E-SCREEN", float(ho_pairs.loc[("S T1 - BL-ADAlite T1", "E-SCREEN"), "est"]), 1e-5)]   # metrics store 5 decimals
-# A deviation beyond tolerance means a slide number no longer matches its independent recomputation.
+# A deviation beyond tolerance means a video number no longer matches its independent recomputation.
 for lab, val, tol in RECOMP:
     assert abs(nv[lab] - val) <= tol, (lab, nv[lab], val)
 print(f"{len(RECOMP)} slide numbers recomputed independently (OOF predictions, recode audit, label strata): all within tolerance")
@@ -1492,7 +1492,7 @@ for lab, val, _ in RECOMP:
     print(f"   {lab:<42} slide {nv[lab]:.4f}   recomputed {val:.4f}")
 
 # %% [markdown]
-# **So what.** Every slide number is traceable to a source key and has passed the assert, and the headline AUCs and counts
+# **So what.** Every number quoted in the video is traceable to a source key and has passed the assert, and the headline AUCs and counts
 # agree with an independent recomputation. If an upstream section changes a number, this cell – not a viewer – notices.
 
 # %% [markdown]

@@ -1312,7 +1312,7 @@ S7["postlock_m1_sensitivity"] = dict(note="POST-LOCK sensitivity, not pre-regist
 
 # %% [markdown]
 # ## 13 Outputs
-# **Why.** §8 and §9 re-use the out-of-fold predictions instead of refitting, and every slide number must come from
+# **Why.** §8 and §9 re-use the out-of-fold predictions instead of refitting, and every number quoted in the video must come from
 # stored artefacts: `results/oof_predictions.parquet`, `results/S7/*.csv`, `results/metrics_S7.json` and the §7
 # decision-register fragment (`governance/register/S7.csv`, listed below).
 
@@ -1348,7 +1348,7 @@ comp = pd.DataFrame(COMP)
 comp.to_csv(OUT / "comparisons.csv", index=False)
 S7["arm_metrics"] = arm_metrics.round(5).to_dict("records")
 S7["comparisons_n"] = len(comp)
-# Headline numbers for the slides, taken from stored artefacts rather than typed by hand.
+# Headline numbers for the video, taken from stored artefacts rather than typed by hand.
 S7["headline"] = {
     "auc_M0_eall_T1": float(arm_metrics.query("arm=='M0' and tier==1 and model=='lr'")["eall_auc"].iloc[0]),
     "auc_M1_eall_T1": float(arm_metrics.query("arm=='M1' and tier==1 and model=='lr'")["eall_auc"].iloc[0]),

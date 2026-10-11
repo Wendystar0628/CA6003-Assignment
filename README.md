@@ -42,7 +42,6 @@ A data-centric study of adult diabetes identification using **NHANES Aug 2021 â€
 | `governance/` | decision register fragments, hypotheses (locked), claims ledger, limitations, DUA checklist, datasheet, GenAI log |
 | `results/` | per-section metrics (`metrics_S*.json`), tables, splits, out-of-fold predictions, `final_metrics.json` |
 | `figures/` | all figures with captions |
-| `slides/` | 12-minute storyboard, Marp deck, number check |
 | `data/nhanes_2021_2023/` | unmodified CDC files (`raw/`), codebooks, `MANIFEST.sha256` |
 | `tools/` | section runner, release builder, repository hygiene check |
 

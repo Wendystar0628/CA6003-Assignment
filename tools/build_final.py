@@ -8,7 +8,7 @@
     .venv/Scripts/python tools/build_final.py --fill-team NOTEBOOK       # team cells from notebooks/final/team.json
 
 What it does
-  1. Front matter: title (shared with the slides), executive Summary (numbers read from
+  1. Front matter: title (shared with the video), executive Summary (numbers read from
      results/final_metrics.json and re-asserted in A.5), brief-requirement checklist with § links,
      group / members / video and contribution table ([TEAM TO FILL] entries from team.json), short
      GenAI declaration, reading guide with the marker's path, run mode and runtime, contents.
@@ -448,7 +448,7 @@ def section_number(cells: list, path: Path) -> tuple[int, str]:
 
 
 # ----------------------------------------------------------------------------- front matter
-# One title for the notebook and the video slides.
+# One title for the notebook and the video.
 TITLE = "Who Gets Labelled Diabetic? Basic Models as Instruments on NHANES 2021–2023"
 
 # Team entries. Everything the team still has to complete carries the marker FILL; `--validate-only` lists what is left.

@@ -1130,7 +1130,7 @@ S8["substantive_gaps"] = {"E-ALL": sub_eall[["attribute", "group", "eod", "eod_l
 # %% [markdown]
 # ## 14 Outputs
 # **Why.** Every decision goes into the §8 decision register with evidence computed above (no value typed by hand), and
-# every number into `results/metrics_S8.json` and `results/S8/`, from which §10 and the slides read.
+# every number into `results/metrics_S8.json` and `results/S8/`, from which §10 and the video read.
 
 # %%
 # Build the §8 decision register: every evidence_value is an f-string over variables computed above.

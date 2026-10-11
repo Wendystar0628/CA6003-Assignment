@@ -24,7 +24,6 @@ governance/                     register/<S>.csv fragments, hypotheses.md, claim
 results/                        metrics_<S>.json, tables (csv/parquet), splits
 figures/                        <S>_<name>.png (+ .txt caption)
 tools/                          run_section.py, check_repo.py, build_final.py (S11)
-slides/                         storyboard and slide assets (S11)
 ```
 
 ## 2. Section notebooks

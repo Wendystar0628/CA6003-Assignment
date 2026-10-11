@@ -1,1 +1,0 @@
-Reduced causal graph for race and diabetes (subgraph of the 15-node graph in notebook section 4.8; grey = latent, orange = measured). Back-door adjustment set {Age, Sex} is valid; adding measured BMI is not, because BMI lies on the race-adiposity-BMI path. Source: results/S4/dag_adjustment_sets.csv.
