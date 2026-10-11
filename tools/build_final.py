@@ -849,6 +849,20 @@ def section_runtimes(nb) -> dict[str, float]:
     return out
 
 
+def slowest_cells(nb, k: int = 12) -> list[str]:
+    """The k slowest code cells (seconds, section tag, first source line) - for runtime tuning."""
+    rows = []
+    for i, c in enumerate(nb.cells):
+        ex = c.metadata.get("execution") or {} if c.cell_type == "code" else {}
+        a, b = ex.get("iopub.execute_input") or ex.get("shell.execute_reply.started"), ex.get("shell.execute_reply")
+        if a and b:
+            dt = (datetime.fromisoformat(b.replace("Z", "+00:00")) - datetime.fromisoformat(a.replace("Z", "+00:00"))).total_seconds()
+            tag = next((t for t in c.metadata.get("tags", []) if t.startswith("sec-") or t == "appendix"), "other")
+            first = next((ln for ln in c.source.split("\n") if ln.strip() and not ln.startswith("#")), "")[:70]
+            rows.append((dt, i, tag, first))
+    return [f"   {dt:7.1f} s  cell {i:4d} {tag:<8} {first}" for dt, i, tag, first in sorted(rows, reverse=True)[:k]]
+
+
 def finish_runtime_cell(nb, mode: str, runtimes: dict[str, float], total: float) -> str:
     def fmt(s):
         return f"{int(s // 60)} min {s % 60:02.0f} s" if s >= 60 else f"{s:.0f} s"
@@ -972,6 +986,8 @@ def main() -> int:
             wall = execute(nb, args.mode, workdir, args.timeout, args.download)
         except Exception as e:  # noqa: BLE001
             failed = out.with_suffix(".failed.ipynb")
+            failed.parent.mkdir(parents=True, exist_ok=True)
+            print("slowest cells so far:\n" + "\n".join(slowest_cells(nb)))
             scrub_outputs(nb)
             nbformat.write(nb, failed)
             print(f"FAIL execution: {type(e).__name__}: {str(e)[:3000]}\npartial notebook: {failed}")
@@ -979,6 +995,7 @@ def main() -> int:
         executed = True
         n_scr = scrub_outputs(nb)
         runtimes = section_runtimes(nb)
+        slow = slowest_cells(nb)
         finish_runtime_cell(nb, args.mode, runtimes, wall)
         for c in nb.cells:
             c.metadata.pop("execution", None)
@@ -986,6 +1003,8 @@ def main() -> int:
         print(f"executed in {wall:.0f} s ({args.mode}); scrubbed {n_scr} absolute-path strings from outputs")
         for k, v in runtimes.items():
             print(f"   {k:<10} {v:7.1f} s")
+        print("slowest cells:")
+        print("\n".join(slow))
         if not args.keep_workdir and not args.workdir:
             shutil.rmtree(workdir, ignore_errors=True)
         if not args.no_runtime_log and out.parent == FINAL_DIR:
