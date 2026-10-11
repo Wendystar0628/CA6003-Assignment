@@ -73,10 +73,10 @@
     "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
     "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
   },
-  "notebook_sha256": "bcfe638fef3258c77d5e31d9b23eeebed65e3d77b9485014859783406f3e5ad2 (file as stored with LF line endings)",
+  "notebook_sha256": "8e291d31398cc8d1a994c6df46fcaa6bbd0edb19519b5559b3403831d713619c (file as stored in git, LF line endings)",
   "documentation_update": {
     "date": "2026-10-12",
-    "base_commit": "004bdb4",
+    "base_commit": "c92f0df",
     "scope": "Team entries (A-D), concise GenAI declaration, summary wording (165 on medication), embedded governance README and GenAI log; no re-execution",
     "evidence_checks_passed": 28,
     "original_code_cell_sha256": "bf4b20ceea95c0f011e5880e62f99bc265e8d9fea247bb7501df90e198b63040",
