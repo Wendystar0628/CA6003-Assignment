@@ -6,7 +6,7 @@
 | `deck.md` | Marp slide deck (16:9) that implements the storyboard; one figure per slide, notes in HTML comments |
 | `check_numbers.py` | Verifies every number (titles, captions, notes and footers) in both files against `results/S10/numbers_on_slides.csv` and the sample sizes in `results/metrics_S4.json` / `metrics_S7.json`; checks that footer section marks exist as notebook headings |
 | `make_slide_figures.py` | Draws the slide versions in `slides/figures/` (14 pt or larger, 200 dpi, Okabe-Ito palette) from stored results only; no refitting. Run `.venv/Scripts/python slides/make_slide_figures.py` after any change to `results/` |
-| `figures/` | Slide versions of nine notebook figures plus a one-line caption `.txt` for each |
+| `figures/` | Nine slide figures (eight redrawn notebook figures and the governance panel) plus a one-line caption `.txt` for each |
 
 Presenter assignment is decided by the team and is not planned in these files.
 
@@ -25,7 +25,7 @@ npx @marp-team/marp-cli slides/deck.md --pptx --allow-local-files -o slides/deck
 npx @marp-team/marp-cli slides/deck.md --images png --allow-local-files -o slides/png/s.png
 ```
 
-`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (27 slides, 24 figures).
+`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (27 slides, 23 figures).
 
 **Number check** (run before every rehearsal and after any change to results):
 
