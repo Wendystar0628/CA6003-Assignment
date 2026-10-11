@@ -488,6 +488,8 @@ def load_team() -> dict:
             if str(v).strip():
                 team["section_leads"][str(n)] = str(v).strip()
         team["collaboration"] = [str(x).strip() for x in user.get("collaboration") or [] if str(x).strip()]
+        team["verification_note"] = str(user.get("verification_note", "")).strip()
+        team["genai_workflow"] = [str(x).strip() for x in user.get("genai_workflow") or [] if str(x).strip()]
     return team
 
 
@@ -519,25 +521,31 @@ def group_md(team: dict) -> str:
 
 def contribution_md(team: dict) -> str:
     return ("## Contribution table\n\n"
-            "Who led which sections, which decisions in the register (Appendix A.1, ids `DR-Sk-nn`) each member authored, "
-            "which video segment each member presents and what each member re-ran and verified. Every § heading also names "
-            "its lead.\n\n"
+            "Sections each member led and reviewed, the decisions in the register they are responsible for (Appendix A.1, "
+            "ids `DR-Sk-nn`), their video segment and the evidence they checked. Every § heading also names its lead.\n\n"
             + team_table([[m["name"], m["sections_led"], m["decisions"], m["video_segment"], m["verified"]] for m in team["members"]],
-                         ["Member", "Sections led", "Decisions authored", "Video segment", "Verified"])
+                         ["Member", "Sections led (reviewed)", "Decisions", "Video segment", "Verified"])
+            + ("\n\n" + team["verification_note"] if team.get("verification_note") else "")
             + ("\n\n**How the work was shared.**\n\n" + "\n".join(f"- {x}" for x in team["collaboration"])
                if team.get("collaboration") else ""))
 
 
 def genai_md(team: dict) -> str:
     lines = "\n".join(f"- {em(m['name'])} verified {em(m['genai_verified'])}" for m in team["members"])
+    workflow = ("\n\n" + " ".join(team["genai_workflow"])) if team.get("genai_workflow") else ""
     return ("## Generative-AI declaration\n\n"
             "No LLM or other complex model is part of the analysis pipeline; generative AI was a development aid only.\n\n"
             + md_table([["Claude (Anthropic): Opus and Sonnet models, chat and command line",
-                         "Planning the analysis, drafting code and text, reviewing statistics and consistency",
+                         "Drafting the analysis design, code and text; reviewing statistics and consistency",
                          "Every number is recomputed from the raw NHANES files by the code in this notebook and asserted; "
                          "independent re-implementation audits of key results; external replication of NCHS Data Brief 516 "
-                         "(@@H:4/External anchor@@, @@H:9/External validity@@); full change history in git"]],
+                         "(@@H:4/External anchor@@, @@H:9/External validity@@); full change history in git"],
+                        ["Codex (OpenAI), 12 October 2026",
+                         "Revising the team records; 28 automated evidence checks",
+                         "Each check compares a raw-data recomputation or a stored result with its source "
+                         "(`governance/team_verification.json`)"]],
                        ["Tool", "Purpose", "How verified"])
+            + workflow
             + "\n\nNo participant-level record was entered into any prompt. Each member's own check:\n\n" + lines
             + "\n\nDated log with tool versions and the data shared: @@A:A.7 Generative-AI use log~Appendix A.7@@.")
 
@@ -592,7 +600,7 @@ def summary_md() -> tuple[str, int]:
         f"valid cells, including HbA1c 7.0 % and 9.0 %, losing {n('S3', 'blanket_recode.a1c_positives_lost')} of "
         f"{n('S3', 'blanket_recode.a1c_positives')} HbA1c-positive adults.\n"
         f"3. **Label and measurement bias.** {n('S5', 'masking.below_6_5')} of {n('S5', 'masking.self_reported')} self-reported "
-        f"diabetics ({pct('S5', 'masking.below_6_5_share')} %) have HbA1c below 6.5 % (treatment masking); uninsured adults with high "
+        f"diabetics ({pct('S5', 'masking.below_6_5_share')} %) have HbA1c below 6.5 % ({n('S5', 'masking.below_6_5_on_med')} on medication); uninsured adults with high "
         f"HbA1c are {float(g('S5', rd + '.rd_pp')):+.1f} pp ({float(g('S5', rd + '.ci_low_pp')):.1f} to "
         f"{float(g('S5', rd + '.ci_high_pp')):.1f}) more often undiagnosed.\n\n"
         f"**Minimal vs systematic, same L2 logistic regression:** ΔAUC {a('S7', 'headline.S_minus_M1_T1_eall.est', True)} "

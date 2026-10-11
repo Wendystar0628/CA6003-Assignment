@@ -4,7 +4,7 @@
   "source_commit": "200c32c",
   "built_utc": "2026-10-11T10:42:59+00:00",
   "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same commit",
-  "code_cell_sha256": "bf4b20ceea95c0f011e5880e62f99bc265e8d9fea247bb7501df90e198b63040",
+  "code_cell_sha256": "041a30b32d042cc7e94387fb6d985b7cb3f7590eee3ccf634b72d47272d866c3",
   "runs": {
     "FAST": {
       "runtime_seconds": 324.0,
@@ -58,20 +58,41 @@
   "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
   "front_matter_words": {
     "title": 89,
-    "summary": 248,
+    "summary": 249,
     "checklist": 127,
-    "group": 149,
-    "contrib": 154,
-    "genai": 154,
+    "group": 161,
+    "contrib": 350,
+    "genai": 258,
     "guide": 365,
     "runmode": 250
   },
   "main_body_markdown_words": 17934,
-  "team_placeholders_left": 15,
+  "team_placeholders_left": 12,
   "outputs_carried_over": {
     "from_release": "89bb9e1",
     "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
     "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
   },
-  "notebook_sha256": "25e501a4127293182319f7f34c1b1b5161be2d010e757426dec3211d076fdd8f (file as stored in git, LF line endings)"
+  "notebook_sha256": "bcfe638fef3258c77d5e31d9b23eeebed65e3d77b9485014859783406f3e5ad2 (file as stored with LF line endings)",
+  "documentation_update": {
+    "date": "2026-10-12",
+    "base_commit": "004bdb4",
+    "scope": "Team entries (A-D), concise GenAI declaration, summary wording (165 on medication), embedded governance README and GenAI log; no re-execution",
+    "evidence_checks_passed": 28,
+    "original_code_cell_sha256": "bf4b20ceea95c0f011e5880e62f99bc265e8d9fea247bb7501df90e198b63040",
+    "current_code_cell_sha256": "041a30b32d042cc7e94387fb6d985b7cb3f7590eee3ccf634b72d47272d866c3",
+    "changed_code_cells": {
+      "27": "governance/README.md",
+      "34": "governance/genai_log.csv"
+    },
+    "changed_output_cells": [
+      70,
+      499
+    ],
+    "analytical_code_unchanged": true,
+    "numerical_analysis_outputs_unchanged": true,
+    "execution_counts_unchanged": true,
+    "genai_log_entries": 7,
+    "member_acknowledgement": "pending: [TEAM TO FILL] entries remain until each member confirms their own checks"
+  }
 }

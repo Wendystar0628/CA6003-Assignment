@@ -68,6 +68,10 @@ The execution directory holds only the notebook-created workspace, so anything a
 * `CA6003_NHANES_Diabetes.ipynb` – the assembled notebook (stored outputs from a FINAL execution of a clean `git archive` export).
 * `build_record.json` – how the committed notebook was produced: source commit, mode of the stored outputs, FAST and FINAL runtimes per section, code-cell SHA-256 (S12 markdown-only check), file SHA-256, validation and FINAL_REF results.
 * `final_ref.json` – reference values (`REF_SPECS` in the builder, including the numbers quoted in the Summary) for the appendix check; regenerate with `--make-final-ref` after the FINAL run.
-* `team.json` – team entries (group number, video link, members, contributions, GenAI verification lines, section leads); placeholders until the team fills them.
+* `team.json` – group number, video link, A-D responsibilities, evidence-linked verification records, role-specific AI use, shared human-AI workflow and section leads. Group/matric/video entries remain to be supplied; members confirm their individual participation.
 * `runtime_log.md` – one line per executed build.
 * `README.md` – this file.
+
+## Team-record update (12 October 2026)
+
+Team entries, the governance README and the GenAI log (seven entries) were updated without re-running the analysis: the embedded copies of the two governance files and the two printed log counts (§0, §10) were synchronised; all analytical code and numerical outputs are unchanged (see `build_record.json`). `governance/team_verification.json` holds 28 automated evidence checks; each member still confirms their own checks.

@@ -11,6 +11,7 @@ This folder holds the audit trail of the project: what was decided, why, with wh
 | `claims.csv` | Final claims with evidence grade, robustness and falsifier | S10 | synthesis |
 | `genai_log.csv` | GenAI declaration (HR5): tool and version, purpose, data shared, where the output is used, how a human verified it | all | append-only |
 | `devlog.md` | One entry per working session: what was done, commits, next steps | all | append-only |
+| `team_verification.json` | Evidence checks assigned to A-D, with actual/expected values, sources and tolerances. Raw-data spot recomputations and stored-result checks; individual human acknowledgement is separate | A-D | documentation evidence check |
 
 ## Conventions
 

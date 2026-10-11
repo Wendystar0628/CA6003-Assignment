@@ -5,4 +5,4 @@ Protected attributes,"race is an audit variable, never a model feature (only as 
 Access variables,insurance and usual place of care kept out of models: trained on self-report they would encode access to diagnosis (no usual place -0.203 per SD),§8 access-proxy audit
 Not a clinical tool,E-SCREEN PR-AUC 0.091 at prevalence 0.032; without class weights the E-SCREEN calibration intercept is -1.78 and slope 0.69,§7 arm metrics
 Fairness is not certified,gap metrics with CIs and permutation nulls describe disparities; they cannot certify a model as fair,"§8 EOD, calibration by race"
-GenAI transparency,6 logged uses of AI assistants; no participant-level data shared; every number recomputed in this notebook,governance/genai_log.csv; front-matter declaration
+GenAI transparency,7 logged uses of AI assistants; no participant-level data shared; every number recomputed in this notebook,governance/genai_log.csv; front-matter declaration

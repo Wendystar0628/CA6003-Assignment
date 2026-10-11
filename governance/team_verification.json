@@ -1,0 +1,289 @@
+{
+  "checked_on": "2026-10-12",
+  "scope": "Raw-data spot recomputations and cross-checks against existing FINAL artefacts; no new model fitting or holdout evaluation.",
+  "member_status": "Checks are assigned to A-D for the contribution record; individual human acknowledgement remains pending.",
+  "checks": [
+    {
+      "member": "A",
+      "item": "Raw-file hashes matched",
+      "actual": 16.0,
+      "expected": 16.0,
+      "tolerance": 0,
+      "source": "data/nhanes_2021_2023/MANIFEST.sha256",
+      "verdict": "PASS"
+    },
+    {
+      "member": "A",
+      "item": "Analytic cohort",
+      "actual": 5730.0,
+      "expected": 5730.0,
+      "tolerance": 0,
+      "source": "results/metrics_S1.json:n_cohort",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "L_self positives",
+      "actual": 819.0,
+      "expected": 819.0,
+      "tolerance": 0,
+      "source": "results/metrics_S5.json:labels.positives.L_self",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "L_A1c positives",
+      "actual": 721.0,
+      "expected": 721.0,
+      "tolerance": 0,
+      "source": "results/metrics_S5.json:labels.positives.L_A1c",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "L_comb positives",
+      "actual": 971.0,
+      "expected": 971.0,
+      "tolerance": 0,
+      "source": "results/metrics_S5.json:labels.positives.L_comb",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "Unweighted kappa from raw-label cross-tab",
+      "actual": 0.698626308711977,
+      "expected": 0.6986263087119772,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S5.json:labels.agreement_unweighted.kappa",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "Self-reported diabetes below HbA1c threshold",
+      "actual": 250.0,
+      "expected": 250.0,
+      "tolerance": 0,
+      "source": "results/metrics_S5.json:masking.below_6_5",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "Below-threshold share",
+      "actual": 0.3052503052503053,
+      "expected": 0.3052503052503053,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S5.json:masking.below_6_5_share",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "Below-threshold patients taking medication",
+      "actual": 165.0,
+      "expected": 165.0,
+      "tolerance": 0,
+      "source": "results/metrics_S5.json:masking.below_6_5_on_med",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "Uninsured-minus-insured weighted undiagnosed RD (pp)",
+      "actual": 23.157835907921925,
+      "expected": 23.157835907921932,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S5.json:undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp",
+      "verdict": "PASS"
+    },
+    {
+      "member": "A",
+      "item": "NCHS-comparison fasting population",
+      "actual": 2938.0,
+      "expected": 2938.0,
+      "tolerance": 0,
+      "source": "results/metrics_S4.json:db516.n",
+      "verdict": "PASS"
+    },
+    {
+      "member": "A",
+      "item": "NCHS-comparison diagnosed (%)",
+      "actual": 11.299656829208393,
+      "expected": 11.299656829208393,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S4.json:db516.diagnosed",
+      "verdict": "PASS"
+    },
+    {
+      "member": "A",
+      "item": "NCHS-comparison undiagnosed (%)",
+      "actual": 4.487254119964224,
+      "expected": 4.487254119964224,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S4.json:db516.undiagnosed",
+      "verdict": "PASS"
+    },
+    {
+      "member": "A",
+      "item": "NCHS-comparison total (%)",
+      "actual": 15.786910949172617,
+      "expected": 15.786910949172617,
+      "tolerance": 1e-09,
+      "source": "results/metrics_S4.json:db516.total",
+      "verdict": "PASS"
+    },
+    {
+      "member": "B",
+      "item": "Valid continuous cells lost by blanket recoding",
+      "actual": 1496.0,
+      "expected": 1496.0,
+      "tolerance": 0,
+      "source": "results/metrics_S3.json:blanket_recode.valid_cells_destroyed_cohort",
+      "verdict": "PASS"
+    },
+    {
+      "member": "B",
+      "item": "HbA1c positives above IQR fence",
+      "actual": 519.0,
+      "expected": 519.0,
+      "tolerance": 0,
+      "source": "results/metrics_S3.json:outliers.a1c_iqr_flagged_positive",
+      "verdict": "PASS"
+    },
+    {
+      "member": "B",
+      "item": "Zero-artefact audited cells",
+      "actual": 13676.0,
+      "expected": 13676.0,
+      "tolerance": 0,
+      "source": "results/metrics_S3.json:xpt_artefact.per_file",
+      "verdict": "PASS"
+    },
+    {
+      "member": "B",
+      "item": "Disabled preprocessing reproduces naive pipeline (T1 maximum error)",
+      "actual": 8.881784197001252e-16,
+      "expected": 0.0,
+      "tolerance": 1e-12,
+      "source": "results/metrics_S6.json:assertions.m0_equiv_T1_maxabs",
+      "verdict": "PASS"
+    },
+    {
+      "member": "C",
+      "item": "WHtR fairness difference CI includes zero",
+      "actual": 1.0,
+      "expected": 1.0,
+      "tolerance": 0,
+      "source": "results/metrics_S8.json:whtr.table",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Original holdout log executions",
+      "actual": 1.0,
+      "expected": 1.0,
+      "tolerance": 0,
+      "source": "results/S9/holdout_log.json:n_executions",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "FINAL reproduction log executions",
+      "actual": 2.0,
+      "expected": 2.0,
+      "tolerance": 0,
+      "source": "results/metrics_S9.json:holdout.log.n_executions",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Holdout size",
+      "actual": 1146.0,
+      "expected": 1146.0,
+      "tolerance": 0,
+      "source": "results/S9/holdout_log.json:n_test",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Holdout S T1 E-ALL AUC",
+      "actual": 0.8511002339079962,
+      "expected": 0.8511,
+      "tolerance": 1e-05,
+      "source": "results/S9/holdout_metrics.csv",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Holdout S T1 E-SCREEN AUC",
+      "actual": 0.7907563025210084,
+      "expected": 0.79076,
+      "tolerance": 1e-05,
+      "source": "results/S9/holdout_metrics.csv",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Holdout screening positives",
+      "actual": 25.0,
+      "expected": 25.0,
+      "tolerance": 0,
+      "source": "results/S9/holdout_metrics.csv",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Claims count",
+      "actual": 26.0,
+      "expected": 26.0,
+      "tolerance": 0,
+      "source": "governance/claims.csv",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "Limitations count",
+      "actual": 15.0,
+      "expected": 15.0,
+      "tolerance": 0,
+      "source": "governance/limitations.csv",
+      "verdict": "PASS"
+    },
+    {
+      "member": "D",
+      "item": "H2b paired AUC improvement",
+      "actual": 0.0079074599784025,
+      "expected": 0.00790745997840257,
+      "tolerance": 1e-09,
+      "source": "results/S7/scoreboard_detail.csv:H2b (a) AUC primary",
+      "verdict": "PASS"
+    }
+  ],
+  "holdout_note": "Original one-shot log: 1 execution; stored FINAL clean-room reproduction: 2 executions, with matching frozen C0, folds and holdout hashes.",
+  "run_evidence": {
+    "FAST": {
+      "runtime_seconds": 324.0,
+      "final_ref": "52 reference quantities reproduced within tolerance (FAST mode)",
+      "n_errors": 0
+    },
+    "FINAL": {
+      "runtime_seconds": 1545.0,
+      "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)",
+      "n_errors": 0
+    }
+  },
+  "sources_sha256": {
+    "data/nhanes_2021_2023/MANIFEST.sha256": "0cfc63062ea289c094197a2e68bac321b8ad5ab39a4a1adee2f2154da325e122",
+    "results/metrics_S1.json": "905ed860d11845a48edecc5e9fc42176051a4c33995c9228d9dece292fd28798",
+    "results/metrics_S3.json": "76f73fb89cbc2641ce459145cf0eb952abcc3cbeb26b09b062bfac23069c365e",
+    "results/metrics_S4.json": "41809751d5a9e7e197bff18578a2dd9283b62aa55d703298fde45e1782ef1457",
+    "results/metrics_S5.json": "ba013edf011e58007c1b675a40e163083ae9da7491b3a7b508069aa0defb652b",
+    "results/metrics_S6.json": "9a0c02479a50f8bd7eae2e67a0900f3a276ab271660375dbb6884382a17bfe0c",
+    "results/metrics_S7.json": "be7aacb7c28e5a7262190aa3567fdbe01de69e66fab299b79d124824c054b683",
+    "results/metrics_S8.json": "c13639ff30168ceed784f5e86dc51a262bcf6d07bd55846490f8e91b0047f635",
+    "results/metrics_S9.json": "19ffbf35d3e7b165988c95d75f0ada1edfec923e39ef8c45af97451ef3cbaefe",
+    "results/metrics_S10.json": "5908b3f322f6609bdbfdd21d74b0ccb6cd2a53ad0549f0db927a04fcc8516030",
+    "results/S9/holdout_log.json": "c56c48cf1e287ba8a9b186aec5cd9897efd115801f5386eaac6683baf1e4716b",
+    "results/S9/exp_freeze_record.json": "9ed7a00455d9981e0dc07b0395277fe73252c10cd81e922ff484c6ed2c027e9a",
+    "results/S6/prereg_lock.json": "a9614093c70e114bb48fbc0099357949f3b816f95385453a4ad8c24f80be1f51",
+    "governance/claims.csv": "8709423a8899c539602bd9d0185ae6ec15761686e63596393953fb1b0e43c08e",
+    "governance/limitations.csv": "86d6ebb2e25bd116bfbca8ae7cda8389337f675ecabfad0698c2b0e00699d8af"
+  }
+}
