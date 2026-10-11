@@ -122,6 +122,12 @@ def git(*args: str) -> str:
         return ""
 
 
+def source_commit() -> str:
+    """Commit the notebook is built from: the checkout's HEAD, or CA6003_SOURCE_COMMIT for a `git archive` export
+    (which has no .git); 'unknown' otherwise."""
+    return os.environ.get("CA6003_SOURCE_COMMIT") or git("rev-parse", "HEAD") or "unknown"
+
+
 def md(src: str, *, tags: list[str] | None = None):
     c = v4.new_markdown_cell(src.strip("\n"))
     if tags:
@@ -758,7 +764,7 @@ def appendix_cells(section_files: list[Path], section_sha: dict[str, str]) -> li
              code(SCOREBOARD_CODE),
              md("## A.4 References\n\n" + "\n".join(f"- {r}" for r in REFERENCES))]
     cells += refcheck_cells()
-    commit = git("rev-parse", "HEAD") or "unknown"
+    commit = source_commit()
     rows = [[f"notebooks/sections/{p.name}", section_sha[p.name][:16]] for p in section_files]
     rows += [[rel, sha256_text(read_text(rel))[:16]] for rel in SRC_FILES]
     cells.append(md("## A.6 Build record\n\n"

@@ -49,6 +49,7 @@ Never execute in the shared checkout. Build and run from a clean export:
 
 ```bash
 git archive HEAD | tar -x -C <tmp>/copy          # + copy the working-tree tools/build_final.py if it is not committed yet
+export CA6003_SOURCE_COMMIT=$(git rev-parse HEAD)   # the export has no .git; recorded in Appendix A.6
 cd <tmp>/copy && <repo>/.venv/Scripts/python tools/build_final.py --execute --workdir <tmp>/run
 ```
 
@@ -56,7 +57,8 @@ The execution directory holds only the notebook-created workspace, so anything a
 
 ## Files
 
-* `CA6003_NHANES_Diabetes.ipynb` – the assembled notebook (committed by the lead once executed with FINAL outputs).
+* `CA6003_NHANES_Diabetes.ipynb` – the assembled notebook (stored outputs from a FINAL execution of a clean `git archive` export).
+* `build_record.json` – how the committed notebook was produced: source commit, mode of the stored outputs, FAST and FINAL runtimes per section, code-cell SHA-256 (S12 markdown-only check), file SHA-256, validation and FINAL_REF results.
 * `final_ref.json` – reference values (`REF_SPECS` in the builder) for the appendix check; regenerate with `--make-final-ref` after the FINAL run.
 * `runtime_log.md` – one line per executed build.
 * `README.md` – this file.
