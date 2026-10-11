@@ -2,7 +2,7 @@ property,probe,reading,number,grade
 Skip-logic leakage,leak gate M0 → M1; depth-3 tree root,the naive model's high AUC is a questionnaire-design artefact,"AUC 0.961 → 0.828; ΔAUC -0.131 [-0.148, -0.114]; root DIQ070",E2
 Imputation artefact,M0 tree level-2 split,a tree learns an imputation constant as if it were biology,DID040 86% missing → 50; tree E-SCREEN AUC 0.633 vs 0.701,E1
 Blanket sentinel cleaning,per-variable vs blanket recode,cleaning itself destroys information and labels,"1,496 valid cells; 29/721 HbA1c positives; 6/971 L_comb flips",E1
-Structural redundancy,bootstrap SD of the BMI coefficient,"redundancy destabilises explanation, not prediction; L2 + scaling absorb most of it","SD ratio unscaled 2.87, inside scaled L2 1.36; ΔAUC B3 +0.0019",E3
+Structural redundancy,bootstrap SD of the BMI coefficient,"redundancy destabilises explanation, not prediction; L2 + scaling absorb most of it (ratios descriptive, post-audit)","SD ratio unscaled 2.87, inside scaled L2 1.36; ΔAUC B3 +0.0019",E3
 Spectrum / label composition,same predictions scored on E-ALL and E-SCREEN,whole-sample AUC measures recognition of known diabetes,"S 0.836 vs 0.781; gap +0.055 [+0.028, +0.086]",E2
 Care traces,T1-minus-care ablation on both populations,contact-with-care items help recognition and hinder screening,"E-ALL -0.016; E-SCREEN +0.019 [+0.004, +0.034]",E3
 Label is a measurement,3 × 3 label matrix; treatment masking,each label misses different people; no label lets these features find the undiagnosed,masking 250/819 (30.5%); recall Undiagnosed 0.50/0.56/0.52,E3

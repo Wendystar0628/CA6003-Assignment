@@ -3,9 +3,36 @@
     "section": "S10",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T10:10:07+00:00"
+    "written_utc": "2026-10-11T18:22:10+00:00"
   },
   "mode": "FINAL",
+  "subclaim_verdict_counts": {
+    "locked": {
+      "supported": 18,
+      "inconclusive": 5,
+      "refuted": 3
+    },
+    "post_audit": {
+      "supported": 18,
+      "inconclusive": 4,
+      "not testable (post-audit)": 2,
+      "refuted": 2
+    }
+  },
+  "withdrawn_subclaims": [
+    {
+      "hyp_id": "B3",
+      "sub": "(b) BMI SD ratio",
+      "locked_verdict": "refuted",
+      "status": "not testable with this design (post-audit)"
+    },
+    {
+      "hyp_id": "H2b",
+      "sub": "(c) BMI SD ratio",
+      "locked_verdict": "inconclusive",
+      "status": "not testable with this design (post-audit)"
+    }
+  ],
   "h2b": {
     "subs": {
       "(a) AUC": {
@@ -207,6 +234,30 @@
           "verdict_equivalence": "refuted"
         }
       ]
+    },
+    "sub_c_status": "not testable (post-audit)",
+    "sub_c_locked_verdict": "inconclusive",
+    "postaudit": {
+      "S_minus_M1c_eall": {
+        "est": 0.006772,
+        "lo": -0.000845,
+        "hi": 0.01439,
+        "verdict": "inconclusive"
+      },
+      "S_minus_M1c_escreen": {
+        "est": 0.004151,
+        "lo": -0.010895,
+        "hi": 0.018898,
+        "verdict": "inconclusive"
+      },
+      "S_minus_M1_nested_C": {
+        "est": 0.006297,
+        "lo": -0.000314,
+        "hi": 0.012909,
+        "verdict": "inconclusive"
+      },
+      "sd_ratio_converged_M1": 2.213332,
+      "sd_ratio_scaled_M1": 0.757515
     }
   },
   "headline": {
@@ -219,7 +270,7 @@
       "§8 TPR: diagnosed vs undiagnosed positives at the same threshold: 0.70 vs 0.52",
       "§8 3 × 3 matrix: Undiagnosed column lowest under every label: {'L_self': 'Undiagnosed', 'L_A1c': 'Undiagnosed', 'L_comb': 'Undiagnosed'}",
       "leakage also is recognition: the leak gate is smaller on E-SCREEN: -0.131 vs -0.072",
-      "hold-out, arm S: same direction and size (not separately testable, 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"
+      "internal hold-out check, arm S: same direction and size (not separately testable, 25 screening positives): E-ALL 0.851 vs E-SCREEN 0.791 (gap +0.060 vs +0.055 in CV)"
     ]
   },
   "findings": {
@@ -289,7 +340,8 @@
       "sub_verdicts": "",
       "prior_exposure": "analysis_seen",
       "source": "§5 (S5)",
-      "note": "uninsured share itself exploratory (Korn-Graubard width ≥ 0.30)"
+      "note": "uninsured share itself exploratory (Korn-Graubard width ≥ 0.30)",
+      "post_audit": ""
     },
     {
       "hyp_id": "H1b",
@@ -308,7 +360,8 @@
       "sub_verdicts": "",
       "prior_exposure": "analysis_seen",
       "source": "§4 (S4); verdict applied in §10",
-      "note": "crude +5.3 pp [+1.8, +8.8] -> age-standardised; attenuation, not reversal"
+      "note": "crude +5.3 pp [+1.8, +8.8] -> age-standardised; attenuation, not reversal",
+      "post_audit": ""
     },
     {
       "hyp_id": "H2a",
@@ -327,7 +380,8 @@
       "sub_verdicts": "AUC M0-M1: supported",
       "prior_exposure": "analysis_seen",
       "source": "§7 (S7)",
-      "note": "primary: M0 - M1, E-ALL, Tier 1"
+      "note": "primary: M0 - M1, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "H2b",
@@ -343,10 +397,11 @@
       "mdd": 0.01118,
       "underpowered": true,
       "verdict": "inconclusive",
-      "sub_verdicts": "(a) AUC: inconclusive; (b) Brier: refuted; (c) BMI SD ratio: inconclusive",
+      "sub_verdicts": "(a) AUC: inconclusive; (b) Brier: refuted; (c) BMI SD ratio: not testable (post-audit; locked rule: inconclusive)",
       "prior_exposure": "none",
       "source": "§7 (S7)",
-      "note": "primary: S - M1, E-ALL, Tier 1"
+      "note": "primary: S - M1, E-ALL, Tier 1",
+      "post_audit": "(c) BMI SD ratio not testable (post-audit); locked verdict inconclusive"
     },
     {
       "hyp_id": "H2c",
@@ -365,7 +420,8 @@
       "sub_verdicts": "(i) AUC E-ALL - E-SCREEN (S): supported; (ii) minus care, E-ALL: supported; (ii) minus care, E-SCREEN: inconclusive; (iii) S - ADA-lite, E-SCREEN: supported",
       "prior_exposure": "none",
       "source": "§7 (S7)",
-      "note": "primary: S - S, E-ALL minus E-SCREEN, Tier 1"
+      "note": "primary: S - S, E-ALL minus E-SCREEN, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "H3",
@@ -384,7 +440,8 @@
       "sub_verdicts": "E1: inconclusive; E2: inconclusive; E3: inconclusive",
       "prior_exposure": "none",
       "source": "§8 (S8)",
-      "note": "primary shown: E3 worst-cell gap L_comb − L_self; column-wise reading (see §10.3)"
+      "note": "primary shown: E3 worst-cell gap L_comb − L_self; column-wise reading (see §10.3)",
+      "post_audit": ""
     },
     {
       "hyp_id": "H4a",
@@ -403,7 +460,8 @@
       "sub_verdicts": "",
       "prior_exposure": "analysis_seen",
       "source": "§5 (S5)",
-      "note": "24/47 Asian vs 35/488 White diabetics with BMI < 25; Asian cell exploratory"
+      "note": "24/47 Asian vs 35/488 White diabetics with BMI < 25; Asian cell exploratory",
+      "post_audit": ""
     },
     {
       "hyp_id": "H4b",
@@ -422,7 +480,8 @@
       "sub_verdicts": "single feature (§5): supported; model level (§8, secondary): inconclusive (+0.0051 [-0.0037, +0.0134])",
       "prior_exposure": "descriptive_seen",
       "source": "§5 (S5), §8 (S8)",
-      "note": "gain Asian +0.137 vs White +0.049"
+      "note": "gain Asian +0.137 vs White +0.049",
+      "post_audit": ""
     },
     {
       "hyp_id": "B1",
@@ -441,7 +500,8 @@
       "sub_verdicts": "(a) AUC: supported",
       "prior_exposure": "analysis_seen",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B1, E-ALL, Tier 1"
+      "note": "primary: S - S-B1, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B2",
@@ -460,7 +520,8 @@
       "sub_verdicts": "(a) AUC M1-M0: supported",
       "prior_exposure": "prototype_seen",
       "source": "§7 (S7)",
-      "note": "primary: M1 - M0, E-ALL, Tier 1"
+      "note": "primary: M1 - M0, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B2t",
@@ -479,7 +540,8 @@
       "sub_verdicts": "root split: supported",
       "prior_exposure": "none",
       "source": "§7 (S7)",
-      "note": "primary: M0 root DIQ070_2.0 (leak); M1 root BPQ020_2.0, training part, Tier 1"
+      "note": "primary: M0 root DIQ070_2.0 (leak); M1 root BPQ020_2.0, training part, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B3",
@@ -495,10 +557,11 @@
       "mdd": 0.00514,
       "underpowered": false,
       "verdict": "mixed",
-      "sub_verdicts": "(a) AUC: supported; (b) BMI SD ratio: refuted; (c) max sign-flip rate: refuted",
+      "sub_verdicts": "(a) AUC: supported; (b) BMI SD ratio: not testable (post-audit; locked rule: refuted); (c) max sign-flip rate: refuted",
       "prior_exposure": "prototype_seen",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B3, E-ALL, Tier 1"
+      "note": "primary: S - S-B3, E-ALL, Tier 1",
+      "post_audit": "(b) BMI SD ratio not testable (post-audit); locked verdict refuted"
     },
     {
       "hyp_id": "B4",
@@ -517,7 +580,8 @@
       "sub_verdicts": "(a) AUC: supported; (b) Brier, PIR missing: inconclusive",
       "prior_exposure": "descriptive_seen",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B4, E-ALL, Tier 1"
+      "note": "primary: S - S-B4, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B5",
@@ -536,7 +600,8 @@
       "sub_verdicts": "(a) |cal slope - 1|: supported; (b) AUC block: inconclusive; (c) AUC splines: supported; (d) LR test splines: supported; (e) tree P08/P09: supported",
       "prior_exposure": "descriptive_seen",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B5, E-ALL, Tier 1"
+      "note": "primary: S - S-B5, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B6a",
@@ -555,7 +620,8 @@
       "sub_verdicts": "(a) AUC: supported; (b) Brier: supported; (c) balanced accuracy at 0.5: supported",
       "prior_exposure": "none",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B6a, E-ALL, Tier 1"
+      "note": "primary: S - S-B6a, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "B6b",
@@ -574,7 +640,8 @@
       "sub_verdicts": "(a) unweighted AUC: supported",
       "prior_exposure": "none",
       "source": "§7 (S7)",
-      "note": "primary: S - S-B6b, E-ALL, Tier 1"
+      "note": "primary: S - S-B6b, E-ALL, Tier 1",
+      "post_audit": ""
     },
     {
       "hyp_id": "P14",
@@ -593,7 +660,8 @@
       "sub_verdicts": "(a) ΔAUC -0.0009 [-0.0028, +0.0009]: supported; (b) NH Asian ΔTPR: inconclusive",
       "prior_exposure": "descriptive_seen",
       "source": "§7 (a), §8 (b)",
-      "note": "§7 interim entry was 'supported (part (b) deferred to S8)'; §8 combined verdict used"
+      "note": "§7 interim entry was 'supported (part (b) deferred to S8)'; §8 combined verdict used",
+      "post_audit": ""
     }
   ],
   "claims": {
@@ -609,7 +677,7 @@
     "max_words": 25
   },
   "limitations": {
-    "n": 15,
+    "n": 17,
     "borderline_auc_items": [
       {
         "hyp_id": "B5",
@@ -644,6 +712,16 @@
       "item": "H1b verdict",
       "note": "§4 reported crude and standardised differences but no verdict line",
       "consequence": "locked rule applied here: standardised +0.69 pp [-2.56, +3.93] < +2 pp and below crude -> supported"
+    },
+    {
+      "item": "SD-ratio sub-verdicts (post-audit)",
+      "note": "the locked rule decided B3-b and H2b(c) with an interval that re-draws the stored bootstrap replicates (Monte Carlo error, not sampling uncertainty; §9.12, DR-S9-18)",
+      "consequence": "B3-b and H2b(c) shown as 'not testable with this design' next to their locked labels; ratios descriptive; B3 mixed and H2b inconclusive unchanged"
+    },
+    {
+      "item": "Hold-out status (post-audit)",
+      "note": "the hold-out rows took part in the full-cohort §4/§5 diagnostics before the split existed (§9.12, DR-S9-16)",
+      "consequence": "§9.11 is an internal hold-out check, not an independent validation; numbers unchanged; limitation L16"
     }
   ],
   "h1b_verdict": "supported",
@@ -665,7 +743,8 @@
     "DR-S10-10",
     "DR-S10-12",
     "DR-S10-13",
+    "DR-S10-14",
     "DR-S10-11"
   ],
-  "runtime_seconds": 0.9254350662231445
+  "runtime_seconds": 1.2099251747131348
 }
