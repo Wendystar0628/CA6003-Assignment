@@ -1,71 +1,77 @@
 {
- "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
- "stored_outputs_mode": "FINAL",
- "source_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
- "built_utc": "2026-10-11T10:42:59+00:00",
- "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same commit",
- "code_cell_sha256": "a0fb3ddf7a344d6b5323177786cdbde7fb6c4de03ceb57a6444044edff192c37",
- "runs": {
-  "FAST": {
-   "runtime_seconds": 324.0,
-   "per_section_seconds": {
-    "§0": 2.2,
-    "§1": 0.8,
-    "§2": 0.9,
-    "§3": 3.2,
-    "§4": 4.3,
-    "§5": 4.0,
-    "§6": 15.3,
-    "§7": 120.1,
-    "§8": 22.7,
-    "§9": 147.2,
-    "§10": 0.9,
-    "Appendix": 0.2
-   },
-   "code_cell_sha256": "a0fb3ddf7a344d6b5323177786cdbde7fb6c4de03ceb57a6444044edff192c37",
-   "file_sha256": "01b885eb30620bd3f399a1b62ae1bbf8a0737a1fdcc01cc0ca0764d5709f2689",
-   "size_mb": 6.87,
-   "validation": "OK",
-   "final_ref": "52 reference quantities reproduced within tolerance (FAST mode)",
-   "n_errors": 0,
-   "n_stderr": 0
+  "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
+  "stored_outputs_mode": "FINAL",
+  "source_commit": "b642d3a",
+  "built_utc": "2026-10-11T10:42:59+00:00",
+  "procedure": "git archive <commit> into an empty temp folder; tools/build_final.py --execute in a fresh temp working directory (never in the checkout); FAST and FINAL from the same commit",
+  "code_cell_sha256": "c9eeade2fc5df02712c3bec6cce1d7f39dd18620281a7d4c5cdfe13dfa0c4550",
+  "runs": {
+    "FAST": {
+      "runtime_seconds": 324.0,
+      "per_section_seconds": {
+        "§0": 2.2,
+        "§1": 0.8,
+        "§2": 0.9,
+        "§3": 3.2,
+        "§4": 4.3,
+        "§5": 4.0,
+        "§6": 15.3,
+        "§7": 120.1,
+        "§8": 22.7,
+        "§9": 147.2,
+        "§10": 0.9,
+        "Appendix": 0.2
+      },
+      "code_cell_sha256": "a0fb3ddf7a344d6b5323177786cdbde7fb6c4de03ceb57a6444044edff192c37",
+      "file_sha256": "01b885eb30620bd3f399a1b62ae1bbf8a0737a1fdcc01cc0ca0764d5709f2689",
+      "size_mb": 6.87,
+      "validation": "OK",
+      "final_ref": "52 reference quantities reproduced within tolerance (FAST mode)",
+      "n_errors": 0,
+      "n_stderr": 0
+    },
+    "FINAL": {
+      "runtime_seconds": 1545.0,
+      "per_section_seconds": {
+        "§0": 2.3,
+        "§1": 0.8,
+        "§2": 1.0,
+        "§3": 3.2,
+        "§4": 4.4,
+        "§5": 20.1,
+        "§6": 15.3,
+        "§7": 672.0,
+        "§8": 58.4,
+        "§9": 764.5,
+        "§10": 0.9,
+        "Appendix": 0.2
+      },
+      "code_cell_sha256": "a0fb3ddf7a344d6b5323177786cdbde7fb6c4de03ceb57a6444044edff192c37",
+      "file_sha256": "a36564f071d9eb43ff3853901fbe7e90453cd788163bde1187d5a2b618967bd6",
+      "size_mb": 6.95,
+      "validation": "OK",
+      "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)",
+      "n_errors": 0,
+      "n_stderr": 0
+    }
   },
-  "FINAL": {
-   "runtime_seconds": 1545.0,
-   "per_section_seconds": {
-    "§0": 2.3,
-    "§1": 0.8,
-    "§2": 1.0,
-    "§3": 3.2,
-    "§4": 4.4,
-    "§5": 20.1,
-    "§6": 15.3,
-    "§7": 672.0,
-    "§8": 58.4,
-    "§9": 764.5,
-    "§10": 0.9,
-    "Appendix": 0.2
-   },
-   "code_cell_sha256": "a0fb3ddf7a344d6b5323177786cdbde7fb6c4de03ceb57a6444044edff192c37",
-   "file_sha256": "a36564f071d9eb43ff3853901fbe7e90453cd788163bde1187d5a2b618967bd6",
-   "size_mb": 6.95,
-   "validation": "OK",
-   "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)",
-   "n_errors": 0,
-   "n_stderr": 0
-  }
- },
- "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
- "front_matter_words": {
-  "title": 89,
-  "summary": 248,
-  "checklist": 127,
-  "group": 149,
-  "contrib": 154,
-  "genai": 154,
-  "guide": 365,
-  "runmode": 250
- },
- "main_body_markdown_words": 17934,
- "team_placeholders_left": 54
+  "file_sha256_note": "SHA-256 of the file with LF line endings, as stored in git (.gitattributes eol=lf)",
+  "front_matter_words": {
+    "title": 89,
+    "summary": 248,
+    "checklist": 127,
+    "group": 149,
+    "contrib": 154,
+    "genai": 154,
+    "guide": 365,
+    "runmode": 250
+  },
+  "main_body_markdown_words": 17934,
+  "team_placeholders_left": 54,
+  "outputs_carried_over": {
+    "from_release": "89bb9e1",
+    "outputs_executed_at_commit": "18a4909f16a7f8607f3e77ce64d5f0058251e3a2",
+    "reason": "commit b642d3a adds code comments only (plus one assert message); code tokens otherwise identical, outputs reused without re-execution"
+  },
+  "notebook_sha256": "f305a36218060d0fd59bb6a543b8a70a65c0de8a0cb842e73f06d7d4898cf314"
 }
