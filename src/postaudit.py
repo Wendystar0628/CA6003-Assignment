@@ -46,11 +46,10 @@ from . import robustness as RB
 
 SEED_TAG = "postaudit"
 #: run-mode sizes (approximate post-lock checks, kept light): outer / inner bootstrap of the SD ratios,
-#: coefficient-bootstrap B, number of replicates whose solver iterations are counted, and the number of
-#: outer folds used for nested C (the first repeat of the stored folds)
+#: coefficient-bootstrap B (every refit's solver iterations are counted), and the number of outer folds used for nested C (the first repeat of the stored folds)
 SIZES = {
-    "FINAL": dict(outer=30, inner=100, coef_b=200, conv_check=20, nested_folds=5),
-    "FAST": dict(outer=6, inner=15, coef_b=50, conv_check=4, nested_folds=5),
+    "FINAL": dict(outer=30, inner=100, coef_b=200, nested_folds=5),
+    "FAST": dict(outer=5, inner=15, coef_b=30, nested_folds=5),
 }
 C_GRID = RB.C_GRID                       # the a-priori grid of §7.3: 0.01, 0.1, 1, 10
 LIN_VARS = {"RIDAGEYR": "age", "BMXBMI": "BMI", "BMXWAIST": "waist", "bp_sys_mean": "SBP (mean)",
@@ -589,80 +588,78 @@ def _m1_variant(name):
     return cfg, params
 
 
-def _n_iter_chunk(cfg, params, C0, X, y, fp, idx_rows):
+ANTHRO = ("BMXBMI", "BMXWT", "BMXHT", "BMXWAIST")
+
+
+def _coef_iter_chunk(cfg, params, C0, X, y, idx_rows):
+    """Anthropometric coefficients and solver iterations of one refit per resample in ``idx_rows``."""
     warnings.simplefilter("ignore")
-    n = len(y)
     out = []
     for idx in idx_rows:
         pipe = P.build_pipeline(cfg, 1, C_=C0).set_params(**params)
-        pipe.fit(X.iloc[idx], y[idx], **ek._slice_fit_params(fp, idx, n))
-        out.append(int(np.max(pipe[-1].n_iter_)))
+        pipe.fit(X.iloc[idx], y[idx])
+        names = [str(s) for s in pipe[:-1].get_feature_names_out()]
+        co = pipe[-1].coef_.ravel()
+        out.append(({c: float(co[names.index(c)]) for c in ANTHRO if c in names}, int(np.max(pipe[-1].n_iter_))))
     return out
 
 
-def converged_m1_coefs(ctx, *, n_boot: int | None = None, n_conv: int | None = None, n_jobs: int | None = None) -> dict:
+def converged_m1_coefs(ctx, *, n_boot: int | None = None, n_jobs: int | None = None, chunk: int = 10) -> dict:
     """Issue 5. The §7.11 M1 bootstrap stops at the iteration limit in almost every refit.
 
-    Re-runs the M1 coefficient bootstrap on the SAME resamples as §7.11 (seed of arm M1) at the exact optimum
-    (newton-cholesky) and with scaling only (P09); counts refits at the iteration limit on the first ``n_conv``
-    resamples for every variant; ratios are taken against the stored S-linear BMI SD (descriptive)."""
+    Re-runs the M1 coefficient bootstrap on the first ``n_boot`` resamples of §7.11 (same seed, so the same
+    patients) for three variants: M1 as fitted (lbfgs, iteration limit), M1 at the exact optimum
+    (newton-cholesky) and M1 + scaling only (P09). Every refit's solver iterations are counted. Ratios are
+    taken against the stored S-linear BMI SD of §7.11 (descriptive, no verdict)."""
     t0 = time.time()
-    sz = sizes()
-    n_boot, n_conv = n_boot or sz["coef_b"], n_conv or sz["conv_check"]
+    n_boot = n_boot or sizes()["coef_b"]
     n_jobs = n_jobs or n_jobs_default()
     X1, n = ctx.X[1], ctx.n
     ylab = P.training_label(ctx.raw_tr, P.ARMS["M1"]).astype(int)
     seed_m1 = ek.derive_seed(C.SEED_MASTER, "S7", "coef", "M1")
+    # the first n_boot rows of the §7.11 resampling matrix (the generator fills it row by row)
+    idx_all = np.random.default_rng(seed_m1).integers(0, n, (n_boot, n))
     cs7 = json.loads((C.RESULTS_DIR / "metrics_S7.json").read_text(encoding="utf-8"))["coef_stability"]
     sd_sl = float(cs7["table"]["S-linear"]["bmi_sd_per_sd"])
     st_m1 = cs7["table"]["M1"]
-    idx_all = np.random.default_rng(seed_m1).integers(0, n, (max(n_conv, 1), n))
+    variants = ("M1 stored (lbfgs, max_iter 5,000)", "M1 exact optimum (newton-cholesky)", "M1 + scaling only (P09)")
+    tasks = [(v, s) for v in variants for s in range(0, n_boot, chunk)]
+    # slow chunks (lbfgs at the iteration limit) first, so the pool stays balanced
+    tasks.sort(key=lambda t: not t[0].startswith("M1 stored"))
+    res = Parallel(n_jobs=n_jobs)(delayed(_coef_iter_chunk)(*_m1_variant(v), ctx.C0, X1, ylab, idx_all[s:s + chunk]) for v, s in tasks)
+    got = {v: [] for v in variants}
+    for (v, s), r in sorted(zip(tasks, res), key=lambda t: (t[0][0], t[0][1])):
+        got[v].extend(r)
     rows, conv = [], {}
-    for name in ("M1 stored (lbfgs, max_iter 5,000)", "M1 exact optimum (newton-cholesky)", "M1 + scaling only (P09)"):
-        cfg, params = _m1_variant(name)
-        mk = (lambda cfg=cfg, params=params: P.build_pipeline(cfg, 1, C_=ctx.C0).set_params(**params))
+    for v in variants:
+        cfg, params = _m1_variant(v)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            full = mk().fit(X1, ylab)
-            sd_bmi = float(mk()[:-1].fit_transform(X1)["BMXBMI"].std(ddof=0))
+            full = P.build_pipeline(cfg, 1, C_=ctx.C0).set_params(**params).fit(X1, ylab)
+            sd_bmi = float(P.build_pipeline(cfg, 1, C_=ctx.C0)[:-1].fit_transform(X1)["BMXBMI"].std(ddof=0))
         names = [str(s) for s in full[:-1].get_feature_names_out()]
-        coef_full = float(full[-1].coef_.ravel()[names.index("BMXBMI")]) * sd_bmi
-        its = Parallel(n_jobs=n_jobs)(delayed(_n_iter_chunk)(cfg, params, ctx.C0, X1, ylab, {}, idx_all[s:s + 5]) for s in range(0, n_conv, 5))
-        its = [i for chunk_ in its for i in chunk_]
-        conv[name] = dict(n_checked=len(its), at_limit=int(sum(i >= C.LR_MAX_ITER for i in its)), max_iter_seen=int(max(its)),
-                          median_iter=float(np.median(its)), full_fit_iter=int(np.max(full[-1].n_iter_)))
-        if name.startswith("M1 stored"):
-            # the stored bootstrap is not repeated (500 slow fits); its SD comes from §7.11. The full-data fit
-            # is refitted to show that this harness reproduces the stored M1 coefficient.
-            rows.append(dict(variant=name, bmi_coef_per_sd=coef_full, bmi_sd_per_sd=float(st_m1["bmi_sd_per_sd"]),
-                             q_low=float(st_m1["bmi_q_low"]), q_high=float(st_m1["bmi_q_high"]), sign_flip=float(st_m1["bmi_sign_flip"]),
-                             max_flip_anthro=float(st_m1["max_flip_anthro"]), n_boot=int(st_m1["n_valid"]), source="§7.11 stored",
-                             stored_coef_per_sd=float(st_m1["bmi_coef_per_sd"])))
-            continue
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            cb = ek.coef_bootstrap(mk, X1, ylab, n_boot=n_boot, seed=seed_m1, n_jobs=n_jobs)
-        s = cb.summary
-        anth = [c for c in ("BMXBMI", "BMXWT", "BMXHT", "BMXWAIST") if c in s.index]
-        rows.append(dict(variant=name, bmi_coef_per_sd=float(s.loc["BMXBMI", "coef"]) * sd_bmi, bmi_sd_per_sd=float(s.loc["BMXBMI", "sd"]) * sd_bmi,
-                         q_low=float(s.loc["BMXBMI", "q_low"]) * sd_bmi, q_high=float(s.loc["BMXBMI", "q_high"]) * sd_bmi,
-                         sign_flip=float(s.loc["BMXBMI", "sign_flip_rate"]), max_flip_anthro=float(s.loc[anth, "sign_flip_rate"].max()),
-                         n_boot=int(s.loc["BMXBMI", "n_valid"]), source="post-audit (same resamples as §7.11)", stored_coef_per_sd=np.nan))
+        fco = {c: float(full[-1].coef_.ravel()[names.index(c)]) for c in ANTHRO if c in names}
+        mat = pd.DataFrame([g[0] for g in got[v]])
+        its = np.array([g[1] for g in got[v]])
+        x = mat["BMXBMI"].to_numpy() * sd_bmi
+        flips = {c: float(np.mean(np.sign(mat[c].to_numpy()) != np.sign(fco[c]))) for c in mat.columns}
+        conv[v] = dict(n_checked=int(len(its)), at_limit=int((its >= C.LR_MAX_ITER).sum()), max_iter_seen=int(its.max()),
+                       median_iter=float(np.median(its)), full_fit_iter=int(np.max(full[-1].n_iter_)))
+        rows.append(dict(variant=v, bmi_coef_per_sd=fco["BMXBMI"] * sd_bmi, bmi_sd_per_sd=float(np.std(x, ddof=1)),
+                         q_low=float(np.percentile(x, 2.5)), q_high=float(np.percentile(x, 97.5)), sign_flip=flips["BMXBMI"],
+                         max_flip_anthro=max(flips.values()), n_boot=int(len(x)), at_limit=f"{conv[v]['at_limit']}/{conv[v]['n_checked']}"))
     tab = pd.DataFrame(rows)
     tab["ratio_to_S_linear"] = tab["bmi_sd_per_sd"] / sd_sl
-    tab["at_limit"] = [f"{conv[v]['at_limit']}/{conv[v]['n_checked']}" for v in tab["variant"]]
     t_ = tab.set_index("variant")
+    st_, cv_, sc_ = variants
     return dict(table=tab, convergence=conv, sd_S_linear=sd_sl, n_boot=n_boot,
-                sd_stored=float(t_.loc["M1 stored (lbfgs, max_iter 5,000)", "bmi_sd_per_sd"]),
-                sd_converged=float(t_.loc["M1 exact optimum (newton-cholesky)", "bmi_sd_per_sd"]),
-                sd_scaled=float(t_.loc["M1 + scaling only (P09)", "bmi_sd_per_sd"]),
-                ratio_stored=float(t_.loc["M1 stored (lbfgs, max_iter 5,000)", "ratio_to_S_linear"]),
-                ratio_converged=float(t_.loc["M1 exact optimum (newton-cholesky)", "ratio_to_S_linear"]),
-                ratio_scaled=float(t_.loc["M1 + scaling only (P09)", "ratio_to_S_linear"]),
-                flip_stored=float(t_.loc["M1 stored (lbfgs, max_iter 5,000)", "sign_flip"]),
-                flip_converged=float(t_.loc["M1 exact optimum (newton-cholesky)", "sign_flip"]),
-                share_at_limit_stored=conv["M1 stored (lbfgs, max_iter 5,000)"]["at_limit"] / conv["M1 stored (lbfgs, max_iter 5,000)"]["n_checked"],
-                full_coef_reproduced=bool(abs(t_.loc["M1 stored (lbfgs, max_iter 5,000)", "bmi_coef_per_sd"] - float(st_m1["bmi_coef_per_sd"])) < 1e-4),
+                stored_7_11=dict(bmi_sd_per_sd=float(st_m1["bmi_sd_per_sd"]), n_boot=int(st_m1["n_valid"]), ratio=float(cs7["ratio_H2b"]["ratio"])),
+                sd_stored=float(t_.loc[st_, "bmi_sd_per_sd"]), sd_converged=float(t_.loc[cv_, "bmi_sd_per_sd"]), sd_scaled=float(t_.loc[sc_, "bmi_sd_per_sd"]),
+                ratio_stored=float(t_.loc[st_, "ratio_to_S_linear"]), ratio_converged=float(t_.loc[cv_, "ratio_to_S_linear"]),
+                ratio_scaled=float(t_.loc[sc_, "ratio_to_S_linear"]),
+                flip_stored=float(t_.loc[st_, "sign_flip"]), flip_converged=float(t_.loc[cv_, "sign_flip"]),
+                share_at_limit_stored=conv[st_]["at_limit"] / conv[st_]["n_checked"],
+                full_coef_reproduced=bool(abs(t_.loc[st_, "bmi_coef_per_sd"] - float(st_m1["bmi_coef_per_sd"])) < 1e-4),
                 seconds=time.time() - t0)
 
 

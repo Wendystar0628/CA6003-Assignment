@@ -4,8 +4,9 @@
 # §7 reached its verdicts on one set of folds, one label, one imputation rule and one C. This section asks how much of
 # that is **procedure** and how much is **data**: negative and positive controls (§9.2), seed, specification, cluster
 # and missing-data stability of the headline contrast (§9.3–§9.7), external validity against NCHS Data Brief 516
-# (§9.8), a leak hunt for disguised labels among the admissible features (§9.9) and the one-shot hold-out (§9.11, after
-# the `exp-freeze` tag). Everything before §9.11 uses the training part only (4,584 rows). The headline contrast is
+# (§9.8), a leak hunt for disguised labels among the admissible features (§9.9), the internal hold-out check (§9.11,
+# evaluated once after the `exp-freeze` tag) and the post-audit corrections of an external review (§9.12, post-lock).
+# Everything before §9.11 uses the training part only (4,584 rows). The headline contrast is
 # ΔAUC(S − M1), H2b(a) (locked rule: *supported* = equivalence within ±0.01; §7 verdict *inconclusive*).
 
 # %%
@@ -445,9 +446,10 @@ S9["sensitivity"] = dict(n_specs=len(SENS), eall_same_verdict=n_same, eall_rows=
 # wholly below 0. **Labels and weighting move the estimate most**: weighting both arms alike enlarges the S advantage to
 # about +0.01 (part of the reference gap is S's own survey weighting, B6b); the label changes the size of the gap, not
 # its direction. **The depth-4 tree reverses the sign** with a wide interval – for a tree the preparation steps are
-# irrelevant (B5-e), one more reason the tree is a probe. **The C0 bias is nil**: tuned on their own, M0 and M1 pick the
-# same C as S, so the "same model for every arm" rule neither favoured S nor manufactured the leak gate. On E-SCREEN every
-# verdict is inconclusive (about 25 positives per fold).
+# irrelevant (B5-e), one more reason the tree is a probe. **Per-arm C does not favour S**: tuned on their own, M0 and M1
+# pick the same C as S, so the "same model for every arm" rule neither favoured S nor manufactured the leak gate. This is
+# a fairness-across-arms check, not a test of nesting (C0 was chosen once on the whole training part); the approximate
+# nested check is in §9.12. On E-SCREEN every verdict is inconclusive (about 25 positives per fold).
 
 # %% [markdown]
 # ## 5 Specification curve
@@ -603,7 +605,7 @@ ipw_all = (~miss).mean() / p_obs                          # stabilised weight
 coh = ctx.clean.copy()
 coh["ipw"] = ipw_all.reindex(coh["SEQN"]).to_numpy()
 coh["w_mec_ipw"] = coh[C.WEIGHT_MEC] * coh["ipw"]
-# Weights of the training part only; the hold-out stays untouched.
+# Weights of the training part only; no hold-out row is used.
 ctx.ipw = coh["ipw"].to_numpy()[ctx.train_idx]
 print(f"stabilised IPW in the cohort: min {coh['ipw'].min():.3f}, median {coh['ipw'].median():.3f}, "
       f"max {coh['ipw'].max():.3f}; Kish deff {sv.kish_deff(coh['ipw']):.3f}")
@@ -638,7 +640,7 @@ Xd_ex = RB.missingness_design(ex).drop(columns=["self-reported diabetes"])
 # Row positions of the training-part cohort inside `ex`, to pick the matching covariate rows.
 seq_pos = pd.Series(np.arange(len(ex)), index=ex["SEQN"].to_numpy())
 tr_rows = seq_pos.reindex(ctx.cl["SEQN"]).to_numpy()
-fit_rows = tr_rows[ctx.esc]                                     # training-part E-SCREEN rows (hold-out untouched)
+fit_rows = tr_rows[ctx.esc]                                     # training-part E-SCREEN rows (no hold-out row)
 # MAR model: logit of HbA1c >= 6.5 % given the covariates, on training-part E-SCREEN rows only.
 mar_fit = sm.Logit(ctx.y_esc[ctx.esc], sm.add_constant(Xd_ex.iloc[fit_rows])).fit(disp=0)
 miss_idx = np.flatnonzero(miss.to_numpy())
@@ -1151,9 +1153,9 @@ S9["summary"] = dict(table=summ.round(5).to_dict("records"), all_inconclusive=al
 # distinguished from 0.01**" – *robust verdict, imprecise effect*; on E-SCREEN intervals are about twice as wide.
 
 # %%
-# decision-register rows of §9 (written and listed in §9.12 Outputs)
+# decision-register rows of §9 (written and listed in §9.13 Outputs)
 # Build the §9 rows of the decision register from the numbers computed above (nothing is typed in by hand).
-# The file itself is written in §9.12, and only in FINAL mode.
+# The file itself is written in §9.13, and only in FINAL mode.
 from datetime import date
 today = date.today().isoformat()
 # Format a comparison row as 'est [lo, hi]' with k decimals.
@@ -1191,8 +1193,10 @@ reg = pd.DataFrame([
     dict(dr_id="DR-S9-06", type="tuning", finding="Arm-specific tuning of C gives M0 and M1 the same C as S",
          evidence_ref="§9.4; results/S9/sensitivity_table.csv",
          evidence_value=f"own C: M0 {OWN_C['M0'][0]}, M1 {OWN_C['M1'][0]} (C0 {ctx.C0}); leak gate own C E-ALL {_f(gate_own[0])}",
-         decision="The C0-on-S optimism disclosed in DR-S7-04 is nil in practice; 'same model for every arm' rule kept", alternatives_rejected="per-arm tuning as primary design",
-         hyp_id="H2a;H2b", status="decided", check_verdict="PASS", check_note="closes the S9 item of DR-S7-04", loop_ref=""),
+         decision="Tuning C on S does not favour S across arms (M0, M1 and S pick the same C); 'same model for every arm' rule kept. "
+                  "This tests arm fairness, not nesting: the tuning optimism of the un-nested C0 is bounded by the post-audit nested check (DR-S9-17)",
+         alternatives_rejected="per-arm tuning as primary design",
+         hyp_id="H2a;H2b", status="decided", check_verdict="PASS", check_note="closes the arm-fairness item of DR-S7-04; nesting: DR-S9-17", loop_ref="DR-S9-17"),
     dict(dr_id="DR-S9-07", type="sensitivity", finding="60-specification curve (label x weighting x C) agrees with the core table",
          evidence_ref="results/S9/specification_curve.csv; figures/S9_specification_curve.png",
          evidence_value=f"E-ALL est {cs.loc['E-ALL', 'est_min']:+.4f} to {cs.loc['E-ALL', 'est_max']:+.4f}, {cs.loc['E-ALL', 'share_positive']:.0%} positive, "
@@ -1251,17 +1255,19 @@ for c in ("change_request", "commit"):
 reg = reg[["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision", "alternatives_rejected", "hyp_id",
            "status", "check_verdict", "check_note", "loop_ref", "change_request", "commit"]]
 REG_PATH = C.GOVERNANCE_DIR / "register" / "S9.csv"
-print(f"{len(reg)} decision-register rows prepared (listed in §9.12)")
+print(f"{len(reg)} decision-register rows prepared (listed in §9.13)")
 
 # %% [markdown]
-# ## 11 One-shot hold-out evaluation
+# ## 11 Internal hold-out check
 # **Why.** Everything above re-used the training part; repeated looks can drift towards what works. The 20 % hold-out
-# (1,146 adults, label × race stratified, created once at its first use in §6, DR-S6-12, and never read since) is the only
-# independent check. Rules fixed before looking: evaluated **once, after the `exp-freeze` tag**; the arms are refitted on
-# the whole training part with the frozen configuration; thresholds come from the training part; a hold-out AUC more
-# than 2 SE below CV is reported, **not** answered by re-tuning.
+# (1,146 adults, label × race stratified, created at its first use in §6, DR-S6-12) is an **internal hold-out check**,
+# not an independent validation: its rows were never fitted, tuned or scored in §6–§9 before this point, but they were
+# part of the full-cohort §4/§5 diagnostics (non-linearity, interactions, VIF, labels) that informed the design before
+# the split existed (§9.12, issue 1; L16). Rules fixed before looking: evaluated **once, after the `exp-freeze` tag**;
+# the arms are refitted on the whole training part with the frozen configuration; thresholds come from the training
+# part; a hold-out AUC more than 2 SE below CV is reported, **not** answered by re-tuning.
 #
-# **What runs here.** The one-shot evaluation took place once (FINAL mode, 2026-10-11, after the tag). A FINAL execution
+# **What runs here.** The evaluation took place once (FINAL mode, 2026-10-11, after the tag). A FINAL execution
 # is a **deterministic re-execution, not a second look**: a gate opens only if C0, the fold hash and the hold-out hash
 # recomputed now equal the frozen values and the five modelling files (`config`, `prep`, `evalkit`, `labels`,
 # `nhanes_io`) are byte-identical to the tag; the refitted AUCs must then equal the logged ones (asserted), so nothing can
@@ -1275,7 +1281,7 @@ print(f"{len(reg)} decision-register rows prepared (listed in §9.12)")
 # later execution reproduced the first exactly.
 
 # %%
-# Gate of the one-shot hold-out: decide whether the evaluation may be executed (or reproduced), only displayed
+# Gate of the internal hold-out check: decide whether the evaluation may be executed (or reproduced), only displayed
 # from stored results, or is not evaluated. Reads the frozen record, the git tag and any stored hold-out
 # files; sets RELEASED and STORED.
 HOLDOUT_LOG = OUT / "holdout_log.json"
@@ -1299,13 +1305,13 @@ gate = {"FINAL mode": C.IS_FINAL,
         "frozen record (exp-freeze) available": TAG_OK or REC is not None,
         **{f"{k} = frozen": FROZEN is not None and FROZEN.get(k) == v for k, v in CURRENT.items()},
         f"modelling sources identical to the tag ({len(RB.FROZEN_SOURCES)} files)": SRC_OK is True,
-        # once the one-shot run is on record, a FINAL execution may only reproduce it, never evaluate afresh
+        # once the single evaluation run is on record, a FINAL execution may only reproduce it, never evaluate afresh
         "one-shot log present (re-execution = reproduction)": STORED or (REC is None and prev is None)}
 RELEASED = all(gate.values())
 if REC is not None:
     print(f"frozen record: tag {REC['tag']} on commit {REC['tag_commit'][:12]} (created {REC['tag_created']})")
     print(f"   C0 {REC['frozen']['C0']}, folds {REC['frozen']['folds_hash'][:12]}..., hold-out {REC['frozen']['holdout_sha256'][:12]}...")
-    print(f"   one-shot run {REC['one_shot']['first_run_utc']} ({REC['one_shot']['nb_mode']}); "
+    print(f"   evaluation run {REC['one_shot']['first_run_utc']} ({REC['one_shot']['nb_mode']}); "
           f"source: {'git tag (record verified)' if TAG_OK else 'record shipped with the notebook'}")
     if prev is not None:
         print(f"   executions on record before this run: {prev['n_executions']} (first {prev['first_run_utc']}, last {prev['last_run_utc']})")
@@ -1314,11 +1320,11 @@ for k, v in gate.items():
     print(f"  {'PASS' if v else 'FAIL'}  {k}")
 REASON = "; ".join(k for k, v in gate.items() if not v)
 if RELEASED:
-    print("gate open -> refit the frozen models and reproduce the logged one-shot hold-out results")
+    print("gate open -> refit the frozen models and reproduce the logged hold-out results of the single evaluation run")
 elif STORED:
-    print(f"gate closed ({REASON}) -> no refit; the stored one-shot results are displayed below")
+    print(f"gate closed ({REASON}) -> no refit; the stored results of the single evaluation run are displayed below")
 else:
-    print(f"gate closed ({REASON}) and no stored one-shot results -> hold-out not evaluated")
+    print(f"gate closed ({REASON}) and no stored results of the single evaluation run -> hold-out not evaluated")
 
 # %%
 # Hold-out evaluation. Gate open: refit the frozen models on the whole training part, set thresholds at
@@ -1425,13 +1431,13 @@ if RELEASED:
                       + [ho_pair(("S", 1), ("BL-ADAlite", 1), "E-SCREEN", "higher by >= 0.01")])
     show(hp, 4)
     print("CV (this run) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
-elif STORED:   # FAST mode (or a closed gate): show the logged one-shot results, never refit
+elif STORED:   # FAST mode (or a closed gate): show the logged results, never refit
     ho = pd.read_csv(HOLDOUT_CSV)
     hp = pd.read_csv(HOLDOUT_PAIRS)
-    if REC is not None:   # the shipped tables must be the ones written by the one-shot run
+    if REC is not None:   # the shipped tables must be the ones written by the single evaluation run
         same = {p_: RB.sha256_lf((C.ROOT / p_).read_bytes()) == h_ for p_, h_ in REC["stored_tables_sha256"].items()}
         assert all(same.values()), f"stored hold-out tables differ from the frozen record: {same}"
-    print(f"STORED ONE-SHOT HOLD-OUT RESULTS - evaluated once in {prev['nb_mode_first_run']} mode on {prev['first_run_utc']}, "
+    print(f"STORED INTERNAL HOLD-OUT RESULTS - evaluated once in {prev['nb_mode_first_run']} mode on {prev['first_run_utc']}, "
           f"{prev['n_test']:,} adults, SHA-256 {prev['sha256_test_seqn'][:16]}...; NOT re-executed in this {C.NB_MODE} run"
           + ("; tables verified against the frozen record" if REC is not None else ""))
     show(ho[SHOW_HO], 3)
@@ -1439,7 +1445,7 @@ elif STORED:   # FAST mode (or a closed gate): show the logged one-shot results,
     print(f"CV (this run, {C.NB_MODE}) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
 
 # %%
-# Figure: hold-out AUC (one shot) against the pooled out-of-fold AUC for every arm; rows more than 2 SE below
+# Figure: hold-out AUC (evaluated once) against the pooled out-of-fold AUC for every arm; rows more than 2 SE below
 # CV are labelled. Calibration curves follow, but only when the models were refitted in this run.
 if RELEASED or STORED:
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
@@ -1450,7 +1456,7 @@ if RELEASED or STORED:
         ax.errorbar(d["cv_auc"], yy_ - 0.15, xerr=[d["cv_auc"] - d["cv_lo"], d["cv_hi"] - d["cv_auc"]], fmt="s", color=OI["grey"], capsize=2,
                     ms=4, label="cross-validation (training part)")
         ax.errorbar(d["roc_auc"], yy_ + 0.15, xerr=[d["roc_auc"] - d["auc_lo"], d["auc_hi"] - d["roc_auc"]], fmt="o", capsize=2, ms=5,
-                    color=OI["blue"], label="hold-out, one shot")
+                    color=OI["blue"], label="internal hold-out (evaluated once)")
         for i, r in d.iterrows():
             if r["flag_2se_below_cv"]:
                 ax.text(r["auc_lo"] - 0.01, i + 0.15, "> 2 SE below CV", ha="right", va="center", fontsize=7, color=OI["vermillion"])
@@ -1458,7 +1464,7 @@ if RELEASED or STORED:
     axes[0].set_yticks(range(len(lab_)), lab_)
     axes[0].invert_yaxis()
     axes[0].legend(fontsize=8, loc="lower left")
-    fig.suptitle("Hold-out vs cross-validation: the CV estimates carry over" + ("" if RELEASED else " (stored one-shot results)"), fontsize=11)
+    fig.suptitle("Hold-out vs cross-validation: the CV estimates carry over" + ("" if RELEASED else " (stored results of the single evaluation run)"), fontsize=11)
     plots.savefig(fig, "S9_holdout_vs_cv", caption="F9-6. ROC-AUC on the 20 % hold-out (blue; models refitted once on the whole training part, evaluated once "
                   "after exp-freeze) against the pooled out-of-fold estimate on the training part (grey), with 95 % bootstrap CIs; E-ALL left, "
                   "E-SCREEN right (about 25 hold-out positives).")
@@ -1486,21 +1492,21 @@ elif STORED:
           "(calibration slope and CITL are in the table above)")
 
 # %%
-# Log the run and write the hold-out tables. A re-execution must reproduce the one-shot numbers exactly.
+# Log the run and write the hold-out tables. A re-execution must reproduce the numbers of the single evaluation run exactly.
 if RELEASED:
     now = pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds")
-    if STORED:   # a re-execution must reproduce the one-shot numbers exactly (deterministic reproduction, not a second look)
+    if STORED:   # a re-execution must reproduce the numbers of the single evaluation run exactly (deterministic reproduction, not a second look)
         old = pd.read_csv(HOLDOUT_CSV).set_index(["arm", "tier", "pop"])["roc_auc"]
         new = ho.set_index(["arm", "tier", "pop"])["roc_auc"]
-        assert old.index.sort_values().equals(new.index.sort_values()), "hold-out arms differ from the one-shot run"
+        assert old.index.sort_values().equals(new.index.sort_values()), "hold-out arms differ from the single evaluation run"
         dmax = float(np.abs(old.reindex(new.index).to_numpy() - new.to_numpy()).max())
         # Deterministic reproduction: the AUCs must equal the logged one-shot values up to floating-point
         # noise; a larger change would mean the frozen configuration moved.
-        assert dmax <= 1e-9, f"hold-out AUCs changed after the one-shot run (max difference {dmax})"
+        assert dmax <= 1e-9, f"hold-out AUCs changed after the single evaluation run (max difference {dmax})"
         oldp = pd.read_csv(HOLDOUT_PAIRS).set_index(["comparison", "pop"])["est"]
         newp = hp.set_index(["comparison", "pop"])["est"]
         assert np.allclose(oldp.reindex(newp.index).to_numpy(), newp.to_numpy(), atol=1e-9), "paired hold-out differences changed"
-        print(f"re-execution reproduces the {len(new)} one-shot hold-out AUCs and {len(newp)} paired differences exactly "
+        print(f"re-execution reproduces the {len(new)} hold-out AUCs of the single evaluation run and {len(newp)} paired differences exactly "
               f"(first run {prev['first_run_utc']}; max |AUC difference| {dmax:.1e})")
     # First-run time and commit are kept from the first execution; only the last-run time and the counter
     # change.
@@ -1513,30 +1519,190 @@ if RELEASED:
     ho.to_csv(HOLDOUT_CSV, index=False)
     hp.to_csv(OUT / "holdout_pairs.csv", index=False)
     print(json.dumps(log_, indent=1))
-    S9["holdout"] = dict(status="re-executed in FINAL mode: reproduces the one-shot run" if STORED else "evaluated (one-shot run)",
+    S9["holdout"] = dict(status="re-executed in FINAL mode: reproduces the single evaluation run" if STORED else "evaluated (single evaluation run)",
                          log=log_, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
                          n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
 elif STORED:   # never replace the one-shot results by "not evaluated": store them unchanged, labelled
-    S9["holdout"] = dict(status=f"stored one-shot results, not re-executed in this {C.NB_MODE} run ({REASON})",
+    S9["holdout"] = dict(status=f"stored results of the single evaluation run, not re-executed in this {C.NB_MODE} run ({REASON})",
                          log=prev, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
                          n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
     print(S9["holdout"]["status"])
 else:
-    S9["holdout"] = dict(status=f"not evaluated: gate closed ({REASON}) and no stored one-shot results")
+    S9["holdout"] = dict(status=f"not evaluated: gate closed ({REASON}) and no stored results of the single evaluation run")
     print(S9["holdout"]["status"])
 
 # %% [markdown]
-# **So what.** The one-shot hold-out (1,146 adults, 194 positives; E-SCREEN 977 adults, 25 positives) changes no
+# **So what.** The internal hold-out check (1,146 adults, 194 positives; E-SCREEN 977 adults, 25 positives) changes no
 # verdict. **No optimism:** no arm × population row is more than 2 SE below CV; on E-ALL every model scores slightly
 # *higher* (S 0.851 [0.823, 0.878] vs CV 0.836), as does the unfitted ADA-lite score, so the hold-out sample is
 # slightly easier. **Contrasts:** the leak gate M1 − M0 replicates on E-ALL (−0.117, supported); S − M1 is +0.004
 # [−0.007, +0.014] on E-ALL and −0.005 on E-SCREEN (inconclusive, as in CV); the recognition gap of S has the same
 # direction and size (+0.060 vs +0.055) but is not separately testable with 25 screening positives; S − ADA-lite is
 # +0.029 [−0.037, +0.098] – **the CV margin does not replicate**. **Calibration:** S over-predicts by design (CITL −1.72).
-# Nothing was re-tuned.
+# Nothing was re-tuned. The check is internal: re-running the §4 diagnostics without the hold-out rows changes no design
+# decision (§9.12), but the hold-out is not an independent sample.
 
 # %% [markdown]
-# ## 12 Outputs
+# ## 12 Post-audit corrections (post-lock)
+# **Why.** After the lock, an external methodological review raised six issues: (1) the hold-out was not fully
+# independent of the design, (2) C0 was not nested, (3) Monte Carlo ratio intervals decided two sub-claims, (4) the
+# reweighing arm used unweighted counts, (5) the M1 coefficient bootstrap did not converge, and (6) M1 keeps the blanket
+# sentinel recode. Each is checked here as an **approximate post-lock analysis** (`src/postaudit.py`, small resampling
+# sizes, printed below). No locked verdict, primary arm, stored §3–§8 result or hold-out row is changed;
+# `governance/hypotheses.md` stays byte-identical. Corrections go into the register (DR-S9-16 to DR-S9-21) and §10.
+
+# %%
+# Run the six post-audit checks (training part only; the hold-out is only counted in check 1) and display their
+# tables. Reads the stored §4/§7/§8 results and the stored folds; writes nothing yet.
+from src import postaudit as PA
+t_pa = time.time()
+PA_SZ = PA.sizes()
+print(f"post-audit sizes ({C.NB_MODE}, approximate): nested C on {PA_SZ['nested_folds']} outer folds (repeat 0); "
+      f"outer bootstrap {PA_SZ['outer']} x inner B {PA_SZ['inner']}; converged-M1 coefficient bootstrap B = {PA_SZ['coef_b']}")
+PA1 = PA.holdout_design_check(ctx)
+print("\n(1) hold-out rows inside the full-cohort §4 samples:")
+show(PA1["overlap"], 3)
+print("§4.11 linearity tests: full cohort (stored) vs training part only")
+show(PA1["linearity"], 4)
+print(f"interactions: {PA1['interactions_same_class']}/{PA1['interactions_n']} classifications unchanged {PA1['interactions_changed']}; "
+      f"VIF > 10 class unchanged {PA1['vif_same_class']}/{PA1['vif_n']} (weight, BMI on training part: "
+      f"{PA1['vif_weight_bmi_train'][0]:.1f}, {PA1['vif_weight_bmi_train'][1]:.1f}); max |skew change| {PA1['max_abs_skew_change']:.3f}")
+PA2 = PA.nested_c(ctx)
+print(f"\n(2) nested C ({PA2['folds_used']}); chosen C per fold: {PA2['cstar']}")
+show(PA2["table"], 4)
+PA3 = PA.ratio_outer_bootstrap(ctx)
+print(f"\n(3) outer patient bootstrap of the BMI SD ratios ({PA3['n_outer']} outer x {PA3['n_inner']} inner refits; approximate)")
+show(PA3["table"], 3)
+PA4 = PA.weighted_reweighing(ctx)
+print("\n(4) reweighing: weighted positive rate (%) by race, training rows of fold 0, and the spread across all folds")
+display(PA4["rates_fold0"].query("attribute == 'race'").pivot(index="group", columns="weighting", values="pos_rate_pct").round(2))
+show(PA4["spread"], 2)
+show(PA4["eod"][["attribute", "group", "eod_S", "eod_asrun", "eod_corrected", "d_eod_corrected", "d_eod_corrected_lo", "d_eod_corrected_hi"]], 3)
+show(PA4["auc"], 4)
+PA5 = PA.converged_m1_coefs(ctx)
+print(f"\n(5) M1 coefficient bootstrap on the first {PA5['n_boot']} resamples of §7.11 (stored §7.11 M1: BMI SD "
+      f"{PA5['stored_7_11']['bmi_sd_per_sd']:.3f} over B = {PA5['stored_7_11']['n_boot']}); every refit's solver iterations counted")
+show(PA5["table"], 3)
+PA6 = PA.m1c_arm(ctx)
+print(f"\n(6) M1c = M1 + P02 (codebook sentinel recode; {PA6['label_flips_train']} training labels differ from M1's blanket-recode label)")
+show(PA6["table"], 4)
+PA_SECONDS = time.time() - t_pa
+print(f"post-audit checks: {PA_SECONDS:.0f} s")
+
+# %%
+# One summary table (issue -> check -> result -> consequence), asserts on the key numbers, storage under
+# metrics_S9.json["postaudit"] and results/S9/postaudit_*.csv, and register rows DR-S9-16 to DR-S9-21.
+r3b, r3h = PA3["ratio_B3"], PA3["ratio_H2b_c_converged"]
+m1c_e, m1c_s = PA6["S_minus_M1c_eall"], PA6["S_minus_M1c_escreen"]
+nb, nbs = PA2["dauc_nested"], PA2["dauc_stored"]
+_conv_st = PA5["convergence"]["M1 stored (lbfgs, max_iter 5,000)"]
+PA_SUM = pd.DataFrame([
+    dict(issue="1 hold-out not independent of the design",
+         check="§4 linearity, interaction, VIF and skew diagnostics re-run on the training part only",
+         result=f"{PA1['lin_sample_holdout']} hold-out rows ({PA1['lin_sample_holdout_pos']} positives) were in the §4.11 sample; on the training part "
+                f"{PA1['nl_same_class']}/{PA1['nl_n']} non-linearity and {PA1['interactions_same_class']}/{PA1['interactions_n']} interaction classifications are unchanged; "
+                f"the splined set is unchanged",
+         consequence="no design decision changes; §9.11 renamed 'internal hold-out check'; limitation L16"),
+    dict(issue="2 C0 not nested",
+         check=f"C chosen inside each of {PA2['n_folds']} outer folds (repeat 0), same grid",
+         result=f"nested C = C0 in {PA2['S_folds_C0']}/{PA2['n_folds']} folds (S) and {PA2['M1_folds_C0']}/{PA2['n_folds']} (M1); S AUC {PA2['S_auc_nested']:.4f} vs "
+                f"{PA2['S_auc_stored']:.4f}; ΔAUC S − M1 {nb['est']:+.4f} [{nb['lo']:+.4f}, {nb['hi']:+.4f}] vs {nbs['est']:+.4f} with C0",
+         consequence="no change; DR-S9-06 reworded (arm fairness, not nesting); limitation L17"),
+    dict(issue="3 Monte Carlo interval decided B3-b and H2b(c)",
+         check=f"outer patient bootstrap ({PA3['n_outer']} x {PA3['n_inner']}, approximate)",
+         result=f"B3 ratio {r3b['point']:.2f}: Monte Carlo [{r3b['mc_lo']:.2f}, {r3b['mc_hi']:.2f}] vs sampling about [{r3b['outer_q025']:.2f}, {r3b['outer_q975']:.2f}]; "
+                f"H2b(c) (converged M1) about [{r3h['outer_q025']:.2f}, {r3h['outer_q975']:.2f}]",
+         consequence="B3-b and H2b(c) verdicts withdrawn: not testable with this design; ratios descriptive; B3 mixed and H2b inconclusive unchanged"),
+    dict(issue="4 reweighing used unweighted counts",
+         check="Kamiran–Calders weights from WTPH2YR-weighted counts, refitted on the stored folds",
+         result=f"race positive-rate spread {PA4['race_spread_pp']['survey']:.1f} pp (survey only) -> {PA4['race_spread_pp']['as_fitted']:.1f} pp (as run) -> 0 (corrected); "
+                f"EOD NH Black {PA4['eod_nh_black']['corrected']:+.3f} vs {PA4['eod_nh_black']['asrun']:+.3f}, NH Asian {PA4['eod_nh_asian']['corrected']:+.3f} vs "
+                f"{PA4['eod_nh_asian']['asrun']:+.3f}; max |ΔAUC| {PA4['max_abs_dauc_corrected']:.4f}",
+         consequence="as-run arm described as partial reweighing; 'not adopted' stands (C21)"),
+    dict(issue="5 M1 coefficient bootstrap unconverged",
+         check=f"M1 at the exact optimum (newton-cholesky) and M1 + scaling (P09), B = {PA5['n_boot']}",
+         result=f"same {PA5['n_boot']} resamples: BMI SD {PA5['sd_converged']:.3f} converged vs {PA5['sd_stored']:.3f} as fitted (ratio {PA5['ratio_converged']:.2f} vs {PA5['ratio_stored']:.2f}); "
+                f"scaling only {PA5['ratio_scaled']:.2f}; stored refits at the limit {_conv_st['at_limit']}/{_conv_st['n_checked']}",
+         consequence="early stopping shrinks the SD (L13 sign corrected); the stability edge of S comes from scaling"),
+    dict(issue="6 M1 keeps the blanket recode",
+         check="M1c = M1 + P02 on the stored folds, §7 engine",
+         result=f"S − M1c E-ALL {m1c_e['est']:+.4f} [{m1c_e['lo']:+.4f}, {m1c_e['hi']:+.4f}]; E-SCREEN {m1c_s['est']:+.4f} [{m1c_s['lo']:+.4f}, {m1c_s['hi']:+.4f}]",
+         consequence=f"H2b(a) reading unchanged ({m1c_e['verdict']}); M1 described as naive-minimal"),
+])
+show(PA_SUM)
+
+# --- asserts on the key numbers (deterministic counts in both modes; resampling-dependent checks in FINAL)
+assert PA1["lin_sample_holdout"] == 901 and PA1["lin_sample_holdout_pos"] == 155 and PA1["n_holdout"] == len(ctx.test_idx)
+assert PA1["splined_still_nonlinear"] and not PA1["decision_changed"], "a design decision changes on the training part"
+assert all(v is None or v < 1e-5 for v in PA2["max_dev_when_C0"].values()), "nested refits with C = C0 must reproduce the stored predictions"
+assert abs(PA2["S_auc_change"]) < 0.002, PA2["S_auc_change"]
+assert (r3b["outer_q975"] - r3b["outer_q025"]) > (r3b["mc_hi"] - r3b["mc_lo"]), "sampling interval must be wider than the Monte Carlo interval"
+assert PA4["race_spread_pp"]["corrected"] < 1e-6, "weighted-count reweighing must make group and label independent"
+assert PA4["max_abs_dauc_corrected"] < C.SESOI["roc_auc"]
+assert PA5["full_coef_reproduced"] and PA5["convergence"]["M1 exact optimum (newton-cholesky)"]["at_limit"] == 0
+assert PA6["label_flips_train"] == 5
+if C.IS_FINAL:
+    assert PA4["max_dev_asrun_vs_stored"] < 1e-4, "the as-run reweighing arm must reproduce §8.8"
+    assert PA5["sd_converged"] > PA5["sd_stored"] and PA5["ratio_scaled"] < 1, "direction of the early-stopping bias"
+    assert PA5["share_at_limit_stored"] >= 0.9
+    assert m1c_e["verdict"] == "inconclusive" and nb["verdict"] == "inconclusive"
+
+# --- storage
+for nm, df in {"postaudit_summary": PA_SUM, "postaudit_holdout_overlap": PA1["overlap"], "postaudit_linearity_train": PA1["linearity"],
+               "postaudit_interactions_train": PA1["interactions"], "postaudit_vif_train": PA1["vif"], "postaudit_nested_c": PA2["table"],
+               "postaudit_ratio_outer": PA3["table"], "postaudit_ratio_outer_reps": PA3["per_outer"],
+               "postaudit_reweighing_rates": PA4["rates_fold0"], "postaudit_reweighing_spread": PA4["spread"],
+               "postaudit_reweighing_eod": PA4["eod"], "postaudit_reweighing_auc": PA4["auc"],
+               "postaudit_m1_coef": PA5["table"], "postaudit_m1c": PA6["table"]}.items():
+    df.to_csv(OUT / f"{nm}.csv", index=False)
+_drop = lambda d, ks: {k: v for k, v in d.items() if k not in ks}
+S9["postaudit"] = PA.jsonable(dict(
+    note="POST-LOCK post-audit checks (approximate, small resampling sizes); locked verdicts, primary arms and the hold-out unchanged",
+    sizes=PA_SZ, runtime_seconds=PA_SECONDS,
+    holdout_design=_drop(PA1, ("overlap", "skew")),
+    nested_c=PA2, ratio_outer=_drop(PA3, ("per_outer",)),
+    reweighing=_drop(PA4, ("rates_fold0",)),
+    m1_coef=PA5, m1c=PA6, summary=PA_SUM))
+
+# --- decision-register rows (appended after DR-S9-15 in §9.13)
+def _reg_pa(i, typ, fnd, ref, val, dec, alt, hyp, loop):
+    return dict(dr_id=f"DR-S9-{i}", stage="S9", date=today, type=typ, finding=fnd, evidence_ref=ref, evidence_value=val, decision=dec,
+                alternatives_rejected=alt, hyp_id=hyp, status="decided", check_verdict="PASS",
+                check_note="post-audit, post-lock; approximate check (§9.12)", loop_ref=loop, change_request="", commit="")
+
+REG_PA = pd.DataFrame([
+    _reg_pa(16, "postaudit_holdout", "Hold-out rows took part in the full-cohort §4/§5 design diagnostics (before the split existed)",
+            "results/S9/postaudit_holdout_overlap.csv; postaudit_linearity_train.csv; postaudit_interactions_train.csv; postaudit_vif_train.csv",
+            PA_SUM.loc[0, "result"], "Call §9.11 an internal hold-out check, not an independent validation; keep its numbers; add limitation L16",
+            "re-splitting or re-scoring the hold-out", "H2a;H2b;H2c", "DR-S6-12"),
+    _reg_pa(17, "postaudit_tuning", "C0 was chosen once on the whole training part, not nested in the outer folds",
+            "results/S9/postaudit_nested_c.csv", PA_SUM.loc[1, "result"],
+            "Keep C0 and the 'same model for every arm' rule; report the nested check; add limitation L17",
+            "re-running §7 with per-fold tuning (breaks the freeze)", "H2b", "DR-S7-04;DR-S9-06"),
+    _reg_pa(18, "postaudit_interval", "The §7.11 SD-ratio interval re-draws stored bootstrap replicates: Monte Carlo error, not sampling uncertainty",
+            "results/S9/postaudit_ratio_outer.csv; results/S7/coef_stability.csv", PA_SUM.loc[2, "result"],
+            "Withdraw the B3-b and H2b(c) verdicts as 'not testable with this design (post-audit)'; keep the ratios as descriptive; "
+            "hypotheses.md unchanged; B3 and H2b hypothesis-level verdicts unchanged",
+            "keeping the locked-rule verdicts; editing the locked file", "B3;H2b", "DR-S7-11"),
+    _reg_pa(19, "postaudit_fairness", "§8.8 reweighing used unweighted-count weights multiplied by survey weights: group and label only partly independent",
+            "results/S9/postaudit_reweighing_eod.csv; postaudit_reweighing_auc.csv; postaudit_reweighing_spread.csv", PA_SUM.loc[3, "result"],
+            "Describe the §8.8 arm as partial reweighing; the corrected weighted-count arm gives the same picture; 'not adopted' stands",
+            "replacing the stored §8 arm", "", "DR-S8-07;DR-S8-08"),
+    _reg_pa(20, "postaudit_stability", "The M1 coefficient bootstrap stops at the iteration limit; early stopping shrinks the BMI SD",
+            "results/S9/postaudit_m1_coef.csv", PA_SUM.loc[4, "result"],
+            "Correct the sign of L13 and of the §7 'optimiser noise' wording; attribute the stability edge of S to scaling (P09); locked M1 kept",
+            "replacing M1 after the lock", "H2b", "DR-S7-14;DR-S7-16"),
+    _reg_pa(21, "postaudit_baseline", "M1 keeps the blanket 7/9 sentinel recode (P02 off) in its features and training label",
+            "results/S9/postaudit_m1c.csv", PA_SUM.loc[5, "result"],
+            "Keep M1 as the locked naive-minimal baseline; report S − M1c as a post-lock comparison", "redefining the primary baseline", "H2b", "DR-S6-01;DR-S6-02"),
+])
+print(f"stored metrics_S9.json['postaudit'] and {len(REG_PA)} register rows (DR-S9-16 to DR-S9-21); post-audit runtime {PA_SECONDS:.0f} s")
+
+# %% [markdown]
+# **So what.** SOWHAT_PLACEHOLDER
+
+# %% [markdown]
+# ## 13 Outputs
 # **Why.** §10 and the video read every number from stored artefacts: `results/metrics_S9.json`, the tables in
 # `results/S9/`, the F9 figures and the §9 decision-register fragment (written from the FINAL run, listed below).
 
@@ -1548,7 +1714,7 @@ if RELEASED and "metrics" in S9["holdout"]:
     hpS = hp.set_index(["comparison", "pop"])
     reg = pd.concat([reg, pd.DataFrame([dict(
         dr_id="DR-S9-15", stage="S9", date=today, type="holdout",
-        finding="One-shot hold-out evaluation after exp-freeze",
+        finding="Internal hold-out check, evaluated once after exp-freeze (design-informed through the full-cohort §4/§5 diagnostics, L16)",
         evidence_ref="results/S9/holdout_metrics.csv; results/S9/holdout_pairs.csv; results/S9/holdout_log.json; figures/S9_holdout_vs_cv.png",
         evidence_value=(f"S T1 AUC E-ALL {hS.loc['E-ALL', 'roc_auc']:.3f} [{hS.loc['E-ALL', 'auc_lo']:.3f}, {hS.loc['E-ALL', 'auc_hi']:.3f}] (CV {hS.loc['E-ALL', 'cv_auc']:.3f}), "
                         f"E-SCREEN {hS.loc['E-SCREEN', 'roc_auc']:.3f} [{hS.loc['E-SCREEN', 'auc_lo']:.3f}, {hS.loc['E-SCREEN', 'auc_hi']:.3f}] (CV {hS.loc['E-SCREEN', 'cv_auc']:.3f}); "
@@ -1557,6 +1723,8 @@ if RELEASED and "metrics" in S9["holdout"]:
         decision="Report hold-out numbers as they are; no re-tuning", alternatives_rejected="re-tuning after seeing the hold-out",
         hyp_id="H2a;H2b;H2c", status="decided", check_verdict="PASS", check_note=f"first run {S9['holdout']['log']['first_run_utc']}",
         loop_ref="", change_request="", commit="")])], ignore_index=True)
+# Post-audit rows (§9.12) follow the hold-out row.
+reg = pd.concat([reg, REG_PA[reg.columns]], ignore_index=True)
 show(reg[["dr_id", "type", "check_verdict", "decision"]])
 if C.IS_FINAL:
     # Only a FINAL run writes the register fragment; a FAST run must not overwrite the committed one.

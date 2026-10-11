@@ -134,9 +134,11 @@ print(f"{len(HYP)} locked hypotheses parsed; prior exposure: {HYP['prior'].value
 # **Why.** Every locked hypothesis gets one verdict under its locked rule, with estimate, CI, SESOI and – for an
 # inconclusive AUC difference – the minimal detectable difference (MDD), so "inconclusive" can be read as "underpowered"
 # when the MDD exceeds the SESOI. Two verdicts are completed here (H1b had no verdict line in §4; P14 combines §7 (a) and
-# §8 (b)). As a check, the locked rules are re-applied to the stored CIs and must reproduce the stored verdicts. Two
-# exploratory rows (not hypotheses, not counted) are appended: the pure-preparation contrast S−B6a vs M1 and the
-# post-lock M1 sensitivity of §7.12.1.
+# §8 (b)). As a check, the locked rules are re-applied to the stored CIs and must reproduce the stored verdicts. Exploratory rows
+# (not hypotheses, not counted) are appended: the pure-preparation contrast S−B6a vs M1, the post-lock M1 sensitivity
+# of §7.12.1 and the post-audit checks of §9.12. **Post-audit:** the two SD-ratio sub-claims (B3-b, H2b-c) are shown as
+# *not testable (post-audit)*, because their locked interval measured Monte Carlo error only; the locked-rule label
+# stays visible next to it.
 
 # %%
 # Build the hypothesis scoreboard: one verdict per locked hypothesis with estimate, CI, SESOI and MDD.
@@ -202,12 +204,25 @@ add("H1b", h1b_std, h1b_lo, h1b_hi, "pp", h1b_v, interval="jackknife (df 15)", s
 # One displayed row per block hypothesis: the first primary sub-claim gives the estimate and CI, the stored
 # combined verdict gives the verdict, and every sub-verdict is listed in text.
 S7V = M["S7"]["scoreboard"]
+# Post-audit (§9.12, DR-S9-18): the SD-ratio sub-claims were decided by a Monte Carlo interval (re-draws of the stored
+# bootstrap replicates), not a sampling interval, so their verdicts are withdrawn as "not testable with this design".
+# The locked-rule label is kept next to it; the hypothesis-level verdicts are re-derived without them below.
+WITHDRAWN = {("B3", "(b) BMI SD ratio"), ("H2b", "(c) BMI SD ratio")}
+PA9 = M["S9"].get("postaudit")
+assert PA9 is not None or not C.IS_FINAL, "§9.12 post-audit results missing"
+
+
+def sub_status(h, sub, verdict):
+    """Displayed status of a locked sub-claim: withdrawn SD-ratio sub-claims show the post-audit status."""
+    return f"not testable (post-audit; locked rule: {verdict})" if (h, sub) in WITHDRAWN else verdict
+
+
 for h in ["H2a", "H2b", "H2c", "B1", "B2", "B2t", "B3", "B4", "B5", "B6a", "B6b"]:
     g = prim[prim["hyp_id"] == h]
     r0 = g.iloc[0]
     # Sub-verdict text; the population is appended only when the same sub-claim appears on several
     # populations.
-    subs = "; ".join(f"{r['sub']}{' ' + r['pop'] if (g['sub'] == r['sub']).sum() > 1 else ''}: {r['verdict']}" for _, r in g.iterrows())
+    subs = "; ".join(f"{r['sub']}{' ' + r['pop'] if (g['sub'] == r['sub']).sum() > 1 else ''}: {sub_status(h, r['sub'], r['verdict'])}" for _, r in g.iterrows())
     # Display unit by metric; dict.get falls back to the raw metric name for anything unlisted.
     unit = {"roc_auc": "AUC", "brier": "Brier", "sd_ratio": "ratio", "calslope_dev": "|slope−1|"}.get(r0["metric"], str(r0["metric"]))
     add(h, r0["est"], r0["lo"], r0["hi"], unit if np.isfinite(r0["est"]) else "", S7V[h]["verdict"], interval=str(r0["interval"]) if pd.notna(r0["interval"]) else "",
@@ -298,6 +313,22 @@ for (h, sub), rule in CHECK.items():
     assert v == r["verdict"], (h, sub, v, r["verdict"])
     n_ok += 1
 print(f"locked rules re-applied to {n_ok} stored S7 sub-claims: all reproduce the stored verdict")
+# Withdrawing the two SD-ratio sub-verdicts must not change a hypothesis-level verdict (locked combination rule).
+for h in sorted({h for h, _ in WITHDRAWN}):
+    kept = prim[(prim["hyp_id"] == h) & ~prim["sub"].isin([s_ for h_, s_ in WITHDRAWN if h_ == h])]["verdict"].tolist()
+    assert ek.combine_verdicts(kept) == S7V[h]["verdict"], (h, kept, S7V[h]["verdict"])
+_hv = ", ".join(f"{h} {S7V[h]['verdict']}" for h in sorted({h for h, _ in WITHDRAWN}))
+print(f"post-audit: SD-ratio sub-verdicts withdrawn for {sorted(WITHDRAWN)}; hypothesis verdicts unchanged ({_hv})")
+# Locked rule, locked verdict and post-audit status of the two sub-claims, side by side.
+PA_SUBS = pd.DataFrame([dict(hyp_id=h, sub=sub, estimate=r["est"], interval=f"[{r['lo']:.2f}, {r['hi']:.2f}] (Monte Carlo)",
+                             locked_rule="supported if ratio ≥ 2 and CI low > 1; refuted if CI high < 2",
+                             locked_verdict=r["verdict"], post_audit_status="not testable with this design (post-audit)",
+                             sampling_interval_approx=(f"[{PA9['ratio_outer']['ratio_B3']['outer_q025']:.2f}, {PA9['ratio_outer']['ratio_B3']['outer_q975']:.2f}]"
+                                                       if (PA9 and h == "B3") else
+                                                       (f"[{PA9['ratio_outer']['ratio_H2b_c_converged']['outer_q025']:.2f}, "
+                                                        f"{PA9['ratio_outer']['ratio_H2b_c_converged']['outer_q975']:.2f}] (converged M1)" if PA9 else "")))
+                        for h, sub in sorted(WITHDRAWN) for _, r in prim[(prim["hyp_id"] == h) & (prim["sub"] == sub)].iterrows()])
+show(PA_SUBS, 2)
 
 score_view = SCORE.assign(est_ci=SCORE.apply(lambda r: "" if not np.isfinite(r["estimate"]) else
                                               f"{r['estimate']:+.3f} [{r['ci_low']:+.3f}, {r['ci_high']:+.3f}]", axis=1))
@@ -313,6 +344,19 @@ EXPL = pd.DataFrame([dict(hyp_id="(expl.) S−B6a vs M1", est_ci=ci3_(pp_rows.lo
                     + [dict(hyp_id="(post-lock) S − " + r.variant, est_ci=ci3_(r.est, r.lo, r.hi, 4), unit="AUC", mdd=r.mdd,
                             underpowered=False, verdict=f"H2b(a) rule: {r.verdict_equivalence}", prior_exposure="post lock",
                             source="§7.12.1") for r in pl_main.itertuples()])
+if PA9:
+    # post-audit rows of §9.12 (approximate post-lock checks; not hypotheses, not counted)
+    _nc, _mc, _mo, _rw = PA9["nested_c"], PA9["m1c"], PA9["m1_coef"], PA9["reweighing"]
+    EXPL = pd.concat([EXPL, pd.DataFrame([
+        dict(hyp_id="(post-audit) S − M1c (M1 + codebook recode P02)", est_ci=ci3_(_mc["S_minus_M1c_eall"]["est"], _mc["S_minus_M1c_eall"]["lo"], _mc["S_minus_M1c_eall"]["hi"], 4),
+             unit="AUC", mdd=np.nan, underpowered=False, verdict=f"H2b(a) rule: {_mc['S_minus_M1c_eall']['verdict']}", prior_exposure="post audit", source="§9.12 (6)"),
+        dict(hyp_id=f"(post-audit) S − M1, C nested in {_nc['n_folds']} outer folds", est_ci=ci3_(_nc["dauc_nested"]["est"], _nc["dauc_nested"]["lo"], _nc["dauc_nested"]["hi"], 4),
+             unit="AUC", mdd=np.nan, underpowered=False, verdict=f"H2b(a) rule: {_nc['dauc_nested']['verdict']}", prior_exposure="post audit", source="§9.12 (2)"),
+        dict(hyp_id="(post-audit) BMI SD ratio, converged M1 / S-linear", est_ci=f"{_mo['ratio_converged']:.2f} (stored M1 {_mo['ratio_stored']:.2f}; M1 + scaling {_mo['ratio_scaled']:.2f})",
+             unit="ratio", mdd=np.nan, underpowered=False, verdict="descriptive (no verdict)", prior_exposure="post audit", source="§9.12 (5)"),
+        dict(hyp_id="(post-audit) EOD NH Black, weighted-count reweighing", est_ci=f"{_rw['eod_nh_black']['corrected']:+.3f} (as run {_rw['eod_nh_black']['asrun']:+.3f})",
+             unit="TPR", mdd=np.nan, underpowered=False, verdict="descriptive; 'not adopted' stands", prior_exposure="post audit", source="§9.12 (4)")])],
+        ignore_index=True)
 show(pd.concat([score_view[["hyp_id", "est_ci", "unit", "mdd", "underpowered", "verdict", "prior_exposure", "source"]], EXPL],
                ignore_index=True), 4)
 print("\nsub-verdicts:")
@@ -328,7 +372,9 @@ SCORE.to_csv(OUT / "scoreboard.csv", index=False)
 # ### H2b in detail
 # **Why.** H2b is the brief's "minimal versus systematic preparation" test (same model, M1 vs S). Its locked verdict
 # combines three sub-claims, so the single word *inconclusive* hides what the data say. The table adds the exploratory
-# pure-preparation contrast S−B6a vs M1 (S without class weights) and the POST-LOCK M1 variants of §7.12.1.
+# pure-preparation contrast S−B6a vs M1 (S without class weights), the POST-LOCK M1 variants of §7.12.1 and the
+# post-audit rows of §9.12 (M1c, nested C, converged-M1 stability). Sub-claim (c) shows its post-audit status next to
+# the locked verdict.
 
 # %%
 # Break H2b into its locked sub-claims and add the exploratory pure-preparation and post-lock M1 rows.
@@ -345,14 +391,16 @@ for (pop, met), r in pp_.iterrows():
     print(f"pure preparation S−B6a vs M1, {pop:<8} {met:<7} {r['diff']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}]")
 # Bootstrap SD ratio of the BMI coefficient (M1 versus the systematic linear model), from §7.
 cs = M["S7"]["coef_stability"]
-print(f"BMI coefficient SD ratio M1 / S-linear {cs['ratio_H2b']['ratio']:.2f} [{cs['ratio_H2b']['lo']:.2f}, {cs['ratio_H2b']['hi']:.2f}]; "
+print(f"BMI coefficient SD ratio M1 / S-linear {cs['ratio_H2b']['ratio']:.2f} (descriptive; Monte Carlo interval [{cs['ratio_H2b']['lo']:.2f}, {cs['ratio_H2b']['hi']:.2f}]); "
       f"unscaled cumulative {cs['ratio_cumulative']['ratio']:.2f}; inside scaled L2 (B3) {cs['ratio_B3']['ratio']:.2f}")
 # one table: locked sub-claims, the exploratory pure-preparation contrast and the POST-LOCK M1 variants (§7.12.1)
 plm = get("S7:postlock_m1_sensitivity")
 plr = pd.DataFrame(plm["rows"])
 H2B_TAB = pd.DataFrame(
     [dict(row=f"H2b {sub}", status="locked", population=r["pop"], estimate_ci=(ci3_(r["est"], r["lo"], r["hi"], 4) if pd.notna(r["hi"]) else f"{r['est']:.2f}"),
-          verdict=r["verdict"], note=(f"MDD {r['mdd']:.3f} vs SESOI {r['sesoi']:.3f}" if pd.notna(r["mdd"]) else "Monte Carlo interval"))
+          verdict=("not testable (post-audit)" if ("H2b", sub) in WITHDRAWN else r["verdict"]), locked_verdict=r["verdict"],
+          note=(f"MDD {r['mdd']:.3f} vs SESOI {r['sesoi']:.3f}" if pd.notna(r["mdd"]) else
+                "Monte Carlo interval (re-draws of stored replicates), not a sampling interval; ratio descriptive"))
      for sub, r in h2b.iterrows()]
     + [dict(row=f"S−B6a vs M1 ({'AUC' if met == 'roc_auc' else 'Brier'})", status="exploratory", population=pop,
             estimate_ci=ci3_(r["diff"], r["lo"], r["hi"], 4), verdict="no verdict (not locked)",
@@ -360,13 +408,33 @@ H2B_TAB = pd.DataFrame(
     + [dict(row=f"S − [{r['variant']}] (AUC)", status="POST-LOCK", population=r["pop"], estimate_ci=ci3_(r["est"], r["lo"], r["hi"], 4),
             verdict=f"equivalence rule: {r['verdict_equivalence']}", note=f"M1 folds at a solver limit: {r['folds_not_converged']}/{r['n_folds']}")
        for _, r in plr[(plr["a"] == "S") & (plr["metric"] == "roc_auc")].iterrows()])
+if PA9:
+    _mc, _nc, _mo, _ro = PA9["m1c"], PA9["nested_c"], PA9["m1_coef"], PA9["ratio_outer"]["ratio_H2b_c_converged"]
+    H2B_TAB = pd.concat([H2B_TAB, pd.DataFrame(
+        [dict(row="S − M1c (M1 + codebook recode P02) (AUC)", status="post-audit", population=pop_, estimate_ci=ci3_(d_["est"], d_["lo"], d_["hi"], 4),
+              verdict=f"equivalence rule: {d_['verdict']}", note="M1 with the codebook sentinel recode and the correct training label (§9.12, 6)")
+         for pop_, d_ in (("E-ALL", _mc["S_minus_M1c_eall"]), ("E-SCREEN", _mc["S_minus_M1c_escreen"]))]
+        + [dict(row=f"S − M1 with C nested in {_nc['n_folds']} outer folds (AUC)", status="post-audit", population="E-ALL",
+                estimate_ci=ci3_(_nc["dauc_nested"]["est"], _nc["dauc_nested"]["lo"], _nc["dauc_nested"]["hi"], 4),
+                verdict=f"equivalence rule: {_nc['dauc_nested']['verdict']}",
+                note=f"same folds with C0: {ci3_(_nc['dauc_stored']['est'], _nc['dauc_stored']['lo'], _nc['dauc_stored']['hi'], 4)}; nested C = C0 in {_nc['S_folds_C0']}/{_nc['n_folds']} (S), {_nc['M1_folds_C0']}/{_nc['n_folds']} (M1) (§9.12, 2)"),
+           dict(row="(c) BMI SD ratio, converged M1 / S-linear", status="post-audit", population="training part",
+                estimate_ci=f"{_mo['ratio_converged']:.2f}; outer bootstrap about [{_ro['outer_q025']:.2f}, {_ro['outer_q975']:.2f}]",
+                verdict="descriptive (no verdict)", note=f"stored M1 stops at the iteration limit: {_mo['ratio_stored']:.2f} understates it (§9.12, 3 and 5)"),
+           dict(row="(c) BMI SD ratio, M1 + scaling only (P09) / S-linear", status="post-audit", population="training part",
+                estimate_ci=f"{_mo['ratio_scaled']:.2f}", verdict="descriptive (no verdict)", note="scaling alone removes M1's instability: the stability edge of S is scaling (§9.12, 5)")])],
+        ignore_index=True)
 show(H2B_TAB)
 H2B_TAB.to_csv(OUT / "h2b_detail.csv", index=False)
 print(f"POST-LOCK: H2b(a) conclusion unchanged under every M1 variant: {plm['h2b_a_unchanged']}")
 S10["h2b"] = dict(subs={k: dict(est=r["est"], lo=r["lo"], hi=r["hi"], verdict=r["verdict"], mdd=r["mdd"]) for k, r in h2b.iterrows()},
                   pure_preparation=pp_.reset_index().to_dict("records"), verdict=S7V["H2b"]["verdict"],
                   postlock_m1=dict(h2b_a_unchanged=plm["h2b_a_unchanged"], folds_not_converged=plm["folds_not_converged"],
-                                   rows=plr[(plr["a"] == "S") & (plr["pop"] == "E-ALL")].to_dict("records")))
+                                   rows=plr[(plr["a"] == "S") & (plr["pop"] == "E-ALL")].to_dict("records")),
+                  sub_c_status="not testable (post-audit)", sub_c_locked_verdict=h2b.loc["(c) BMI SD ratio", "verdict"],
+                  postaudit=(dict(S_minus_M1c_eall=PA9["m1c"]["S_minus_M1c_eall"], S_minus_M1c_escreen=PA9["m1c"]["S_minus_M1c_escreen"],
+                                  S_minus_M1_nested_C=PA9["nested_c"]["dauc_nested"], sd_ratio_converged_M1=PA9["m1_coef"]["ratio_converged"],
+                                  sd_ratio_scaled_M1=PA9["m1_coef"]["ratio_scaled"]) if PA9 else None))
 
 # %% [markdown]
 # **So what.** Of 17 hypotheses, 10 are supported, 1 is mixed (B3), 6 are inconclusive (B4, B5, H2b, H2c, H3, P14) and
@@ -448,7 +516,8 @@ plt.show()
 # ## 3 Post-lock notes
 # **Why.** After the lock, later interpretations must be visible as such. Three entries are recorded in the §10
 # decision register (not in the locked file): the operational reading of H3, the source of the P14 verdict and the
-# verdict of H1b. The POST-LOCK M1 sensitivity is recorded in §7.12.1 and DR-S7-16.
+# verdict of H1b. The POST-LOCK M1 sensitivity is recorded in §7.12.1 and DR-S7-16; two post-audit corrections of §9.12
+# (SD-ratio sub-verdicts, hold-out status) are listed here as well.
 
 # %%
 # Record the three post-lock interpretation notes (H3 reading, P14 verdict source, H1b verdict) next to their
@@ -462,12 +531,17 @@ POSTLOCK = [
          consequence=f"scoreboard uses the §8 combined verdict: {get('S8:verdicts.P14')}"),
     dict(item="H1b verdict", note="§4 reported crude and standardised differences but no verdict line",
          consequence=f"locked rule applied here: standardised {h1b_std:+.2f} pp [{h1b_lo:+.2f}, {h1b_hi:+.2f}] < +2 pp and below crude -> {h1b_v}"),
+    dict(item="SD-ratio sub-verdicts (post-audit)", note="the locked rule decided B3-b and H2b(c) with an interval that re-draws the stored bootstrap "
+                                                          "replicates (Monte Carlo error, not sampling uncertainty; §9.12, DR-S9-18)",
+         consequence="B3-b and H2b(c) shown as 'not testable with this design' next to their locked labels; ratios descriptive; B3 mixed and H2b inconclusive unchanged"),
+    dict(item="Hold-out status (post-audit)", note="the hold-out rows took part in the full-cohort §4/§5 diagnostics before the split existed (§9.12, DR-S9-16)",
+         consequence="§9.11 is an internal hold-out check, not an independent validation; numbers unchanged; limitation L16"),
 ]
 show(pd.DataFrame(POSTLOCK))
 
 # %% [markdown]
-# **So what.** None of the notes changes a locked statement or a stored estimate; they make explicit how two ambiguous
-# or deferred items were resolved.
+# **So what.** None of the notes changes a locked statement or a stored estimate; they make explicit how ambiguous or
+# deferred items were resolved and how two post-audit corrections are carried.
 
 # %% [markdown]
 # ## 4 Improvements and deteriorations
@@ -538,8 +612,12 @@ IMPDET = pd.DataFrame([
     dict(change="Race reweighing (fairness mitigation)", direction="deterioration (NH Black gap widens)", metric="ΔEOD NH Black / NH Asian",
          effect=f"{ci3(blk['d_eod'], blk['d_eod_lo'], blk['d_eod_hi'])} / {ci3(asn['d_eod'], asn['d_eod_lo'], asn['d_eod_hi'])}",
          mechanism=f"race weights range {get('S8:reweighing.weight_range.race')[0]:.2f}–{get('S8:reweighing.weight_range.race')[1]:.2f} (NH Black cases down-weighted most); "
-                   "rebalancing prevalence moves the shared threshold away from the Black positives",
-         test="paired bootstrap of EOD change", verdict="not adopted"),
+                   "narrowing the prevalence differences moves the shared threshold away from the Black positives. As run, the weights came from unweighted "
+                   "counts times survey weights, so group and label were only partly independent"
+                   + (f" (race positive-rate spread {PA9['reweighing']['race_spread_pp']['survey']:.1f} → {PA9['reweighing']['race_spread_pp']['as_fitted']:.1f} pp); "
+                      f"with weighted counts (exact independence) NH Black EOD {PA9['reweighing']['eod_nh_black']['corrected']:+.3f} vs {PA9['reweighing']['eod_nh_black']['asrun']:+.3f} as run (§9.12)"
+                      if PA9 else ""),
+         test="paired bootstrap of EOD change; post-audit weighted-count arm", verdict="not adopted (holds for the corrected arm)"),
 ])
 show(IMPDET[["change", "direction", "effect", "mechanism", "verdict"]])
 IMPDET.to_csv(OUT / "improvements_deteriorations.csv", index=False)
@@ -550,7 +628,8 @@ IMPDET.to_csv(OUT / "improvements_deteriorations.csv", index=False)
 # 0.076 (B6a block, S − S−B6a; the S − M1 Brier gap is +0.074); without class weights, systematic preparation gains
 # 0.007 AUC and no calibration cost. Dropping care traces
 # lowers whole-sample AUC but raises screening AUC, and refitting ADA items on our label lowers screening AUC – both say
-# the label rewards *recognising the diagnosed*. Race reweighing widens the NH Black gap and was not adopted.
+# the label rewards *recognising the diagnosed*. Race reweighing widens the NH Black gap and was not adopted; the arm as
+# run was only partial reweighing, and the post-audit weighted-count version (§9.12) gives the same picture.
 
 # %% [markdown]
 # ## 5 What the ML evidence says about the data
@@ -587,7 +666,7 @@ WHAT = pd.DataFrame([
          number=f"{s3['valid_cells_destroyed_cohort']:,} valid cells; {s3['a1c_positives_lost']}/{s3['a1c_positives']} HbA1c positives; {s3['l_comb_flips']}/{s3['l_comb_positives']} L_comb flips",
          grade="E1"),
     dict(property="Structural redundancy", probe="bootstrap SD of the BMI coefficient",
-         reading="redundancy destabilises explanation, not prediction; L2 + scaling absorb most of it",
+         reading="redundancy destabilises explanation, not prediction; L2 + scaling absorb most of it (ratios descriptive, post-audit)",
          number=f"SD ratio unscaled {cs['ratio_cumulative']['ratio']:.2f}, inside scaled L2 {cs['ratio_B3']['ratio']:.2f}; ΔAUC B3 "
                 f"{prim[(prim['hyp_id'] == 'B3') & (prim['sub'] == '(a) AUC')].iloc[0]['est']:+.4f}",
          grade="E3"),
@@ -643,7 +722,7 @@ WHAT.to_csv(OUT / "what_ml_says.csv", index=False)
 
 # %%
 # Collect the three findings for the video and the evidence lines behind the chosen modelling headline.
-# Reads stored results, including the one-shot hold-out when available; writes
+# Reads stored results, including the internal hold-out check when available; writes
 # results/S10/headline_findings.csv.
 pc = pd.DataFrame(M["S9"]["positive_control"]["rows"])
 # The hold-out may be absent in a re-run; HO_OK switches every hold-out reference on or off.
@@ -694,7 +773,7 @@ HEAD_LINES = [
 if HO_OK:
     # Hold-out AUCs of arm S on both populations; only direction and size of the gap are compared with CV.
     s_all, s_scr = HOM.loc[("S", 1, "E-ALL"), "roc_auc"], HOM.loc[("S", 1, "E-SCREEN"), "roc_auc"]
-    HEAD_LINES.append(("hold-out, arm S: same direction and size (not separately testable, 25 screening positives)",
+    HEAD_LINES.append(("internal hold-out check, arm S: same direction and size (not separately testable, 25 screening positives)",
                        f"E-ALL {s_all:.3f} vs E-SCREEN {s_scr:.3f} (gap {s_all - s_scr:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)"))
 print("\nHEADLINE – whole-sample AUC measures recognition of known diabetes, not screening; distinct evidence lines:")
 for a, b in HEAD_LINES:
@@ -710,7 +789,7 @@ HF.to_csv(OUT / "headline_findings.csv", index=False)   # slide material for the
 # **So what – choice of the headline.** The modelling headline is **"a whole-sample AUC measures recognition of known
 # diabetes, not screening"** – spectrum bias (Ransohoff & Feinstein 1978) created by the label's composition (84 % of
 # positives already diagnosed), not by the model. It is non-obvious (one whole-sample AUC hides it), carried by six
-# evidence lines from §7–§8 (the hold-out shows the same direction and size, +0.060 vs +0.055, but is not separately
+# evidence lines from §7–§8 (the internal hold-out check shows the same direction and size, +0.060 vs +0.055, but is not separately
 # testable with 25 screening positives), and actionable (report E-SCREEN; keep care traces out of screening models).
 # Its pre-registered core H2c(i) is supported; H2c as a whole is inconclusive because the care-trace sub-claim (ii) on
 # E-SCREEN rose (+0.019) instead of staying unchanged, with a CI that crosses the ±0.01 band.
@@ -736,7 +815,7 @@ for i, (a, t, lab) in enumerate(ARMS_FIG):
     ax.plot([r["escr_auc"], r["eall_auc"]], [i, i], color=OI["grey"], lw=2, zorder=1)
     ax.errorbar(r["eall_auc"], i, xerr=[[r["eall_auc"] - r["eall_auc_lo"]], [r["eall_auc_hi"] - r["eall_auc"]]], fmt="o", color=OI["blue"], capsize=2, zorder=2)
     ax.errorbar(r["escr_auc"], i, xerr=[[r["escr_auc"] - r["escr_auc_lo"]], [r["escr_auc_hi"] - r["escr_auc"]]], fmt="o", color=OI["vermillion"], capsize=2, zorder=2)
-    # One-shot hold-out AUCs as hollow triangles just below the CV points.
+    # Internal hold-out AUCs as hollow triangles just below the CV points.
     if HO_OK and (a, t, "E-ALL") in HOM.index:
         ax.plot(HOM.loc[(a, t, "E-ALL"), "roc_auc"], i - 0.25, "^", color=OI["blue"], mfc="white", ms=6)
         ax.plot(HOM.loc[(a, t, "E-SCREEN"), "roc_auc"], i - 0.25, "^", color=OI["vermillion"], mfc="white", ms=6)
@@ -754,13 +833,13 @@ ax.invert_yaxis()
 leg = [Line2D([], [], marker="o", ls="", color=OI["blue"], label="E-ALL (all adults, L_comb)"),
        Line2D([], [], marker="o", ls="", color=OI["vermillion"], label="E-SCREEN (not diagnosed, HbA1c ≥ 6.5)")]
 if HO_OK:
-    leg.append(Line2D([], [], marker="^", ls="", color="k", mfc="white", label="one-shot hold-out"))
+    leg.append(Line2D([], [], marker="^", ls="", color="k", mfc="white", label="internal hold-out (evaluated once)"))
 ax.legend(handles=leg, fontsize=8, loc="lower right")
 ax.set(xlabel="ROC-AUC (95 % CI)", xlim=(0.6, 1.0), title="Recognition vs screening")
 fig.tight_layout()
 plots.savefig(fig, "S10_recognition_vs_screening", caption="F10-2. The same out-of-fold predictions scored on E-ALL (blue; all adults, 84 % of "
               "positives already diagnosed) and E-SCREEN (red; adults without a diagnosis, positive = HbA1c ≥ 6.5 %), training part, 95 % "
-              "bootstrap CIs; triangles = one-shot hold-out where available. Every arm loses AUC on the screening population; the arm without "
+              "bootstrap CIs; triangles = internal hold-out check where available. Every arm loses AUC on the screening population; the arm without "
               "care-trace items is the only one that ranks higher on E-SCREEN than arm S.")
 plt.show()
 
@@ -847,9 +926,9 @@ CL = [
     dict(cid="C01", vs="V3", head=True, grade="E2", type="leakage", subj="The leak gate",
          prop=f"removing inadmissible items (treatment, diagnosis history, glucose testing) lowers E-ALL AUC by {-lg['T1_E-ALL']['est']:.2f}, and the excess was leakage",
          ev=["§7 paired CV leak gate (H2a/B2)", "§7 depth-3 tree root on a treatment item (B2t)", "§9 leak hunt on admissible arms", "§9 permutation null"]
-            + (["§9 one-shot hold-out M1 − M0"] if HO_OK else []),
+            + (["§9 internal hold-out M1 − M0"] if HO_OK else []),
          eff=f"ΔAUC M1 − M0 E-ALL {sw(lg['T1_E-ALL'])}; E-SCREEN {sw(lg['T1_E-SCREEN'])}", prereg=pe("H2a"),
-         rob=ROB_LEAK + (f"; hold-out {sw(HOP.loc[('M1 T1 - M0 T1', 'E-ALL')])}" if HO_OK else ""), ext="none",
+         rob=ROB_LEAK + (f"; internal hold-out {sw(HOP.loc[('M1 T1 - M0 T1', 'E-ALL')])}" if HO_OK else ""), ext="none",
          scope="training part, Tier 1, E-ALL", fals="CI of M1 − M0 reaching above −0.05", hyp="H2a;B2;B2t"),
     dict(cid="C02", vs="V3", head=False, grade="E1", type="data_artefact", subj="The naive tree",
          prop=f"median imputation turns age at diagnosis ({tm['did040_missing_share']:.0%} missing) into a constant {tm['did040_fill']:.0f} that the tree splits on",
@@ -868,9 +947,12 @@ CL = [
     # --- minimal versus systematic preparation, spectrum and care traces (C05-C10)
     dict(cid="C05", vs="V7", head=True, grade="E3", type="minimal_vs_systematic", subj="The M1-versus-S contrast",
          prop=f"systematic preparation changes AUC by under {h2b.loc['(a) AUC', 'hi']:.3f}; equivalence stays unestablished (MDD {h2b.loc['(a) AUC', 'mdd']:.3f})",
-         ev=["§7 paired CV H2b(a)", f"§9 {N_SEEDS} seeds", f"§9 {N_SENS}-spec table", f"§9 {N_CURVE}-spec curve", "§9 PSU-grouped CV"] + (["§9 one-shot hold-out S − M1"] if HO_OK else []),
+         ev=["§7 paired CV H2b(a)", f"§9 {N_SEEDS} seeds", f"§9 {N_SENS}-spec table", f"§9 {N_CURVE}-spec curve", "§9 PSU-grouped CV"] + (["§9 internal hold-out S − M1"] if HO_OK else []),
          eff=f"ΔAUC {sw(h2b.loc['(a) AUC'])}; Brier {h2b.loc['(b) Brier', 'est']:+.3f} (refuted, class weights); pure preparation ΔAUC {pp_.loc[('E-ALL', 'roc_auc'), 'diff']:+.3f}",
-         prereg=pe("H2b"), rob=ROB_H2B + (f"; hold-out {sw(HOP.loc[('S T1 - M1 T1', 'E-ALL')])} ({HOP.loc[('S T1 - M1 T1', 'E-ALL'), 'verdict']})" if HO_OK else ""), ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
+         prereg=pe("H2b"), rob=ROB_H2B + (f"; internal hold-out {sw(HOP.loc[('S T1 - M1 T1', 'E-ALL')])} ({HOP.loc[('S T1 - M1 T1', 'E-ALL'), 'verdict']})" if HO_OK else "")
+             + (f"; post-audit: C nested in folds {sw(PA9['nested_c']['dauc_nested'])}, S − M1c (codebook recode) {sw(PA9['m1c']['S_minus_M1c_eall'])}, both "
+                f"{PA9['m1c']['S_minus_M1c_eall']['verdict']}" if PA9 else ""),
+         ext="none", scope="training part, E-ALL, Tier 1", fals="CI of S − M1 wholly beyond ±0.01", hyp="H2b"),
     dict(cid="C06", vs="V7", head=False, grade="E2", type="deterioration", subj="Paired cross-validation",
          prop=f"balanced class weights worsen the Brier score by {b6.loc['(b) Brier', 'est']:.3f} at unchanged AUC; without them preparation costs no calibration",
          ev=["§7 paired CV B6a(b)", "§7 pure-preparation contrast S−B6a vs M1"],
@@ -880,21 +962,21 @@ CL = [
     dict(cid="C07", vs="V7", head=True, grade="E2", type="spectrum", subj="Scoring arm S on E-SCREEN",
          prop=f"whole-sample AUC overstates screening discrimination by {hl['eall_minus_escreen_S_T1']['est']:.3f}; most positives were already diagnosed",
          ev=[a for a, _ in HEAD_LINES], eff=f"AUC {hl['auc_S_eall_T1']:.3f} vs {hl['auc_S_escreen_T1']:.3f}; gap {sw(hl['eall_minus_escreen_S_T1'])}",
-         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + (f"; hold-out: same direction and size ({s_all - s_scr:+.3f} vs "
+         prereg=pe("H2c"), rob="all admissible arms lose AUC on E-SCREEN" + (f"; internal hold-out check: same direction and size ({s_all - s_scr:+.3f} vs "
                                                               f"{hl['eall_minus_escreen_S_T1']['est']:+.3f}), not separately testable with 25 screening positives" if HO_OK else ""), ext="none",
          scope="US adults 2021-23; screening = not yet diagnosed", fals="gap CI including 0 in a new sample", hyp="H2c"),
     dict(cid="C08", vs="V7", head=True, grade="E3", type="care_traces", subj="The care-trace ablation",
          prop=f"removing the two told-by-doctor items lowers E-ALL AUC by {-hl['minus_care_eall']['est']:.3f} yet raises E-SCREEN by {hl['minus_care_escreen']['est']:.3f}",
          ev=["§7 paired ablation H2c(ii) on E-ALL", "§7 same ablation on E-SCREEN", "§9 leak hunt T1-minus-care contrast"]
-            + (["§9 one-shot hold-out T1-minus-care − S"] if HO_OK else []),
+            + (["§9 internal hold-out T1-minus-care − S"] if HO_OK else []),
          eff=f"E-ALL {sw(hl['minus_care_eall'])}; E-SCREEN {sw(hl['minus_care_escreen'])}", prereg=pe("H2c"),
-         rob="E-SCREEN CI excludes 0 but reaches below the SESOI" + (f"; hold-out same signs ({HOP.loc[('T1-minus-care T1 - S T1', 'E-ALL'), 'est']:+.3f} / "
+         rob="E-SCREEN CI excludes 0 but reaches below the SESOI" + (f"; internal hold-out same signs ({HOP.loc[('T1-minus-care T1 - S T1', 'E-ALL'), 'est']:+.3f} / "
                                                                 f"{HOP.loc[('T1-minus-care T1 - S T1', 'E-SCREEN'), 'est']:+.3f}, CIs include 0)" if HO_OK else ""), ext="none", scope="training part, Tier 1", fals="E-SCREEN difference CI including 0", hyp="H2c"),
     dict(cid="C09", vs="V7", head=False, grade="E3", type="baseline", subj="The E-SCREEN baseline comparison",
          prop=f"arm S ranks undiagnosed cases better than the {ADA_ITEMS - ADA_MISS}-item ADA-lite points score, by {hl['S_minus_ADAlite_escreen']['est']:.3f} AUC",
-         ev=["§7 paired bootstrap H2c(iii)"] + (["§9 one-shot hold-out S − ADA-lite"] if HO_OK else []),
+         ev=["§7 paired bootstrap H2c(iii)"] + (["§9 internal hold-out S − ADA-lite"] if HO_OK else []),
          eff=f"ΔAUC {sw(hl['S_minus_ADAlite_escreen'])}", prereg=pe("H2c"),
-         rob=(f"not replicated on the hold-out: {sw(HOP.loc[('S T1 - BL-ADAlite T1', 'E-SCREEN')])} (same sign, CI includes 0, about 25 positives); "
+         rob=(f"not replicated on the internal hold-out: {sw(HOP.loc[('S T1 - BL-ADAlite T1', 'E-SCREEN')])} (same sign, CI includes 0, about 25 positives); "
               "ADA-lite incomplete (L06)" if HO_OK else ROB_NONE),
          ext=f"Bang 2009 ADA risk test (qualitative only; ADA-lite lacks {ADA_MISS} of {ADA_ITEMS} items)", scope="E-SCREEN, training part", fals="CI including 0", hyp="H2c"),
     dict(cid="C10", vs="V7", head=False, grade="E3", type="deterioration", subj="Refitting ADA-lite items on L_comb",
@@ -953,10 +1035,15 @@ CL = [
          prop="the race-blind model under-predicts for Black, Asian and Mexican American adults and over-predicts for White adults",
          ev=["§8 observed : expected by race with bootstrap CI"], eff="O:E " + ", ".join(f"{g} {cal.loc[g, 'oe']:.2f} [{cal.loc[g, 'oe_lo']:.2f}, {cal.loc[g, 'oe_hi']:.2f}]" for g in ["NH White", "NH Black", "NH Asian", "Mexican American"]),
          prereg="none (audit)", rob=ROB_NONE, ext="none", scope="training part, S without class weights", fals="O:E CIs including 1", hyp=""),
-    dict(cid="C21", vs="V7", head=False, grade="E3", type="mitigation", subj="The race-reweighing arm",
-         prop=f"it leaves AUC and the Asian gap unchanged and widens the NH Black gap by {-eod_b['d_eod']:.3f}",
-         ev=["§8 paired bootstrap of EOD change"], eff=f"ΔEOD NH Black {eod_b['d_eod']:+.3f} [{eod_b['d_eod_lo']:+.3f}, {eod_b['d_eod_hi']:+.3f}]",
-         prereg="none (mitigation arm)", rob=ROB_NONE, ext="none", scope="E-ALL, training part", fals="ΔEOD CI including 0", hyp=""),
+    dict(cid="C21", vs="V7", head=False, grade="E3", type="mitigation", subj="Race reweighing",
+         prop=f"it widens the NH Black gap by {-eod_b['d_eod']:.3f} without changing AUC, also with weighted counts",
+         ev=["§8 paired bootstrap of EOD change"] + (["§9.12 post-audit weighted-count reweighing"] if PA9 else []),
+         eff=f"ΔEOD NH Black {eod_b['d_eod']:+.3f} [{eod_b['d_eod_lo']:+.3f}, {eod_b['d_eod_hi']:+.3f}] (as run: partial reweighing, unweighted counts x survey weights); "
+             f"NH Asian ΔEOD {asn['d_eod']:+.3f} [{asn['d_eod_lo']:+.3f}, {asn['d_eod_hi']:+.3f}]"
+             + (f"; weighted counts: NH Black EOD {PA9['reweighing']['eod_nh_black']['corrected']:+.3f} vs {PA9['reweighing']['eod_nh_black']['asrun']:+.3f}, "
+                f"NH Asian {PA9['reweighing']['eod_nh_asian']['corrected']:+.3f} vs {PA9['reweighing']['eod_nh_asian']['asrun']:+.3f}" if PA9 else ""),
+         prereg="none (mitigation arm)", rob=("post-audit weighted-count arm (exact group-label independence) agrees" if PA9 else ROB_NONE), ext="none",
+         scope="E-ALL, training part", fals="ΔEOD CI including 0", hyp=""),
     # --- procedure credibility, external replication and missing data (C22-C24)
     dict(cid="C22", vs="V7", head=False, grade="E1", type="credibility", subj="The control analysis",
          prop=f"the evaluation returns AUC {perm9['S']['null_mean']:.2f} without signal and detects a weak synthetic feature",
@@ -977,12 +1064,13 @@ if HO_OK:
     nflag = int(HO.get("n_flag_2se", 0))
     hS = HOM.loc[("S", 1)]
     ho_gap = hS.loc["E-ALL", "roc_auc"] - hS.loc["E-SCREEN", "roc_auc"]          # from the stored hold-out AUCs only
-    CL.append(dict(cid="C25", vs="V7", head=False, grade="E3", type="holdout", subj="The one-shot hold-out",
+    CL.append(dict(cid="C25", vs="V7", head=False, grade="E3", type="holdout", subj="The internal hold-out check",
                    prop=f"arm S keeps the recognition gap: same direction and size ({ho_gap:+.3f} vs {hl['eall_minus_escreen_S_T1']['est']:+.3f} in CV)",
                    ev=["§9 hold-out after exp-freeze", "§7 cross-validation"],
                    eff=f"E-ALL {hS.loc['E-ALL', 'roc_auc']:.3f} [{hS.loc['E-ALL', 'auc_lo']:.3f}, {hS.loc['E-ALL', 'auc_hi']:.3f}]; E-SCREEN {hS.loc['E-SCREEN', 'roc_auc']:.3f} "
                        f"[{hS.loc['E-SCREEN', 'auc_lo']:.3f}, {hS.loc['E-SCREEN', 'auc_hi']:.3f}]; {nflag} rows > 2 SE below CV",
-                   prereg="none (one shot)", rob=f"evaluated once; {nflag} of 20 AUCs > 2 SE below CV; the gap itself is not separately testable "
+                   prereg="none (evaluated once after exp-freeze; design-informed through the full-cohort §4/§5 diagnostics, L16)",
+                   rob=f"evaluated once; internal, not independent (L16); {nflag} of 20 AUCs > 2 SE below CV; the gap itself is not separately testable "
                                                    "with 25 screening positives (no CI)", ext="none", scope="20 % hold-out (1,146 adults)",
                    fals="hold-out AUC > 2 SE below CV", hyp="H2a;H2b;H2c"))
 
@@ -991,7 +1079,7 @@ tg_skew = get("S4:skew.LBXTLG|fasting (WTSAF2YR > 0)")
 CL.append(dict(cid="C26", vs="V4", head=False, grade="E1", type="redundancy_skew", subj="The redundancy and skew audit",
                prop=f"weight and BMI are near-collinear (VIF {vif_raw['BMXWT']:.1f}, {vif_raw['BMXBMI']:.1f}) and fasting triglycerides are heavily skewed ({tg_skew['raw']:.2f})",
                ev=["§4 VIF of the raw anthropometrics", "§4 structural identity log BMI = log weight − 2 log height",
-                   "§4 skewness on the valid fasting subsample", "§7 coefficient stability (B3)"],
+                   "§4 skewness on the valid fasting subsample", "§7 coefficient stability (B3, descriptive SD ratio)"],
                eff=f"VIF weight {vif_raw['BMXWT']:.1f}, BMI {vif_raw['BMXBMI']:.1f}; r(log BMI, log W − 2 log H) {get('S4:redundancy.r_logbmi_logw_2logh'):.5f}; "
                    f"triglyceride skewness {tg_skew['raw']:.2f} raw, {tg_skew['log']:.2f} log, {tg_skew['yj']:.3f} Yeo-Johnson (n = {tg_skew['n']:,}, WTSAF2YR > 0)",
                prereg="analysis_seen", rob="deterministic computation", ext="none",
@@ -1047,16 +1135,18 @@ else:
 # **So what.** Grades and counts are printed above. All headline claims have at least two independent evidence lines, so
 # none was downgraded automatically. Two claims are graded by judgement: C05 (minimal vs systematic) stays E3 because
 # its effect is imprecise although its *verdict* is stable across seeds, specifications and the curve; C09 (S beats
-# ADA-lite on E-SCREEN) is E3 because the one-shot hold-out does not replicate the margin and ADA-lite is incomplete
+# ADA-lite on E-SCREEN) is E3 because the internal hold-out check does not replicate the margin and ADA-lite is incomplete
 # (L06). C26 adds the redundancy and skew audit behind the V4 segment. No statement uses a causal verb.
 
 # %% [markdown]
 # ## 8 Hold-out against cross-validation
-# **Why.** The hold-out was evaluated once, after the freeze (§9.11). Expected precision: AUC SE about 0.017 on E-ALL and
-# about 0.05 on E-SCREEN, so differences below about 0.03 cannot be resolved.
+# **Why.** The internal hold-out check was evaluated once, after the freeze (§9.11). It is internal, not independent: its
+# rows took part in the full-cohort §4/§5 diagnostics before the split existed (L16; re-running them without the hold-out
+# changes no design decision, §9.12). Expected precision: AUC SE about 0.017 on E-ALL and about 0.05 on E-SCREEN, so
+# differences below about 0.03 cannot be resolved.
 
 # %%
-# Compare the one-shot hold-out with cross-validation, arm by arm and for the paired contrasts.
+# Compare the internal hold-out check with cross-validation, arm by arm and for the paired contrasts.
 # Reads the stored hold-out results (nothing is re-evaluated); writes results/S10/holdout_vs_cv.csv and
 # holdout_pairs_vs_cv.csv.
 if HO_OK:
@@ -1186,15 +1276,34 @@ LIM = pd.DataFrame([
          claims_affected="C05"),
     dict(lim_id="L13", threat=f"Non-convergence: unscaled arms hit the iteration limit ({', '.join(sorted(set(nonconv['arm'])))}; "
                              f"{nonconv['n_convergence_warnings'].min()}-{nonconv['n_convergence_warnings'].max()} of {get("S7:posthoc_c_sensitivity.n_folds")} folds)",
-         bias_direction="inflates coefficient instability of M1, so the H2b SD ratio is partly an optimisation artefact",
-         how_bounded=("post hoc C sensitivity; POST-LOCK M1 refits (exact optimum, scaling only) leave H2b(a) "
+         bias_direction=("early stopping shrinks M1's coefficients towards 0: it lowers the BMI SD (so the stored H2b SD ratio understates the "
+                         "unscaled instability) and adds sign flips and intervals crossing 0"
+                         + (f"; converged M1 BMI SD {PA9['m1_coef']['sd_converged']:.3f} vs {PA9['m1_coef']['sd_stored']:.3f} stored (ratio {PA9['m1_coef']['ratio_converged']:.2f} "
+                            f"vs {PA9['m1_coef']['ratio_stored']:.2f}); scaling alone gives {PA9['m1_coef']['ratio_scaled']:.2f}" if PA9 else "")),
+         how_bounded=("post-audit converged and scaled M1 bootstrap (§9.12); post hoc C sensitivity; POST-LOCK M1 refits (exact optimum, scaling only) leave H2b(a) "
                       + ("unchanged" if get("S7:postlock_m1_sensitivity.h2b_a_unchanged") else "CHANGED") + " (§7.12.1); stability claims graded E3; "
-                      "locked M1 kept because a naive analyst would get the same fit"), claims_affected="C05"),
+                      "locked M1 kept because a naive analyst would get the same fit; H2b(c) verdict withdrawn post-audit"), claims_affected="C05"),
     dict(lim_id="L14", threat="Permutation test detects procedural leakage only",
          bias_direction="feature leakage would inflate AUC", how_bounded=f"availability rule plus L3 leak hunt ({top10_pass}/{len(M['S9']['leak_hunt']['top10'])} top features pass)", claims_affected="C01, C22"),
     dict(lim_id="L15", threat="Fairness audit uses one criterion (equal opportunity) at one threshold",
          bias_direction="other criteria (calibration, PPV) can disagree; small groups inflate variance",
          how_bounded="permutation null for gaps; within-group calibration reported; no claim that the model is fair", claims_affected="C18, C20, C21"),
+    dict(lim_id="L16", threat="The hold-out is internal and design-informed: its rows took part in the full-cohort §4/§5 diagnostics "
+                              "(non-linearity, interactions, VIF, labels) before the split existed",
+         bias_direction=(f"at most slightly optimistic for S (splines vs linear, B5-c, add {b5.loc['(c) AUC splines', 'est']:+.4f} AUC in CV); every arm, including the "
+                         "unfitted ADA-lite score, scores higher on the hold-out, which points to an easier sample rather than design leakage"),
+         how_bounded=(f"§4 diagnostics re-run on the training part only: {PA9['holdout_design']['nl_same_class']}/{PA9['holdout_design']['nl_n']} non-linearity and "
+                      f"{PA9['holdout_design']['interactions_same_class']}/{PA9['holdout_design']['interactions_n']} interaction classifications unchanged, splined set unchanged "
+                      f"({PA9['holdout_design']['lin_sample_holdout']} hold-out rows were in the §4.11 sample); " if PA9 else "")
+                     + "hold-out rows never fitted, tuned or scored before §9.11; no independent cohort available",
+         claims_affected="C01, C05, C07, C08, C09, C25"),
+    dict(lim_id="L17", threat="C0 was chosen once on the whole training part (preparation fitted on all of it), not nested in the outer folds",
+         bias_direction="optimistic for S in principle (C0 was tuned on S)",
+         how_bounded=(f"approximate nested check on {PA9['nested_c']['n_folds']} outer folds: nested C = C0 in {PA9['nested_c']['S_folds_C0']}/{PA9['nested_c']['n_folds']} (S) and "
+                      f"{PA9['nested_c']['M1_folds_C0']}/{PA9['nested_c']['n_folds']} (M1); S AUC change {PA9['nested_c']['S_auc_change']:+.4f}; "
+                      f"ΔAUC S − M1 {sw(PA9['nested_c']['dauc_nested'])} vs {sw(PA9['nested_c']['dauc_stored'])} with C0; " if PA9 else "")
+                     + "flat inner-CV curve (§7.3); the per-arm C check of §9.4 tests arm fairness, not nesting",
+         claims_affected="C05"),
 ])
 show(LIM[["lim_id", "threat", "claims_affected"]])
 LIM.to_csv(OUT / "limitations.csv", index=False)
@@ -1207,7 +1316,7 @@ if C.IS_FINAL:
     print("wrote governance/limitations.csv")
 
 # %% [markdown]
-# **So what.** Fifteen limitations, each tied to claims. Two bound the *substance* most: L05 (E-SCREEN has 127 training
+# **So what.** Seventeen limitations, each tied to claims. Two bound the *substance* most: L05 (E-SCREEN has 127 training
 # positives, so almost every screening contrast is underpowered) and L07 (the label is itself a measurement with known
 # blind spots). L12 is notebook-specific: the lower CI bound of S − M1 sits essentially on 0, so a FAST re-run can show
 # another sub-verdict for H2b(a) while H2b stays inconclusive.
@@ -1526,8 +1635,11 @@ reg = pd.DataFrame([
          decision=f"Apply the locked rule: {h1b_v}", alternatives_rejected="", hyp_id="H1b", check_verdict="PASS", check_note="H4a Newcombe CI recomputed from counts and matches §5"),
     dict(dr_id="DR-S10-05", type="interpretation", finding="H2b inconclusive hides three different sub-results",
          evidence_ref="results/S7/scoreboard_detail.csv; results/S7/comparisons.csv",
-         evidence_value=f"AUC {sw(h2b.loc['(a) AUC'])} MDD {h2b.loc['(a) AUC', 'mdd']:.3f}; Brier refuted; SD ratio {cs['ratio_H2b']['ratio']:.2f}; pure preparation ΔBrier {pp_.loc[('E-ALL', 'brier'), 'diff']:+.4f}",
-         decision="Report H2b as underpowered on AUC, refuted on Brier by class weights alone, borderline on stability; no verdict change",
+         evidence_value=f"AUC {sw(h2b.loc['(a) AUC'])} MDD {h2b.loc['(a) AUC', 'mdd']:.3f}; Brier refuted; SD ratio {cs['ratio_H2b']['ratio']:.2f} (descriptive)"
+                        + (f", converged M1 {PA9['m1_coef']['ratio_converged']:.2f}, scaled M1 {PA9['m1_coef']['ratio_scaled']:.2f}" if PA9 else "")
+                        + f"; pure preparation ΔBrier {pp_.loc[('E-ALL', 'brier'), 'diff']:+.4f}",
+         decision="Report H2b as underpowered on AUC and refuted on Brier by class weights alone; the stability sub-claim (c) is not testable post-audit "
+                  "(descriptive ratio; the stability edge of S comes from scaling, §9.12); no verdict change",
          alternatives_rejected="calling S equivalent or better", hyp_id="H2b", check_verdict="PASS", check_note=""),
     dict(dr_id="DR-S10-06", type="headline", finding="The brief asks for one non-obvious finding discovered through profiling and EDA",
          evidence_ref="§10.6; figures/S10_recognition_vs_screening.png", evidence_value=f"{len(HEAD_LINES)} distinct evidence lines (§7, §8, hold-out); gap {sw(hl['eall_minus_escreen_S_T1'])}",
@@ -1563,6 +1675,13 @@ reg = pd.DataFrame([
          evidence_value="; ".join(f"{r['variant']}: S - M1 {ci3_(r['est'], r['lo'], r['hi'], 4)} ({r['verdict_equivalence']})" for r in S10["h2b"]["postlock_m1"]["rows"] if r["metric"] == "roc_auc"),
          decision="Report the post-lock refits next to the locked H2b; locked verdict and arm unchanged", alternatives_rejected="replacing M1 after the lock",
          hyp_id="H2b", check_verdict="PASS", check_note="final-audit item F8"),
+    dict(dr_id="DR-S10-14", type="postaudit", finding="An external review raised six methodological issues after the lock; §9.12 checked each (post-lock, approximate)",
+         evidence_ref="results/S9/postaudit_summary.csv; results/metrics_S9.json postaudit; governance/register/S9.csv DR-S9-16 to DR-S9-21",
+         evidence_value=("; ".join(f"{r['issue']}: {r['consequence']}" for r in PA9["summary"]) if PA9 else "post-audit results not available"),
+         decision="B3-b and H2b(c) shown as 'not testable (post-audit)' next to their locked labels; post-audit rows in the scoreboard and H2b detail; "
+                  "claims C01, C05, C07, C08, C09, C21, C25 and C26 reworded; L13 corrected; L16 and L17 added; hypotheses.md unchanged",
+         alternatives_rejected="editing the locked file; replacing locked arms or verdicts", hyp_id="B3;H2b", check_verdict="PASS" if PA9 else "PENDING",
+         check_note="hypothesis-level verdicts re-derived without the withdrawn sub-claims: unchanged (asserted)"),
     dict(dr_id="DR-S10-11", type="number_audit", finding="Every slide number must be traceable and checked",
          evidence_ref="results/S10/numbers_on_slides.csv; results/final_metrics.json", evidence_value=f"{len(NOS)} numbers re-resolved; {len(RECOMP)} recomputed independently",
          decision="Slides use only numbers_on_slides.csv", alternatives_rejected="typing numbers into slides", hyp_id="", check_verdict="PASS", check_note="asserted in code"),
@@ -1589,6 +1708,6 @@ R.collect()
 print(f"saved results/metrics_S10.json and results/final_metrics.json; section runtime {S10['runtime_seconds']:.0f} s")
 
 # %% [markdown]
-# **So what.** The synthesis closes the evidence chain: 17 hypotheses with locked verdicts, graded claims, 15 limitations
+# **So what.** The synthesis closes the evidence chain: 17 hypotheses with locked verdicts, graded claims, 17 limitations
 # bound to claims, six recommendations and an audited list of every number in the video, all read from the stored
 # results of §1–§9 and asserted on a clean run.
