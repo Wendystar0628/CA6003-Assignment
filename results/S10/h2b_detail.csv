@@ -1,0 +1,16 @@
+row,status,population,estimate_ci,verdict,note
+H2b (a) AUC,locked,E-ALL,"+0.0079 [+0.0000, +0.0158]",inconclusive,MDD 0.011 vs SESOI 0.010
+H2b (b) Brier,locked,E-ALL,"+0.0739 [+0.0665, +0.0814]",refuted,MDD 0.011 vs SESOI 0.005
+H2b (c) BMI SD ratio,locked,training part,"+1.9819 [+1.8048, +2.1708]",inconclusive,Monte Carlo interval
+S−B6a vs M1 (AUC),exploratory,E-ALL,"+0.0073 [+0.0001, +0.0146]",no verdict (not locked),S without class weights: preparation only
+S−B6a vs M1 (Brier),exploratory,E-ALL,"-0.0018 [-0.0036, -0.0000]",no verdict (not locked),S without class weights: preparation only
+S−B6a vs M1 (AUC),exploratory,E-SCREEN,"+0.0059 [-0.0094, +0.0214]",no verdict (not locked),S without class weights: preparation only
+S−B6a vs M1 (Brier),exploratory,E-SCREEN,"-0.0009 [-0.0022, +0.0005]",no verdict (not locked),S without class weights: preparation only
+"S − [M1 stored (lbfgs, max_iter 5,000)] (AUC)",POST-LOCK,E-ALL,"+0.0079 [+0.0000, +0.0158]",equivalence rule: inconclusive,M1 folds at a solver limit: 25/25
+"S − [M1 stored (lbfgs, max_iter 5,000)] (AUC)",POST-LOCK,E-SCREEN,"+0.0085 [-0.0076, +0.0245]",equivalence rule: inconclusive,M1 folds at a solver limit: 25/25
+"S − [M1 lbfgs, max_iter 100,000] (AUC)",POST-LOCK,E-ALL,"+0.0072 [-0.0006, +0.0151]",equivalence rule: inconclusive,M1 folds at a solver limit: 7/25
+"S − [M1 lbfgs, max_iter 100,000] (AUC)",POST-LOCK,E-SCREEN,"+0.0075 [-0.0093, +0.0225]",equivalence rule: inconclusive,M1 folds at a solver limit: 7/25
+S − [M1 exact optimum (newton-cholesky)] (AUC),POST-LOCK,E-ALL,"+0.0072 [-0.0006, +0.0149]",equivalence rule: inconclusive,M1 folds at a solver limit: 0/25
+S − [M1 exact optimum (newton-cholesky)] (AUC),POST-LOCK,E-SCREEN,"+0.0074 [-0.0101, +0.0234]",equivalence rule: inconclusive,M1 folds at a solver limit: 0/25
+S − [M1 + scaling only (P09)] (AUC),POST-LOCK,E-ALL,"+0.0071 [-0.0003, +0.0145]",equivalence rule: inconclusive,M1 folds at a solver limit: 0/25
+S − [M1 + scaling only (P09)] (AUC),POST-LOCK,E-SCREEN,"+0.0100 [-0.0049, +0.0251]",equivalence rule: inconclusive,M1 folds at a solver limit: 0/25

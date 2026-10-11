@@ -3,7 +3,7 @@
     "section": "S10",
     "nb_mode": "FINAL",
     "seed_master": 20261011,
-    "written_utc": "2026-10-11T06:54:37+00:00"
+    "written_utc": "2026-10-11T08:55:30+00:00"
   },
   "mode": "FINAL",
   "h2b": {
@@ -68,7 +68,146 @@
         "hi": 0.0004793800110157751
       }
     ],
-    "verdict": "inconclusive"
+    "verdict": "inconclusive",
+    "postlock_m1": {
+      "h2b_a_unchanged": true,
+      "folds_not_converged": {
+        "M1 stored (lbfgs, max_iter 5,000)": 25,
+        "M1 lbfgs, max_iter 100,000": 7,
+        "M1 exact optimum (newton-cholesky)": 0,
+        "M1 + scaling only (P09)": 0
+      },
+      "rows": [
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.828453,
+          "value_a": 0.835918,
+          "est": 0.007907,
+          "lo": 1.1e-05,
+          "hi": 0.015804,
+          "interval": "corrected_t",
+          "mdd": 0.011175,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.11189,
+          "value_a": 0.185428,
+          "est": 0.073924,
+          "lo": 0.066467,
+          "hi": 0.081381,
+          "interval": "corrected_t",
+          "mdd": 0.010553,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.828812,
+          "value_a": 0.835918,
+          "est": 0.007225,
+          "lo": -0.000606,
+          "hi": 0.015056,
+          "interval": "corrected_t",
+          "mdd": 0.011082,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.111906,
+          "value_a": 0.185428,
+          "est": 0.073959,
+          "lo": 0.066519,
+          "hi": 0.081398,
+          "interval": "corrected_t",
+          "mdd": 0.010528,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828855,
+          "value_a": 0.835918,
+          "est": 0.007181,
+          "lo": -0.000566,
+          "hi": 0.014929,
+          "interval": "corrected_t",
+          "mdd": 0.010964,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111918,
+          "value_a": 0.185428,
+          "est": 0.073949,
+          "lo": 0.066553,
+          "hi": 0.081346,
+          "interval": "corrected_t",
+          "mdd": 0.010467,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828844,
+          "value_a": 0.835918,
+          "est": 0.007121,
+          "lo": -0.000276,
+          "hi": 0.014518,
+          "interval": "corrected_t",
+          "mdd": 0.010468,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111667,
+          "value_a": 0.185428,
+          "est": 0.07425,
+          "lo": 0.066732,
+          "hi": 0.081768,
+          "interval": "corrected_t",
+          "mdd": 0.01064,
+          "verdict_equivalence": "refuted"
+        }
+      ]
+    }
   },
   "headline": {
     "finding": "Whole-sample AUC measures recognition of known diabetes, not screening",
@@ -456,11 +595,11 @@
     }
   ],
   "claims": {
-    "n": 25,
+    "n": 26,
     "grades": {
-      "E3": 10,
-      "E2": 8,
-      "E1": 5,
+      "E3": 11,
+      "E2": 7,
+      "E1": 6,
       "E4": 2
     },
     "n_headline": 6,
@@ -522,7 +661,9 @@
     "DR-S10-08",
     "DR-S10-09",
     "DR-S10-10",
+    "DR-S10-12",
+    "DR-S10-13",
     "DR-S10-11"
   ],
-  "runtime_seconds": 0.8259685039520264
+  "runtime_seconds": 0.9096932411193848
 }

@@ -7,10 +7,14 @@ V1,weighted prevalence L_comb,14.0%,0.14035739528195537,S1:prevalence_comb.weigh
 V1,interview response rate,34.6%,0.346,S1:response_rates.interview
 V1,examination response rate,25.7%,0.257,S1:response_rates.mec
 V1,E-SCREEN positives,152,152.0,S1:e_screen.positives
+V1,self-reported diabetes (L_self),819,819.0,S1:labels.L_self
+V1,E-SCREEN cohort (not diagnosed),"4,911",4911.0,S1:e_screen.rows
 V2,valid cells destroyed by blanket recode,"1,496",1496.0,S3:blanket_recode.valid_cells_destroyed_cohort
 V2,HbA1c positives lost,29,29.0,S3:blanket_recode.a1c_positives_lost
 V2,HbA1c positives,721,721.0,S3:blanket_recode.a1c_positives
 V2,L_comb label flips,6,6.0,S3:blanket_recode.l_comb_flips
+V2,HbA1c values beyond the IQR outlier fence,542,542.0,S3:outliers.a1c_iqr_flagged
+V2,HbA1c fence values that are diabetic (>= 6.5),519,519.0,S3:outliers.a1c_iqr_flagged_positive
 V3,AUC M0 E-ALL,0.961,0.9606127573030646,S7:headline.auc_M0_eall_T1
 V3,AUC M1 E-ALL,0.828,0.8284525660412184,S7:headline.auc_M1_eall_T1
 V3,leak gate dAUC,-0.131,-0.13084083945101074,S7:leak_gate.T1_E-ALL.est
@@ -27,6 +31,9 @@ V4,BMI coefficient SD ratio before/after pruning (unscaled),2.87,2.8651787865681
 V4,BMI coefficient SD ratio inside scaled L2,1.36,1.3608660297705042,S7:coef_stability.ratio_B3.ratio
 V4,skew triglycerides (fasting),6.62,6.622983965691647,S4:skew.LBXTLG|fasting (WTSAF2YR > 0).raw
 V4,skew BMI,1.22,1.2225907632940765,S4:skew.BMXBMI|cohort.raw
+V4,skew triglycerides after Yeo-Johnson,-0.009,-0.009185326107955697,S4:skew.LBXTLG|fasting (WTSAF2YR > 0).yj
+V4,fasting subsample n (triglycerides),"2,820",2820.0,S4:skew.LBXTLG|fasting (WTSAF2YR > 0).n
+V4,"r(log BMI, log weight - 2 log height)",0.99999,0.9999898544705884,S4:redundancy.r_logbmi_logw_2logh
 V5,insurance gap crude (pp),+5.3,5.305529853010037,S4:standardisation.insured_uninsured.crude
 V5,insurance gap standardised (pp),+0.7,0.6854571595387438,S4:standardisation.insured_uninsured.std
 V5,Asian-White crude (pp),-0.8,-0.8140647186259911,S4:standardisation.asian_white.crude
@@ -50,6 +57,9 @@ V6,White diabetics with BMI < 25,7.2%,0.07172131147540983,S5:asian_bmi.bmi_lt25_
 V6,NH Asian TPR gap (EOD),-0.184,-0.18354,S8:eod_eall_t1[group=NH Asian].eod
 V6,O:E NH Black,1.30,1.3043,S8:calibration.table[group=NH Black].oe
 V6,O:E NH White,0.88,0.8756,S8:calibration.table[group=NH White].oe
+V6,O:E NH Asian,1.35,1.35326,S8:calibration.table[group=NH Asian].oe
+V6,TPR diagnosed positives (arm S),0.70,0.7015384615384616,S8:gap_decomposition.tpr_diagnosed
+V6,TPR undiagnosed positives (arm S),0.52,0.5196850393700787,S8:gap_decomposition.tpr_undiagnosed
 V7,AUC S E-ALL,0.836,0.8359179848541551,S7:headline.auc_S_eall_T1
 V7,AUC S E-SCREEN,0.781,0.7807354458943223,S7:headline.auc_S_escreen_T1
 V7,E-ALL minus E-SCREEN gap,+0.055,0.05518253895983283,S7:headline.eall_minus_escreen_S_T1.est
@@ -61,6 +71,16 @@ V7,minus care traces E-ALL,-0.016,-0.01587600396805298,S7:headline.minus_care_ea
 V7,minus care traces E-SCREEN,+0.019,0.019231047655686062,S7:headline.minus_care_escreen.est
 V7,S - ADA-lite E-SCREEN,+0.055,0.05469410886286974,S7:headline.S_minus_ADAlite_escreen.est
 V7,class weights dBrier,+0.076,0.07575,S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est
+V7,S-B6a vs M1 dAUC,+0.007,0.007332867558757137,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff
+V7,S-B6a vs M1 dAUC CI low,+0.000,5.7283367045601365e-05,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].lo
+V7,S-B6a vs M1 dAUC CI high,+0.015,0.014608451750468671,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].hi
+V7,S-B6a vs M1 dBrier,-0.002,-0.0018306190971882797,S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].diff
+V7,post-lock: M1 folds at the iteration limit (stored fit),25,25.0,"S7:postlock_m1_sensitivity.folds_not_converged.M1 stored (lbfgs, max_iter 5,000)"
+V7,"post-lock: S - M1 dAUC, M1 at exact optimum",+0.007,0.007181,S7:postlock_m1_sensitivity.rows[variant=M1 exact optimum (newton-cholesky)&a=S&pop=E-ALL&metric=roc_auc].est
+V7,"post-lock: S - M1 CI low, M1 at exact optimum",-0.001,-0.000566,S7:postlock_m1_sensitivity.rows[variant=M1 exact optimum (newton-cholesky)&a=S&pop=E-ALL&metric=roc_auc].lo
+V7,"post-lock: S - M1 CI high, M1 at exact optimum",+0.015,0.014929,S7:postlock_m1_sensitivity.rows[variant=M1 exact optimum (newton-cholesky)&a=S&pop=E-ALL&metric=roc_auc].hi
+V7,post-lock: S - (M1 + scaling) dAUC,+0.007,0.007121,S7:postlock_m1_sensitivity.rows[variant=M1 + scaling only (P09)&a=S&pop=E-ALL&metric=roc_auc].est
+V7,post-lock: H2b(a) conclusion unchanged (1 = yes),1,1.0,S7:postlock_m1_sensitivity.h2b_a_unchanged
 V7,permutation null mean (S),0.501,0.5013611778042592,S9:permutation.S.null_mean
 V7,DB516 total reproduced (%),15.79,15.786910949172617,S4:db516.total
 V7,DB516 diagnosed reproduced (%),11.30,11.299656829208393,S4:db516.diagnosed
@@ -69,7 +89,11 @@ V7,hold-out AUC S E-ALL,0.851,0.8511,S9:holdout.metrics[arm=S&tier=1&pop=E-ALL].
 V7,hold-out AUC S E-SCREEN,0.791,0.79076,S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc
 V7,hold-out AUC M0 E-ALL,0.964,0.96437,S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc
 V7,hold-out AUC M1 E-ALL,0.848,0.84758,S9:holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc
+V7,hold-out n,"1,146",1146.0,S9:holdout.log.n_test
+V7,hold-out S - ADA-lite E-SCREEN,+0.029,0.02857,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].est
+V7,hold-out S - ADA-lite CI low,-0.037,-0.03702,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].lo
+V7,hold-out S - ADA-lite CI high,+0.098,0.09832,S9:holdout.pairs[comparison=S T1 - BL-ADAlite T1&pop=E-SCREEN].hi
 V8,hypotheses supported,10,10.0,S10:verdict_counts.supported
 V8,hypotheses inconclusive,6,6.0,S10:verdict_counts.inconclusive
 V8,hypotheses mixed,1,1.0,S10:verdict_counts.mixed
-V8,claims in ledger,25,25.0,S10:claims.n
+V8,claims in ledger,26,26.0,S10:claims.n

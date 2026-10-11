@@ -4,7 +4,7 @@
       "section": "S0",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:53:10+00:00"
+      "written_utc": "2026-10-11T08:13:14+00:00"
     },
     "mode": "FINAL",
     "seed_master": 20261011,
@@ -52,7 +52,7 @@
       "section": "S1",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:53:15+00:00"
+      "written_utc": "2026-10-11T08:28:32+00:00"
     },
     "n_cohort": 5730,
     "funnel": {
@@ -144,7 +144,7 @@
       "section": "S2",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:53:23+00:00"
+      "written_utc": "2026-10-11T08:17:08+00:00"
     },
     "raw_files_verified": 16,
     "hash_mismatches": 0,
@@ -265,7 +265,7 @@
       "section": "S3",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:53:23+00:00"
+      "written_utc": "2026-10-11T08:17:08+00:00"
     },
     "xpt_artefact": {
       "cells": 13676,
@@ -551,7 +551,7 @@
         "Other Hispanic": 0.04234527687296417,
         "Other/Multi": 0.059278350515463915
       },
-      "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in S9)"
+      "wording": "not MCAR; no evidence against MAR given covariates; MNAR untestable (sensitivity in §9.7)"
     },
     "outliers": {
       "layer_table": {
@@ -587,6 +587,7 @@
         }
       },
       "manual_review": 1,
+      "manual_review_outcome": "BMI 74.8 (weight 185.2 kg, height 157.3 cm) recomputes from the measured weight and height: plausible class III obesity, kept with its flag",
       "a1c_iqr_fence_upper": 6.800000000000001,
       "a1c_iqr_flagged": 542,
       "a1c_iqr_flagged_positive": 519,
@@ -621,7 +622,7 @@
         "verdict": "pass"
       },
       "Accuracy": {
-        "result": "max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (S5 kappa)",
+        "result": "max BMI diff 0.050; label accuracy limited: self-report vs HbA1c disagree (§5.1 kappa)",
         "verdict": "pass for measures, limited for label"
       },
       "Consistency": {
@@ -647,7 +648,7 @@
       "section": "S4",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:53:33+00:00"
+      "written_utc": "2026-10-11T08:21:54+00:00"
     },
     "design": {
       "n_strata": 15,
@@ -1484,7 +1485,7 @@
         "diagnostic": "Non-linearity",
         "evidence": "RCS chi2(2): age 57.6, TC 41.8, HDL 18.5, BMI 11.6, waist 7.1 (all p < 0.05); PIR 0.8",
         "decision": "L2 logistic regression + SplineTransformer(4 quantile knots, cubic, linear extrapolation) on continuous features; linear arm as ablation",
-        "why_not_alternative": "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting not allowed (HR3) and less interpretable"
+        "why_not_alternative": "Linear logit under-fits the bends; categorisation is arbitrary; GAM/boosting outside the basic-model rule and less interpretable"
       },
       {
         "diagnostic": "Interactions",
@@ -1526,7 +1527,7 @@
         "diagnostic": "Thresholds / leakage probe",
         "evidence": "clinical cut-points (BMI 25/30, age 45) and leakage need inspection",
         "decision": "Secondary shallow decision tree (max_depth = 3, min_samples_leaf = 50) for threshold discovery and leak hunting only",
-        "why_not_alternative": "Deep trees / ensembles overfit and are outside HR3; a shallow tree is readable and exposes leaks as near-perfect splits"
+        "why_not_alternative": "Deep trees / ensembles overfit and are outside the basic-model rule; a shallow tree is readable and exposes leaks as near-perfect splits"
       },
       {
         "diagnostic": "Non-monotone TC",
@@ -1650,7 +1651,7 @@
       },
       {
         "quantity": "uninsured x A1c | age P(sign differs)",
-        "reference": 0.77,
+        "reference": 0.775,
         "recomputed": 0.775,
         "note": "reference at B = 1000; here B = 1000 (FINAL)",
         "tolerance": 0.1,
@@ -1727,7 +1728,7 @@
       "section": "S5",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:54:04+00:00"
+      "written_utc": "2026-10-11T08:29:05+00:00"
     },
     "labels": {
       "confusion": {
@@ -1966,6 +1967,35 @@
           "w_ci_low": 0.8426092087125479,
           "w_ci_high": 5.6207159623722145,
           "df": 15
+        }
+      },
+      "rd_df_sensitivity": {
+        "uninsured - insured": {
+          "rd_pp": 23.157835907921932,
+          "df_contrast_domain": 15,
+          "ci_low_pp": 6.235010286422246,
+          "ci_high_pp": 40.08066152942161,
+          "df_smaller_group": 9,
+          "ci_low_pp_conservative": 5.197246000849741,
+          "ci_high_pp_conservative": 41.118425814994126
+        },
+        "no usual place - usual place": {
+          "rd_pp": 19.935708936353603,
+          "df_contrast_domain": 15,
+          "ci_low_pp": -1.6054904701312185,
+          "ci_high_pp": 41.47690834283843,
+          "df_smaller_group": 9,
+          "ci_low_pp_conservative": -2.9264688878279053,
+          "ci_high_pp_conservative": 42.79788676053511
+        },
+        "NH Asian - NH White": {
+          "rd_pp": 15.622099842435725,
+          "df_contrast_domain": 15,
+          "ci_low_pp": -5.678259847488332,
+          "ci_high_pp": 36.92245953235978,
+          "df_smaller_group": 4,
+          "ci_low_pp_conservative": -12.123937835656792,
+          "ci_high_pp_conservative": 43.368137520528244
         }
       }
     },
@@ -2394,7 +2424,7 @@
         }
       },
       "known_dx_share_of_positives": 0.84346035015448,
-      "label_freeze_sha256": "3a28026c7ffafac8dde5da8c461b9246b8f1875dad78cf812e64d9ca216a6800"
+      "label_freeze_sha256": "a630b4f72389e16b26427de7f5050e06671454b8933ed673bbc8e22e6c536da6"
     },
     "hypotheses": {
       "H1a": {
@@ -2422,7 +2452,7 @@
       "section": "S6",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:54:25+00:00"
+      "written_utc": "2026-10-11T08:29:24+00:00"
     },
     "inputs": {
       "n_cohort": 5730,
@@ -3031,7 +3061,7 @@
       "section": "S7",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-10T20:29:29+00:00"
+      "written_utc": "2026-10-11T08:39:01+00:00"
     },
     "mode": "FINAL",
     "cv": "5x5",
@@ -3104,7 +3134,7 @@
     },
     "runs": {
       "n_runs": 44,
-      "wall_seconds": 73.30710577964783,
+      "wall_seconds": 74.20027732849121,
       "convergence": [
         {
           "arm": "M0",
@@ -4576,6 +4606,531 @@
         "p": 5.916820174251057e-14
       }
     },
+    "postlock_m1_sensitivity": {
+      "note": "POST-LOCK sensitivity, not pre-registered; no verdict changed",
+      "folds_not_converged": {
+        "M1 stored (lbfgs, max_iter 5,000)": 25,
+        "M1 lbfgs, max_iter 100,000": 7,
+        "M1 exact optimum (newton-cholesky)": 0,
+        "M1 + scaling only (P09)": 0
+      },
+      "n_folds": 25,
+      "h2b_a_unchanged": true,
+      "rows": [
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.828453,
+          "value_a": 0.835918,
+          "est": 0.007907,
+          "lo": 1.1e-05,
+          "hi": 0.015804,
+          "interval": "corrected_t",
+          "mdd": 0.011175,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.11189,
+          "value_a": 0.185428,
+          "est": 0.073924,
+          "lo": 0.066467,
+          "hi": 0.081381,
+          "interval": "corrected_t",
+          "mdd": 0.010553,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.772266,
+          "value_a": 0.780735,
+          "est": 0.00847,
+          "lo": -0.007578,
+          "hi": 0.024543,
+          "interval": "bootstrap",
+          "mdd": 0.022895,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.056062,
+          "value_a": 0.19586,
+          "est": 0.139798,
+          "lo": 0.134674,
+          "hi": 0.145357,
+          "interval": "bootstrap",
+          "mdd": 0.007596,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.828453,
+          "value_a": 0.835317,
+          "est": 0.007333,
+          "lo": 5.7e-05,
+          "hi": 0.014608,
+          "interval": "corrected_t",
+          "mdd": 0.010296,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.11189,
+          "value_a": 0.110053,
+          "est": -0.001831,
+          "lo": -0.003628,
+          "hi": -3.3e-05,
+          "interval": "corrected_t",
+          "mdd": 0.002543,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.772266,
+          "value_a": 0.778194,
+          "est": 0.005928,
+          "lo": -0.009409,
+          "hi": 0.02141,
+          "interval": "bootstrap",
+          "mdd": 0.021644,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 stored (lbfgs, max_iter 5,000)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 25,
+          "n_folds": 25,
+          "value_variant": 0.056062,
+          "value_a": 0.05521,
+          "est": -0.000852,
+          "lo": -0.002183,
+          "hi": 0.000479,
+          "interval": "bootstrap",
+          "mdd": 0.001916,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.828812,
+          "value_a": 0.835918,
+          "est": 0.007225,
+          "lo": -0.000606,
+          "hi": 0.015056,
+          "interval": "corrected_t",
+          "mdd": 0.011082,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.111906,
+          "value_a": 0.185428,
+          "est": 0.073959,
+          "lo": 0.066519,
+          "hi": 0.081398,
+          "interval": "corrected_t",
+          "mdd": 0.010528,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.773281,
+          "value_a": 0.780735,
+          "est": 0.007454,
+          "lo": -0.00929,
+          "hi": 0.022505,
+          "interval": "bootstrap",
+          "mdd": 0.022481,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.056105,
+          "value_a": 0.19586,
+          "est": 0.139755,
+          "lo": 0.134222,
+          "hi": 0.145536,
+          "interval": "bootstrap",
+          "mdd": 0.008118,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.828812,
+          "value_a": 0.835317,
+          "est": 0.006651,
+          "lo": -0.000513,
+          "hi": 0.013814,
+          "interval": "corrected_t",
+          "mdd": 0.010138,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.111906,
+          "value_a": 0.110053,
+          "est": -0.001796,
+          "lo": -0.003538,
+          "hi": -5.4e-05,
+          "interval": "corrected_t",
+          "mdd": 0.002465,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.773281,
+          "value_a": 0.778194,
+          "est": 0.004912,
+          "lo": -0.012482,
+          "hi": 0.020169,
+          "interval": "bootstrap",
+          "mdd": 0.02365,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 lbfgs, max_iter 100,000",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 7,
+          "n_folds": 25,
+          "value_variant": 0.056105,
+          "value_a": 0.05521,
+          "est": -0.000895,
+          "lo": -0.002176,
+          "hi": 0.000355,
+          "interval": "bootstrap",
+          "mdd": 0.001826,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828855,
+          "value_a": 0.835918,
+          "est": 0.007181,
+          "lo": -0.000566,
+          "hi": 0.014929,
+          "interval": "corrected_t",
+          "mdd": 0.010964,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111918,
+          "value_a": 0.185428,
+          "est": 0.073949,
+          "lo": 0.066553,
+          "hi": 0.081346,
+          "interval": "corrected_t",
+          "mdd": 0.010467,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.773381,
+          "value_a": 0.780735,
+          "est": 0.007355,
+          "lo": -0.010088,
+          "hi": 0.023423,
+          "interval": "bootstrap",
+          "mdd": 0.02356,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.056129,
+          "value_a": 0.19586,
+          "est": 0.139731,
+          "lo": 0.134329,
+          "hi": 0.145389,
+          "interval": "bootstrap",
+          "mdd": 0.008049,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828855,
+          "value_a": 0.835317,
+          "est": 0.006607,
+          "lo": -0.000459,
+          "hi": 0.013672,
+          "interval": "corrected_t",
+          "mdd": 0.009999,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111918,
+          "value_a": 0.110053,
+          "est": -0.001805,
+          "lo": -0.003529,
+          "hi": -8.2e-05,
+          "interval": "corrected_t",
+          "mdd": 0.002439,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.773381,
+          "value_a": 0.778194,
+          "est": 0.004813,
+          "lo": -0.011208,
+          "hi": 0.020088,
+          "interval": "bootstrap",
+          "mdd": 0.023013,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 exact optimum (newton-cholesky)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.056129,
+          "value_a": 0.05521,
+          "est": -0.000919,
+          "lo": -0.002216,
+          "hi": 0.00036,
+          "interval": "bootstrap",
+          "mdd": 0.001853,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828844,
+          "value_a": 0.835918,
+          "est": 0.007121,
+          "lo": -0.000276,
+          "hi": 0.014518,
+          "interval": "corrected_t",
+          "mdd": 0.010468,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111667,
+          "value_a": 0.185428,
+          "est": 0.07425,
+          "lo": 0.066732,
+          "hi": 0.081768,
+          "interval": "corrected_t",
+          "mdd": 0.01064,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.770731,
+          "value_a": 0.780735,
+          "est": 0.010004,
+          "lo": -0.004924,
+          "hi": 0.025098,
+          "interval": "bootstrap",
+          "mdd": 0.021603,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.055611,
+          "value_a": 0.19586,
+          "est": 0.140249,
+          "lo": 0.134935,
+          "hi": 0.146362,
+          "interval": "bootstrap",
+          "mdd": 0.007883,
+          "verdict_equivalence": "refuted"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.828844,
+          "value_a": 0.835317,
+          "est": 0.006546,
+          "lo": -0.000212,
+          "hi": 0.013304,
+          "interval": "corrected_t",
+          "mdd": 0.009563,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S-B6a",
+          "pop": "E-ALL",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.111667,
+          "value_a": 0.110053,
+          "est": -0.001505,
+          "lo": -0.003186,
+          "hi": 3.2e-05,
+          "interval": "bootstrap",
+          "mdd": 0.002361,
+          "verdict_equivalence": "supported"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "roc_auc",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.770731,
+          "value_a": 0.778194,
+          "est": 0.007462,
+          "lo": -0.009479,
+          "hi": 0.023184,
+          "interval": "bootstrap",
+          "mdd": 0.023378,
+          "verdict_equivalence": "inconclusive"
+        },
+        {
+          "variant": "M1 + scaling only (P09)",
+          "a": "S-B6a",
+          "pop": "E-SCREEN",
+          "metric": "brier",
+          "folds_not_converged": 0,
+          "n_folds": 25,
+          "value_variant": 0.055611,
+          "value_a": 0.05521,
+          "est": -0.000401,
+          "lo": -0.001664,
+          "hi": 0.00092,
+          "interval": "bootstrap",
+          "mdd": 0.001824,
+          "verdict_equivalence": "supported"
+        }
+      ]
+    },
     "arm_metrics": [
       {
         "arm": "M0",
@@ -4603,7 +5158,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.9654,
         "n_convergence_warnings": 25,
-        "seconds": 50.93754,
+        "seconds": 49.07294,
         "n_pos_train_label": 772
       },
       {
@@ -4632,7 +5187,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84427,
         "n_convergence_warnings": 25,
-        "seconds": 42.45318,
+        "seconds": 40.74812,
         "n_pos_train_label": 772
       },
       {
@@ -4661,7 +5216,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85208,
         "n_convergence_warnings": 0,
-        "seconds": 5.38827,
+        "seconds": 5.02625,
         "n_pos_train_label": 777
       },
       {
@@ -4690,7 +5245,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.8451,
         "n_convergence_warnings": 25,
-        "seconds": 41.66879,
+        "seconds": 40.51571,
         "n_pos_train_label": 777
       },
       {
@@ -4719,7 +5274,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84943,
         "n_convergence_warnings": 25,
-        "seconds": 38.21207,
+        "seconds": 36.58515,
         "n_pos_train_label": 777
       },
       {
@@ -4748,7 +5303,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85031,
         "n_convergence_warnings": 25,
-        "seconds": 38.83525,
+        "seconds": 37.49684,
         "n_pos_train_label": 777
       },
       {
@@ -4777,7 +5332,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85432,
         "n_convergence_warnings": 0,
-        "seconds": 5.45315,
+        "seconds": 4.93664,
         "n_pos_train_label": 777
       },
       {
@@ -4806,7 +5361,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85506,
         "n_convergence_warnings": 0,
-        "seconds": 5.47722,
+        "seconds": 4.98894,
         "n_pos_train_label": 777
       },
       {
@@ -4835,7 +5390,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85164,
         "n_convergence_warnings": 0,
-        "seconds": 6.21825,
+        "seconds": 5.5678,
         "n_pos_train_label": 772
       },
       {
@@ -4864,7 +5419,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.96656,
         "n_convergence_warnings": 0,
-        "seconds": 8.70886,
+        "seconds": 8.05462,
         "n_pos_train_label": 777
       },
       {
@@ -4893,7 +5448,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84981,
         "n_convergence_warnings": 0,
-        "seconds": 5.51325,
+        "seconds": 5.02277,
         "n_pos_train_label": 777
       },
       {
@@ -4922,7 +5477,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85162,
         "n_convergence_warnings": 0,
-        "seconds": 5.17984,
+        "seconds": 4.80387,
         "n_pos_train_label": 777
       },
       {
@@ -4951,7 +5506,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84824,
         "n_convergence_warnings": 25,
-        "seconds": 37.93245,
+        "seconds": 37.24065,
         "n_pos_train_label": 777
       },
       {
@@ -4980,7 +5535,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85153,
         "n_convergence_warnings": 0,
-        "seconds": 5.08167,
+        "seconds": 4.92281,
         "n_pos_train_label": 777
       },
       {
@@ -5009,7 +5564,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85506,
         "n_convergence_warnings": 0,
-        "seconds": 5.1422,
+        "seconds": 5.01194,
         "n_pos_train_label": 777
       },
       {
@@ -5038,7 +5593,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.83411,
         "n_convergence_warnings": 0,
-        "seconds": 5.05349,
+        "seconds": 4.61922,
         "n_pos_train_label": 777
       },
       {
@@ -5067,7 +5622,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85013,
         "n_convergence_warnings": 0,
-        "seconds": 4.76492,
+        "seconds": 4.54507,
         "n_pos_train_label": 777
       },
       {
@@ -5096,7 +5651,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84831,
         "n_convergence_warnings": 0,
-        "seconds": 4.83367,
+        "seconds": 4.57763,
         "n_pos_train_label": 777
       },
       {
@@ -5125,7 +5680,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85116,
         "n_convergence_warnings": 0,
-        "seconds": 4.74249,
+        "seconds": 5.0305,
         "n_pos_train_label": 777
       },
       {
@@ -5154,7 +5709,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.96628,
         "n_convergence_warnings": 24,
-        "seconds": 47.6995,
+        "seconds": 48.21417,
         "n_pos_train_label": 772
       },
       {
@@ -5183,7 +5738,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85243,
         "n_convergence_warnings": 25,
-        "seconds": 40.95923,
+        "seconds": 40.84713,
         "n_pos_train_label": 772
       },
       {
@@ -5212,7 +5767,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86231,
         "n_convergence_warnings": 0,
-        "seconds": 5.43646,
+        "seconds": 5.64305,
         "n_pos_train_label": 777
       },
       {
@@ -5241,7 +5796,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85263,
         "n_convergence_warnings": 25,
-        "seconds": 40.44942,
+        "seconds": 40.38771,
         "n_pos_train_label": 777
       },
       {
@@ -5270,7 +5825,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85708,
         "n_convergence_warnings": 25,
-        "seconds": 37.00887,
+        "seconds": 37.65541,
         "n_pos_train_label": 777
       },
       {
@@ -5299,7 +5854,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85746,
         "n_convergence_warnings": 25,
-        "seconds": 38.74852,
+        "seconds": 38.98436,
         "n_pos_train_label": 777
       },
       {
@@ -5328,7 +5883,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86649,
         "n_convergence_warnings": 0,
-        "seconds": 5.26063,
+        "seconds": 5.78957,
         "n_pos_train_label": 777
       },
       {
@@ -5357,7 +5912,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86641,
         "n_convergence_warnings": 0,
-        "seconds": 5.58567,
+        "seconds": 5.79994,
         "n_pos_train_label": 777
       },
       {
@@ -5386,7 +5941,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86223,
         "n_convergence_warnings": 0,
-        "seconds": 5.81464,
+        "seconds": 6.32424,
         "n_pos_train_label": 772
       },
       {
@@ -5415,7 +5970,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.96636,
         "n_convergence_warnings": 0,
-        "seconds": 8.09781,
+        "seconds": 8.54959,
         "n_pos_train_label": 777
       },
       {
@@ -5444,7 +5999,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86112,
         "n_convergence_warnings": 0,
-        "seconds": 5.13712,
+        "seconds": 5.50645,
         "n_pos_train_label": 777
       },
       {
@@ -5473,7 +6028,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86226,
         "n_convergence_warnings": 0,
-        "seconds": 4.86649,
+        "seconds": 5.28224,
         "n_pos_train_label": 777
       },
       {
@@ -5502,7 +6057,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85595,
         "n_convergence_warnings": 25,
-        "seconds": 28.98238,
+        "seconds": 30.11282,
         "n_pos_train_label": 777
       },
       {
@@ -5531,7 +6086,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86305,
         "n_convergence_warnings": 0,
-        "seconds": 5.45622,
+        "seconds": 5.61905,
         "n_pos_train_label": 777
       },
       {
@@ -5560,7 +6115,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86641,
         "n_convergence_warnings": 0,
-        "seconds": 5.33557,
+        "seconds": 5.82981,
         "n_pos_train_label": 777
       },
       {
@@ -5589,7 +6144,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.84935,
         "n_convergence_warnings": 0,
-        "seconds": 5.32001,
+        "seconds": 5.51278,
         "n_pos_train_label": 777
       },
       {
@@ -5618,7 +6173,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85752,
         "n_convergence_warnings": 0,
-        "seconds": 4.95949,
+        "seconds": 4.99166,
         "n_pos_train_label": 777
       },
       {
@@ -5647,7 +6202,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.85621,
         "n_convergence_warnings": 0,
-        "seconds": 4.98784,
+        "seconds": 4.91766,
         "n_pos_train_label": 777
       },
       {
@@ -5676,7 +6231,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.86183,
         "n_convergence_warnings": 0,
-        "seconds": 5.49286,
+        "seconds": 5.60055,
         "n_pos_train_label": 777
       },
       {
@@ -5705,7 +6260,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.92313,
         "n_convergence_warnings": 0,
-        "seconds": 5.00073,
+        "seconds": 5.25072,
         "n_pos_train_label": 772
       },
       {
@@ -5734,7 +6289,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.79156,
         "n_convergence_warnings": 0,
-        "seconds": 3.74396,
+        "seconds": 3.72219,
         "n_pos_train_label": 772
       },
       {
@@ -5763,7 +6318,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.79057,
         "n_convergence_warnings": 0,
-        "seconds": 4.97045,
+        "seconds": 4.82206,
         "n_pos_train_label": 777
       },
       {
@@ -5792,7 +6347,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.92313,
         "n_convergence_warnings": 0,
-        "seconds": 5.3616,
+        "seconds": 5.17898,
         "n_pos_train_label": 772
       },
       {
@@ -5821,7 +6376,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.79572,
         "n_convergence_warnings": 0,
-        "seconds": 3.87782,
+        "seconds": 4.05641,
         "n_pos_train_label": 772
       },
       {
@@ -5850,7 +6405,7 @@
         "escr_prev": 0.03228,
         "eall_auc_weighted": 0.79228,
         "n_convergence_warnings": 0,
-        "seconds": 4.74599,
+        "seconds": 5.17868,
         "n_pos_train_label": 777
       }
     ],
@@ -5899,14 +6454,14 @@
       "rows": 1054320,
       "mb": 7.822092056274414
     },
-    "runtime_seconds": 577.2990398406982
+    "runtime_seconds": 652.7676975727081
   },
   "S8": {
     "_meta": {
       "section": "S8",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-10T19:27:21+00:00"
+      "written_utc": "2026-10-11T08:40:06+00:00"
     },
     "mode": "FINAL",
     "cv": "5x5",
@@ -9248,20 +9803,22 @@
       "figures/S8_group_calibration.png",
       "figures/S8_tradeoff.png"
     ],
-    "runtime_seconds": 56.0161235332489
+    "runtime_seconds": 54.80124545097351
   },
   "S9": {
     "_meta": {
       "section": "S9",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T05:35:17+00:00"
+      "written_utc": "2026-10-11T08:52:25+00:00"
     },
     "mode": "FINAL",
     "cv": "5x5",
     "n_boot": 1000,
     "n_perm": 100,
     "n_boot_coef": 500,
+    "n_seeds": 10,
+    "n_curve": 60,
     "reference": {
       "E-ALL": {
         "auc_a": 0.8359179848541551,
@@ -10815,10 +11372,11 @@
       }
     },
     "holdout": {
+      "status": "re-executed in FINAL mode: reproduces the one-shot run",
       "log": {
         "first_run_utc": "2026-10-11T05:35:17+00:00",
-        "last_run_utc": "2026-10-11T05:35:17+00:00",
-        "n_executions": 1,
+        "last_run_utc": "2026-10-11T08:52:25+00:00",
+        "n_executions": 2,
         "sha256_test_seqn": "616fd0590bec7b9256cd9704f62dfcd147f31d83a56b1f6969e1d613010659c3",
         "n_test": 1146,
         "exp_freeze_commit": "37a2387af1b6bf7bf3ed3aa4b192e5f817e5c738",
@@ -10844,11 +11402,12 @@
         },
         "gate": {
           "FINAL mode": true,
-          "exp-freeze tag exists": true,
+          "frozen record (exp-freeze) available": true,
           "C0 = frozen": true,
           "folds_hash = frozen": true,
           "holdout_sha256 = frozen": true,
-          "modelling sources unchanged since tag (5 files)": true
+          "modelling sources identical to the tag (5 files)": true,
+          "one-shot log present (re-execution = reproduction)": true
         }
       },
       "metrics": [
@@ -11464,14 +12023,14 @@
       "DR-S9-14",
       "DR-S9-15"
     ],
-    "runtime_seconds": 930.6482815742493
+    "runtime_seconds": 725.3771622180939
   },
   "S10": {
     "_meta": {
       "section": "S10",
       "nb_mode": "FINAL",
       "seed_master": 20261011,
-      "written_utc": "2026-10-11T06:54:37+00:00"
+      "written_utc": "2026-10-11T08:55:30+00:00"
     },
     "mode": "FINAL",
     "h2b": {
@@ -11536,7 +12095,146 @@
           "hi": 0.0004793800110157751
         }
       ],
-      "verdict": "inconclusive"
+      "verdict": "inconclusive",
+      "postlock_m1": {
+        "h2b_a_unchanged": true,
+        "folds_not_converged": {
+          "M1 stored (lbfgs, max_iter 5,000)": 25,
+          "M1 lbfgs, max_iter 100,000": 7,
+          "M1 exact optimum (newton-cholesky)": 0,
+          "M1 + scaling only (P09)": 0
+        },
+        "rows": [
+          {
+            "variant": "M1 stored (lbfgs, max_iter 5,000)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "roc_auc",
+            "folds_not_converged": 25,
+            "n_folds": 25,
+            "value_variant": 0.828453,
+            "value_a": 0.835918,
+            "est": 0.007907,
+            "lo": 1.1e-05,
+            "hi": 0.015804,
+            "interval": "corrected_t",
+            "mdd": 0.011175,
+            "verdict_equivalence": "inconclusive"
+          },
+          {
+            "variant": "M1 stored (lbfgs, max_iter 5,000)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "brier",
+            "folds_not_converged": 25,
+            "n_folds": 25,
+            "value_variant": 0.11189,
+            "value_a": 0.185428,
+            "est": 0.073924,
+            "lo": 0.066467,
+            "hi": 0.081381,
+            "interval": "corrected_t",
+            "mdd": 0.010553,
+            "verdict_equivalence": "refuted"
+          },
+          {
+            "variant": "M1 lbfgs, max_iter 100,000",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "roc_auc",
+            "folds_not_converged": 7,
+            "n_folds": 25,
+            "value_variant": 0.828812,
+            "value_a": 0.835918,
+            "est": 0.007225,
+            "lo": -0.000606,
+            "hi": 0.015056,
+            "interval": "corrected_t",
+            "mdd": 0.011082,
+            "verdict_equivalence": "inconclusive"
+          },
+          {
+            "variant": "M1 lbfgs, max_iter 100,000",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "brier",
+            "folds_not_converged": 7,
+            "n_folds": 25,
+            "value_variant": 0.111906,
+            "value_a": 0.185428,
+            "est": 0.073959,
+            "lo": 0.066519,
+            "hi": 0.081398,
+            "interval": "corrected_t",
+            "mdd": 0.010528,
+            "verdict_equivalence": "refuted"
+          },
+          {
+            "variant": "M1 exact optimum (newton-cholesky)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "roc_auc",
+            "folds_not_converged": 0,
+            "n_folds": 25,
+            "value_variant": 0.828855,
+            "value_a": 0.835918,
+            "est": 0.007181,
+            "lo": -0.000566,
+            "hi": 0.014929,
+            "interval": "corrected_t",
+            "mdd": 0.010964,
+            "verdict_equivalence": "inconclusive"
+          },
+          {
+            "variant": "M1 exact optimum (newton-cholesky)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "brier",
+            "folds_not_converged": 0,
+            "n_folds": 25,
+            "value_variant": 0.111918,
+            "value_a": 0.185428,
+            "est": 0.073949,
+            "lo": 0.066553,
+            "hi": 0.081346,
+            "interval": "corrected_t",
+            "mdd": 0.010467,
+            "verdict_equivalence": "refuted"
+          },
+          {
+            "variant": "M1 + scaling only (P09)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "roc_auc",
+            "folds_not_converged": 0,
+            "n_folds": 25,
+            "value_variant": 0.828844,
+            "value_a": 0.835918,
+            "est": 0.007121,
+            "lo": -0.000276,
+            "hi": 0.014518,
+            "interval": "corrected_t",
+            "mdd": 0.010468,
+            "verdict_equivalence": "inconclusive"
+          },
+          {
+            "variant": "M1 + scaling only (P09)",
+            "a": "S",
+            "pop": "E-ALL",
+            "metric": "brier",
+            "folds_not_converged": 0,
+            "n_folds": 25,
+            "value_variant": 0.111667,
+            "value_a": 0.185428,
+            "est": 0.07425,
+            "lo": 0.066732,
+            "hi": 0.081768,
+            "interval": "corrected_t",
+            "mdd": 0.01064,
+            "verdict_equivalence": "refuted"
+          }
+        ]
+      }
     },
     "headline": {
       "finding": "Whole-sample AUC measures recognition of known diabetes, not screening",
@@ -11924,11 +12622,11 @@
       }
     ],
     "claims": {
-      "n": 25,
+      "n": 26,
       "grades": {
-        "E3": 10,
-        "E2": 8,
-        "E1": 5,
+        "E3": 11,
+        "E2": 7,
+        "E1": 6,
         "E4": 2
       },
       "n_headline": 6,
@@ -11990,8 +12688,10 @@
       "DR-S10-08",
       "DR-S10-09",
       "DR-S10-10",
+      "DR-S10-12",
+      "DR-S10-13",
       "DR-S10-11"
     ],
-    "runtime_seconds": 0.8259685039520264
+    "runtime_seconds": 0.9096932411193848
   }
 }
