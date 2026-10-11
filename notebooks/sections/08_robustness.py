@@ -1153,32 +1153,66 @@ print(reg[["dr_id", "type", "check_verdict", "evidence_value"]].to_string(index=
 # `exp-freeze` tag**; arms BL0, BL-ADAlite (points), BL-ADAlite-LR, M0, M1, S and T1-minus-care (Tier 1; M0, M1 and S also
 # Tier 2) are refitted on the whole training part with the frozen configuration; thresholds for recall at
 # specificity 0.80 come from the training part; a hold-out AUC more than 2 standard errors below its CV estimate is
-# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged. The gate
-# below opens only in FINAL mode, when the tag exists, when C0, the fold-file hash and the hold-out SEQN hash equal
-# the values committed at the tag, and when the modelling code (`config`, `prep`, `evalkit`, `labels`,
-# `nhanes_io`) is unchanged since the tag; a re-execution must reproduce the logged AUCs exactly. Expected
-# precision: AUC SE about 0.017 on E-ALL and about 0.05 on E-SCREEN (about 25 positives).
+# reported as such and **not** answered by re-tuning. The test SEQN hash and the run time are logged.
+#
+# **The evaluation has already happened, once** (FINAL mode, 2026-10-11, after the tag; the time stamp is printed
+# below). What this notebook does with the hold-out therefore depends on the run mode:
+#
+# * **FINAL mode – deterministic reproduction, not a second look.** The gate opens only if the frozen facts of the tag
+#   are reproduced: C0, the fold-file hash and the hold-out SEQN hash recomputed in this run must equal the frozen
+#   values, and the modelling code (`config`, `prep`, `evalkit`, `labels`, `nhanes_io`) must be byte-identical to the
+#   tagged version. The same frozen models are then refitted with the same seeds and the AUCs are **asserted equal**
+#   to the logged one-shot results; nothing can be tuned, and a different number stops the notebook.
+# * **FAST mode – no refit.** The stored one-shot results are displayed and stored unchanged, clearly labelled.
+#
+# A single `.ipynb` has no git history, so the facts of the tag (commit, time stamp, C0, fold hash, hold-out hash,
+# module hashes) travel with the notebook as a frozen record, `results/S9/exp_freeze_record.json`, written once
+# from git and inlined in §0.0 (like the pre-registration lock of §6.11). In a git checkout the record is
+# re-derived from the tag and asserted equal. Expected precision: AUC SE about 0.017 on E-ALL and about 0.05 on
+# E-SCREEN (about 25 positives).
 
 # %%
 HOLDOUT_LOG = OUT / "holdout_log.json"
 HOLDOUT_CSV = OUT / "holdout_metrics.csv"
+HOLDOUT_PAIRS = OUT / "holdout_pairs.csv"
 prev = json.loads(HOLDOUT_LOG.read_text(encoding="utf-8")) if HOLDOUT_LOG.exists() else None
-TAG_OK = RB.tag_exists("exp-freeze")
-# frozen values as committed at the tag; without git (a reader's copy) fall back to those logged at the one-shot run
-FROZEN = RB.frozen_reference("exp-freeze") if TAG_OK else (prev or {}).get("frozen")
+STORED = prev is not None and HOLDOUT_CSV.exists() and HOLDOUT_PAIRS.exists()
+REC = RB.load_freeze_record()                       # frozen record shipped with the notebook
+TAG_OK = RB.tag_exists("exp-freeze")                # only in a git checkout
+if TAG_OK:                                          # facts re-derived from git; the shipped record must agree
+    FROZEN = RB.frozen_reference("exp-freeze")
+    if REC is not None:
+        assert REC["frozen"] == FROZEN and REC["tag_commit"] == RB.head_commit("exp-freeze"), "freeze record disagrees with the tag"
+    SRC_OK = RB.sources_unchanged("exp-freeze")
+else:                                               # a copy without git: the record is the only source
+    FROZEN = None if REC is None else REC["frozen"]
+    SRC_OK = None if REC is None else RB.module_hashes() == REC["module_sha256"]
 CURRENT = dict(C0=ctx.C0, folds_hash=ctx.folds.hash, holdout_sha256=hold["sha256_test_seqn"])
-SRC_OK = RB.sources_unchanged("exp-freeze") if TAG_OK else None
 gate = {"FINAL mode": C.IS_FINAL,
-        "exp-freeze tag exists": TAG_OK or (prev is not None and FROZEN is not None),
+        "frozen record (exp-freeze) available": TAG_OK or REC is not None,
         **{f"{k} = frozen": FROZEN is not None and FROZEN.get(k) == v for k, v in CURRENT.items()},
-        f"modelling sources unchanged since tag ({len(RB.FROZEN_SOURCES)} files)": SRC_OK is True or (prev is not None and SRC_OK is None)}
+        f"modelling sources identical to the tag ({len(RB.FROZEN_SOURCES)} files)": SRC_OK is True,
+        # once the one-shot run is on record, a FINAL execution may only reproduce it, never evaluate afresh
+        "one-shot log present (re-execution = reproduction)": STORED or (REC is None and prev is None)}
 RELEASED = all(gate.values())
+if REC is not None:
+    print(f"frozen record: tag {REC['tag']} on commit {REC['tag_commit'][:12]} (created {REC['tag_created']}); "
+          f"C0 {REC['frozen']['C0']}, folds {REC['frozen']['folds_hash'][:12]}..., hold-out {REC['frozen']['holdout_sha256'][:12]}...; "
+          f"one-shot run {REC['one_shot']['first_run_utc']} ({REC['one_shot']['nb_mode']}); source: {'git tag (record verified)' if TAG_OK else 'record shipped with the notebook'}")
+print(f"this run: C0 {CURRENT['C0']}, folds {CURRENT['folds_hash'][:12]}... ({C.NB_MODE} folds), hold-out {CURRENT['holdout_sha256'][:12]}...")
 for k, v in gate.items():
     print(f"  {'PASS' if v else 'FAIL'}  {k}")
-GATE_STATUS = "released" if RELEASED else "not evaluated: gate failed (" + "; ".join(k for k, v in gate.items() if not v) + ")"
-print(f"hold-out log present: {prev is not None} -> {'evaluate the hold-out' if RELEASED else GATE_STATUS}")
+REASON = "; ".join(k for k, v in gate.items() if not v)
+if RELEASED:
+    print("gate open -> refit the frozen models and reproduce the logged one-shot hold-out results")
+elif STORED:
+    print(f"gate closed ({REASON}) -> no refit; the stored one-shot results are displayed below")
+else:
+    print(f"gate closed ({REASON}) and no stored one-shot results -> hold-out not evaluated")
 
 # %%
+SHOW_HO = ["arm", "tier", "pop", "n_pos", "roc_auc", "auc_lo", "auc_hi", "cv_auc", "gap_in_se", "flag_2se_below_cv", "pr_auc", "brier",
+           "cal_slope", "cal_citl", "recall_at_thr", "spec_at_thr"]
 if RELEASED:
     from sklearn.dummy import DummyClassifier
     raw_te, cl_te, X_te = RB.holdout_frames(ctx)
@@ -1228,9 +1262,7 @@ if RELEASED:
     pts = ho["arm"] == "BL-ADAlite"                 # an integer score, not a probability: no Brier / calibration
     ho.loc[pts, ["brier", "cal_slope", "cal_citl"]] = np.nan
     ho["flag_2se_below_cv"] = ho["gap_in_se"] < -2
-    show_ = ["arm", "tier", "pop", "n_pos", "roc_auc", "auc_lo", "auc_hi", "cv_auc", "gap_in_se", "flag_2se_below_cv", "pr_auc", "brier",
-             "cal_slope", "cal_citl", "recall_at_thr", "spec_at_thr"]
-    print(ho[show_].round(3).to_string(index=False))
+    print(ho[SHOW_HO].round(3).to_string(index=False))
 
     def ho_pair(a, b, pop, rule):
         """Paired hold-out bootstrap A - B with the locked rule of the hypothesis it belongs to."""
@@ -1256,11 +1288,23 @@ if RELEASED:
                       + [ho_pair(("S", 1), ("BL-ADAlite", 1), "E-SCREEN", "higher by >= 0.01")])
     print(hp.round(4).to_string(index=False))
     print("CV (this run) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
+elif STORED:   # FAST mode (or a closed gate): show the logged one-shot results, never refit
+    ho = pd.read_csv(HOLDOUT_CSV)
+    hp = pd.read_csv(HOLDOUT_PAIRS)
+    if REC is not None:   # the shipped tables must be the ones written by the one-shot run
+        same = {p_: RB.sha256_lf((C.ROOT / p_).read_bytes()) == h_ for p_, h_ in REC["stored_tables_sha256"].items()}
+        assert all(same.values()), f"stored hold-out tables differ from the frozen record: {same}"
+    print(f"STORED ONE-SHOT HOLD-OUT RESULTS - evaluated once in {prev['nb_mode_first_run']} mode on {prev['first_run_utc']}, "
+          f"{prev['n_test']:,} adults, SHA-256 {prev['sha256_test_seqn'][:16]}...; NOT re-executed in this {C.NB_MODE} run"
+          + ("; tables verified against the frozen record" if REC is not None else ""))
+    print(ho[SHOW_HO].round(3).to_string(index=False))
+    print(hp.round(4).to_string(index=False))
+    print(f"CV (this run, {C.NB_MODE}) S - M1: " + "; ".join(f"{p} {r['est']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] {r['h2b']}" for p, r in S9["reference"].items()))
 
 # %%
-if RELEASED:
+if RELEASED or STORED:
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-    lab_ = [f"{a}" + (" (T2)" if t == 2 else "") for a, t in P_TE]
+    lab_ = [f"{a}" + (" (T2)" if t == 2 else "") for a, t in ho.loc[ho["pop"] == "E-ALL", ["arm", "tier"]].itertuples(index=False)]
     for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
         d = ho[ho["pop"] == pop].reset_index(drop=True)
         yy_ = np.arange(len(d))
@@ -1275,12 +1319,13 @@ if RELEASED:
     axes[0].set_yticks(range(len(lab_)), lab_)
     axes[0].invert_yaxis()
     axes[0].legend(fontsize=8, loc="lower left")
-    fig.suptitle("Hold-out vs cross-validation: the CV estimates carry over", fontsize=11)
+    fig.suptitle("Hold-out vs cross-validation: the CV estimates carry over" + ("" if RELEASED else " (stored one-shot results)"), fontsize=11)
     plots.savefig(fig, "S9_holdout_vs_cv", caption="F9-6. ROC-AUC on the 20 % hold-out (blue; models refitted once on the whole training part, evaluated once "
                   "after exp-freeze) against the pooled out-of-fold estimate on the training part (grey), with 95 % bootstrap CIs; E-ALL left, "
                   "E-SCREEN right (about 25 hold-out positives).")
     plt.show()
 
+if RELEASED:   # needs the refitted models' hold-out predictions
     from sklearn.calibration import calibration_curve
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
     for ax, pop in zip(axes, ("E-ALL", "E-SCREEN")):
@@ -1295,15 +1340,24 @@ if RELEASED:
     plots.savefig(fig, "S9_holdout_calibration", caption="Calibration on the hold-out by quintiles of the predicted probability for M1, S (balanced class weights) "
                   "and BL-ADAlite-LR, Tier 1; E-ALL left, E-SCREEN right.")
     plt.show()
+elif STORED:
+    print("hold-out calibration curves need the refitted models' predictions; they are part of the stored FINAL outputs "
+          "(calibration slope and CITL are in the table above)")
 
 # %%
 if RELEASED:
     now = pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds")
-    if prev is not None and HOLDOUT_CSV.exists():   # a re-execution must reproduce the one-shot numbers exactly
+    if STORED:   # a re-execution must reproduce the one-shot numbers exactly (deterministic reproduction, not a second look)
         old = pd.read_csv(HOLDOUT_CSV).set_index(["arm", "tier", "pop"])["roc_auc"]
         new = ho.set_index(["arm", "tier", "pop"])["roc_auc"]
-        assert np.allclose(old.reindex(new.index).to_numpy(), new.to_numpy(), atol=1e-9), "hold-out numbers changed after the one-shot run"
-        print(f"re-execution reproduces the one-shot hold-out AUCs exactly (first run {prev['first_run_utc']})")
+        assert old.index.sort_values().equals(new.index.sort_values()), "hold-out arms differ from the one-shot run"
+        dmax = float(np.abs(old.reindex(new.index).to_numpy() - new.to_numpy()).max())
+        assert dmax <= 1e-9, f"hold-out AUCs changed after the one-shot run (max difference {dmax})"
+        oldp = pd.read_csv(HOLDOUT_PAIRS).set_index(["comparison", "pop"])["est"]
+        newp = hp.set_index(["comparison", "pop"])["est"]
+        assert np.allclose(oldp.reindex(newp.index).to_numpy(), newp.to_numpy(), atol=1e-9), "paired hold-out differences changed"
+        print(f"re-execution reproduces the {len(new)} one-shot hold-out AUCs and {len(newp)} paired differences exactly "
+              f"(first run {prev['first_run_utc']}; max |AUC difference| {dmax:.1e})")
     log_ = dict(first_run_utc=prev["first_run_utc"] if prev else now, last_run_utc=now,
                 n_executions=(prev["n_executions"] + 1) if prev else 1, sha256_test_seqn=sha_te, n_test=int(len(cl_te)),
                 exp_freeze_commit=RB.head_commit("exp-freeze"), head_at_first_run=prev["head_at_first_run"] if prev else RB.head_commit(),
@@ -1313,10 +1367,17 @@ if RELEASED:
     ho.to_csv(HOLDOUT_CSV, index=False)
     hp.to_csv(OUT / "holdout_pairs.csv", index=False)
     print(json.dumps(log_, indent=1))
-    S9["holdout"] = dict(log=log_, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
+    S9["holdout"] = dict(status="re-executed in FINAL mode: reproduces the one-shot run" if STORED else "evaluated (one-shot run)",
+                         log=log_, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
                          n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
+elif STORED:   # never replace the one-shot results by "not evaluated": store them unchanged, labelled
+    S9["holdout"] = dict(status=f"stored one-shot results, not re-executed in this {C.NB_MODE} run ({REASON})",
+                         log=prev, metrics=ho.round(5).to_dict("records"), pairs=hp.round(5).to_dict("records"),
+                         n_flag_2se=int(ho["flag_2se_below_cv"].sum()))
+    print(S9["holdout"]["status"])
 else:
-    S9["holdout"] = dict(status=GATE_STATUS)
+    S9["holdout"] = dict(status=f"not evaluated: gate closed ({REASON}) and no stored one-shot results")
+    print(S9["holdout"]["status"])
 
 # %% [markdown]
 # **So what.** The one-shot hold-out (1,146 adults, 194 L_comb positives; E-SCREEN 977 adults, 25 positives; SHA-256
@@ -1339,8 +1400,9 @@ else:
 #   were fitted to the E-ALL prevalence; calibration plots show this as curves well below the diagonal. At the training-derived specificity-0.80 thresholds, the fitted models reach a hold-out specificity of 0.80–0.83, and
 #   recall is 0.67 (M1) and 0.70 (S) on E-ALL but 0.48 for both (12 of 25) on E-SCREEN.
 #
-# Nothing was re-tuned after these numbers were seen. A re-execution of this notebook must reproduce them exactly
-# (asserted against `results/S9/holdout_metrics.csv`).
+# Nothing was re-tuned after these numbers were seen. A FINAL-mode re-execution of this notebook must reproduce them
+# exactly (asserted against `results/S9/holdout_metrics.csv` and `holdout_pairs.csv`); a FAST-mode run shows the same
+# stored one-shot numbers without refitting (labelled as such in the output above).
 
 # %% [markdown]
 # ## 12 Storage
@@ -1374,4 +1436,4 @@ R.save_section("S9", S9)
 print(f"saved results/metrics_S9.json; section runtime {S9['runtime_seconds']:.0f} s ({C.NB_MODE})")
 print(json.dumps({"H2b(a) reference": S9["reference"]["E-ALL"]["h2b"], "seeds stable": S9["seeds"]["stable_eall"],
                   "sensitivity same verdict": f"{S9['sensitivity']['eall_same_verdict']}/{S9['sensitivity']['eall_rows']}",
-                  "L3 triggered": S9["leak_hunt"]["triggered"], "hold-out": "evaluated" if "metrics" in S9["holdout"] else S9["holdout"]["status"]}, indent=1))
+                  "L3 triggered": S9["leak_hunt"]["triggered"], "hold-out": S9["holdout"]["status"]}, indent=1))

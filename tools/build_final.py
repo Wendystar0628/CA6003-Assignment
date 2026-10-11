@@ -74,6 +74,10 @@ REGISTER_GLOB = "governance/register/S*.csv"
 # the section that creates it has run. Everything else under results/ is produced by the notebook itself.
 SEED_RESULTS = [
     "results/S6/prereg_lock.json",           # git-history record of the pre-registration lock (S6 fallback without git)
+    "results/S9/exp_freeze_record.json",     # git-history record of the exp-freeze tag (S9 hold-out gate without git)
+    "results/S9/holdout_log.json",           # the one-shot hold-out run (done once, after exp-freeze): log ...
+    "results/S9/holdout_metrics.csv",        # ... per-arm metrics ...
+    "results/S9/holdout_pairs.csv",          # ... and paired differences; FAST displays them, FINAL must reproduce them
 ]
 CODEBOOK_DIR = "data/nhanes_2021_2023/codebooks"
 
@@ -282,7 +286,7 @@ display(tbl.T)
 print(f"{len(status['verified'])}/{status['n_files']} files verified against MANIFEST.sha256 ({source});",
       "mismatched:", status["mismatched"] or "none")'''
 
-RESULTS_ARTEFACT_NOTE = """**So what.** The workspace now holds exactly the repository files the analysis depends on, the raw data are present and hash-verified, and every later section starts by calling `new_section()`, which clears the namespace so each section depends only on files (never on hidden variables). One small stored artefact (`results/S6/prereg_lock.json`) is shipped inside this notebook because it records git history (the pre-registration lock commit) that a single `.ipynb` cannot reproduce; the pre-registration lock is shown with its commit and timestamp in §6."""
+RESULTS_ARTEFACT_NOTE = """**So what.** The workspace now holds exactly the repository files the analysis depends on, the raw data are present and hash-verified, and every later section starts by calling `new_section()`, which clears the namespace so each section depends only on files (never on hidden variables). A few small stored artefacts are shipped inside this notebook because they record events that a single `.ipynb` cannot reproduce: the git history of the pre-registration lock (`results/S6/prereg_lock.json`, shown with its commit and timestamp in §6.11) and of the experiment freeze (`results/S9/exp_freeze_record.json`), and the one-shot hold-out evaluation that was run once after that freeze (`results/S9/holdout_log.json`, `holdout_metrics.csv`, `holdout_pairs.csv`). §9.11 re-executes that evaluation in FINAL mode and asserts that it reproduces the logged numbers; in FAST mode it displays them without refitting."""
 
 
 def setup_cells(section_no: int) -> list:

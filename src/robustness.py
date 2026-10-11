@@ -52,6 +52,9 @@ Missing HbA1c (MNAR) sensitivity
 Hold-out (after exp-freeze only)
     tag_exists(name), head_commit(), holdout_frames(ctx), fit_full(ctx, spec, C0),
     holdout_scores(y, p, thr, mask, seed, n_boot)
+    frozen_reference(tag), sources_unchanged(tag)        -> facts of the tag, from git
+    make_freeze_record / write_freeze_record / load_freeze_record, module_hashes, sha256_lf
+        -> the same facts as a JSON record (results/S9/exp_freeze_record.json) for copies without git
 
 All randomness comes from ``evalkit.derive_seed(config.SEED_MASTER, "S9", ...)``.
 """
@@ -87,7 +90,8 @@ __all__ = [
     "contribution_importance", "base_variable", "availability_proof", "examined_population",
     "missingness_design", "observation_model", "delta_prevalence", "delta_auc", "tag_exists",
     "head_commit", "frozen_reference", "sources_unchanged", "FROZEN_SOURCES", "holdout_frames", "fit_full",
-    "holdout_scores", "IterativeImpute",
+    "holdout_scores", "IterativeImpute", "FREEZE_RECORD", "HOLDOUT_FILES", "sha256_lf", "module_hashes",
+    "make_freeze_record", "write_freeze_record", "load_freeze_record",
 ]
 
 ADMISSIBLE_ARMS = ("M1", "S")
@@ -796,6 +800,74 @@ def sources_unchanged(tag: str = "exp-freeze", paths=FROZEN_SOURCES) -> bool | N
         return {0: True, 1: False}.get(out.returncode)
     except Exception:  # noqa: BLE001
         return None
+
+
+# ----------------------------------------------------------------------------- frozen record (no-git copies)
+# A single .ipynb has no git history, so the tag cannot be checked there. The facts the gate needs from the
+# tag are written once, from git, into a small JSON record that ships with the notebook (like the S6
+# pre-registration lock). In a git checkout the record is cross-checked against the tag on every run.
+FREEZE_RECORD = "results/S9/exp_freeze_record.json"
+HOLDOUT_FILES = ("results/S9/holdout_metrics.csv", "results/S9/holdout_pairs.csv")
+
+
+def sha256_lf(data: bytes) -> str:
+    """SHA-256 of text bytes with CRLF normalised to LF (independent of the checkout's or %%writefile's EOL)."""
+    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
+
+
+def module_hashes(paths=FROZEN_SOURCES, root=None) -> dict:
+    """LF-normalised SHA-256 of the frozen modelling sources as they exist under ``root`` (default C.ROOT)."""
+    root = C.ROOT if root is None else root
+    return {p: (sha256_lf((root / p).read_bytes()) if (root / p).exists() else None) for p in paths}
+
+
+def _git(*args) -> str | None:
+    try:
+        out = subprocess.run(["git", *args], cwd=C.ROOT, capture_output=True, timeout=20)
+        return out.stdout.decode("utf-8") if out.returncode == 0 else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def make_freeze_record(tag: str = "exp-freeze") -> dict | None:
+    """Build the frozen record from git (None without git or tag): tag commit and timestamps, C0, fold-file hash and
+    hold-out SEQN hash as committed at the tag, LF SHA-256 of FROZEN_SOURCES at the tag, and the facts of the one-shot
+    hold-out run (results/S9/holdout_log.json) with the SHA-256 of the stored hold-out tables."""
+    commit = head_commit(tag)
+    ref = frozen_reference(tag)
+    if not (commit and ref):
+        return None
+    tag_date = (_git("for-each-ref", f"refs/tags/{tag}", "--format=%(taggerdate:iso-strict)") or "").strip()
+    commit_date = (_git("show", "-s", "--format=%cI", commit) or "").strip()
+    mods = {}
+    for p in FROZEN_SOURCES:
+        txt = subprocess.run(["git", "show", f"{tag}:{p}"], cwd=C.ROOT, capture_output=True, timeout=20).stdout
+        mods[p] = sha256_lf(txt)
+    log_p = C.ROOT / "results" / "S9" / "holdout_log.json"
+    log = json.loads(log_p.read_text(encoding="utf-8")) if log_p.exists() else {}
+    return dict(
+        tag=tag, tag_commit=commit, tag_created=tag_date, tag_commit_date=commit_date,
+        frozen=ref, module_sha256=mods,
+        one_shot=dict(first_run_utc=log.get("first_run_utc"), head_at_first_run=log.get("head_at_first_run"),
+                      nb_mode=log.get("nb_mode_first_run"), sha256_test_seqn=log.get("sha256_test_seqn"),
+                      n_test=log.get("n_test"), arms=log.get("arms")),
+        stored_tables_sha256={p: sha256_lf((C.ROOT / p).read_bytes()) for p in HOLDOUT_FILES if (C.ROOT / p).exists()},
+        note=("Written once from git after the one-shot hold-out run; shipped inside the notebook because a single .ipynb "
+              "has no git history. In a checkout with the tag, the gate re-derives these values from git and asserts equality."),
+    )
+
+
+def write_freeze_record(tag: str = "exp-freeze") -> dict:
+    """Write FREEZE_RECORD from git (run once in the repository; the file is committed and inlined by build_final)."""
+    rec = make_freeze_record(tag)
+    assert rec is not None, "git or the tag is unavailable"
+    (C.ROOT / FREEZE_RECORD).write_bytes((json.dumps(rec, indent=2) + "\n").encode("utf-8"))
+    return rec
+
+
+def load_freeze_record() -> dict | None:
+    p = C.ROOT / FREEZE_RECORD
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
 def holdout_frames(ctx: Context):
