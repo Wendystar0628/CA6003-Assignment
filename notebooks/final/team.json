@@ -6,40 +6,40 @@
   {
    "name": "Member A",
    "matric": "[TEAM TO FILL: matric no.]",
-   "role": "Data governance and reproducibility lead; integrator (build, number audit, freeze gatekeeper, video coordination)",
-   "sections_led": "§0, §1, §2; co-lead §9 (external validity) and §10 (number audit)",
+   "role": "Data governance and integration (builds the notebook, checks the numbers, coordinates the video)",
+   "sections_led": "§0, §1, §2 (reviews §3, §5)",
    "decisions": "DR-S0-01–08; DR-S1-01–14 (scope workshop with all); DR-S2-01–06; DR-S9-10–11; DR-S10-11",
-   "video_segment": "0:30–2:40 (plus opening and closing with all)",
+   "video_segment": "0:30–2:40",
    "verified": "[TEAM TO FILL: confirm after doing – planned: re-run §0–§2 from a fresh clone; check the 16 file hashes and the NCHS Data Brief 516 replication]",
    "genai_verified": "[TEAM TO FILL: confirm after doing – planned: checked the generated loader, governance text and build output against the raw files and codebooks]"
   },
   {
    "name": "Member B",
    "matric": "[TEAM TO FILL: matric no.]",
-   "role": "Data quality and preparation engineer (owner of the 14 preparation steps)",
-   "sections_led": "§3, §6, §9; co-lead §7 (block ablation) and §8 (mitigation steps)",
+   "role": "Data quality and preparation (owner of the 14 preparation steps)",
+   "sections_led": "§3, §6, §9 (reviews §1, §2)",
    "decisions": "DR-S3-01–07; DR-S4-08–09; DR-S6-01–10; DR-S7-12; DR-S9-01–09, DR-S9-12–13 (leak hunt with D)",
-   "video_segment": "2:40–5:00 and 9:45–10:20 (plus opening and closing with all)",
+   "video_segment": "2:40–5:00",
    "verified": "[TEAM TO FILL: confirm after doing – planned: re-run §3, §6 and §9; spot-check sentinel codes and the XPT artefact in the raw files; confirm every step is fitted inside training folds]",
    "genai_verified": "[TEAM TO FILL: confirm after doing – planned: checked the generated preparation code step by step against the variable specification]"
   },
   {
    "name": "Member C",
    "matric": "[TEAM TO FILL: matric no.]",
-   "role": "EDA, label and bias analyst (owner of label definitions and the fairness audit)",
-   "sections_led": "§4, §5, §8; co-lead §1 (target definition)",
+   "role": "Exploratory analysis, labels and bias",
+   "sections_led": "§4, §5, §8 (reviews §7, §9)",
    "decisions": "DR-S4-01–07, DR-S4-13; DR-S5-01–10; DR-S8-01–12; DR-S10-02–03",
-   "video_segment": "5:00–7:30 (plus opening and closing with all)",
+   "video_segment": "5:00–7:30",
    "verified": "[TEAM TO FILL: confirm after doing – planned: re-run §4, §5 and §8; recompute kappa, the 30.5 % treatment-masking share and the undiagnosed risk difference by hand; check small-group suppression]",
    "genai_verified": "[TEAM TO FILL: confirm after doing – planned: checked the generated label and fairness code against the codebook definitions]"
   },
   {
    "name": "Member D",
    "matric": "[TEAM TO FILL: matric no.]",
-   "role": "Modelling and evaluation lead; owner of the hold-out and the claims ledger",
-   "sections_led": "§7, §10; co-lead §9 (hold-out) and §1 (hypotheses)",
+   "role": "Modelling, evaluation and conclusions (owner of the hold-out and the claims ledger)",
+   "sections_led": "§7, §10 (reviews §0, §4, §6, §8)",
    "decisions": "DR-S4-10–12; DR-S6-11–12; DR-S7-01–11, DR-S7-13–16; DR-S9-14–15; DR-S10-01, DR-S10-04–10, DR-S10-12–13",
-   "video_segment": "7:30–9:45 (plus opening and closing with all)",
+   "video_segment": "7:30–10:15",
    "verified": "[TEAM TO FILL: confirm after doing – planned: re-run §7 and §10; confirm the hold-out was evaluated once (log and freeze record); trace 5 claims back to their numbers]",
    "genai_verified": "[TEAM TO FILL: confirm after doing – planned: checked the generated evaluation code and claim wording against the stored results]"
   }
@@ -57,11 +57,10 @@
   "9": "Member B",
   "10": "Member D"
  },
- "_roles_doc": "docs/team_roles.md (division of work, review matrix, shared workstreams, feedback loops); names A–D are placeholders",
+ "_roles_doc": "docs/team_roles.md; names A–D are placeholders",
  "collaboration": [
-  "**Owner plus reviewer.** Every section has one lead and a different member as reviewer, who checked its code, numbers and wording before each freeze (reviewers: §0 D, §1–§2 B, §3 A, §4 D, §5 A, §6 D, §7 C, §8 D, §9 C, §10 all).",
-  "**Shared workstreams.** Problem framing and pre-registration (all, chaired by A), label definition (C, D, A), the leak hunt (B, D, C), bias mitigation (C finds, B implements, D evaluates), the claims ledger (all, D owns) and the video (all, A coordinates).",
-  "**Feedback loops.** Downstream findings changed upstream work before each freeze: B's XPT finding → A's loader fix; C's redundancy and skewness → B's steps P04, P05, P13; C's treatment masking → the union label and D's E-SCREEN population; D's leakage pilot → the availability rule; B's sensitivity results → D's claim downgrades.",
-  "**Two-person gates.** Each freeze was approved by two members before the tag was set (scope: A+B; target: C+A; pre-registration: D+A; experiments: D+B; content: all four)."
+  "**Lead and reviewer.** Each section has one lead and a different member as reviewer, who checked its code, numbers and wording before each freeze.",
+  "**Done together.** Problem framing and pre-registration (all four; A chaired, D wrote the decision rules); bias mitigation (C found the group gaps, B implemented the steps, D evaluated them); conclusions and video (each member drafted their section's claims, D merged them, A checked every number).",
+  "**Feedback.** Later findings changed earlier work before each freeze: C's redundancy and skewness findings led to B's preparation steps; C's treatment-masking finding changed the training label and added D's screening population; D's leakage pilot led to the availability rule (A, B). Every freeze was approved by two members."
  ]
 }
