@@ -919,12 +919,12 @@ def citation_report(cells: list) -> dict:
             continue
         if not any(y == year and any(re.search(r"\b" + re.escape(p) + r"\b", authors) for p in parts) for authors, y in keys):
             missing.add(f"{m.group(0).strip()}")
-    for pat in NAMED_CITATIONS:
-        for m in re.finditer(pat, corpus):
-            hit = m.group(0)
-            ctx = corpus[max(0, m.start() - 40):m.end() + 40]
-            if not any(ref_alias(a, t).search(hit) or ref_alias(a, t).search(ctx) for a, t in REFERENCES):
-                missing.add(hit)
+    for pat in NAMED_CITATIONS:          # a named method needs a reference at one of its mentions at least
+        hits = list(re.finditer(pat, corpus))
+        covered = any(ref_alias(a, t).search(m.group(0)) or ref_alias(a, t).search(corpus[max(0, m.start() - 40):m.end() + 40])
+                      for m in hits for a, t in REFERENCES)
+        if hits and not covered:
+            missing.add(hits[0].group(0))
     cited = [t for a, t in REFERENCES if ref_alias(a, t).search(corpus)]
     never = [t.split("(")[0].strip() for a, t in REFERENCES if t not in cited]
     return {"cited": cited, "missing": sorted(missing), "never_cited": never}
