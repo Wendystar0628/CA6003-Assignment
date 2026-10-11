@@ -21,7 +21,7 @@ A data-centric study of adult diabetes identification using **NHANES Aug 2021 �
 
 ## Process
 
-`docs/development_process.md` (Chinese) defines stages S0–S12, feedback loops, freezes and the git policy; `docs/architecture.md` the code architecture. Freeze tags:
+`docs/development_process.md` (Chinese) defines stages S0–S12, feedback loops, freezes and the git policy; `docs/architecture.md` the code architecture; `docs/team_roles.md` (Chinese) the division of work among members A–D (section leads, reviewers, shared workstreams, feedback loops, video segments). Freeze tags:
 
 | Tag | Meaning |
 |---|---|

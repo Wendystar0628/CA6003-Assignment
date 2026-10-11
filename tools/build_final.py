@@ -487,6 +487,7 @@ def load_team() -> dict:
         for n, v in (user.get("section_leads") or {}).items():
             if str(v).strip():
                 team["section_leads"][str(n)] = str(v).strip()
+        team["collaboration"] = [str(x).strip() for x in user.get("collaboration") or [] if str(x).strip()]
     return team
 
 
@@ -522,7 +523,9 @@ def contribution_md(team: dict) -> str:
             "which video segment each member presents and what each member re-ran and verified. Every § heading also names "
             "its lead.\n\n"
             + team_table([[m["name"], m["sections_led"], m["decisions"], m["video_segment"], m["verified"]] for m in team["members"]],
-                         ["Member", "Sections led", "Decisions authored", "Video segment", "Verified"]))
+                         ["Member", "Sections led", "Decisions authored", "Video segment", "Verified"])
+            + ("\n\n**How the work was shared.**\n\n" + "\n".join(f"- {x}" for x in team["collaboration"])
+               if team.get("collaboration") else ""))
 
 
 def genai_md(team: dict) -> str:
