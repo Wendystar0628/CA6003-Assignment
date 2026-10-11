@@ -95,12 +95,10 @@ print(f"cohort: {len(d):,} adults; columns: {d.shape[1]}")
 # %% [markdown]
 # ## 1 Three labels and their agreement
 #
-# **Why.** The research question needs a diabetes label, and the data offer two independent instruments:
-# `L_self` (DIQ010 = 1, "a doctor told you that you have diabetes") and `L_A1c` (HbA1c ≥ 6.5 %, measured at the
-# exam). `L_comb` is their union. Before choosing one, we measure how much they agree. Cohen's κ is reported
-# unweighted and weighted (WTPH2YR, delete-one-PSU jackknife, df = 15). Because κ depends on prevalence, the
-# positive and negative specific agreements (PA, NA) are reported alongside, as well as the sensitivity and PPV
-# of self-report against HbA1c.
+# **Why.** Two independent instruments are available: `L_self` (DIQ010 = 1, "a doctor told you that you have diabetes")
+# and `L_A1c` (HbA1c ≥ 6.5 % at the exam); `L_comb` is their union. Their agreement is measured by Cohen's κ
+# (unweighted and WTPH2YR-weighted, jackknife df 15), with positive/negative specific agreement because κ depends on
+# prevalence.
 
 # %%
 tab = L.confusion(d)
@@ -283,24 +281,19 @@ register("DR-S5-04", "label_semantics",
          "Describe undiagnosed as 'no access to care'; use DIQ180 as a screening feature")
 
 # %% [markdown]
-# **So what.** Borderline respondents are almost seven times as likely to be HbA1c-positive as those answering
-# "no" (16.9 % vs 2.5 %). An estimated 62.5 % (KG 53.5–70.9 %, WTPH2YR) of undiagnosed adults had a blood-sugar
-# test in the past three years (sample: 104 of 152); 36 of the 152 were told they were borderline and 48 that
-# they had prediabetes. "Undiagnosed" is therefore mostly a diagnosis and communication gap, not a lack of any
-# contact. DIQ160 and DIQ180 are excluded as features because they record the result of a glucose test, which
-# the screening use case precedes.
+# **So what.** Borderline respondents are almost seven times as likely to be HbA1c-positive as those answering "no"
+# (16.9 % vs 2.5 %). An estimated 62.5 % (weighted, WTPH2YR; KG 53.5–70.9 %) of undiagnosed adults had a blood-sugar
+# test in the past three years (unweighted: 104 of 152 = 68 %); 36 were told they were borderline and 48 that they had
+# prediabetes. "Undiagnosed" is mostly a diagnosis and communication gap; DIQ160 and DIQ180 record a glucose-test
+# result and are excluded as features.
 
 # %% [markdown]
 # ## 4 Who is undiagnosed
 #
-# **Why.** If the undiagnosed share differs by insurance, access or race, then `L_self` is a biased label
-# and a model trained on it inherits the bias. The domain is all adults with HbA1c ≥ 6.5 % (n = 721) and the
-# outcome is "not self-reported". Proportions get Korn–Graubard intervals with the NCHS domain df; an estimate
-# with n or effective n < 30, an absolute CI width ≥ 0.30, or a CI width > 0.05 with a relative width > 130 % is
-# labelled *exploratory, does not meet NCHS standard* (Parker et al. 2017); df < 8 also triggers statistical review.
-# The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife) rather than a small-cell
-# proportion. Its df is that of the domain on which the contrast is estimated (both groups together); a
-# conservative check with the smaller group's own df follows.
+# **Why.** If the undiagnosed share differs by insurance, access or race, `L_self` is a biased label. Domain: adults with
+# HbA1c ≥ 6.5 % (n = 721); outcome: not self-reported. Proportions get Korn–Graubard intervals and the NCHS flags
+# (*exploratory* when n or effective n < 30 or the CI is too wide; Parker et al. 2017). The headline is the risk
+# difference (WTPH2YR, jackknife) on the joint domain's df, with the smaller group's own df as a conservative check.
 
 # %%
 d["undx"] = 1.0 - d["L_self"]
@@ -379,20 +372,17 @@ assert RDC.loc["uninsured - insured", "df_smaller_group"] == 9
 assert RDC.loc["uninsured - insured", "ci_low_pp_conservative"] > 0      # H1a rule holds with either df
 
 # %% [markdown]
-# **Adjusted models.** The risk differences above are crude. To check whether they survive confounding, each
-# exposure gets **its own** logistic model of "undiagnosed" among the HbA1c-positive adults, with the adjustment
-# set that the DAG of §4.8 (back-door criterion) identifies for that exposure:
+# **Adjusted models.** Each exposure gets **its own** logistic model of "undiagnosed" among HbA1c-positive adults, with
+# the adjustment set the §4.8 DAG identifies:
 #
 # | Exposure | Adjustment set (§4.8 DAG) | Not adjusted for, and why |
 # |---|---|---|
 # | uninsured | age, sex, SES (PIR + missing-PIR indicator) | usual place of care: a *mediator* (insurance → usual care → diagnosis) |
-# | no usual place of care | age, sex, SES (PIR + missing-PIR indicator) | insurance: an ancestor of usual care whose back-door paths are already closed by age and SES |
-# | NH Asian (vs NH White) | age, sex | SES and BMI: *mediators* of race (race → SES / adiposity → diagnosis) |
+# | no usual place of care | age, sex, SES (PIR + missing-PIR indicator) | insurance: an ancestor whose back-door paths age and SES already close |
+# | NH Asian (vs NH White) | age, sex | SES and BMI: *mediators* of race |
 #
-# PIR is missing for some adults, so it enters as median-filled value plus the indicator `pir_miss`. Each model
-# is fitted unweighted (model-based CI) and WTPH2YR-weighted (delete-one-PSU jackknife, domain by zero weights);
-# both are reported because they disagree in places. A mutually adjusted model is not used: it would adjust
-# insurance for its own mediator and present every coefficient as if it were an effect.
+# Each model is fitted unweighted and WTPH2YR-weighted (jackknife); a mutually adjusted model would adjust insurance for
+# its own mediator.
 
 # %%
 RACE_LEVELS = ["NH White", *[r for r in RACE.values() if r != "NH White"]]
@@ -512,13 +502,11 @@ register("DR-S5-05", "label_bias",
 # %% [markdown]
 # ## 5 BMI as a biased measurement of adiposity in Asian adults
 #
-# **Why.** BMI is the main adiposity feature of any non-laboratory screening model. Asian adults develop
-# diabetes at lower BMI (Araneta et al. 2015; WHO Expert Consultation 2004), so the same BMI value may carry
-# different information by race: a *feature-level* measurement bias. We compare NH Asian with NH White adults on
-# (a) the BMI of diabetics, (b) `L_comb` prevalence by BMI band, (c) the discrimination (single-feature ROC-AUC)
-# of BMI, waist circumference and waist-to-height ratio (WHtR), with a paired bootstrap of the WHtR − BMI gain,
-# and (d) the sensitivity of the BMI ≥ 25 and ≥ 23 screening cut-offs. These are unweighted *measurement*
-# properties of the sample; the White group is the control comparison.
+# **Why.** BMI is the main adiposity feature of any non-laboratory screening model, but Asian adults develop diabetes at
+# lower BMI (Araneta et al. 2015; WHO Expert Consultation 2004): a possible *feature-level* measurement bias. NH Asian
+# and NH White adults are compared on the BMI of diabetics, prevalence by BMI band, single-feature AUC of BMI, waist and
+# waist-to-height ratio (WHtR, paired bootstrap of the gain) and the sensitivity of the BMI ≥ 25 / ≥ 23 cut-offs
+# (unweighted measurement properties).
 
 # %%
 grp = {"NH Asian": 6, "NH White": 3}
@@ -744,11 +732,8 @@ register("DR-S5-06", "measurement_bias",
 # %% [markdown]
 # ## 6 Representation and response
 #
-# **Why.** A model trained on 5,730 examined adults describes the people who agreed to be examined and gave
-# blood. Three checks: (i) sample versus WTPH2YR-weighted composition, (ii) the cycle's response rates and the
-# variance cost of unequal weights (Kish design effect), (iii) whether exam participation is related to health,
-# comparing self-reported diabetes (interview weight WTINT2YR) between interview-only adults and adults with an
-# HbA1c result.
+# **Why.** The composition, response rates and Kish design effect are those of §1.10; the new check here is whether exam
+# participation relates to health (self-reported diabetes, WTINT2YR, interview-only vs adults with an HbA1c result).
 
 # %%
 band_s = S.age_band(d["RIDAGEYR"]).to_numpy()
@@ -827,12 +812,10 @@ register("DR-S5-07", "representation",
          "Treat the unweighted sample as the population; claim national representativeness of model metrics")
 
 # %% [markdown]
-# **So what.** Adults aged 60+ are 46.2 % of the sample but 31.4 % of the weighted population; race shares differ
-# by at most about one point because this cycle no longer oversamples by race. Age structure explains about 84 %
-# of the 2.9 pp gap between unweighted (16.9 %) and weighted (14.0 %) `L_comb` prevalence (§4.4). With response
-# rates of 34.6 % and 25.7 %, selection matters: interview-only adults report diabetes less often (8.8 %) than
-# adults with an HbA1c result (11.7 %). Weights correct for known covariates, not for health-related
-# participation, so model metrics describe the examined population.
+# **So what.** Composition and response rates repeat §1.10 (age structure explains about 84 % of the 16.9 % vs 14.0 %
+# prevalence gap, §4.4). New: interview-only adults report diabetes less often (8.8 %) than adults with an HbA1c result
+# (11.7 %), so weights correct for known covariates but not for health-related participation – model metrics describe
+# the examined population.
 
 # %% [markdown]
 # ## 7 HbA1c missingness bias
@@ -899,22 +882,17 @@ register("DR-S5-08", "missingness",
          "Impute HbA1c (would impute the label); ignore missingness")
 
 # %% [markdown]
-# **So what.** HbA1c is missing for 9.3 % of examined NH Black adults versus 4.0 % of NH White adults (weighted
-# difference +4.9 pp, jackknife CI 2.9–6.9). The phlebotomy weights' non-response adjustment moves prevalence only
-# from 13.9 % (MEC weight) to 14.0 % (WTPH2YR). Without any assumption on the missing values the
-# overall `L_comb` prevalence among examined non-pregnant adults lies between 13.9 % and 18.1 % (width 0.042,
-# narrower than the naive 0.049 because missing-HbA1c adults who self-report diabetes are known positives); for
-# NH Black adults the bounds are 21.5–28.4 % (width 0.069) against 12.4–15.9 % for NH White adults. The cohort stays complete-case
-# with WTPH2YR; an inverse-probability-weighting sensitivity check follows in §9.7.
+# **So what.** HbA1c is missing for 9.3 % of examined NH Black vs 4.0 % of NH White adults (+4.9 pp, CI 2.9–6.9). The
+# blood-weight non-response adjustment moves prevalence only from 13.9 % to 14.0 %. Without assumptions on the missing
+# values the `L_comb` prevalence of examined non-pregnant adults lies between 13.9 % and 18.1 % (NH Black 21.5–28.4 %,
+# NH White 12.4–15.9 %). The cohort stays complete-case with WTPH2YR; IPW and MNAR checks follow in §9.7.
 
 # %% [markdown]
 # ## 8 Decision gate L2 and target freeze
 #
-# **Why.** The decision gate L2 (label revision) sends the project back to the scope (§1) if the label audit
-# changes the question. Four criteria decide whether `L_comb` can be frozen. They are evaluated **after** seeing the data (post-hoc), so they
-# are a documented judgement, not a pre-registered test. The freeze then fixes the target, the second primary
-# evaluation population E-SCREEN, the 3×3 label-matrix strata and the sensitivity labels SL1–SL7, written as
-# executable definitions in `governance/label_freeze.md` (all point to `src/labels.py`).
+# **Why.** The label-revision decision gate sends the project back to §1 if the label audit changes the question. Four
+# criteria, judged **after** seeing the data, decide whether `L_comb` is frozen together with E-SCREEN, the 3×3 strata
+# and the sensitivity labels SL1–SL7 (`governance/label_freeze.md`, executable in `src/labels.py`).
 
 # %%
 spec = NIO.load_spec()

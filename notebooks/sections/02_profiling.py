@@ -93,7 +93,7 @@ print(f"included variables with codebook refusal/don't-know codes: {n_sentinel_v
 assert (cont_inc["sentinel_codes"] == "").all() and len(cont_inc) == 21 and n_sentinel_vars == 25
 
 # %% [markdown]
-# **So what.** All 16 raw files match their recorded hashes (CDC public-use files of the August 2021 – August 2023 cycle, downloaded 2026-10-10). The specification has one row per raw column (175), and `verify_spec` finds no disagreement with the codebooks or XPT headers. The loader keeps 78 columns and drops 97, each with a stated reason. 25 included variables carry codebook refusal or don't-know codes, all questionnaire items; none of the 21 continuous laboratory and examination measures has one, so the per-variable sentinel map leaves every measurement untouched (§3.4 shows why this matters).
+# **So what.** All 16 raw files match their hashes (CDC public-use files, Aug 2021 – Aug 2023, downloaded 2026-10-10). The specification has one row per raw column (175) and agrees with the codebooks and XPT headers; the loader keeps 78 columns and drops 97, each with a reason. The 25 variables with refusal or don't-know codes are all questionnaire items; none of the 21 continuous measures has one (§3.4 shows why this matters).
 
 # %%
 M2.update({
@@ -109,7 +109,7 @@ M2.update({
 # %% [markdown]
 # ## 1 XPT read artefact and zero-weight semantics
 #
-# **Why.** When pandas reads a SAS transport (XPT) file, a stored zero comes back as 5.397605e-79 (= 16⁻⁶⁵). This is a floating-point artefact of the reader, not a SAS missing-value code. Left in place it creates a spurious minimum and breaks `== 0` tests such as "zero weight" or "no activity". The repair has to keep NaN as NaN. `x.where(|x| >= 1e-10, 0)` is the tempting one-liner, but it also turns every NaN into 0, because NaN fails the comparison.
+# **Why.** pandas reads a stored XPT zero as 5.397605e-79 (= 16⁻⁶⁵), a reader artefact that creates a spurious minimum and breaks `== 0` tests ("zero weight", "no activity"). The repair must keep NaN as NaN; the tempting `x.where(|x| >= 1e-10, 0)` turns every NaN into 0.
 
 # %%
 art = io.xpt_artefact_audit()
@@ -163,7 +163,7 @@ assert zw.loc[0, "n"] == 3073 == zw.loc[0, "cross-check: RIDSTATR = 1 (interview
 assert zw.loc[1, "n"] == 449 and zero_in_cohort == 0
 
 # %% [markdown]
-# **So what.** The artefact affects 13,676 cells in 9 of the 16 files, mostly weights or frequencies whose true value is 0 (e.g. 3,073 zero exam weights, 4,413 zero vigorous-activity sessions). On `PAQ_L` the `mask` repair keeps the NaN count unchanged; the `where` version would turn non-answers into "no physical activity". No value with 0 < |x| < 10⁻¹⁰ remains. The zero weights carry meaning: the 3,073 `WTMEC2YR = 0` rows are exactly the interview-only participants, `WTPH2YR = 0` marks 449 people without a blood sample, and every cohort member has a positive `WTPH2YR`. **Decision (DR-S3-01):** repair with `mask` at load time; zero weights become NaN before any weighted analysis.
+# **So what.** The artefact affects 13,676 cells in 9 files, mostly weights or frequencies whose true value is 0 (3,073 zero exam weights, 4,413 zero vigorous-activity sessions); the `mask` repair keeps every NaN, and no value with 0 < |x| < 10⁻¹⁰ remains. The zero weights carry meaning: `WTMEC2YR = 0` marks exactly the interview-only participants and `WTPH2YR = 0` the 449 without a blood sample. **Decision (DR-S3-01):** repair with `mask` at load time; zero weights become NaN before any weighted analysis.
 
 # %%
 M3["xpt_artefact"] = {"cells": n_art, "files": files_hit, "n_files": len(files_hit),
@@ -204,7 +204,7 @@ f_funnel = plots.savefig(fig, "S3_funnel", caption="Sample funnel: DEMO_L partic
 plt.show(); print("saved", f_funnel)
 
 # %% [markdown]
-# **So what.** `SEQN` is unique in all 16 files and each file is a subset of `DEMO_L`, so the left join neither duplicates nor drops anyone. The funnel is 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (not pregnant). The most selective step is the examination (1,745 adults lost), which, with the 25.7 % examination response rate, is why §3.9 rates credibility separately. The 297 examined adults without HbA1c are studied in §3.7; the 21 women with unascertainable pregnancy status are kept and flagged (`preg_unknown`).
+# **So what.** `SEQN` is unique in all 16 files and each is a subset of `DEMO_L`, so the join neither duplicates nor drops anyone. Funnel: 11,933 → 7,809 (age ≥ 20) → 6,064 (examined) → 5,767 (HbA1c present) → 5,730 (not pregnant); the examination step loses most (1,745). The 297 examined adults without HbA1c are studied in §3.7; 21 women with unascertainable pregnancy status are kept and flagged.
 
 # %%
 M3["funnel"] = dict(zip(fun["step"], fun["n"].astype(int)))
@@ -214,10 +214,7 @@ M3["preg_unknown_kept"] = preg3
 # %% [markdown]
 # ## 3 Per-variable sentinel map
 #
-# **Why.** NHANES codes "Refused" and "Don't know" differently in each variable: 7/9, 77/99, 777/999 or 7777/9999. Continuous laboratory and examination measures have no such codes at all; their codebook lists only a range of values and "Missing". The sentinel map is therefore taken from each variable's codebook entry, never from a global list. Two kinds of check make it auditable:
-#
-# - Every recoded code is traceable to the codebook: for each variable, the number of rows recoded in the raw file must equal the frequency the CDC codebook prints for that code.
-# - Codes that look like sentinels but are real categories are kept. Examples are `DIQ010 = 3` (borderline) and `HUQ030 = 3` (more than one place of care).
+# **Why.** NHANES codes "Refused" / "Don't know" differently per variable (7/9, 77/99, 777/999, 7777/9999), and continuous measures have no such codes at all, so the sentinel map comes from each variable's codebook entry. Two checks make it auditable: recoded rows must equal the codebook frequency of each code, and look-alike codes that are real categories (`DIQ010 = 3` borderline, `HUQ030 = 3` more than one place of care) are kept.
 
 # %%
 cb = io.codebook_table()
@@ -254,7 +251,7 @@ n_sent_coh = int(sent["recoded_cohort"].fillna(0).sum())
 print(f"variables with codebook sentinels: {len(sent)}; cells recoded in the files: {int(sent['recoded_file'].sum()):,}; in the cohort: {n_sent_coh:,}")
 
 # %% [markdown]
-# **So what.** For each of the 25 variables, the number of recoded rows equals the frequency the codebook prints, so every recode traces to its CDC source: 1,047 cells across the files, 562 in the cohort (largest: `DIQ180`, 173 "don't know", a label-audit variable). Codes that look like sentinels but are categories stay untouched: 213 borderline answers (`DIQ010 = 3`; 284 in the file), 34 people with more than one usual place of care (`HUQ030 = 3`) and 363 "Other race / multiracial" adults (`RIDRETH3 = 7`). **Decision (DR-S3-02):** recode per variable from the codebook; no global list, and continuous measures are never recoded.
+# **So what.** For all 25 variables the recoded rows equal the codebook frequencies (1,047 cells; 562 in the cohort, most for `DIQ180`). Look-alike categories stay untouched: 213 borderline answers, 34 people with more than one usual place of care and 363 multiracial adults (`RIDRETH3 = 7`). **Decision (DR-S3-02):** recode per variable from the codebook; continuous measures are never recoded.
 
 # %%
 M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sent["recoded_file"].sum()),
@@ -264,13 +261,7 @@ M3["sentinel_audit"] = {"n_variables": len(sent), "cells_recoded_files": int(sen
 # %% [markdown]
 # ## 4 Cost of a blanket recode
 #
-# **Why.** A common shortcut is `df.replace([7, 9, 77, 99, 777, 999, 7777, 9999], np.nan)` across the whole table. It is also the "minimal" arm M0 of the experiments (§6.9). The cost has to be measured rather than assumed. Every value the shortcut removes from a continuous measure is a valid measurement, because those variables have no refusal codes. Examples are a diastolic pressure of 77 mmHg, a weight of 99 kg and an HbA1c of 7.0 %. The damage is counted on the fixed cohort of 5,730 adults in three arms:
-#
-# - **per-variable**: codebook codes only;
-# - **blanket**: the shortcut;
-# - **questionnaire-only**: the shortcut restricted to the six questionnaire items where it is harmless.
-#
-# The effect on the labels is counted as well.
+# **Why.** The common shortcut `df.replace([7, 9, 77, 99, 777, 999, 7777, 9999], np.nan)` – the naive arm M0 of §6.9 – removes valid values from continuous measures, which have no refusal codes (a diastolic pressure of 77, a weight of 99 kg, an HbA1c of 7.0 %). The damage is counted on the 5,730 adults for per-variable codes, the blanket shortcut and the shortcut restricted to six questionnaire items, including the effect on the labels.
 
 # %%
 coh_none = io.build_cohort(sentinels="none")
@@ -417,7 +408,7 @@ assert univ.loc[0, ["answered", "DIQ010=1", "other"]].tolist() == [1081, 1081, 0
 assert univ.loc[1, ["DIQ010=1", "DIQ010=3", "DIQ010=2 & DIQ160=1", "other"]].tolist() == [1081, 282, 918, 0]
 
 # %% [markdown]
-# **So what.** The arithmetic holds: BMI recomputes for all 8,471 valid triples (largest difference 0.050, rounding), no reading has systolic ≤ diastolic, pulse pressures below 20 or above 100 mmHg are rare and flagged (wide pulse pressure is plausible in older adults), and four waist-to-height ratios above 1 are flagged. The skip patterns matter more. `DIQ050` (insulin) is answered only by the 1,081 people reporting diabetes, so it is a label proxy; `DIQ070` (oral medication) is also asked of 282 borderline and 918 prediabetic respondents, and 41 non-diabetic plus 44 borderline cohort adults take glucose-lowering pills. **Decision (DR-S3-06):** both are inadmissible features; the treatment-aware sensitivity label (§5.8) may use them only inside this universe, excluding prediabetes medication.
+# **So what.** The arithmetic holds: BMI recomputes for all 8,471 valid triples (largest difference 0.050), no reading has systolic ≤ diastolic, and implausible pulse pressures and four waist-to-height ratios above 1 are flagged. The skip patterns matter more: `DIQ050` (insulin) is answered only by the 1,081 people reporting diabetes, and `DIQ070` (pills) also by borderline and prediabetic respondents (41 non-diabetic and 44 borderline cohort adults take them). **Decision (DR-S3-06):** both are inadmissible; the treatment-aware label (§5.8) uses them only inside this universe.
 
 # %%
 M3["consistency"] = {"bmi_triples": len(v), "bmi_max_abs_diff": float(bmi_diff.max()), "bmi_diff_gt_0_1": int((bmi_diff > 0.1).sum()),
@@ -460,12 +451,7 @@ M3["top_coding"] = {"age_top": age_top, "pir_top": pir_top, "pir_top_share": pir
 # %% [markdown]
 # ## 7 Missing-data mechanism for HbA1c
 #
-# **Why.** The cohort keeps only examined adults *with* an HbA1c value. If missingness depended on diabetes itself, the label would be biased in a way no weighting could repair. Rubin's taxonomy cannot be settled from the data:
-#
-# - MCAR can be rejected by showing that missingness depends on observed covariates.
-# - MAR versus MNAR depends on the unobserved values and cannot be tested.
-#
-# A logistic model for the missingness indicator among the 6,064 examined adults shows who is missing. It is unweighted because it describes the sample rather than the population. Little's MCAR test is not used: it assumes multivariate normality, and it can only reject MCAR, which the logit already does more informatively.
+# **Why.** The cohort keeps only examined adults *with* HbA1c; if missingness depended on diabetes itself, no weighting could repair the label. MCAR can be rejected from observed covariates, MAR vs MNAR cannot be tested. An unweighted logistic model for missingness among the 6,064 examined adults shows who is missing (Little's test is not used: it assumes normality and can only reject MCAR).
 
 # %%
 mrg = io.load_merged(sentinels="per_variable")
@@ -514,7 +500,7 @@ f_miss = plots.savefig(fig, "S3_missing_hba1c_or",
 plt.show(); print("saved", f_miss)
 
 # %% [markdown]
-# **So what.** 297 of 6,064 examined adults (4.9 %) lack HbA1c, and missingness clearly depends on observed covariates (likelihood-ratio p = 2.8 × 10⁻¹¹, AUC 0.65). Data are **not MCAR**. Associations with missing HbA1c:
+# **So what.** 297 of 6,064 examined adults (4.9 %; all examined adults, pregnant women included – §9.7 uses the 6,023 non-pregnant ones, 293 missing) lack HbA1c, and missingness clearly depends on observed covariates (likelihood-ratio p = 2.8 × 10⁻¹¹, AUC 0.65). Data are **not MCAR**. Associations with missing HbA1c:
 #
 # | Covariate | OR (95 % CI) |
 # |---|---|
@@ -538,13 +524,7 @@ M3["missingness"] = {"examined_adults": len(ex), "a1c_missing": int(y_miss.sum()
 # %% [markdown]
 # ## 8 Outliers: a three-layer rule
 #
-# **Why.** Extreme values in clinical data are often the signal itself: a very high HbA1c *is* diabetes. A rule that deletes values outside 1.5 × IQR therefore removes cases, not errors. The project uses three layers:
-#
-# 1. hard physiological limits, which only flag;
-# 2. a robust z-score (median and MAD, |z| > 3.5), which only flags;
-# 3. human review of whatever both layers flag.
-#
-# The harm of the blind alternative is measured directly on HbA1c and on a joint fence over five predictors.
+# **Why.** In clinical data the extremes are often the signal (a very high HbA1c *is* diabetes), so deleting beyond 1.5 × IQR removes cases, not errors. Three layers: hard physiological limits and a robust z-score (|z| > 3.5) only flag; a human reviews what both flag. The harm of blind deletion is measured directly.
 
 # %%
 LIMITS = {"BMXBMI": (12, 70), "bp_sys_mean": (70, 260), "bp_dia_mean": (30, 150), "LBXTC": (60, 500), "LBDHDD": (10, 200), "LBXGH": (3, 18)}
@@ -613,7 +593,7 @@ f_iqr = plots.savefig(fig, "S3_iqr_fence_harm",
 plt.show(); print("saved", f_iqr)
 
 # %% [markdown]
-# **So what.** The hard limits flag 2 BMI values. The robust z-score flags 462 HbA1c values, which are the diabetic tail, so it may only flag. Exactly one value is flagged by both layers; the manual review (layer 3) finds a BMI of 74.8 that recomputes from measured weight (185.2 kg) and height (157.3 cm), a plausible class III obesity, so it is kept. Blind deletion would be costly: the HbA1c 1.5 × IQR fence (6.8 %) flags 542 rows, 519 of them with HbA1c ≥ 6.5 %, i.e. **72 % of all HbA1c-defined cases**; a joint fence over five predictors deletes 512 rows (8.9 %) whose HbA1c-positive share is 17.2 % against 12.1 % among those kept. **Decision (DR-S3-03):** keep every value; skewness is handled as block B5 (§6.7), not by deletion.
+# **So what.** The hard limits flag 2 BMI values and the robust z-score 462 HbA1c values (the diabetic tail). The one value flagged by both, a BMI of 74.8, recomputes from measured weight (185.2 kg) and height (157.3 cm) and is kept. Blind deletion would be costly: the HbA1c 1.5 × IQR fence (6.8 %) flags 542 rows, 519 of them with HbA1c ≥ 6.5 % (**72 % of all HbA1c-defined cases**); a joint fence over five predictors deletes 512 rows with a higher positive share (17.2 % vs 12.1 %). **Decision (DR-S3-03):** keep every value; skewness is handled in block B5 (§6.7).
 
 # %%
 M3["outliers"] = {"layer_table": outl.set_index("var")[["layer1_outside_limits", "layer2_robust_z_gt_3.5", "both_layers"]].to_dict("index"),
@@ -686,7 +666,7 @@ f_dq = plots.savefig(fig, "S3_quality_matrix", caption="Verdict per data-quality
 plt.show(); print("saved", f_dq)
 
 # %% [markdown]
-# **So what.** Once the two read-time problems are fixed (XPT artefact, per-variable sentinels) the measurements are trustworthy: keys are unique, every continuous value lies inside its codebook range, BMI recomputes and blood-pressure pairs are coherent. The weak points lie elsewhere: **credibility** is limited (response 34.6 % / 25.7 %, partly self-reported label), **timeliness** cannot be assessed (one cycle), and **completeness** passes with flags (HbA1c missingness is covariate-dependent, §3.7). No admissible variable meets the scope-revision trigger (> 40 % item missingness, no variation, or post-diagnosis content). **Decision (DR-S3-07):** freeze the variable scope (`scope-freeze`); carry credibility and label accuracy as limitations to §5 and §10.
+# **So what.** With the two read-time problems fixed the measurements are trustworthy (unique keys, codebook ranges, BMI recomputes, coherent BP pairs). The weak points are **credibility** (response 34.6 % / 25.7 %, partly self-reported label), **timeliness** (one cycle) and **completeness** with flags (§3.7); no admissible variable meets the scope-revision trigger. **Decision (DR-S3-07):** `scope-freeze`; credibility and label accuracy go to §5 and §10 as limitations.
 
 # %%
 M3["quality_matrix"] = dq.set_index("dimension")[["result", "verdict"]].to_dict("index")

@@ -121,9 +121,8 @@ display(catalogue)
 
 # %% [markdown]
 # ## 3 B1 integrity: XPT zeros and sentinel codes
-# **Why.** §3.1 and §3.4 showed that the XPT reader turns stored zeros into 5.4e-79 and that a blanket
-# `replace({7, 9, 77, 99, ...}, NaN)` destroys valid measurements. The naive analyst also builds the
-# *label* from recoded data, so HbA1c values of exactly 7.0 % and 9.0 % disappear before `L_comb` is formed.
+# **Why.** §3.1 and §3.4 showed that the XPT reader turns stored zeros into 5.4e-79 and that a blanket recode destroys
+# valid measurements – including HbA1c 7.0 % and 9.0 % before the naive label is formed. P01/P02 repair both.
 
 # %%
 x_fixed = P.XptZeroFix().transform(X1_tr)
@@ -153,18 +152,14 @@ S6["B1"] = dict(n_artefact_cells_train_t1=n_artefact, artefact_by_column=art[art
                 naive_lcomb_pos=int(y_naive_all.sum()))
 
 # %% [markdown]
-# **So what.** The zero artefact sits almost entirely in the activity frequencies and the income ratio. As a number it is
-# harmless, but every *equality test* on zero fails: without P01 the skip-pattern rule of P04 ("0 sessions →
-# 0 minutes") silently turns the non-exercisers printed above into missing values. The blanket recode deletes valid
-# answers (7 activity sessions per week, 77-year-olds, a diastolic pressure of 77) and costs the naive label 29
-# HbA1c-based positives, 6 of them not rescued by self-report. This agrees with §3.4 (1,496 cells there counts 20
-# continuous candidates in the whole cohort; here the model's feature frame in the training part). Expected model
-# effect: small (hypothesis B1).
+# **So what.** Without P01 every equality test on zero fails, so the "0 sessions → 0 minutes" rule silently turns the
+# printed non-exercisers into missing values; the blanket recode costs the naive label 29 HbA1c-based positives (6 not
+# rescued by self-report), consistent with §3.4. Expected AUC effect: small (B1).
 
 # %% [markdown]
 # ## 4 B2 admissibility (availability rule)
-# **Why.** The use case is screening *before any glucose test*. A feature is admissible only if it exists at
-# that moment (§1.3). The rule is applied from the spec, not by judging variables one at a time.
+# **Why.** The use case is screening *before any glucose test*, so a feature is admissible only if it exists at that
+# moment (§1.3); the rule is applied from the specification.
 
 # %%
 rows = []
@@ -189,19 +184,14 @@ S6["B2"] = dict(n_excluded_t1=len(excl_t1), n_kept_t1=len(kept_t1), kept_t1=kept
                 excluded_t1=sorted(excl_t1))
 
 # %% [markdown]
-# **So what.** P03 removes every column with admissibility `N`: the glucose test, treatment and diagnosis
-# history (leakage), race, insurance and usual place of care (audit-only by design), and optional/side
-# variables outside the frozen T1 list. The explicit list of §1.3 (LBXGLU, DIQ050, DIQ070, DID040, DID060,
-# DIQ160, DIQ180, RIDRETH3, HIQ011, HUQ030) is contained in it (asserted). BPQ020 (told high blood pressure) and
-# BPQ080 (told high cholesterol) pass the timing rule but are traces of earlier care; the **T1-minus-care** arm
-# removes them so §7 can measure how much of the signal is "being known to the health system".
+# **So what.** P03 removes the glucose test, treatment and diagnosis history (leakage) and the audit-only race, insurance
+# and access items; the explicit §1.3 list is contained (asserted). The care traces BPQ020/BPQ080 stay, and the
+# **T1-minus-care** arm removes them so §7 can measure "being known to the health system".
 
 # %% [markdown]
 # ## 5 B3 redundancy: aggregation and pruning
-# **Why.** Six blood-pressure readings measure the same thing (VIF 8.8–11.7, §4.9), and weight, height and BMI
-# are linked by a formula (VIF ≈ 96). The physical-activity block has a skip pattern: people who report
-# zero sessions are never asked how long a session lasts, so their duration is *structurally* missing – median
-# imputation would give a non-exerciser the median session length.
+# **Why.** §4.9 found the six BP readings and the weight–height–BMI formula collinear, and the activity block has a skip
+# pattern: non-exercisers are never asked a session length, so median imputation would give them one.
 
 # %%
 xpv = P.Sentinels("per_variable").transform(P.XptZeroFix().transform(X1_tr))
@@ -229,19 +219,15 @@ S6["B3"] = dict(pa_skip_moderate=skip_mod, pa_skip_vigorous=skip_vig, pa_naive_m
                 vif_max_after=float(vif_after.max()))
 
 # %% [markdown]
-# **So what.** Averaging the readings removes the BP collinearity (6 readings VIF 8.7–11.7 → means ≈ 2.3), and converting activity into weekly minutes
-# turns the structural gap into a true zero for about a fifth of the training part instead of the median duration.
-# In-fold VIF pruning (threshold 10, BMI and waist protected) removes **weight** only (BMI VIF 62 → 9.7); height, hip and arm
-# circumference stay because their VIF is below 10 after weight is gone (O'Brien 2007: VIF alone is not a reason
-# to delete). L2 shrinkage is the second line of defence. Hypothesis B3 expects the same AUC but a more stable
-# BMI coefficient.
+# **So what.** These VIFs are computed on the training part with *all* continuous Tier-1 inputs together, so they differ
+# from §4.9's block-wise cohort VIFs: the BP means sit at about 2.3, and in-fold pruning (threshold 10, BMI and waist
+# protected) removes **weight** only (BMI VIF 62 → 9.7). Weekly minutes turn the skip gap into a true zero for about a
+# fifth of the training part. B3 expects the same AUC but a more stable BMI coefficient.
 
 # %% [markdown]
 # ## 6 B4 missingness: indicators and top-codes
-# **Why.** A missing-value indicator only helps when missingness carries information (MNAR-suspect); under MAR
-# it can bias (Groenwold et al. 2012). We list candidates whose missingness has a plausible mechanism
-# (income refusal, exam not possible, no blood pressure / blood sample) and show how missingness relates to
-# the label in the training part (descriptive, `prior_exposure = descriptive_seen`).
+# **Why.** A missing-value indicator only helps when missingness is informative (Groenwold et al. 2012); the table
+# relates candidate missingness to the label in the training part (descriptive, hence `descriptive_seen` for B4).
 
 # %%
 agg2 = P.Aggregate().transform(P.Admissibility(2).transform(
@@ -260,18 +246,13 @@ print(f"top-codes in training part: age 80 = {n_age80}, PIR 5 = {n_pir5}")
 S6["B4"] = dict(mnar=mnar.set_index("column").to_dict("index"), n_age_top=n_age80, n_pir_top=n_pir5)
 
 # %% [markdown]
-# **So what.** Missing waist circumference is strongly informative (prevalence 29.8 % vs 16.4 %; waist is not
-# measured when the exam is not possible), missing income almost not (17.4 % vs 16.9 %). The effect on
-# discrimination is therefore expected to be negligible, and the calibration benefit for people with missing income
-# (hypothesis B4) is less likely than assumed when B4 was drafted; because this table was seen before the lock, B4
-# carries `prior_exposure = descriptive_seen`. The top-code flags let the model treat "80 or older" and "5 or
-# more" as categories instead of numbers.
+# **So what.** Missing waist is informative (prevalence 29.8 % vs 16.4 %), missing income almost not (17.4 % vs 16.9 %), so
+# the calibration benefit predicted for B4 is less likely than drafted; top-code flags treat "80+" and "5+" as categories.
 
 # %% [markdown]
 # ## 7 B5 representation: skewness, splines, scaling, rare levels
-# **Why.** §4.11 found monotone but curved relations for age and BMI (and HDL/TC in Tier 2) – a linear term
-# would be misspecified – and right-skewed variables. Splines keep the model a GLM; Yeo-Johnson is fitted in-fold
-# only on columns with |skew| > 1 that are not already splined.
+# **Why.** §4.10–§4.11 found right skew and curved relations for age and BMI (HDL/TC in Tier 2); splines keep the
+# model a GLM, and Yeo-Johnson is fitted in-fold on columns with |skew| > 1 that are not splined.
 
 # %%
 pre_s = Pipeline(P.preprocessor_steps(P.make_cfg(["P01", "P02", "P03", "P04", "P05", "P06", "P07"]), 2)[:-1]).fit_transform(X2_tr)   # before encoding
@@ -298,17 +279,14 @@ S6["B5"] = dict(skew=skew.to_dict(), yj_columns=yj.cols_, skew_after_yj=skew_aft
                 spline_cols={k: list(v) for k, v in P.SPLINE_COLS.items()}, spline_kw=C.SPLINE_KW, rare_levels=rare, rare_levels_without_p04=rare_nop4)
 
 # %% [markdown]
-# **So what.** Only the activity minutes and hip circumference exceed |skew| = 1 once BMI is splined; Yeo-Johnson
-# brings them close to symmetric (in the *S-linear* arm BMI, skew 1.22 in §4.10, is transformed instead). Splines
-# add 5 B-spline basis columns per variable. With P04 on, no admissible category falls below 2 %, so P10 is inert
-# in S; without P04 the activity *unit* columns keep rare levels (printed) that P10 groups, so P10 matters only in
-# arms that switch P04 off. For trees, P08/P09 are monotone per column and must leave predictions unchanged (§6.10).
+# **So what.** Only activity minutes and hip circumference exceed |skew| = 1 once BMI is splined, and Yeo-Johnson makes
+# them nearly symmetric; P10 is inert in S (no rare level with P04 on), and P08/P09 must leave tree predictions
+# unchanged (§6.10).
 
 # %% [markdown]
 # ## 8 B6 class and survey weights
-# **Why.** `class_weight='balanced'` (P11) trades calibration for sensitivity at the default threshold; survey
-# weights (P12, WTPH2YR, mean 1) make the fit target the population rather than the sample (60+ are
-# over-represented: 46.2 % vs 31.4 % weighted, §1.10).
+# **Why.** `class_weight='balanced'` (P11) trades calibration for sensitivity at threshold 0.5; survey weights (P12,
+# WTPH2YR) make the fit target the population (60+: 46.2 % of the sample vs 31.4 % weighted, §1.10).
 
 # %%
 w = P.survey_weights(raw_tr)
@@ -319,9 +297,8 @@ S6["B6"] = dict(train_prevalence=float(ytr.mean()), w_min=float(w.min()), w_max=
                 kish_neff=kish, kish_deff=len(w) / kish)
 
 # %% [markdown]
-# **So what.** Balanced class weights multiply each positive by about 3; probabilities will be inflated, so the
-# Brier score should worsen while discrimination stays (hypothesis B6a). The survey weights reduce the
-# effective sample size by about a third; hypothesis B6b expects at most a small loss in *unweighted* AUC.
+# **So what.** Class weights multiply each positive by about 3, so the Brier score should worsen at equal AUC (B6a);
+# survey weights cut the effective sample by about a third, so B6b expects at most a small unweighted-AUC loss.
 
 # %% [markdown]
 # ## 9 Arms
@@ -412,7 +389,8 @@ S6["assertions"] = checks
 # **Why.** A block ablation tempts post-hoc storytelling. The block hypotheses (direction, magnitude, SESOI,
 # falsifier and honest `prior_exposure`) and the verdict rules are therefore written to
 # `governance/hypotheses.md` and locked by a dedicated commit **before** the first ablation result is
-# committed. The lock is the file's SHA-256 recorded in that commit; git history shows the order.
+# committed. The lock is the file's SHA-256 recorded in that commit; git history shows the order. Besides the three
+# exposure labels of §1.5, block hypotheses may carry `prototype_seen` = the pattern was seen in the pilot analysis.
 
 # %%
 HYP = C.GOVERNANCE_DIR / "hypotheses.md"

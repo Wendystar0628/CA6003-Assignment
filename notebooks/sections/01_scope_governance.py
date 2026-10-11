@@ -74,18 +74,18 @@ assert funnel["n"].tolist() == [11933, 7809, 6064, 5767, 5730]
 # %% [markdown]
 # ## Research question and use case
 #
-# **Why.** A model's result is only interpretable relative to the decision it would support. The question is therefore tied to one use case.
+# **Why.** A result is only interpretable relative to the decision it would support, so the question is tied to one use case.
 #
 # > *Can adult diabetes (diagnosed or undiagnosed) be identified from non-glycaemic information available at a clinical contact; how much of that ability survives in the population screening is meant for; and how do data-preparation decisions change the answer?*
 #
-# The use case is a **screening aid applied before any glucose test**. Models are deliberately basic (L2 logistic regression with splines; a depth-3 decision tree for thresholds and leakage probing): the model is a measuring instrument for the data, not the product. Out of scope: complex or LLM-based models, causal estimation, linkage with external individual-level data (forbidden by the data user agreement), pooling cycles, and firm conclusions about small subgroups.
+# The use case is a **screening aid applied before any glucose test**; the basic models (L2 logistic regression with splines, a depth-3 tree as a probe) are measuring instruments for the data, not the product. Out of scope: complex or LLM-based models, causal estimation, record linkage (forbidden by the DUA), pooling cycles and firm conclusions about small subgroups.
 
 # %% [markdown]
 # ## Feature-availability rule
 #
-# **Why.** "Leakage" is easy to assert and hard to defend variable by variable. One rule decides all cases: a feature is admissible only if it can be obtained **at the screening moment** by questionnaire, basic physical measurement or (Tier 2) a lipid panel from the same visit, **and** it is not a diagnostic criterion, not a consequence of diagnosis, and not derived from the target. Applied to the data, the rule also exposes a quieter problem: BPQ020 and BPQ080 ("told you have high blood pressure / cholesterol") are legitimate questionnaire items but are traces of earlier contact with health care, as DIQ160 and DIQ180 are. They stay admissible and get their own ablation arm (T1-minus-care).
+# **Why.** One rule decides leakage for every variable: a feature is admissible only if it is available **at the screening moment** (questionnaire, basic measurement or, in Tier 2, a same-visit lipid panel) **and** is not a diagnostic criterion, a consequence of diagnosis or derived from the target. BPQ020 and BPQ080 ("told high blood pressure / cholesterol") pass the rule but are traces of earlier care, like DIQ160 and DIQ180; they stay admissible and get their own ablation arm (T1-minus-care).
 #
-# The table is read from `governance/S1_scope.md` and compared with `config/variable_spec.csv`, which is built from the CDC codebooks; the two must agree on every shared variable.
+# The table is read from `governance/S1_scope.md` and must agree with the codebook-built `config/variable_spec.csv` on every shared variable.
 
 # %%
 rule = md_table(SCOPE_MD, "Variable availability")
@@ -198,7 +198,7 @@ plt.show(); print("saved", f_comp)
 # %% [markdown]
 # ## Research questions and hypotheses
 #
-# **Why.** Four questions organise the whole project, and each hypothesis has a metric, a direction, a magnitude, a smallest effect of interest (SESOI), a falsifier and an honest record of whether the data had been seen. The hypotheses are read from `governance/hypotheses.md`, which §6.11 locks with a SHA-256 before any ablation is run.
+# **Why.** Four questions organise the project; each hypothesis has a metric, direction, magnitude, smallest effect of interest (SESOI), falsifier and an honest record of whether the data had been seen. They are read from `governance/hypotheses.md`, locked in §6.11 before any ablation.
 #
 # | RQ | Question |
 # |---|---|
@@ -314,7 +314,7 @@ assert (strata_n, psu_n) == (15, 30) and hh_max == 7
 assert preg_known["RIDAGEYR"].between(20, 44).all()
 
 # %% [markdown]
-# **So what.** The data were collected under NCHS ethics approval with informed consent, and the DUA obligations are met by design. 321 adults (5.6 %) are top-coded at age 80 and 1,282 (22.4 %) at an income ratio of 5, with 734 (12.8 %) missing, so income is both capped and incomplete; indicators are kept next to the values. Masked variance units (15 strata, 30 PSUs) give every design-based interval 15 jackknife degrees of freedom. Nothing tries to undo these controls or link records; external checks use published aggregates only.
+# **So what.** Ethics approval and consent come from NCHS, and the DUA obligations are met by design. 321 adults (5.6 %) are top-coded at age 80 and 1,282 (22.4 %) at an income ratio of 5, with 734 (12.8 %) missing, so indicators are kept next to the values. Masked variance units (15 strata, 30 PSUs) give 15 jackknife degrees of freedom; nothing tries to undo these controls.
 
 # %% [markdown]
 # ## Data minimisation

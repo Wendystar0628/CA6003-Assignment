@@ -103,12 +103,12 @@ print(f"logical CPU cores here: {N_CPU}; parallel workers: min(12, cores - 2) = 
 # %% [markdown]
 # **So what.** The config sizes agree with `config.py` (asserted). The stored outputs come from a FINAL run; FAST changes only Monte-Carlo precision, and the reference values of Appendix A.5 hold in both modes.
 #
-# **Runtime.** Measured on the development machine (28 logical cores, hence 12 workers in §7–§8 and 16 in §9): FAST about 5 minutes, FINAL about 23 minutes, almost all of it in §7 and §9. On a 4–8-core laptop (2–6 workers) we estimate roughly 10–25 minutes for FAST and 1–3 hours for FINAL; the laptop figures are scaled from the worker count, not measured.
+# **Runtime.** Measured on the development machine (28 logical cores; 12 workers in §7–§8, 16 in §9): FAST about 5 minutes, FINAL about 25 minutes (24 min 45 s for the stored run), almost all of it in §7 and §9. On a 4–8-core laptop we estimate roughly 10–25 minutes for FAST and 1–3 hours for FINAL (scaled from the worker count, not measured).
 
 # %% [markdown]
 # ## Seed derivation
 #
-# **Why.** A single integer seed shared by every random step would couple them: adding one bootstrap call would change the cross-validation folds. Instead, every random consumer gets its own seed from `evalkit.derive_seed(SEED_MASTER, *tags)`, which builds `numpy.random.SeedSequence([SEED_MASTER, crc32(tag), ...])` and takes one 32-bit word. The tags (section, purpose, arm, population) name the consumer, so its stream depends only on the master seed and its own name: it does not move when another consumer is added or removed, and it is identical on every machine because `crc32` is a fixed function (unlike Python's salted `hash`). Robustness checks (§9) vary only the CV and bootstrap tags; the 20% hold-out is generated once and stored.
+# **Why.** One shared seed would couple every random step (an extra bootstrap call would move the folds). Each consumer instead gets `evalkit.derive_seed(SEED_MASTER, *tags)` – a `SeedSequence` of the master seed and `crc32` of its name – so its stream depends only on the master seed and its own name, on every machine.
 
 # %%
 from src import evalkit as ek
@@ -134,7 +134,7 @@ print(f"SEED_MASTER = {C.SEED_MASTER}; {len(TAGS)} example consumers, all distin
       f"{C.N_ROBUSTNESS_SEEDS} illustrative robustness seeds, first three {seeds_k[:3]}")
 
 # %% [markdown]
-# **So what.** The master seed is `20261011`. Re-deriving gives identical seeds, consumers get distinct seeds, and changing the master seed or the tag order changes the result (all asserted), so any figure can be regenerated on its own.
+# **So what.** Master seed `20261011`; re-derivation is identical, consumers get distinct seeds, and changing the master seed or tag order changes them (asserted).
 
 # %% [markdown]
 # ## Data integrity
@@ -193,7 +193,7 @@ print("nhanes_io.ensure_raw_data(download=False) ->", status if len(str(status))
 # %% [markdown]
 # ## Repository layout and governance files
 #
-# **Why.** A traceable process needs a fixed place for every artefact. File, register and figure names carry a stage tag `Sk`, which is the notebook's §k. The cell checks that the governance files exist and that the register and GenAI-log headers match the schema in `governance/README.md`.
+# **Why.** Every artefact has a fixed place; the cell checks that the governance files exist and that the register and GenAI-log headers match `governance/README.md`.
 
 # %%
 LAYOUT = pd.DataFrame([
@@ -236,12 +236,12 @@ assert len(reg0) >= 1 and (pd.read_csv(gov / "genai_log.csv").shape[0] >= 1)
 print(f"S0 acceptance: register rows = {len(reg0)}, GenAI log rows = {pd.read_csv(gov / 'genai_log.csv').shape[0]}")
 
 # %% [markdown]
-# **So what.** The governance files exist and their headers match the schema, so the per-section register fragments merge into one decision register (Appendix A.1) without manual repair.
+# **So what.** The headers match, so the register fragments merge into Appendix A.1 without manual repair.
 
 # %% [markdown]
 # ## Freeze order
 #
-# **Why.** After a freeze, results may only be *down-graded*, never re-run until they look better. A git tag at each point lets the history prove that the hypotheses preceded the ablations.
+# **Why.** After a freeze results may only be down-graded, never re-run until they look better; the tags let the history prove that the hypotheses preceded the ablations.
 
 # %%
 FREEZES = pd.DataFrame([

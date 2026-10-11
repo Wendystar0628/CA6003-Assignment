@@ -164,13 +164,10 @@ OUT["asian_undx_domain_df"] = S.domain_df(coh, undx_dom & asian)
 
 # %% [markdown]
 # ## 4.3 External anchor: NCHS Data Brief 516
-# **Why.** An internal check cannot detect a wrong *definition* or a wrong *weight*. Re-deriving an
-# official estimate from the same public files can: if our cohort logic, fasting weight, jackknife,
-# Korn–Graubard interval and age standardisation are all correct, we must land on NCHS Data Brief 516
-# (Gwira et al. 2024, Tables 1–2). DB516 definitions: adults ≥ 20, non-pregnant, fasting subsample
-# (`WTSAF2YR` > 0, 8–24 h fast); diagnosed = DIQ010 = 1; undiagnosed = not diagnosed and
-# (fasting glucose ≥ 126 mg/dL or HbA1c ≥ 6.5 %); total = diagnosed + undiagnosed; age adjustment to
-# the US 2000 standard with 20–39 / 40–59 / 60+. Note the fasting weight, **not** `WTPH2YR`.
+# **Why.** Only an external anchor detects a wrong *definition* or *weight*: if cohort logic, fasting weight, jackknife,
+# Korn–Graubard interval and age standardisation are right, we must land on NCHS Data Brief 516 (Gwira et al. 2024).
+# DB516: adults ≥ 20, non-pregnant, fasting subsample (`WTSAF2YR` > 0); undiagnosed = not diagnosed and (FPG ≥ 126
+# mg/dL or HbA1c ≥ 6.5 %); age adjustment to the US 2000 standard (20–39 / 40–59 / 60+). Note the fasting weight.
 
 # %%
 # NCHS Data Brief 516, Tables 1-2 (external reference values, transcribed from
@@ -369,13 +366,10 @@ plots.savefig(fig, "S4_age_structure",
 plt.show()
 
 # %% [markdown]
-# **So what.** 46 % of the cohort is 60+ against 31 % of the population, and prevalence there is about
-# seven times that of 20–39-year-olds, so the unweighted 16.95 % overstates the weighted 14.0 %
-# (12.4–15.6). Re-weighting the sample's age-specific rates to the population age mix closes most of
-# the gap: the bias is mainly age structure. The remaining difference to DB516's 15.8 % is definitional
-# (no fasting-glucose criterion, phlebotomy not fasting sample). The Kish design effect of 1.55 leaves
-# the information of about 3,700 equally weighted adults, which motivates the weighted ablation arm
-# (block B6) instead of ignoring weights.
+# **So what.** The unweighted 16.95 % overstates the weighted 14.0 % (12.4–15.6) because the sample is older (§1.10);
+# re-weighting age-specific rates to the population age mix closes most of the gap. The rest of the distance to DB516's
+# 15.8 % is definitional (no fasting-glucose criterion, §9.8.2). The design effect (Kish 1.55, §1.10) motivates the
+# weighted ablation arm (B6b).
 
 # %% [markdown]
 # ## 4.5 Age standardisation
@@ -456,12 +450,10 @@ OUT["standardisation"] = {
     "insured_uninsured": {"crude": iu.crude, "crude_ci": [iu.crude_low, iu.crude_high], "std": iu["std"], "std_ci": [iu.std_low, iu.std_high]}}
 
 # %% [markdown]
-# **So what.** The derived band weights match 0.3966 / 0.3718 / 0.2316, so the standard rests on the
-# published standard million. NH Asian adults have a slightly *lower* crude prevalence than NH White
-# adults (−0.8 pp, −5.1 to 3.5) but, being younger, a *higher* age-standardised one (+2.1 pp, −2.6 to
-# 6.8). Both intervals include zero and the 6-band and internal standards agree, so the honest
-# statement is "direction changes after age standardisation, magnitude unknown". An earlier pilot
-# estimate of 18.0 % vs 13.6 % cannot be reproduced with any standard and is withdrawn.
+# **So what.** The band weights match the published standard (0.3966 / 0.3718 / 0.2316). NH Asian adults have a slightly
+# *lower* crude prevalence than NH White adults (−0.8 pp, −5.1 to 3.5) but, being younger, a *higher* standardised one
+# (+2.1 pp, −2.6 to 6.8); both intervals include zero: "direction changes after standardisation, magnitude unknown". An
+# earlier pilot estimate (18.0 % vs 13.6 %) cannot be reproduced and is withdrawn.
 
 # %% [markdown]
 # ## 4.6 Insurance: attenuation, not reversal
@@ -526,29 +518,18 @@ reg("DR-S4-05", "interpretation", "Insured - uninsured L_comb: crude +5.3 pp (1.
     check_verdict="PASS-FIX", check_note="wording corrected from 'reversal' to 'attenuation'")
 
 # %% [markdown]
-# **So what.** Only 10 % of uninsured adults are 60+, against a third of insured adults (Medicare).
-# Standardising to the US 2000 age mix shrinks the gap from +5.3 pp (1.8–8.8) to +0.7 pp (−2.6–3.9),
-# an attenuation of almost 90 % with the **same sign**: age confounding, not a Simpson reversal. The
-# age-specific differences are heterogeneous (about −1, +6 and −5 pp; only 40–59 excludes zero). The
-# *usual place of care* gap, by contrast, survives standardisation (+9.4 → +5.3 pp, CI excluding
-# zero), consistent with a detection pathway (care → diagnosis) that §5.4 examines. Access comparisons,
-# including the fairness audit (§8), must therefore be read conditional on age.
+# **So what.** Only 10 % of uninsured adults are 60+, against a third of insured adults. Age standardisation shrinks the
+# gap from +5.3 pp (1.8–8.8) to +0.7 pp (−2.6–3.9) with the **same sign**: age confounding, not a Simpson reversal. The
+# *usual place of care* gap survives (+9.4 → +5.3 pp, CI excluding zero), consistent with a care → diagnosis pathway
+# (§5.4). Access comparisons, including the §8 fairness audit, must be read conditional on age.
 
 # %% [markdown]
 # ## 4.7 Simpson scan
-# **Why.** §4.5–4.6 examined two contrasts chosen in advance. A systematic scan asks the general
-# question: across all exposure × outcome × stratifier combinations, how often does stratification
-# change the *sign* of a weighted difference (Simpson's paradox) or shrink it by more than half?
-# The scan is exploratory and suffers from multiple comparisons, so (a) every row carries a
-# jackknife CI, (b) sign flips get a design-based bootstrap probability, and (c) only flips that the
-# DAG (§4.8) supports as de-confounding – stratifier is a confounder, not a mediator – may become
-# claims.
-#
-# Grid (fixed before looking at the results): 9 binary exposures × 4 outcomes × 7 stratifiers, minus
-# the combinations where the stratifier *is* the exposure variable. Difference = exposure − reference,
-# WTPH2YR; standardised difference uses the pooled weighted stratum shares of the comparison domain
-# (internal standard). Flip: crude and standardised differences of opposite sign, both |Δ| > 1 pp.
-# Attenuation: same sign, |crude| > 1 pp and |standardised| < ½ |crude|.
+# **Why.** A systematic scan asks how often stratification flips the *sign* of a weighted difference (Simpson) or halves
+# it. It is exploratory, so every row carries a jackknife CI, flips get a design-based bootstrap probability, and only
+# flips the DAG (§4.8) supports as de-confounding may become claims. Grid fixed in advance: 9 binary exposures × 4
+# outcomes × 7 stratifiers (WTPH2YR; internal standard). Flip: opposite signs, both |Δ| > 1 pp; attenuation: same sign,
+# |crude| > 1 pp and |standardised| < ½ |crude|.
 
 # %%
 r3 = coh.RIDRETH3
@@ -740,15 +721,11 @@ reg("DR-S4-06", "interpretation",
     check_note=f"grid fixed before the scan: 9 x 4 x 7 = 252 minus 28 self-stratifications = {len(SCAN)} comparisons")
 
 # %% [markdown]
-# **So what.** Of 224 comparisons (grid fixed in advance), 6 show a sign flip and 10 an attenuation
-# above 50 %; every flipped standardised difference has a CI that includes zero. Two kinds of flip
-# must be read differently. **Age-stratified flips** (uninsured × `L_A1c`, Asian × `L_self`) are
-# DAG-supported (age is a confounder) but exploratory: the headline example, uninsured × `L_A1c` | age
-# (−2.8 → +1.1 pp), has a sign-change probability of 0.775 (B = 1,000). **BMI- and
-# education-stratified flips** are *mediator artefacts*: BMI lies on race → adiposity → BMI → diabetes
-# and under-states adiposity in Asian adults (§5.5), so equal-BMI strata are not equal-risk strata.
-# The Asian–White gap takes three values (+2.1, +2.9, +3.3 pp) because three age standards are used;
-# all intervals include zero.
+# **So what.** Of 224 comparisons, 6 flip sign and 10 attenuate by more than half; every flipped standardised difference
+# has a CI including zero. **Age-stratified flips** (uninsured × `L_A1c`, Asian × `L_self`) are DAG-supported but
+# exploratory (headline: uninsured × `L_A1c` | age, −2.8 → +1.1 pp, sign-change probability 0.775). **BMI- and
+# education-stratified flips** are *mediator artefacts*: BMI lies on race → adiposity → diabetes and under-states
+# Asian adiposity (§5.5), so equal-BMI strata are not equal-risk strata.
 
 # %% [markdown]
 # ## 4.8 Causal structure (DAG)
@@ -879,13 +856,10 @@ reg("DR-S4-07", "method", "In the DAG, BMI is a descendant of race (race -> adip
     check_note="adjustment sets verified with networkx d-separation")
 
 # %% [markdown]
-# **So what.** Under the stated assumptions, {Age, SES} suffices for insurance → undiagnosed (§5.4;
-# age alone does not) and {Age} or {Age, Sex} for race → diabetes. Adding BMI breaks the back-door
-# criterion, because BMI descends from race through adiposity, so BMI-adjusted race contrasts (and the
-# BMI-stratified flips of §4.7) estimate something other than the total association. Two structural
-# biases become explicit: the cohort conditions on the collider *ExamSelection*, and the HbA1c label
-# descends from *Treatment*, which carries the treatment masking of §5.2. Model coefficients in §7 are
-# conditional associations, not effects (Westreich & Greenland 2013, "Table 2 fallacy").
+# **So what.** Under the stated assumptions {Age, SES} suffices for insurance → undiagnosed (§5.4) and {Age} or {Age, Sex}
+# for race → diabetes; adjusting for BMI breaks the back-door criterion, so BMI-adjusted race contrasts estimate
+# something else. The cohort conditions on the collider *ExamSelection*, and the HbA1c label descends from *Treatment*
+# (masking, §5.2). Model coefficients in §7 are conditional associations, not effects (Westreich & Greenland 2013).
 
 # %% [markdown]
 # ## 4.9 Redundancy and collinearity
@@ -989,10 +963,11 @@ for g_ in groups:
 OUT["redundancy"]["clusters_rho07"] = groups
 
 # %% [markdown]
-# **So what.** Weight (VIF 95.7) and BMI (97.6) are almost perfectly predictable from the other body
-# measures, for a structural reason: log BMI is an exact linear function of log weight and log height
-# (r = 0.99999). BMI and waist share variance (5.1) but measure different things, and the six
-# blood-pressure readings (8.8–11.7) collapse to VIF 1.6 as means. TC and LDL correlate at 0.94 because
+# **So what.** VIFs here are block-wise on the whole cohort (each block's variables only; §6.5 reports in-pipeline VIFs
+# on the training part with all inputs together). Within the six body measures, weight (VIF 95.7) and BMI (97.6) are
+# almost perfectly predictable, for a structural reason: log BMI is an exact linear function of log weight and log
+# height (r = 0.99999). BMI and waist share variance (5.1) but measure different things, and the six blood-pressure
+# readings (8.8–11.7) collapse to VIF 1.6 when only the two means are compared. TC and LDL correlate at 0.94 because
 # LDL is calculated from TC. Decision: mean SBP/DBP, no LDL, and in-fold iterative VIF > 10 pruning with
 # BMI and waist protected (removes only weight); L2 penalisation is the second line of defence. The
 # heatmap shows the three blocks (body size, blood pressure, lipids).
@@ -1066,22 +1041,16 @@ reg("DR-S4-09", "preparation", "Right skew: BMI 1.22, SBP 0.93, HDL 1.08; trigly
     check_verdict="PASS-FIX", check_note="valid fasting value 6.62; including the 235 rows with WTSAF2YR = 0 would give 6.23; figure S4_triglyceride_skew")
 
 # %% [markdown]
-# **So what.** BMI, SBP and HDL are moderately right-skewed (0.9–1.2); Yeo–Johnson removes it (BMI
-# λ ≈ −0.65). Triglycerides are extremely skewed: 6.62 on the 2,820 valid fasting adults, 0.60 after
-# a log transform (figure). Including the 235 rows with `WTSAF2YR = 0` (fast outside 8–24 h)
-# would give 6.23, and the trap is easy to fall into because an unfixed XPT read turns those zero
-# weights into tiny positive numbers that pass a `> 0` filter (§3.1). Logistic regression makes no
-# distributional assumption, so skew matters only through leverage: the transform is a toggleable,
-# in-fold step whose value the §7 ablation decides.
+# **So what.** BMI, SBP and HDL are moderately right-skewed (0.9–1.2); Yeo–Johnson removes it. Triglycerides are extremely
+# skewed: 6.62 on the 2,820 valid fasting adults, 0.60 after a log transform. Including the 235 rows with
+# `WTSAF2YR = 0` would give 6.23 – an easy trap, because an unfixed XPT read makes those zero weights pass a `> 0`
+# filter (§3.1). Logistic regression assumes no distribution, so the transform is an in-fold step that §7 judges.
 
 # %% [markdown]
 # ## 4.11 Linearity
-# **Why.** A plain logistic regression assumes each continuous predictor acts linearly on the
-# log-odds. If that is wrong, the model under-fits exactly where risk changes fastest. We test it with
-# restricted cubic splines (Harrell): each variable gets a 4-knot RCS (knots at the 5/35/65/95th
-# percentiles, 2 extra df) and a likelihood-ratio test against the linear term, with the other six
-# continuous predictors linear and sex adjusted; complete cases for all seven variables, outcome
-# `L_comb`, unweighted (a model-structure question, not a population estimate).
+# **Why.** A plain logistic regression assumes linear effects on the log-odds. Each continuous predictor gets a 4-knot
+# restricted cubic spline (Harrell; 2 extra df) and a likelihood-ratio test against the linear term, with the others
+# linear and sex adjusted (complete cases, `L_comb`, unweighted: a model-structure question).
 
 # %%
 import statsmodels.formula.api as smf
@@ -1169,22 +1138,16 @@ display(pd.DataFrame({"decile": range(1, len(bmi_b) + 1), "BMI median": bmi_b["m
 OUT["binned_logodds"] = {lab: df_.to_dict("list") for lab, df_ in binned.items()}
 
 # %% [markdown]
-# **So what.** Five of seven continuous predictors depart from linearity on the log-odds scale: age
-# (χ² 57.6), total cholesterol (41.8), HDL (18.5), BMI (11.6) and waist (7.1); SBP is borderline
-# (p ≈ 0.05) and PIR linear. Age rises steeply to about 60 and then flattens; BMI is flat below about
-# 24 (log-odds about −2.6 in the two lowest deciles) and levels off above about 35; total cholesterol
-# is U-shaped, most plausibly because statins lower it *after* diagnosis (reverse causation), a caveat
-# for any Tier-2 coefficient. Consequence: L2 logistic regression with cubic B-splines (4 quantile
-# knots, linear extrapolation) on continuous predictors, with a linear arm kept as an ablation.
+# **So what.** Five of seven predictors bend on the log-odds scale: age (χ² 57.6), total cholesterol (41.8), HDL (18.5),
+# BMI (11.6) and waist (7.1); SBP is borderline and PIR linear. Age rises steeply to about 60 and flattens; BMI is flat
+# below about 24; total cholesterol is U-shaped, most plausibly because statins lower it *after* diagnosis. Consequence:
+# cubic B-splines on continuous predictors, with a linear arm kept as an ablation.
 
 # %% [markdown]
 # ## 4.12 Interactions and power
-# **Why.** If the BMI–diabetes slope differed by race (as the measurement-bias finding of §5.5 suggests
-# it might for Asian adults), the model would need an interaction term. A non-significant test is only
-# informative together with its power, so we also report the minimum detectable effect (MDE, 80 %
-# power, two-sided α = 0.05) and repeat the tests under three model specifications (`C(...)` is avoided
-# in the formulas because `C` is the project config module here; race is an unordered categorical with
-# NH White as reference).
+# **Why.** If the BMI slope differed by race (as §5.5 suggests for Asian adults) the model would need an interaction.
+# A non-significant test is informative only with its power, so the minimum detectable effect (80 % power, α = 0.05) is
+# reported and the tests are repeated under three specifications.
 
 # %%
 inter = lin.rename(columns={"RIDAGEYR": "age", "BMXBMI": "bmi", "BMXWAIST": "waist", "bp_sys_mean": "sbp",
