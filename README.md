@@ -10,14 +10,16 @@ A data-centric study of adult diabetes identification using **NHANES Aug 2021 �
 
 ## Headline findings
 
-| Finding | Evidence (FINAL cross-validation; hold-out where stated) |
+| Finding | Evidence (FINAL cross-validation; internal hold-out where stated) |
 |---|---|
-| A whole-sample AUC measures recognition of already-diagnosed diabetes, not screening value | S: 0.836 on all adults vs 0.781 on the not-yet-diagnosed screening group (gap +0.055 [0.028, 0.086]); hold-out 0.851 vs 0.791 – same direction and size (+0.060 vs +0.055), not separately testable with 25 screening positives |
-| Minimal vs systematic preparation (same model, H2b) | S − M1 AUC +0.008 [0.000, 0.016]: inconclusive (underpowered against the ±0.01 margin); the Brier cost of S (+0.074 vs M1) comes from class weights only – without them S−B6a vs M1 is −0.002 (the B6a block contrast S vs S−B6a is +0.076, a different comparison) |
+| A whole-sample AUC measures recognition of already-diagnosed diabetes, not screening value | S: 0.836 on all adults vs 0.781 on the not-yet-diagnosed screening group (gap +0.055 [0.028, 0.086]); internal hold-out 0.851 vs 0.791 – same direction and size (+0.060 vs +0.055), not separately testable with 25 screening positives |
+| Minimal vs systematic preparation (same model, H2b; M1 is the naive-minimal baseline that keeps the blanket 7/9 recode) | S − M1 AUC +0.008 [0.000, 0.016]: inconclusive (underpowered against the ±0.01 margin); the Brier cost of S (+0.074 vs M1) comes from class weights only – without them S−B6a vs M1 is −0.002 (the B6a block contrast S vs S−B6a is +0.076, a different comparison) |
 | "Told by a doctor" items are care traces | removing them costs 0.016 AUC on all adults but gains +0.019 [0.004, 0.034] on the screening group |
 | Leakage and naive cleaning | removing inadmissible items (treatment, diagnosis history, glucose testing) lowers AUC from 0.961 to 0.828 (−0.131; leakage via skip patterns and a median-imputed age at diagnosis); blanket sentinel recoding destroys 1,496 valid values, including HbA1c 7.0 % and 9.0 % |
 | Labels are measurements | self-report vs HbA1c κ = 0.70; 30.5 % of self-reported diabetics have HbA1c below 6.5 % (165 of the 250 on medication); uninsured adults are more often undiagnosed (+23.2 pp) |
 | External validity | NCHS Data Brief 516 replicated (15.79 / 11.30 / 4.49 % vs 15.8 / 11.3 / 4.5 %) |
+
+An external review raised six methodological issues; each was checked and corrected post-lock in §9 (post-audit corrections), and no headline verdict changed.
 
 ## Process
 
@@ -28,7 +30,7 @@ A data-centric study of adult diabetes identification using **NHANES Aug 2021 �
 | `scope-freeze` | variable specification, cohort (N = 5,730) and data-quality audit fixed |
 | `target-freeze` | training label, screening population, 3×3 strata and sensitivity labels fixed |
 | `prereg-lock` | hypotheses locked (SHA-256 in commit) before any experiment result |
-| `exp-freeze` | experiment configuration fixed; hold-out evaluated once afterwards |
+| `exp-freeze` | experiment configuration fixed; internal hold-out evaluated once afterwards |
 
 ## Repository layout
 
