@@ -15,6 +15,7 @@ Figures
   S8_group_tpr              sensitivity by race group, E-ALL and E-SCREEN          (slide V6.5)
   S4_binned_logodds         decile log-odds of age, BMI and total cholesterol      (slide V7.1)
   S10_scoreboard_forest     S minus M1: AUC and Brier, with post-lock variants     (slide V7.2)
+  S10_recognition_vs_screening  CV AUC on E-ALL and E-SCREEN with hold-out        (slide V7.3)
   S6_arm_matrix             arms M0, M1, S against preparation blocks              (slide V1.4)
 """
 from __future__ import annotations
@@ -345,6 +346,39 @@ def fig_arm_matrix() -> None:
          "Source: results/S6/arm_table.csv, step_catalogue.csv and metrics_S6.json; all 19 arms and 15 steps are in figures/S6_arm_matrix.png.")
 
 
+def fig_recognition() -> None:
+    am = pd.read_csv(RES / "S7" / "arm_metrics.csv"); am = am[(am["tier"] == 1) & (am["model"] == "lr")].set_index("arm")
+    bl = pd.read_csv(RES / "S7" / "baselines_escreen.csv").set_index("model")
+    ho = pd.read_csv(RES / "S9" / "holdout_metrics.csv"); ho = ho[ho["tier"] == 1].set_index(["arm", "pop"])
+    rows = [("M0 naive", "M0", "M0"), ("M1 availability rule", "M1", "M1"), ("S systematic", "S", "S"),
+            ("S without care traces", "T1-minus-care", "T1-minus-care")]
+    fig, ax = plt.subplots(figsize=(11.6, 5.6))
+    for i, (lab, a, h) in enumerate(rows):
+        r = am.loc[a]
+        for off, pop, col, pre in ((-0.17, "E-ALL", OI["blue"], "eall"), (0.17, "E-SCREEN", OI["vermillion"], "escr")):
+            ax.errorbar(r[f"{pre}_auc"], i + off, xerr=[[r[f"{pre}_auc"] - r[f"{pre}_auc_lo"]], [r[f"{pre}_auc_hi"] - r[f"{pre}_auc"]]],
+                        fmt="o", color=col, capsize=5, ms=10, lw=2.6)
+            ax.plot(ho.loc[(h, pop), "roc_auc"], i + off, "^", color=col, mfc="white", ms=11, mew=2)
+    i = len(rows)
+    b = bl.loc["BL-ADAlite (points)"]
+    ax.errorbar(b["escr_auc"], i + 0.17, xerr=[[b["escr_auc"] - b["lo"]], [b["hi"] - b["escr_auc"]]], fmt="o", color=OI["vermillion"], capsize=5, ms=10, lw=2.6)
+    ax.plot(b["eall_auc"], i - 0.17, "o", color=OI["blue"], ms=10)
+    ax.plot(ho.loc[("BL-ADAlite", "E-ALL"), "roc_auc"], i - 0.17, "^", color=OI["blue"], mfc="white", ms=11, mew=2)
+    ax.plot(ho.loc[("BL-ADAlite", "E-SCREEN"), "roc_auc"], i + 0.17, "^", color=OI["vermillion"], mfc="white", ms=11, mew=2)
+    ax.set_yticks(range(len(rows) + 1), [r[0] for r in rows] + ["ADA-lite points"]); ax.invert_yaxis()
+    ax.set_xlim(0.6, 1.0); ax.set_xlabel("ROC-AUC (95 % bootstrap CI)"); ax.grid(axis="y", visible=False)
+    from matplotlib.lines import Line2D
+    ax.legend(handles=[Line2D([], [], marker="o", ls="", color=OI["blue"], label="E-ALL, all adults"),
+                       Line2D([], [], marker="o", ls="", color=OI["vermillion"], label="E-SCREEN, not diagnosed"),
+                       Line2D([], [], marker="^", ls="", color="black", mfc="white", mew=2, label="one-shot hold-out")],
+              loc="lower right", bbox_to_anchor=(1.0, 0.0))
+    fig.tight_layout()
+    save(fig, "S10_recognition_vs_screening",
+         "The same out-of-fold predictions scored on all adults (blue) and on adults without a diagnosis (red), training part, with 95 % bootstrap intervals; "
+         "hollow triangles are the one-shot hold-out. Arm S 0.836 against 0.781. Source: results/S7/arm_metrics.csv, baselines_escreen.csv and results/S9/holdout_metrics.csv; "
+         "the notebook version with all arms is figures/S10_recognition_vs_screening.png.")
+
+
 if __name__ == "__main__":
-    for f in (fig_governance, fig_redundancy, fig_coef, fig_dag, fig_group_tpr, fig_logodds, fig_scoreboard, fig_arm_matrix):
+    for f in (fig_governance, fig_redundancy, fig_coef, fig_dag, fig_group_tpr, fig_logodds, fig_scoreboard, fig_recognition, fig_arm_matrix):
         f()

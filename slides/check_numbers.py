@@ -6,11 +6,15 @@ Exit code 0 = all checks pass; 1 = at least one error (warnings do not fail the 
 What is checked
   Storyboard (slides/storyboard.md), per slide block `### <id> · <title>`:
     * required fields (type, time, figure, takeaway, notes, numbers used, footer, claims);
-    * title is a noun phrase of at most 6 words (no sentence punctuation or finite-verb cue words);
+    * title is a noun phrase of at most 6 words (no sentence punctuation or finite-verb cue words;
+      the title slide of type `title` is exempt from the word limit);
     * takeaway (the one-line caption or the body) has at most 15 words (template slides exempt);
     * notes have at most 60 words and at most 2.2 words per budgeted second, and contain no ': '
       (Marp would parse such an HTML comment as a directive instead of a presenter note);
-    * the figure and its caption file exist; claim ids exist in governance/claims.csv;
+    * the figure and its caption file exist (`figures/*.png` or `slides/figures/*.png`); claim ids
+      exist in governance/claims.csv;
+    * every section mark in a footer (§3.2, §10.2.1) exists as a heading of the assembled notebook
+      notebooks/final/CA6003_NHANES_Diabetes.ipynb (skipped with a warning if the notebook is missing);
     * time ranges are consecutive and the total is within the 11:40 cap;
     * every `numbers used` row (`<segment> · <label> = <value>`) exists in numbers_on_slides.csv
       with exactly that printed value;
@@ -20,6 +24,14 @@ What is checked
   Deck (slides/deck.md): the same extraction applied independently to each Marp slide, plus a
   sync check against the storyboard (id order, title, figure path, caption, footer, notes) and
   the 15-word body limit and one-image-per-slide rule.
+
+Number sources
+  * results/S10/numbers_on_slides.csv (rows `<segment> · <label> = <value>`);
+  * JSON_ROWS below: the cross-validation sample sizes (4,584 training adults, 127 screening positives)
+    and the DB516 fasting-subsample size, read from results/metrics_S4.json and metrics_S7.json because
+    they are not in the CSV. They are declared in `numbers used` exactly like CSV rows.
+  * Footers are checked like titles, captions and notes: every digit token in a footer must match a
+    declared row of that slide.
 
 Matching rules for a digit token
   * an explicit sign (+, -, minus sign) must agree with the sign of the value; an unsigned token
@@ -36,6 +48,7 @@ Spelled-out numbers (ten, two) are NOT checked, so data numbers must be written 
 from __future__ import annotations
 
 import csv
+import json
 import re
 import sys
 from pathlib import Path
@@ -46,6 +59,14 @@ NUMBERS_CSV = ROOT / "results" / "S10" / "numbers_on_slides.csv"
 CLAIMS_CSV = ROOT / "governance" / "claims.csv"
 STORYBOARD = SLIDES / "storyboard.md"
 DECK = SLIDES / "deck.md"
+NOTEBOOK = ROOT / "notebooks" / "final" / "CA6003_NHANES_Diabetes.ipynb"
+
+# (slide_id, label, results file, key path in the JSON file, printed format)
+JSON_ROWS = [
+    ("V7", "training part adults", "results/metrics_S7.json", "splits.n_train", "{:,.0f}"),
+    ("V7", "training part E-SCREEN positives", "results/metrics_S7.json", "splits.n_pos_escreen", "{:,.0f}"),
+    ("V1", "DB516 fasting subsample n", "results/metrics_S4.json", "design.n_fasting_pos", "{:,.0f}"),
+]
 
 CAP_SECONDS = 11 * 60 + 40
 TITLE_MAX_WORDS = 6
@@ -82,6 +103,12 @@ def load_numbers():
             rows[(r["slide_id"], r["label"])] = r
             for m in re.finditer(r"(?<![\w.])(\d+(?:\.\d+)?)(?![\w])", r["label"]):
                 definitional.append(float(m.group(1)))
+    for sid, label, rel, key, fmt in JSON_ROWS:
+        node = json.loads((ROOT / rel).read_text(encoding="utf-8"))
+        for k in key.split("."):
+            node = node[k]
+        rows[(sid, label)] = dict(slide_id=sid, label=label, value=fmt.format(float(node)), value_raw=str(float(node)),
+                                  source_key=f"{rel}:{key}")
     return rows, sorted(set(definitional))
 
 
@@ -161,15 +188,40 @@ def check_slide_numbers(where, fields: dict, declared: list, rows, definitional)
     return n_tok
 
 
+# --------------------------------------------------------------------------- section marks
+def notebook_sections() -> set[str] | None:
+    """Section numbers (3, 3.2, 10.2.1) that exist as headings of the assembled notebook."""
+    if not NOTEBOOK.exists():
+        return None
+    nb = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    found: set[str] = set()
+    for c in nb["cells"]:
+        if c["cell_type"] != "markdown":
+            continue
+        for line in "".join(c["source"]).splitlines():
+            m = re.match(r"#{1,3} (?:§)?(\d+(?:\.\d+)*)", line)
+            if m:
+                found.add(m.group(1))
+    return found
+
+
+def check_section_marks(where: str, footer: str, sections) -> None:
+    if sections is None:
+        return
+    for m in re.finditer(r"§(\d+(?:\.\d+)*)", footer):
+        if m.group(1) not in sections:
+            err(where, f"footer cites §{m.group(1)}, which is not a heading of the assembled notebook")
+
+
 # --------------------------------------------------------------------------- word counts
 def words(text: str) -> int:
     return sum(1 for w in text.split() if re.search(r"[A-Za-z0-9]", w))
 
 
-def title_ok(where, title):
+def title_ok(where, title, max_words=TITLE_MAX_WORDS):
     n = words(title)
-    if n > TITLE_MAX_WORDS:
-        err(where, f"title has {n} words (max {TITLE_MAX_WORDS})")
+    if n > max_words:
+        err(where, f"title has {n} words (max {max_words})")
     if re.search(r"[.!?:;]$", title) or re.search(r"\b(is|are|was|were|has|have|can|will|does|do|shows?|means?)\b", title, re.I):
         err(where, f"title looks like a sentence: '{title}'")
 
@@ -247,6 +299,9 @@ def main() -> int:
     rows, definitional = load_numbers()
     claim_ids = {r["claim_id"] for r in csv.DictReader(open(CLAIMS_CSV, encoding="utf-8", newline=""))}
     sb = parse_storyboard()
+    sections = notebook_sections()
+    if sections is None:
+        warn("notebook", "assembled notebook not found; section marks not checked")
     n_checked = 0
     if not sb:
         err("storyboard", "no slide blocks found")
@@ -265,7 +320,7 @@ def main() -> int:
                 err(where, f"missing field '{key}'")
         if any(k not in f for k in ("type", "time", "takeaway", "notes", "numbers used", "footer", "figure")):
             continue
-        title_ok(where, s["title"])
+        title_ok(where, s["title"], 99 if f["type"] == "title" else TITLE_MAX_WORDS)
         typ = f["type"]
         if typ not in ("figure", "text", "template", "title"):
             err(where, f"unknown type '{typ}'")
@@ -292,9 +347,9 @@ def main() -> int:
             err(where, "notes contain ': ' (would be parsed as a Marp directive)")
         # figure
         if typ == "figure":
-            m = re.match(r"`(figures/[^`]+\.png)`$", f["figure"])
+            m = re.match(r"`((?:slides/)?figures/[^`]+\.png)`$", f["figure"])
             if not m:
-                err(where, "figure field must be a figures/*.png path in backticks")
+                err(where, "figure field must be a figures/*.png or slides/figures/*.png path in backticks")
             else:
                 png = ROOT / m.group(1)
                 if not png.exists():
@@ -327,6 +382,7 @@ def main() -> int:
                     err(where, f"'{key[1]}' printed as {nm.group(3)} but the CSV value is {row['value']}")
                 declared.append(row)
         s["declared"] = declared
+        check_section_marks(where, f["footer"], sections)
         n_checked += check_slide_numbers(where, {"title": s["title"], "takeaway": f["takeaway"],
                                                   "notes": f["notes"], "footer": f["footer"]},
                                          declared, rows, definitional)
@@ -359,7 +415,9 @@ def main() -> int:
                 rel = d["imgs"][0]
                 if not (SLIDES / rel).resolve().exists():
                     err(where, f"image path does not resolve from slides/: {rel}")
-                if f["figure"].strip("`") != rel.replace("../", "", 1):
+                want = f["figure"].strip("`")
+                want_rel = "../" + want if want.startswith("figures/") else want.replace("slides/", "", 1)
+                if want_rel != rel:
                     err(where, f"image {rel} differs from storyboard figure {f['figure']}")
         elif d["imgs"]:
             err(where, "text/template/title slide must not carry an image")
@@ -377,7 +435,7 @@ def main() -> int:
             err(where, "speaker notes differ from storyboard")
         if ": " in notes:
             err(where, "notes contain ': '")
-        title_ok(where, d["title"])
+        title_ok(where, d["title"], 99 if typ == "title" else TITLE_MAX_WORDS)
         # caption / body
         if typ == "figure":
             cap = " ".join(d["paras"])
