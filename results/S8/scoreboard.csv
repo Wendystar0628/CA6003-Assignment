@@ -6,6 +6,6 @@ H3,none,overall,inconclusive,combine_verdicts(E1-E3); falsifier: any contrast re
 P14,descriptive_seen,(a) |ΔAUC| < 0.01 (from S7),supported,"ΔAUC -0.0009 (-0.0028, +0.0009), corrected t"
 P14,descriptive_seen,(b) NH Asian ΔTPR ≥ +0.05,inconclusive,"ΔTPR +0.025 (-0.042, +0.071), psu interval; White ΔTPR +0.013"
 P14,descriptive_seen,overall,inconclusive,"combine_verdicts(a, b)"
-H4b,descriptive_seen,single feature (S5),supported,"WHtR - BMI gain Asian +0.137 (0.097, 0.184) vs White +0.049 (0.038, 0.058); difference CI (person +0.045, +0.138; PSU +0.038, +0.111)"
+H4b,descriptive_seen,single feature (S5),supported,"WHtR - BMI gain Asian +0.137 (0.093, 0.181) vs White +0.049 (0.039, 0.058); difference CI (person +0.044, +0.135; PSU +0.035, +0.116)"
 H4b,descriptive_seen,"model level (S8, secondary)",inconclusive,"ΔAUC_Asian − ΔAUC_White +0.0051 (-0.0037, +0.0134)"
 H4b,descriptive_seen,overall,supported,S5 primary; a decisive contradicting S8 model-level verdict would make it mixed

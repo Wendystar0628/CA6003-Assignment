@@ -1,25 +1,18 @@
 # %% [markdown]
-# # §8 Fairness and the 3 × 3 Label Matrix (Stage S8)
+# # §8 Fairness and the 3 × 3 Label Matrix
 #
-# §5 showed that the label and one feature are measured unevenly across groups: self-report misses the 152 people
-# whose diabetes is undiagnosed, and these people are more often uninsured or without a usual place of care, while BMI
-# under-reads adiposity in Asian adults. This section checks whether those measurement biases **carry over into the
-# model**. Three parts follow:
+# §5 showed that the label and one feature are measured unevenly across groups: self-report misses the 152
+# undiagnosed people, who are more often uninsured or without a usual place of care, and BMI under-reads adiposity in
+# Asian adults. This section checks whether those biases **carry over into the model**:
 #
-# 1. **Group audit** – error rates of arm S by race, insurance, access to care, income and sex at one fixed threshold,
-#    with bootstrap intervals, small-cell suppression and a permutation baseline.
-# 2. **3 × 3 label matrix** (pre-registered H3) – the same pipeline trained on three labels and scored on three kinds
-#    of diabetes, plus an audit arm that shows how the access-to-care imprint differs between labels.
-# 3. **Mitigation** – reweighing (race, insurance, access), the WHtR measurement fix (P14-b), the fairness–performance
-#    trade-off and within-group calibration.
+# 1. **Group audit** (§8.1–§8.5) – error rates of arm S by race, insurance, access, income and sex at one threshold, with
+#    bootstrap intervals, small-cell suppression and a permutation baseline.
+# 2. **3 × 3 label matrix** (§8.6–§8.7, pre-registered H3) – one pipeline trained on three labels and scored on three
+#    kinds of diabetes, plus an access-proxy audit arm.
+# 3. **Mitigation** (§8.8–§8.12) – reweighing, the WHtR fix (P14-b), group thresholds, the trade-off and calibration.
 #
-# All results use the out-of-fold (OOF) predictions of the **training part** and the stored folds of §7. The 20 %
-# hold-out is not read; its single use belongs to S9 after `exp-freeze`. Race, insurance and access never enter the
-# prediction model (S1 availability rule): they are audit variables only.
-#
-# Contents: 0 setup · 1 audit groups · 2 group metrics · 3 gaps and permutation baseline · 4 E-SCREEN · 5 Tier 2 ·
-# 6 3 × 3 label matrix · 7 access-proxy audit · 8 reweighing · 9 WHtR fix · 10 group-specific thresholds ·
-# 11 trade-off · 12 within-group calibration · 13 verdicts · 14 register and storage
+# Everything uses the out-of-fold predictions of the **training part** on the §7 folds; the hold-out is not read. Race,
+# insurance and access never enter a prediction model (§1 availability rule): they are audit variables only.
 
 # %%
 import sys, pathlib
@@ -35,7 +28,15 @@ import matplotlib.pyplot as plt
 
 from src import nhanes_io as io, labels as L, prep as P, evalkit as ek, survey as SV, fairness as F
 
-pd.set_option("display.width", 170, "display.max_columns", 30, "display.max_colwidth", 60)
+from IPython.display import display
+pd.set_option("display.width", 150, "display.max_columns", 30, "display.max_colwidth", 60)
+
+
+def show(df, digits=3):
+    """Display a table as HTML (long text wraps; keeps the text output narrow)."""
+    display(df.style.hide(axis="index").format(precision=digits, na_rep="")
+            .set_properties(**{"text-align": "left", "white-space": "normal"}))
+
 OUT = C.RESULTS_DIR / "S8"
 OUT.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("PYTHONWARNINGS", "ignore::UserWarning")
@@ -51,10 +52,9 @@ print(f"mode {C.NB_MODE}: {C.CV_SPLITS}x{C.CV_REPEATS} CV, B = {C.N_BOOT}, {N_PE
 
 # %% [markdown]
 # ## 0 Setup
-# **Why.** S8 must evaluate exactly the predictions that §7 judged, on the same rows and folds. The cohort is rebuilt, the
-# stored hold-out split is re-verified (not evaluated), the stored folds are reloaded with their hash, and the stored OOF
-# file is checked against those folds. One fold of arm S is refitted to prove that a refit reproduces the stored
-# predictions, so that the new arms below (other labels, reweighing) are paired with S on identical terms.
+# **Why.** The audit must evaluate exactly the predictions that §7 judged. The stored hold-out split and folds are
+# re-verified, the OOF file is checked against the folds, and one fold of arm S is refitted to prove that a refit
+# reproduces the stored predictions, so the new arms below (other labels, reweighing) are paired with S on equal terms.
 
 # %%
 raw = P.raw_cohort()
@@ -107,23 +107,19 @@ S8["setup"] = dict(n_train=n, n_pos=int(y.sum()), n_escreen=int(esc.sum()), n_po
                    folds_hash=folds.hash, C0=C0, refit_max_abs_diff=max_dev)
 
 # %% [markdown]
-# **So what.** The stored predictions belong to the stored folds, and refitting arm S reproduces them to float32
-# precision. Every new arm in this section is therefore a paired comparison with the S predictions that §7 evaluated.
-# The training part holds 4,584 adults; the E-SCREEN subset has only about 127 positives.
+# **So what.** Refitting arm S reproduces the stored predictions to float32 precision, so every new arm here is a
+# paired comparison with the S predictions of §7. The training part holds 4,584 adults; E-SCREEN has only 127 positives.
 
 # %% [markdown]
 # ## 1 Audit groups
-# **Why.** The audit must be planned around cell sizes. With no race or income oversampling in this cycle, several groups
-# have only a few dozen cases. Five attributes are audited: race (NH Asian separate and always exploratory),
-# insurance (HIQ011), **low access** (uninsured *or* no usual place of care, HUQ030 – the two access measures §5 linked
-# to being undiagnosed), income band (PIR < 1.3 / 1.3–3.49 / ≥ 3.5 / missing) and sex. The reference level is the
-# largest or most advantaged group. Small-cell rule (NCHS presentation standard): a group with n < 30 or fewer than 30
-# positives (the TPR denominator) is still shown, but no verdict is drawn on its gap.
+# **Why.** Without race or income oversampling in this cycle, several groups have only a few dozen cases. Five
+# attributes are audited: race (NH Asian separate, always exploratory), insurance (HIQ011), **low access** (uninsured
+# *or* no usual place of care, HUQ030 – the measures §5 linked to being undiagnosed), income band (PIR < 1.3 / 1.3–3.49 /
+# ≥ 3.5 / missing) and sex; the reference is the largest or most advantaged group. NCHS small-cell rule: a group with
+# n < 30 or fewer than 30 positives is shown, but no verdict is drawn on its gap.
 #
-# **Ecological-fallacy caveat.** Every number below describes a *group* of people scored by the model. A lower TPR for a
-# group says that the model misses a larger share of that group's cases; it does not say that any individual in it
-# has a different risk, nor that group membership causes the difference. Group membership is also never used to
-# score an individual.
+# **Ecological-fallacy caveat.** A lower TPR for a group says that the model misses a larger share of that group's
+# cases; it says nothing about any individual's risk, nor that group membership causes the difference.
 
 # %%
 def pop_of(name):
@@ -145,7 +141,7 @@ for attr in F.ATTRIBUTES:
     size_rows.append({"attribute": attr, "group": "(unknown)", "n": int(grp[attr].isna().sum())})
 sizes = pd.DataFrame(size_rows)
 sizes.to_csv(OUT / "group_sizes.csv", index=False)
-print(sizes.to_string(index=False))
+show(sizes)
 n_supp = {p: int((sizes[f"status_{p}"] == "suppress").sum()) for p in ("eall", "escreen")}
 print(f"\nsuppressed groups (n < 30 or positives < 30): E-ALL {n_supp['eall']}, E-SCREEN {n_supp['escreen']} "
       f"of {int(sizes['status_eall'].notna().sum())}")
@@ -153,23 +149,18 @@ S8["group_sizes"] = sizes.to_dict("records")
 S8["n_suppressed"] = n_supp
 
 # %% [markdown]
-# **So what.** On E-ALL every group passes the 30-positive rule, but NH Asian adults pass with only 40 positives and stay
-# exploratory. On E-SCREEN 10 of 16 groups fall below 30 positives, so E-SCREEN gaps are reported as numbers only: the
-# screening population is too small in this cycle for a group-fairness verdict except for the largest groups. That is
-# itself a governance finding: a fairness audit of the screening use case needs more data than NHANES 2021–23 provides.
+# **So what.** On E-ALL every group passes the 30-positive rule, NH Asian adults with only 40 positives (exploratory).
+# On E-SCREEN 10 of 16 groups fall below 30 positives, so their gaps are numbers only. That is itself a governance
+# finding: a fairness audit of the screening use case needs more data than NHANES 2021–23 provides.
 
 # %% [markdown]
 # ## 2 Group metrics at the fixed threshold
 # **Why.** Equal opportunity (Hardt et al. 2016) asks whether people *with* diabetes are found at the same rate in each
-# group. One threshold is fixed for everybody: the score that gives specificity 0.80 on all negatives of the population
-# (no group-specific thresholds, see section 10). For each group the table reports TPR (sensitivity), FPR, selection
-# rate, PPV, the within-group AUC and the observed-to-expected ratio (O:E = cases / sum of predicted probabilities).
-# Intervals come from a stratified bootstrap (rows resampled within group × label, B = `config.N_BOOT`) in which the
-# threshold is **re-estimated in every replicate**, so the threshold's own uncertainty is included. Arm S is
-# class-weighted (P11), so its probabilities are inflated by design and its O:E is far below 1 everywhere; only
-# differences in O:E between groups are informative for S (absolute calibration is examined in section 12). Because the
-# bootstrap is label-stratified, each group's prevalence is held at its observed value: intervals for TPR and FPR are
-# the natural conditional ones, those for selection rate and PPV are conditional on the observed prevalence.
+# group. One threshold is fixed for everybody: specificity 0.80 on all negatives of the population (no group thresholds,
+# §8.10). Per group: TPR, FPR, selection rate, PPV, within-group AUC and observed-to-expected ratio (O:E). Intervals come
+# from a bootstrap stratified by group × label with the threshold **re-estimated in every replicate**. Arm S is
+# class-weighted, so its O:E is far below 1 everywhere; only O:E differences between groups are informative here
+# (absolute calibration: §8.12).
 
 # %%
 AUD = {}   # (attr, pop, tier, arms) -> (point, boot, codes, mask)
@@ -213,19 +204,17 @@ GT1, ET1 = tables("E-ALL", 1)
 thr_eall = float(audit("race")[0]["thr"][0, 0])
 rec_check, thr_check = ek.recall_at_specificity(y, PM[("S", 1, "lr")])
 assert abs(audit("race")[0]["tpr"][0, 0].dot(audit("race")[0]["n_pos"][0, 0]) / y.sum() - rec_check) < 1e-12
-show = ["attribute", "group", "n", "n_pos", "tpr", "tpr_lo", "tpr_hi", "fpr", "sel", "ppv", "auc", "auc_lo", "auc_hi", "oe", "status", "flags"]
+cols_show = ["attribute", "group", "n", "n_pos", "tpr", "tpr_lo", "tpr_hi", "fpr", "sel", "ppv", "auc", "auc_lo", "auc_hi", "oe", "status", "flags"]
 print(f"E-ALL, Tier 1, arm S: threshold {thr_eall:.4f} (specificity 0.80 on {int((y == 0).sum())} negatives); "
       f"overall TPR {rec_check:.3f}; {time.time() - t0:.1f} s")
-print(GT1[show].round(3).to_string(index=False))
+show(GT1[cols_show], 3)
 
 # %% [markdown]
-# **So what.** At one shared threshold the model finds about two thirds of all cases, but not evenly. The lowest TPRs
-# belong to NH Asian adults, the highest income band, the low-access group and the uninsured; the highest TPR to the
-# lowest income band. In NH Asian, low-access and uninsured adults low TPR comes with low FPR and a low selection rate:
-# the whole score distribution of these groups sits lower, so the shared threshold selects fewer of them, cases and
-# non-cases alike. Within-group AUCs overlap widely (about 0.78–0.87), so the *ranking* inside each group is similar; the
-# gaps arise from where each group's scores lie relative to the shared threshold. Whether they exceed sampling noise is
-# tested next.
+# **So what.** At one shared threshold the model finds about two thirds of all cases, but not evenly: the lowest TPRs
+# belong to NH Asian adults, the highest income band, the low-access group and the uninsured; the highest to the lowest
+# income band. In NH Asian, low-access and uninsured adults low TPR comes with low FPR: their whole score distribution
+# sits lower. Within-group AUCs overlap widely (about 0.78–0.87), so the gaps come from where each group's scores lie
+# relative to the shared threshold, not from worse ranking.
 
 # %% [markdown]
 # ## 3 Gaps and permutation baseline
@@ -263,20 +252,20 @@ def permutation_block(pop="E-ALL", tier=1, arm="S", preds=None):
 
 PERM1, NULL1 = permutation_block("E-ALL", 1)
 print("Equal-opportunity differences, E-ALL, Tier 1 (reference in column 'ref'):")
-print(ET1[["attribute", "group", "ref", "eod", "eod_lo", "eod_hi", "fpr_diff", "flag_0.05", "substantive", "verdict_status"]].round(3).to_string(index=False))
+show(ET1[["attribute", "group", "ref", "eod", "eod_lo", "eod_hi", "fpr_diff", "flag_0.05", "substantive", "verdict_status"]], 3)
 print("\nPermutation null of max |EOD| (reportable groups only):")
-print(PERM1.round(3).to_string(index=False))
+show(PERM1, 3)
 sub1 = ET1[ET1["substantive"] & ET1["verdict_status"].eq("reportable")]
-print(f"\nsubstantive gaps (|EOD| >= {GAP_SUB}, CI excludes 0, reportable): {len(sub1)} -> "
-      f"{sub1[['attribute', 'group', 'eod']].round(3).to_dict('records')}")
+print(f"\nsubstantive gaps (|EOD| >= {GAP_SUB}, CI excludes 0, reportable): {len(sub1)}")
+for r_ in sub1.itertuples():
+    print(f"   {r_.attribute}: {r_.group} EOD {r_.eod:+.3f}")
 
 # %% [markdown]
-# **So what.** Three attributes have a largest gap beyond the 95th percentile of the permutation null: **race** (driven
-# by NH Asian adults, EOD about −0.18 with a CI excluding 0 – substantive but exploratory, 40 positives), **income** (the
-# lowest band is found *more* often than the highest, EOD about +0.19, substantive) and **low access** (EOD about −0.09;
-# the permutation test flags it, but its own bootstrap CI still includes 0, so it is borderline). Insurance and sex show
-# nothing beyond chance on E-ALL. Race, insurance and access are not model inputs, so every gap must travel through
-# correlated features; the next table asks which.
+# **So what.** Three attributes have a largest gap beyond the 95th percentile of the permutation null: **race** (NH Asian,
+# EOD about −0.18, CI excluding 0 – substantive but exploratory, 40 positives), **income** (the lowest band found *more*
+# often than the highest, EOD about +0.19) and **low access** (EOD about −0.09; its own CI includes 0, so borderline).
+# Insurance and sex show nothing beyond chance. Race, insurance and access are not inputs, so every gap must travel
+# through correlated features; the next table asks which.
 
 # %%
 pS = PM[("S", 1, "lr")]
@@ -293,7 +282,7 @@ for attr in F.ATTRIBUTES:
                     "tpr": hitS[m].mean(), "tpr_diagnosed": hitS[dx].mean(), "tpr_undiagnosed": hitS[ud].mean() if ud.sum() else np.nan})
 DEC = pd.DataFrame(dec)
 DEC.to_csv(OUT / "gap_decomposition.csv", index=False)
-print(DEC.round(3).to_string(index=False))
+show(DEC, 3)
 r_dx = float(np.corrcoef(DEC["share_diagnosed"], DEC["tpr"])[0, 1])
 r_age = float(np.corrcoef(DEC["mean_age"], DEC["tpr"])[0, 1])
 r_care = float(np.corrcoef(DEC["care_trace"], DEC["tpr"])[0, 1])
@@ -307,30 +296,23 @@ fullS = P.build_pipeline(cfgS, 1, C_=C0).fit(X1, y, model__sample_weight=w_svy)
 coefS = pd.Series(fullS[-1].coef_[0], index=fullS[:-1].get_feature_names_out())
 route_cols = [c for c in coefS.index if c.startswith(("INDFMPIR", "DMDEDUC2", "BPQ020", "BPQ080", "BMXWAIST", "BMXHIP", "BMXBMI"))]
 print("\narm S coefficients of the route variables (scaled inputs):")
-print(coefS[route_cols].round(3).to_string())
+display(coefS[route_cols].round(3))
 S8["gap_decomposition"] = dict(table=DEC.round(4).to_dict("records"), tpr_diagnosed=tpr_dx_all, tpr_undiagnosed=tpr_ud_all,
                                r_tpr_share_diagnosed=r_dx, r_tpr_care_trace=r_care, r_tpr_mean_age=r_age,
                                route_coefficients=coefS[route_cols].round(4).to_dict())
 
 # %% [markdown]
-# **So what.** Three different routes produce the gaps:
+# **So what.** Three routes produce the gaps:
 #
-# * **Diagnosis and care traces (label route).** The model finds diagnosed cases far more often than undiagnosed ones
-#   (TPRs printed above), and a group's TPR rises with the share of its cases that are already diagnosed and carry care
-#   traces (correlations printed above). Uninsured and low-access cases are less often diagnosed, younger and have fewer
-#   care traces – the access imprint on the label documented in §5, reproduced by the model.
-# * **Body-size measurement (feature route).** NH Asian cases are as old as White cases (mean age about 64.5) and mostly
-#   diagnosed, but much leaner (mean BMI about 26 against 34). BMI and waist – the anthropometrics §5 found to under-read
-#   adiposity in Asian adults – push their scores down, so they are missed more often even when diagnosed (TPR among
-#   diagnosed cases about 0.62 against 0.71).
-# * **Socio-economic risk markers (direct route).** Income (INDFMPIR) has a negative coefficient and low education a
-#   positive one (printed above), so the model scores low-SES people higher; among the income bands the highest is
-#   missed most although its cases are as often diagnosed and as old as the others. This is the model using SES as a
-#   risk marker – a gap it was built to have, not a measurement artefact.
+# * **Label route.** Diagnosed cases are found far more often than undiagnosed ones (TPR about 0.70 vs 0.52, printed),
+#   and a group's TPR rises with its share of diagnosed cases with care traces – the access imprint of §5, reproduced.
+# * **Measurement route.** NH Asian cases are as old as White cases but much leaner (mean BMI about 26 vs 34); BMI and
+#   waist push their scores down, so they are missed more even when diagnosed.
+# * **Direct route.** Income has a negative and low education a positive coefficient: the model uses SES as a risk
+#   marker, which explains the income gaps.
 #
-# The race and access gaps are therefore mostly **label and measurement bias transmitted through the features**,
-# not a separate model defect – which means a model-side fix (reweighing) is unlikely to remove them, while a
-# measurement fix (WHtR) targets one of the routes directly. Both are tested in sections 8–9.
+# The race and access gaps are mostly **label and measurement bias transmitted through the features**, so reweighing
+# is unlikely to remove them, while WHtR targets one route directly (§8.8–§8.9).
 
 # %%
 plots.set_style()
@@ -343,30 +325,31 @@ def tpr_panel(ax, GT, ET, title, overall):
             sup = r["status"] == "suppress"
             col = C.OKABE_ITO["grey"] if sup else (C.OKABE_ITO["blue"] if r["group"] == F.REFERENCE[attr] else C.OKABE_ITO["vermillion"])
             ax.errorbar(r["tpr"], -k, xerr=[[r["tpr"] - r["tpr_lo"]], [r["tpr_hi"] - r["tpr"]]], fmt="o",
-                        color=col, mfc="white" if sup else col, capsize=2, ms=5)
+                        color=col, mfc="white" if sup else col, capsize=3, ms=8, lw=1.8)
             e = ET[(ET["attribute"] == attr) & (ET["group"] == r["group"])]
             if len(e) and bool(e["substantive"].iloc[0]) and e["verdict_status"].iloc[0] == "reportable":
-                ax.annotate("*", (r["tpr_hi"], -k), xytext=(4, -4), textcoords="offset points", fontsize=13, color="black")
-            ax.annotate(f"n+ {int(r['n_pos'])}", (0.01, -k), xytext=(0, 3), textcoords="offset points", fontsize=7, color="dimgrey")
+                ax.annotate("*", (r["tpr_hi"], -k), xytext=(4, -6), textcoords="offset points", fontsize=18, color="black")
+            ax.annotate(f"n+ {int(r['n_pos'])}", (0.01, -k), xytext=(0, 4), textcoords="offset points", fontsize=10, color="dimgrey")
             ylabels.append(f"{attr}: {r['group']}")
             ypos.append(-k)
             k += 1
         k += 0.6
     ax.axvline(overall, color="black", lw=0.8, ls="--")
-    ax.set_yticks(ypos); ax.set_yticklabels(ylabels, fontsize=8)
-    ax.set_xlabel("TPR at specificity 0.80 (95 % bootstrap CI)")
-    ax.set_title(title)
+    ax.set_yticks(ypos); ax.set_yticklabels(ylabels, fontsize=12)
+    ax.tick_params(axis="x", labelsize=11)
+    ax.set_xlabel("TPR at specificity 0.80 (95 % CI)", fontsize=12)
+    ax.set_title(title, fontsize=14)
     ax.set_xlim(0, 1)
 
-# E-SCREEN tables are needed for the right panel (computed in section 4, re-used there)
+# E-SCREEN tables are needed for the right panel (computed in §8.4, re-used there)
 GTs, ETs = tables("E-SCREEN", 1)
 rec_s, _ = ek.recall_at_specificity(y_esc[esc], PM[("S", 1, "lr")][esc])
-fig, axes = plt.subplots(1, 2, figsize=(13, 9))
+fig, axes = plt.subplots(1, 2, figsize=(14, 10.5))
 tpr_panel(axes[1], GTs, ETs, f"E-SCREEN (overall TPR {rec_s:.2f})", rec_s)
 axes[1].tick_params(labelleft=False)
 tpr_panel(axes[0], GT1, ET1, f"E-ALL (overall TPR {rec_check:.2f})", rec_check)
-fig.suptitle("Arm S, Tier 1: sensitivity by group at one shared threshold\n"
-             "blue = reference, red = comparison group, hollow grey = suppressed (n or positives < 30), * substantive gap (|EOD| >= 0.10, CI excludes 0); n+ = positives", fontsize=10)
+fig.suptitle("Sensitivity by group at one shared threshold (arm S, Tier 1)\n"
+             "blue = reference · red = comparison · hollow grey = suppressed (< 30) · * substantive gap (|EOD| ≥ 0.10, CI excl. 0)", fontsize=14)
 fig.tight_layout()
 f81 = plots.savefig(fig, "S8_group_tpr", caption="F8-1. TPR at specificity 0.80 by audit group for arm S (Tier 1) on E-ALL "
                     "and E-SCREEN, stratified bootstrap 95 % CI with the threshold re-estimated per replicate; dashed line = "
@@ -395,26 +378,24 @@ S8["threshold_eall_t1"] = thr_eall
 S8["overall_tpr_eall_t1"] = rec_check
 
 # %% [markdown]
-# **So what.** The left panel is the audit in one picture: the reference groups (blue) sit near the overall TPR, NH Asian
-# adults and the highest income band fall clearly below it, and the lowest income band lies above it. In the right panel
-# almost every E-SCREEN group is grey (suppressed). The permutation panel shows, per attribute, whether the largest gap is
-# beyond chance: for race, income and low access the red line lies beyond the null's 95th percentile; for insurance and
-# sex it lies inside the null, i.e. random grouping of the same people produces gaps of that size.
+# **So what.** The left panel is the audit in one picture: NH Asian adults and the highest income band fall clearly
+# below the overall TPR, the lowest income band lies above it; on E-SCREEN almost every group is suppressed. In the
+# permutation panel the observed maximum gap lies beyond the null's 95th percentile for race, income and low access, and
+# inside it for insurance and sex.
 
 # %% [markdown]
 # ## 4 E-SCREEN
-# **Why.** E-SCREEN is the population the use case is about (adults not known to have diabetes). The same metrics are
-# computed with the threshold fixed at specificity 0.80 on the E-SCREEN negatives. With about 127 positives in total,
-# most groups have fewer than 30 positives; they are reported but receive no verdict.
+# **Why.** E-SCREEN is the use-case population. The same metrics are computed at specificity 0.80 on its negatives;
+# with 127 positives most groups fall below 30 positives and receive no verdict.
 
 # %%
 PERMs, NULLs = permutation_block("E-SCREEN", 1)
 print(f"E-SCREEN, Tier 1, arm S: overall TPR {rec_s:.3f}")
-print(GTs[show].round(3).to_string(index=False))
+show(GTs[cols_show], 3)
 print()
-print(ETs[["attribute", "group", "ref", "eod", "eod_lo", "eod_hi", "flag_0.05", "substantive", "verdict_status"]].round(3).to_string(index=False))
+show(ETs[["attribute", "group", "ref", "eod", "eod_lo", "eod_hi", "flag_0.05", "substantive", "verdict_status"]], 3)
 print()
-print(PERMs.round(3).to_string(index=False))
+show(PERMs, 3)
 rep_s = ETs[ETs["verdict_status"].eq("reportable")]
 print(f"\nreportable E-SCREEN gaps: {len(rep_s)} of {len(ETs)}; substantive among them: {int(rep_s['substantive'].sum())}")
 S8["group_metrics_escreen_t1"] = GTs.round(5).to_dict("records")
@@ -423,17 +404,13 @@ S8["permutation_escreen_t1"] = PERMs.round(5).to_dict("records")
 S8["overall_tpr_escreen_t1"] = rec_s
 
 # %% [markdown]
-# **So what.** In the screening population only the sex contrast has 30 or more positives in both groups. It points to
-# undiagnosed **women being found less often than undiagnosed men** (EOD about −0.17), but the CI includes 0 and the
-# permutation p is about 0.09, so the gap is not established. The race gaps look much larger than on E-ALL (NH Black and
-# NH Asian undiagnosed cases are found far less often than White ones) but rest on 11–24 positives per group with CIs
-# wider than 0.30, so they are suppressed: a screening-population race audit is not possible with NHANES 2021–23.
-# "Not reportable" here means "not measurable", not "fair".
+# **So what.** Only the sex contrast is reportable on E-SCREEN: undiagnosed **women are found less often than men** (EOD
+# about −0.17), but the CI includes 0 and the permutation p is about 0.09. The race gaps look larger than on E-ALL but
+# rest on 11–24 positives per group with CIs wider than 0.30. "Not reportable" means "not measurable", not "fair".
 
 # %% [markdown]
 # ## 5 Tier 2 summary
-# **Why.** Tier 2 adds total and HDL cholesterol. If lipids carry group-specific information, the gaps could change. The
-# same audit is repeated on E-ALL and summarised by the largest reportable gap per attribute.
+# **Why.** Tier 2 adds total and HDL cholesterol; if lipids carry group-specific information the gaps could change.
 
 # %%
 GT2, ET2 = tables("E-ALL", 2)
@@ -441,40 +418,31 @@ PERM2, _ = permutation_block("E-ALL", 2)
 cmp_t = (ET1.set_index(["attribute", "group"])[["eod", "eod_lo", "eod_hi", "verdict_status"]]
          .join(ET2.set_index(["attribute", "group"])[["eod", "eod_lo", "eod_hi"]], rsuffix="_t2"))
 cmp_t["delta_t2_t1"] = cmp_t["eod_t2"] - cmp_t["eod"]
-print(cmp_t.round(3).to_string())
+display(cmp_t.round(3))
 summ = PERM1.set_index("attribute")[["observed_max_eod", "p_value"]].join(
     PERM2.set_index("attribute")[["observed_max_eod", "p_value"]], rsuffix="_t2")
 print("\nmax |EOD| (reportable groups) and permutation p, Tier 1 vs Tier 2:")
-print(summ.round(3).to_string())
+display(summ.round(3))
 max_shift = float(cmp_t["delta_t2_t1"].abs().max())
 print(f"largest change of any EOD from Tier 1 to Tier 2: {max_shift:.3f}")
 S8["tier2_summary"] = dict(eod=ET2.round(5).to_dict("records"), permutation=PERM2.round(5).to_dict("records"),
                            max_abs_eod_shift=max_shift)
 
 # %% [markdown]
-# **So what.** Adding lipids moves individual gaps by less than their own CIs (the largest shift is printed above) and,
-# apart from the near-zero Other/Multi gap, every gap keeps its sign; the NH Asian gap is unchanged (about −0.18). The
-# low-access gap grows in Tier 2 and its CI then excludes 0, while the race and income gaps stay beyond their permutation
-# nulls. The *direction* of the audit is therefore robust to the feature tier; which borderline attribute crosses 0.05 is
-# not. Tier 1 remains the primary audit.
+# **So what.** Lipids move every gap by less than its CI (largest shift printed) and the NH Asian gap is unchanged (about
+# −0.18); the borderline low-access gap grows and its CI then excludes 0. The direction of the audit is robust to the
+# tier; Tier 1 remains primary.
 
 # %% [markdown]
 # ## 6 3 × 3 label matrix
-# **Why.** RQ3 asks whether the *label* decides who the model misses. Hypothesis H3 is pre-registered (`prior_exposure =
-# none`): train the identical arm-S pipeline (same folds, same steps, same C0, same class and survey weights) on three
-# labels – self-report `L_self`, HbA1c `L_A1c` and the frozen union `L_comb` – and score every model on three kinds of
-# diabetes: **D-uncontrolled** (self-report and HbA1c ≥ 6.5), **D-controlled** (self-report, HbA1c < 6.5 – treatment
-# masking) and **Undiagnosed** (HbA1c ≥ 6.5 without a diagnosis). Each cell is the recall at the threshold that gives
-# specificity 0.80 on the common non-diabetic negatives (the same negatives for all nine cells); AUC is secondary.
-# Locked prediction: `L_self` misses Undiagnosed most, `L_A1c` misses D-controlled most, `L_comb` has the smallest
-# worst-cell gap; differences below 0.05 count as equivalent.
-#
-# Operational reading (fixed before looking at the matrix, coded in `fairness.h3_elements`): "misses most" is read
-# **column-wise** – among the three training labels, which one serves a given kind of diabetes worst, holding the
-# stratum and the negatives fixed; the worst-cell gap of a training label is its largest shortfall against the best
-# label in any column. Contrasts are paired bootstrap differences (the same resampled people for all rows) judged with
-# `evalkit.verdict` at SESOI 0.05. The matrix uses the training part (80 % of the 569 / 250 / 152 / 4,759 people
-# frozen in `label_freeze.md`); the hold-out stays untouched.
+# **Why.** RQ3 asks whether the *label* decides who the model misses. H3 is a genuine pre-registration
+# (`prior_exposure = none`): the identical arm-S pipeline (same folds, steps, C0 and weights) is trained on `L_self`,
+# `L_A1c` and the union `L_comb` and scored on three kinds of diabetes – **D-uncontrolled** (self-report and HbA1c ≥ 6.5),
+# **D-controlled** (self-report, HbA1c < 6.5: treatment masking) and **Undiagnosed** (HbA1c ≥ 6.5, no diagnosis). Each
+# cell is recall at specificity 0.80 on the common non-diabetic negatives. Locked prediction: `L_self` misses Undiagnosed
+# most, `L_A1c` misses D-controlled most, `L_comb` has the smallest worst-cell gap; differences below 0.05 are
+# equivalent. "Misses most" is read **column-wise** (coded in `fairness.h3_elements` before the matrix was viewed);
+# contrasts are paired bootstrap differences judged at SESOI 0.05.
 
 # %%
 LABELS3 = ("L_self", "L_A1c", "L_comb")
@@ -489,22 +457,22 @@ PM3 = {lab: ek.mean_oof(OOF3[lab], n) for lab in LABELS3}
 cnt = pd.Series(strat).value_counts()
 full = L.strata_counts(clean)
 print(f"refitted arm S on L_self and L_A1c: {2 * len(folds)} fits, {time.time() - t0:.0f} s")
-print("training-part strata (share of the frozen full-cohort counts):",
-      {k: f"{int(cnt[k])} ({cnt[k] / full[k]:.2f})" for k in L.STRATA_3X3})
+print("training-part strata (share of the frozen full-cohort counts):")
+print("   " + ", ".join(f"{k} {int(cnt[k])} ({cnt[k] / full[k]:.2f})" for k in L.STRATA_3X3))
 assert all(0.75 < cnt[k] / full[k] < 0.85 for k in L.STRATA_3X3)
 LM = F.label_matrix(strat, PM3, n_boot=C.N_BOOT, seed=ek.derive_seed(C.SEED_MASTER, "S8", "3x3"))
 cells = LM["cells"]
 # consistency: L_comb row, Undiagnosed column = E-SCREEN recall of arm S (same positives, same negatives)
 assert abs(LM["recall"].loc["L_comb", "Undiagnosed"] - rec_s) < 1e-12
 print("\nrecall at specificity 0.80 on the common NonDiabetic negatives (rows: training label):")
-print(LM["recall"].round(3).to_string())
+display(LM["recall"].round(3))
 print("\nROC-AUC against the common negatives:")
-print(LM["auc"].round(3).to_string())
+display(LM["auc"].round(3))
 print()
-print(cells[["train_label", "stratum", "n_pos", "recall", "recall_lo", "recall_hi", "auc", "auc_lo", "auc_hi"]].round(3).to_string(index=False))
+show(cells[["train_label", "stratum", "n_pos", "recall", "recall_lo", "recall_hi", "auc", "auc_lo", "auc_hi"]], 3)
 H3E = F.h3_elements(LM)
 print("\npre-registered contrasts (predicted sign: negative):")
-print(H3E.round(3).to_string(index=False))
+show(H3E, 3)
 # row-wise reading (secondary): in which stratum does each training label have its lowest recall?
 roww = LM["recall"].idxmin(axis=1).to_dict()
 print(f"\nrow-wise reading (secondary): lowest-recall stratum per training label {roww}")
@@ -548,26 +516,20 @@ f82 = plots.savefig(fig, "S8_label_matrix", caption="F8-2. 3x3 label matrix: arm
 plt.show()
 
 # %% [markdown]
-# **So what.** Every element of the locked pattern points the predicted way: in the Undiagnosed column the self-report
-# model has the lowest recall, in the D-controlled column the HbA1c-only model has the lowest recall, and the union label
-# has the smallest worst-cell gap. But the differences are small – at most about 0.06 – and every paired CI includes 0
-# while reaching beyond ±0.05, so H3 is **inconclusive**: neither the predicted ordering nor equivalence is established
-# (verdict line above). The row-wise reading tells the stronger story: *whatever* the training label, the Undiagnosed
-# column is the hardest, and the AUCs show the same order. With non-laboratory features the model cannot see the
-# diagnosis gap: undiagnosed people lack the care traces and the treatment-era profile that the features pick up, and
-# changing the label only shifts recall by a few points. The label therefore shapes *what the model claims to measure*
-# (§5: 152 and 250 cases silently dropped by the two single labels) more than *whom this feature set can find*.
+# **So what.** Every element of the locked pattern points the predicted way, but the differences are small (at most
+# about 0.06) and every paired CI includes 0 while reaching beyond ±0.05, so H3 is **inconclusive**. The row-wise reading
+# tells the stronger story: *whatever* the training label, the Undiagnosed column is the hardest, and the AUCs agree.
+# Undiagnosed people lack the care traces and treatment-era profile the features pick up, so changing the label shifts
+# recall by only a few points. The label shapes *what the model claims to measure* (§5) more than *whom this feature set
+# can find*.
 
 # %% [markdown]
 # ## 7 Access-proxy audit arm
-# **Why.** §5 found that uninsured adults and adults without a usual place of care are more often undiagnosed. If the
-# self-report label carries this access imprint, a model trained on `L_self` should learn that *lacking access lowers
-# the chance of "having diabetes"* – a pure artefact of who gets diagnosed – while a model trained on the union label
-# (or on HbA1c, which needs no doctor) should not. The audit arm adds two binary features, **uninsured** (HIQ011 = 2)
-# and **no usual place of care** (HUQ030 = 2), to the arm-S pipeline and fits it on each label. Coefficients (per SD,
-# because P09 scales every column) are bootstrapped with `evalkit.coef_bootstrap` (B = `config.N_BOOT_COEF`); the
-# same seed gives the same resampled rows for every label, so differences between labels are paired. This arm is an
-# **audit instrument only**: the availability rule keeps insurance and access out of every model that could be used.
+# **Why.** If the self-report label carries the access imprint of §5, a model trained on `L_self` should learn that
+# *lacking access lowers the chance of "having diabetes"* – an artefact of who gets diagnosed – while one trained on
+# HbA1c (which needs no doctor) should not. The audit arm adds **uninsured** (HIQ011 = 2) and **no usual place of care**
+# (HUQ030 = 2) to the arm-S pipeline and fits it on each label; per-SD coefficients are bootstrapped with the same seed
+# for every label, so label differences are paired. This arm is an **audit instrument only**.
 
 # %%
 t0 = time.time()
@@ -594,37 +556,29 @@ for f in F.ACCESS_FEATURES:
                           "ci_excludes_0": bool(lo > 0 or hi < 0)})
 ACCD = pd.DataFrame(diff_rows)
 print(f"access audit arm: {len(LABELS3)} labels x (1 + {C.N_BOOT_COEF}) fits, {time.time() - t0:.0f} s")
-print(ACC.round(3).to_string(index=False))
+show(ACC, 3)
 print("\npaired differences of the per-SD coefficient between training labels:")
-print(ACCD.round(3).to_string(index=False))
+show(ACCD, 3)
 ACC.to_csv(OUT / "access_audit_coefs.csv", index=False)
 ACCD.to_csv(OUT / "access_audit_diffs.csv", index=False)
 S8["access_audit"] = dict(coefs=ACC.round(5).to_dict("records"), diffs=ACCD.round(5).to_dict("records"),
                           n_boot=C.N_BOOT_COEF, sd_binary=sd_bin)
 
 # %% [markdown]
-# **So what.** The access imprint points where the label requires a doctor. Trained on self-report, the model gives both
-# access features negative coefficients – lacking a usual place of care *lowers* the predicted chance of diabetes, with a
-# CI that excludes 0 (odds ratio about 0.5) – although §4 showed that the insured–uninsured prevalence gap is age
-# confounding (+0.7 pp after age standardisation). Trained on HbA1c, which needs no diagnosis, the coefficients are small
-# with CIs including 0, and the union label sits next to HbA1c. The paired differences self-report minus union are about
-# −0.10 per SD for both features, but their CIs just include 0, so the label contrast is suggestive rather than
-# established at this sample size. The direction is the one that matters for governance: a model trained on self-report
-# would learn to **score people with poor access as lower risk because they were never diagnosed**, a feedback loop
-# that would deepen the diagnosis gap. The result supports the frozen union label and keeping insurance and access out
-# of the model.
+# **So what.** The access imprint appears where the label requires a doctor. Trained on self-report, both access features
+# get negative coefficients – no usual place of care *lowers* predicted risk (odds ratio about 0.5, CI excluding 0) –
+# although §4 showed the insured–uninsured prevalence gap is age confounding. Trained on HbA1c the coefficients are small
+# with CIs including 0, and the union label sits next to HbA1c. The paired self-report minus union differences (about
+# −0.10 per SD) have CIs that just include 0: suggestive, not established. A self-report model would **score people with
+# poor access as lower risk because they were never diagnosed** – a feedback loop that supports the union label and
+# keeping access out of the model.
 
 # %% [markdown]
 # ## 8 Reweighing
-# **Why.** Reweighing (Kamiran & Calders 2012) is the standard pre-processing mitigation: each training row gets the
-# weight w(g, y) = P(g)·P(y) / P(g, y), which makes group and label independent in the weighted training data without
-# touching features or predictions. It is applied **inside every training fold** (weights computed from that fold's rows)
-# on top of the survey weights of arm S, so the comparison with S is paired on the same folds. Three versions are run:
-# race (pre-specified; the plan expected weights close to 1 and a one-line null result), and – as extension items –
-# insurance and low access, the attributes linked to the diagnosis gap. ΔAUC uses the locked
-# S7 engine (E-ALL: fold-mean paired difference with the wider of the corrected-t and paired-bootstrap intervals;
-# E-SCREEN: pooled-OOF difference with its paired bootstrap); the gap
-# changes are paired bootstrap differences of EOD with the threshold re-estimated for each arm.
+# **Why.** Reweighing (Kamiran & Calders 2012) gives each training row the weight w(g, y) = P(g)·P(y) / P(g, y), making
+# group and label independent in the weighted data. It is applied inside every training fold on top of arm S's survey
+# weights, so the comparison with S is paired. Race (pre-specified) and, as extensions, insurance and low access are
+# reweighed. ΔAUC uses the §7.4.1 engine; gap changes are paired bootstrap differences of EOD.
 
 # %%
 from joblib import parallel_config
@@ -674,7 +628,7 @@ for attr, w_rw in RW_W.items():
     lv = grp[attr].fillna("(unknown)")
     tab = pd.DataFrame({"g": lv, "y": y, "w": w_rw}).groupby(["g", "y"])["w"].first().unstack()
     print(f"\n{attr}: reweighing weights w(g, y) on the training part (range {w_rw.min():.3f}-{w_rw.max():.3f})")
-    print(tab.round(3).rename(columns={0: "w(y=0)", 1: "w(y=1)"}).to_string())
+    display(tab.round(3).rename(columns={0: "w(y=0)", 1: "w(y=1)"}))
     PMx = ek.mean_oof(OOF_RW[attr], n)
     for pop in ("E-ALL", "E-SCREEN"):
         r = compare_auc(OOF_RW[attr], OOF[("S", 1, "lr")], pop, tag=f"rw_{attr}")
@@ -697,36 +651,29 @@ for attr, w_rw in RW_W.items():
 RWT = pd.DataFrame(RW_ROWS)
 RWE = pd.DataFrame(RW_EOD)
 print("\nΔAUC reweighed arm − S:")
-print(RWT[["arm", "pop", "est", "lo", "hi", "interval", "mdd", "w_min", "w_max", "verdict_auc"]].round(4).to_string(index=False))
+show(RWT[["arm", "pop", "est", "lo", "hi", "interval", "mdd", "w_min", "w_max", "verdict_auc"]], 4)
 print("\nchange of equal-opportunity differences (reweighed − S), E-ALL:")
-print(RWE.round(3).to_string(index=False))
+show(RWE, 3)
 RWT.to_csv(OUT / "reweighing_auc.csv", index=False)
 RWE.to_csv(OUT / "reweighing_eod.csv", index=False)
 S8["reweighing"] = dict(auc=RWT.round(5).to_dict("records"), eod=RWE.round(5).to_dict("records"),
                         weight_range={a: [float(w.min()), float(w.max())] for a, w in RW_W.items()})
 
 # %% [markdown]
-# **So what.** Reweighing is a null mitigation here, and an instructive one. The race weights are not close to 1 (NH Black
-# cases are down-weighted to about 0.7 because their prevalence is highest), yet discrimination does not move: every ΔAUC
-# interval lies inside ±0.01 (equivalent) on both populations. The gaps do not close either: race reweighing leaves the
-# NH Asian gap where it was (slightly wider) and *widens* the NH Black gap with a CI excluding 0, because making race and
-# label independent removes exactly the prevalence difference that made Black cases easier to find. Insurance and
-# low-access reweighing narrow their gaps by about 0.04–0.05, with CIs that include 0. Reweighing acts on the label–group
-# association; the gaps found in section 3 come from features (care traces, BMI) and from the label's diagnosis
-# component, which reweighing does not touch.
+# **So what.** Reweighing is an instructive null. Race weights are not close to 1 (NH Black cases down-weighted to about
+# 0.7), yet every ΔAUC interval lies inside ±0.01. The gaps do not close either: race reweighing leaves the NH Asian gap
+# where it was and *widens* the NH Black gap (CI excluding 0), because it removes the prevalence difference that made
+# Black cases easier to find. Insurance and low-access reweighing narrow their gaps by about 0.04–0.05 with CIs including
+# 0. Reweighing acts on the label–group association; the gaps of §8.3 come from features and from the diagnosis
+# component of the label.
 
 # %% [markdown]
 # ## 9 WHtR measurement fix (P14-b)
-# **Why.** §5 found that BMI under-reads adiposity in Asian adults (single-feature AUC gain of WHtR over BMI +0.137 for
-# Asian against +0.049 for White adults), and section 3 found Asian cases missed most at the shared threshold, mainly
-# because they are leaner. Arm S+WHtR replaces waist circumference by waist-to-height ratio (P14, pre-registered in S6;
-# `prior_exposure = descriptive_seen`). Locked prediction **P14-b**: Asian TPR at specificity 0.80 rises by at least
-# 0.05 (falsifier: upper CI bound of ΔTPR below 0.05), overall |ΔAUC| < 0.01 (P14-a, tested in §7), and the White
-# change is smaller (control group). With only 40 Asian positives in the training part, two intervals are computed: the
-# simple stratified bootstrap and a **PSU-cluster bootstrap** (Rao–Wu, `survey.rao_wu_weights`), because Asian adults
-# cluster in few PSUs; the wider interval decides. The model-level counterpart of H4b (does the WHtR advantage
-# transfer into the multivariable model, Asian more than White?) is read from the same replicates as the within-group
-# ΔAUC.
+# **Why.** §5 found that BMI under-reads adiposity in Asian adults (WHtR − BMI single-feature AUC gain +0.137 Asian vs
+# +0.049 White), and §8.3 found Asian cases missed most because they are leaner. Arm S+WHtR replaces waist by
+# waist-to-height ratio (P14, locked in §6, `prior_exposure = descriptive_seen`). Locked prediction **P14-b**: Asian TPR
+# rises by at least 0.05 (falsifier: upper CI bound below 0.05), with a smaller White change. With 40 Asian positives
+# clustered in few PSUs, a simple and a **PSU-cluster (Rao–Wu) bootstrap** are both computed; the wider decides.
 
 # %%
 pW = PM[("S+WHtR", 1, "lr")]
@@ -761,7 +708,7 @@ r_aA = add_whtr("ΔAUC within NH Asian", lambda d: d["auc"][:, 1, iA] - d["auc"]
 r_aW = add_whtr("ΔAUC within NH White", lambda d: d["auc"][:, 1, iW] - d["auc"][:, 0, iW])
 r_h4 = add_whtr("ΔAUC Asian − ΔAUC White (H4b, model level)", lambda d: (d["auc"][:, 1, iA] - d["auc"][:, 0, iA]) - (d["auc"][:, 1, iW] - d["auc"][:, 0, iW]))
 WH = pd.DataFrame(whtr_rows)
-print(WH[["quantity", "est", "simple_lo", "simple_hi", "simple_boot_mean", "psu_lo", "psu_hi", "psu_boot_mean", "interval"]].round(3).to_string(index=False))
+show(WH[["quantity", "est", "simple_lo", "simple_hi", "simple_boot_mean", "psu_lo", "psu_hi", "psu_boot_mean", "interval"]], 3)
 # E-SCREEN (secondary; NH Asian has 11 positives -> suppressed, numbers only)
 pt_s, bt_s, _, _ = audit("race", "E-SCREEN", 1, ("S", "S+WHtR"))
 dA_s = F.summarise(pt_s["tpr"][0, 1, iA] - pt_s["tpr"][0, 0, iA], bt_s["tpr"][:, 1, iA] - bt_s["tpr"][:, 0, iA])
@@ -817,24 +764,17 @@ f83 = plots.savefig(fig, "S8_whtr_asian_white", caption="F8-3. WHtR measurement 
 plt.show()
 
 # %% [markdown]
-# **So what.** The measurement fix moves the right group in the right direction, but by very little: NH Asian sensitivity
-# rises by +0.025 – one more case found out of 40 – against +0.013 for White adults, and overall discrimination is
-# unchanged (P14-a supported in §7). The point estimate is half the pre-registered +0.05, and the PSU-cluster interval
-# (which respects that Asian adults are concentrated in few PSUs) runs from about −0.04 to +0.07, so P14-b is
-# **inconclusive**: the data neither confirm nor exclude a gain of 0.05. At model level the WHtR advantage that §5 found
-# for a single feature (H4b) largely disappears: the model already contains waist, height and BMI, so replacing waist by
-# their ratio adds little ranking information (within-group ΔAUC near 0). WHtR is therefore *not* adopted as a new
-# preparation step and loop L4 is not triggered.
+# **So what.** The fix moves the right group in the right direction, but by little: NH Asian sensitivity rises by +0.025
+# – one more case of 40 – against +0.013 for White adults, with overall AUC unchanged (P14-a). The PSU interval runs from
+# about −0.04 to +0.07, so P14-b is **inconclusive**. At model level the single-feature WHtR advantage (H4b) largely
+# disappears: the model already contains waist, height and BMI. WHtR is not adopted as a new preparation step.
 
 # %% [markdown]
 # ## 10 Group-specific thresholds
-# **Why.** The obvious "fix" for a TPR gap is a lower threshold for the disadvantaged group (Hardt et al. 2016 post-
-# processing). It is **not** implemented, for three reasons recorded in R7.2: (i) it requires race at prediction time,
-# i.e. explicit differential treatment by a protected attribute, which the availability rule and the governance scope
-# exclude; (ii) it can equalise TPR only by raising the group's false positives or by lowering other groups' TPR
-# ("levelling down", Fairlearn ThresholdOptimizer documentation); (iii) with about 40 Asian cases the group threshold
-# would be unstable. Point (iii) is quantified here: the Asian-specific threshold that would give NH Asian adults the
-# White TPR, and the false-positive rate it implies, with bootstrap CIs.
+# **Why.** The obvious "fix" for a TPR gap is a lower threshold for the disadvantaged group (Hardt et al. 2016). It is
+# **not** implemented (DR-S8-02): (i) it needs race at prediction time, which the availability rule excludes; (ii) it
+# equalises TPR only by raising that group's false positives or lowering others' TPR ("levelling down"); (iii) with about
+# 40 Asian cases the threshold would be unstable. Point (iii) is quantified here.
 
 # %%
 def asian_threshold(w=None):
@@ -863,11 +803,16 @@ print(f"Asian FPR: {fpr_overall_a:.3f} at the shared threshold -> {fpr_a:.3f} at
 S8["group_threshold_counterfactual"] = GTHR
 
 # %% [markdown]
-# **So what.** Matching the White TPR would need a markedly lower threshold for Asian adults and would raise their
-# false-positive rate by about 40 %, and the threshold itself has a wide interval because it rests on about 40 cases
-# (numbers above). The project therefore keeps one threshold for everybody and treats the Asian gap as a **measurement**
-# problem (section 9) and a **data** problem (too few Asian cases in this cycle), not as something to be patched at the
-# decision step.
+# **So what.** Matching the White TPR would need a markedly lower Asian threshold, raising their false-positive rate by
+# about 40 %, and the threshold itself has a wide interval (about 40 cases). One threshold is kept for everybody; the
+# Asian gap is treated as a **measurement** problem (§8.9) and a **data** problem (too few Asian cases), not patched at
+# the decision step.
+
+# %% [markdown]
+# ## 11 Fairness–performance trade-off
+# **Why.** A mitigation is only worth adopting if it narrows the targeted gap without costing discrimination. Each arm
+# is placed on one plane: ΔAUC against S on E-ALL versus the change in the absolute TPR gap of its target group, with a
+# "no practical change" box of |ΔAUC| < 0.01 and |Δ gap| < 0.05.
 
 # %%
 wh_auc = compare_auc(OOF[("S+WHtR", 1, "lr")], OOF[("S", 1, "lr")], "E-ALL", tag="whtr")
@@ -881,7 +826,7 @@ TO.append({"arm": "S+WHtR", "target": "NH Asian", "d_auc": wh_auc["est"], "d_auc
            "d_abs_eod": r_eod["est"], "d_abs_eod_lo": r_eod["lo"], "d_abs_eod_hi": r_eod["hi"]})
 TO = pd.DataFrame(TO)
 TO["in_no_change_box"] = (TO["d_auc_lo"] > -AUC_SESOI) & (TO["d_auc_hi"] < AUC_SESOI) & (TO["d_abs_eod_lo"] > -GAP) & (TO["d_abs_eod_hi"] < GAP)
-print(TO.round(4).to_string(index=False))
+show(TO, 4)
 TO.to_csv(OUT / "tradeoff.csv", index=False)
 S8["tradeoff"] = TO.round(5).to_dict("records")
 
@@ -904,23 +849,16 @@ f85 = plots.savefig(fig, "S8_tradeoff", caption="F8-5. Fairness-performance plan
 plt.show()
 
 # %% [markdown]
-# **So what.** All four mitigations sit on the vertical line: none costs discrimination (every ΔAUC CI inside ±0.01). None
-# demonstrably helps either: the targeted gaps move by −0.05 to +0.02, every interval crosses zero and is wider than
-# ±0.05, so no arm reaches the "no change" box or a clear improvement. Low-access and insurance reweighing have the
-# largest point gains for their targets; race reweighing and WHtR barely move the NH Asian gap. There is no trade-off to
-# manage because there is no demonstrated benefit to trade against; with the present sample sizes the honest summary is
-# "cheap, harmless, not shown to help".
+# **So what.** All four mitigations cost no discrimination (every ΔAUC CI inside ±0.01), and none demonstrably helps: the
+# targeted gaps move by −0.05 to +0.02 with intervals crossing zero and wider than ±0.05. There is no trade-off to manage
+# because there is no demonstrated benefit; the honest summary is "cheap, harmless, not shown to help".
 
 # %% [markdown]
 # ## 12 Within-group calibration
-# **Why.** Equal sensitivity is one fairness criterion; calibration within groups (a predicted 20 % meaning 20 % in
-# every group) is another, and the two cannot in general hold together when prevalences differ (Chouldechova 2017).
-# Arm S is class-weighted, so its probabilities are inflated by design and only *relative* calibration across groups
-# can be read from it. Absolute calibration is therefore checked on **S−B6a** – arm S without class weights, equivalent
-# in AUC (§7) – which is the calibrated sibling of S. For each group: observed-to-expected ratio O:E (bootstrap CI),
-# calibration-in-the-large (CITL, log-odds offset; 0 = calibrated) and calibration slope (1 = calibrated). Here the
-# bootstrap resamples within groups but *not* within label, so the number of observed cases varies across replicates
-# (a label-stratified bootstrap would fix the numerator of O:E and understate its uncertainty).
+# **Why.** Calibration within groups (a predicted 20 % meaning 20 % in every group) is a second fairness criterion that
+# cannot in general hold together with equal sensitivity when prevalences differ (Chouldechova 2017). Arm S is
+# class-weighted, so absolute calibration is checked on **S−B6a**, its AUC-equivalent sibling without class weights: O:E
+# (group-stratified bootstrap, so the number of cases varies), calibration-in-the-large (CITL) and slope.
 
 # %%
 pC = PM[("S-B6a", 1, "lr")]
@@ -940,7 +878,7 @@ CAL = pd.DataFrame(cal_rows)
 CAL["oe_ci_excludes_1"] = (CAL["oe_lo"] > 1) | (CAL["oe_hi"] < 1)
 slope_all, _, citl_all = ek._calibration(y, pC)
 print(f"S-B6a overall: O:E {y.sum() / pC.sum():.3f}, CITL {citl_all:+.3f}, slope {slope_all:.3f}")
-print(CAL.round(3).to_string(index=False))
+show(CAL, 3)
 CAL.to_csv(OUT / "group_calibration.csv", index=False)
 S8["calibration"] = dict(table=CAL.round(5).to_dict("records"), overall=dict(oe=float(y.sum() / pC.sum()), citl=citl_all, slope=slope_all),
                          groups_oe_ci_excl_1=CAL.loc[CAL["oe_ci_excludes_1"], ["attribute", "group", "oe"]].round(3).to_dict("records"))
@@ -975,21 +913,16 @@ f84 = plots.savefig(fig, "S8_group_calibration", caption="F8-4. Within-group cal
 plt.show()
 
 # %% [markdown]
-# **So what.** The calibrated sibling is well calibrated overall (O:E about 1.02, slope about 0.98) and across insurance,
-# access, income and sex, but **not across race**: it under-predicts for NH Black, NH Asian and Mexican American adults
-# (about 30–40 % more cases than predicted, CIs excluding 1) and over-predicts for NH White adults. This is the price of a
-# race-blind model when prevalence differs by race at the same feature values: the score is an average over groups. It is
-# also the second face of the TPR gap for Asian adults – their scores are too low on both the ranking and the
-# probability scale. Correcting it would require race as an input or a race-specific recalibration, which the project
-# excludes for the same reasons as group thresholds (section 10); it is reported as a limitation, and any use of the
-# probabilities for individual counselling should carry this caveat.
+# **So what.** S−B6a is well calibrated overall (O:E about 1.02, slope about 0.98) and across insurance, access, income and
+# sex, but **not across race**: it under-predicts for NH Black, NH Asian (O:E about 1.35) and Mexican American adults
+# (CIs excluding 1) and over-predicts for NH White adults. A race-blind score averages over groups whose prevalence
+# differs at the same feature values – the second face of the Asian TPR gap. Correcting it would need race as an input
+# or race-specific recalibration, excluded for the reasons of §8.10; it is a limitation for any individual use.
 # %% [markdown]
 # ## 13 Verdicts
-# **Why.** Each locked hypothesis tested in S8 gets one verdict from the locked rules (`governance/hypotheses.md`):
-# `evalkit.verdict` with the SESOI of `config.SESOI` (group TPR gap 0.05, AUC 0.01), sub-claims combined with
-# `evalkit.combine_verdicts`. H3 is a genuine pre-registration (`prior_exposure = none`); P14-b and H4b were written
-# after a descriptive look (`descriptive_seen`). The group-gap flags of sections 3–4 are audit findings, not
-# hypotheses, and are listed separately.
+# **Why.** Each locked hypothesis tested here gets one verdict from its locked rule (`evalkit.verdict` with the SESOI
+# of `config.SESOI`, sub-claims combined by `evalkit.combine_verdicts`). H3 is a genuine pre-registration; P14-b and H4b
+# were written after a descriptive look. The gap flags of §8.3–§8.4 are audit findings, listed separately.
 
 # %%
 sub_eall = ET1[ET1["substantive"] & ET1["verdict_status"].eq("reportable")]
@@ -1015,10 +948,10 @@ SB8 = pd.DataFrame([
          evidence="S5 primary; a decisive contradicting S8 model-level verdict would make it mixed"),
 ])
 assert set(SB8["verdict"]) <= set(C.VERDICTS)
-print(SB8.to_string(index=False, max_colwidth=110))
+show(SB8)
 print("\naudit flags (not hypotheses): substantive reportable gaps")
-print(f"  E-ALL: {[(r.attribute, r.group, round(r.eod, 3), round(r.eod_lo, 3), round(r.eod_hi, 3)) for r in sub_eall.itertuples()]}")
-print(f"  E-SCREEN: {[(r.attribute, r.group, round(r.eod, 3), round(r.eod_lo, 3), round(r.eod_hi, 3)) for r in sub_escr.itertuples()]}")
+for nm_, d_ in (("E-ALL", sub_eall), ("E-SCREEN", sub_escr)):
+    print(f"  {nm_}: " + ("; ".join(f"{r.attribute} {r.group} {r.eod:+.3f} [{r.eod_lo:+.3f}, {r.eod_hi:+.3f}]" for r in d_.itertuples()) or "none"))
 SB8.to_csv(OUT / "scoreboard.csv", index=False)
 S8["scoreboard"] = {h: g.set_index("sub")["verdict"].to_dict() for h, g in SB8.groupby("hyp_id")}
 S8["verdicts"] = {"H3": h3_v, "P14": v_p14, "P14b": v_p14b, "H4b": v_h4b, "H4b_model_level": v_h4b_model}
@@ -1026,30 +959,18 @@ S8["substantive_gaps"] = {"E-ALL": sub_eall[["attribute", "group", "eod", "eod_l
                           "E-SCREEN": sub_escr[["attribute", "group", "eod", "eod_lo", "eod_hi"]].round(4).to_dict("records")}
 
 # %% [markdown]
-# **So what.** None of the S8 experiments produces a decisive verdict, and each "inconclusive" means something specific:
-#
-# * **H3 – inconclusive.** All three predicted orderings point the right way, but the label shifts recall by at most about
-#   0.06 while the CIs are about ±0.07 wide; neither the ordering nor equivalence is established. What *is* clear is that
-#   no label lets non-laboratory features find the undiagnosed as well as the diagnosed.
-# * **P14 – inconclusive.** WHtR is harmless for overall discrimination (a: supported) and moves Asian sensitivity the
-#   predicted way, but only by +0.025, and the PSU-cluster interval neither confirms nor excludes the +0.05 gain (b).
-# * **H4b – supported (S5), not transferred.** The single-feature WHtR advantage for Asian adults is real; inside the
-#   multivariable model, which already contains waist, height and BMI, it shrinks to a few thousandths of AUC.
-#
-# The decisive S8 results are audit findings rather than hypothesis tests: a substantive NH Asian sensitivity gap beyond
-# the permutation null (exploratory), SES-driven income gaps, an access imprint that appears when the model learns from
-# self-report (direction consistent, label contrast not yet significant), and race-level miscalibration of a race-blind
-# model. The screening population is too small for any group verdict except sex, where no gap is established.
-#
-# The wording refers to the FINAL run stored in this notebook (5 × 5 CV, B = 1000, coefficient B = 500). A FAST re-run
-# (5 × 2, B = 100) reproduces the verdicts, but borderline audit items (the E-SCREEN sex gap, the access-label contrast,
-# the income middle band, the WHtR point gain) can cross their thresholds in either direction.
+# **So what.** No fairness experiment produces a decisive verdict, and each "inconclusive" is specific: **H3** – all
+# three orderings point the right way, but the label shifts recall by at most about 0.06 against CIs about ±0.07 wide;
+# **P14** – WHtR is harmless (a) and moves Asian sensitivity the predicted way, but its +0.025 neither confirms nor
+# excludes +0.05 (b); **H4b** – the single-feature WHtR advantage (§5, supported) does not transfer to the model. The
+# decisive results are audit findings: a substantive NH Asian sensitivity gap beyond the permutation null
+# (exploratory), SES-driven income gaps, an access imprint under self-report, and race-level miscalibration of a
+# race-blind model. A FAST re-run can move the borderline audit items across their thresholds.
 
 # %% [markdown]
-# ## 14 Register and storage
-# **Why.** Every decision of this section goes into the decision register with the evidence computed above (no value
-# is typed by hand), and every number into `results/metrics_S8.json` and `results/S8/`, so that S10 and the slides read
-# them instead of re-typing them.
+# ## 14 Outputs
+# **Why.** Every decision goes into the §8 decision register with evidence computed above (no value typed by hand), and
+# every number into `results/metrics_S8.json` and `results/S8/`, from which §10 and the slides read.
 
 # %%
 REGISTER_COLS = ["dr_id", "stage", "date", "type", "finding", "evidence_ref", "evidence_value", "decision",
@@ -1071,9 +992,9 @@ reg = [
          status="decided", check_verdict="PASS", check_note="counts recomputed from the cohort and the stored split"),
     dict(dr_id="DR-S8-02", type="threshold",
          finding="One operating point is needed to compare groups; group thresholds need race at prediction time",
-         evidence_ref="notebooks/sections/07_fairness.py sections 2 and 10; results/metrics_S8.json group_threshold_counterfactual",
+         evidence_ref="§8.2 and §8.10; results/metrics_S8.json group_threshold_counterfactual",
          evidence_value=f"shared threshold {thr_check:.3f} (spec 0.80, E-ALL); Asian threshold for White TPR {t_a:.3f} (CI {GTHR['threshold_asian_ci'][0]:.3f}-{GTHR['threshold_asian_ci'][1]:.3f}), Asian FPR {fpr_overall_a:.3f}->{fpr_a:.3f}",
-         decision="Single threshold at overall specificity 0.80, re-estimated in each bootstrap replicate; no group-specific thresholds (R7.2)",
+         decision="Single threshold at overall specificity 0.80, re-estimated in each bootstrap replicate; no group-specific thresholds (race would be needed at prediction time)",
          alternatives_rejected="ThresholdOptimizer / equalised-odds post-processing (uses race at prediction, levelling down, unstable with ~40 cases)",
          status="decided", check_verdict="PASS", check_note="engine threshold equals evalkit.recall_at_specificity (asserted)"),
     dict(dr_id="DR-S8-03", type="finding",
@@ -1117,9 +1038,8 @@ reg = [
          finding="WHtR raises NH Asian TPR in point estimate only; PSU-cluster interval crosses 0",
          evidence_ref="results/S8/whtr_p14b.csv; figures/S8_whtr_asian_white.png",
          evidence_value=f"Asian dTPR {r_dA['est']:+.3f} (simple {r_dA['simple_lo']:+.3f}, {r_dA['simple_hi']:+.3f}; PSU {r_dA['psu_lo']:+.3f}, {r_dA['psu_hi']:+.3f}); White {r_dW['est']:+.3f}; dAUC {r_auc['est']:+.4f}",
-         decision=f"P14-b {v_p14b}, P14 {v_p14}; WHtR not adopted as a new preparation step; loop L4 not triggered",
-         alternatives_rejected="Adopting WHtR on the point estimate (post hoc)", hyp_id="P14", status="decided", check_verdict="PASS",
-         loop_ref="L4"),
+         decision=f"P14-b {v_p14b}, P14 {v_p14}; WHtR not adopted as a new preparation step; no return to the §6 design",
+         alternatives_rejected="Adopting WHtR on the point estimate (post hoc)", hyp_id="P14", status="decided", check_verdict="PASS"),
     dict(dr_id="DR-S8-10", type="hypothesis_test",
          finding="The single-feature WHtR advantage for Asian adults does not transfer to the multivariable model",
          evidence_ref="results/S8/whtr_p14b.csv", evidence_value=f"model-level dAUC Asian - White {r_h4['est']:+.4f} ({r_h4['lo']:+.4f}, {r_h4['hi']:+.4f})",
@@ -1131,6 +1051,12 @@ reg = [
          evidence_value=f"S-B6a O:E overall {y.sum() / pC.sum():.2f}; groups with CI excluding 1: {cal_race[['group', 'oe']].round(2).to_dict('records')}",
          decision="Reported as a limitation; no race-specific recalibration (same reasons as DR-S8-02)",
          alternatives_rejected="Race-specific recalibration", status="decided", check_verdict="PASS"),
+    dict(dr_id="DR-S8-12", type="tradeoff",
+         finding="No mitigation arm narrows its targeted gap demonstrably; none costs AUC",
+         evidence_ref="results/S8/tradeoff.csv; figures/S8_tradeoff.png",
+         evidence_value="; ".join(f"{r.arm}: dAUC {r.d_auc:+.4f} [{r.d_auc_lo:+.4f}, {r.d_auc_hi:+.4f}], d|gap| {r.d_abs_eod:+.3f} [{r.d_abs_eod_lo:+.3f}, {r.d_abs_eod_hi:+.3f}]" for r in TO.itertuples()),
+         decision="No mitigation adopted; reported as 'cheap, harmless, not shown to help'", alternatives_rejected="Adopting the arm with the best point estimate",
+         status="decided", check_verdict="PASS"),
 ]
 REG8 = pd.DataFrame(reg)
 REG8["stage"], REG8["date"] = "S8", TODAY
@@ -1139,7 +1065,7 @@ for c in REGISTER_COLS:
         REG8[c] = ""
 REG8 = REG8[REGISTER_COLS].fillna("")
 REG8.to_csv(C.GOVERNANCE_DIR / "register" / "S8.csv", index=False, lineterminator="\n")
-print(REG8[["dr_id", "type", "decision"]].to_string(index=False, max_colwidth=110))
+show(REG8[["dr_id", "type", "decision"]])
 
 # %%
 for nm, df_ in {"group_metrics_eall_t1": GT1, "eod_eall_t1": ET1, "group_metrics_escreen_t1": GTs, "eod_escreen_t1": ETs,
