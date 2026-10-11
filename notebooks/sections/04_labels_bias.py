@@ -295,11 +295,9 @@ register("DR-S5-04", "label_semantics",
 #
 # **Why.** If the undiagnosed share differs by insurance, access or race, then `L_self` is a biased label
 # and a model trained on it inherits the bias. The domain is all adults with HbA1c ≥ 6.5 % (n = 721) and the
-# outcome is "not self-reported". Following NCHS presentation standards, proportions get Korn–Graubard intervals
-# with the design-based effective sample size and the NCHS domain df (PSUs containing the domain minus strata
-# containing it). An estimate with n or effective n < 30, an absolute CI width ≥ 0.30, or a CI width > 0.05 with
-# a relative width > 130 % is labelled *exploratory, does not meet NCHS standard*; df < 8 additionally triggers
-# NCHS statistical review.
+# outcome is "not self-reported". Proportions get Korn–Graubard intervals with the NCHS domain df; an estimate
+# with n or effective n < 30, an absolute CI width ≥ 0.30, or a CI width > 0.05 with a relative width > 130 % is
+# labelled *exploratory, does not meet NCHS standard* (Parker et al. 2017); df < 8 also triggers statistical review.
 # The headline quantity is the risk difference (WTPH2YR, delete-one-PSU jackknife) rather than a small-cell
 # proportion. Its df is that of the domain on which the contrast is estimated (both groups together); a
 # conservative check with the smaller group's own df follows.
@@ -506,11 +504,10 @@ register("DR-S5-05", "label_bias",
 # **So what.** Among HbA1c-positive adults, 43.0 % of the uninsured but 19.9 % of the insured do not know their
 # diagnosis: a risk difference of +23.2 pp (6.2, 40.1; df 15), which still excludes zero with the uninsured
 # group's own df of 9 (table above). For no usual place of care (+19.9 pp, −1.6 to 41.5) and NH Asian vs NH
-# White (+15.6 pp, −5.7 to 36.9) the intervals include zero, and all three group proportions are *exploratory*
-# under the NCHS rules. In the DAG-guided models, lacking insurance stays associated with being undiagnosed after
-# age, sex and income (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1); for no usual place the fits disagree
-# (weighted OR 2.5, 0.9–7.1), so that association is suggestive only. `L_self` thus under-counts disease where
-# access is poorer, which is why the target is the union `L_comb` and §8 compares training labels.
+# White (+15.6 pp, −5.7 to 36.9) the intervals include zero; all three group proportions are *exploratory*. In
+# the DAG-guided models, lacking insurance stays associated with being undiagnosed after age, sex and income
+# (OR 2.2 unweighted, 2.9 weighted; both CIs exclude 1); for no usual place the fits disagree (weighted OR 2.5,
+# 0.9–7.1). `L_self` thus under-counts disease where access is poorer, hence the union target `L_comb`.
 
 # %% [markdown]
 # ## 5 BMI as a biased measurement of adiposity in Asian adults
@@ -736,13 +733,12 @@ register("DR-S5-06", "measurement_bias",
 
 # %% [markdown]
 # **So what.** Half of the Asian diabetics (24/47, 51.1 %) have a "normal" BMI below 25, against 7.2 % of White
-# diabetics. The BMI-band prevalences rest on 44–107 Asian adults each and all four fail the NCHS standard, so
-# they are exploratory (the Asian pattern is not even monotone). The robust evidence is the case-based BMI share
-# and discrimination: BMI barely discriminates in Asian adults (AUC 0.573), waist (0.697) and WHtR (0.714) do.
+# diabetics (the BMI-band prevalences rest on 44–107 Asian adults each and are exploratory). BMI barely
+# discriminates in Asian adults (AUC 0.573), while waist (0.697) and WHtR (0.714) do.
 # The paired WHtR − BMI gain is +0.137 in Asian against +0.049 in White adults; the difference, +0.088, excludes
 # zero with person-level and PSU-level resampling (PSU 0.035–0.116, FINAL). A BMI ≥ 25 rule finds 48.9 % of Asian
 # cases (White 92.8 %); the ADA cut-off of 23 for Asian Americans raises this to 72.3 % at a specificity of 35.7 %.
-# With 40–50 Asian cases this is a measurement *signal*, consistent with Araneta et al. (2015); it motivates the
+# With 40–50 Asian cases this is a measurement *signal* (consistent with Araneta et al. 2015) that motivates the
 # pre-registered WHtR arm P14 (§8.9).
 
 # %% [markdown]
@@ -904,8 +900,8 @@ register("DR-S5-08", "missingness",
 
 # %% [markdown]
 # **So what.** HbA1c is missing for 9.3 % of examined NH Black adults versus 4.0 % of NH White adults (weighted
-# difference +4.9 pp, jackknife CI 2.9–6.9), so the label is less often observed in one group. The phlebotomy weights already adjust for blood-draw non-response:
-# prevalence moves from 13.9 % (MEC weight) to 14.0 % (WTPH2YR). Without any assumption on the missing values the
+# difference +4.9 pp, jackknife CI 2.9–6.9). The phlebotomy weights' non-response adjustment moves prevalence only
+# from 13.9 % (MEC weight) to 14.0 % (WTPH2YR). Without any assumption on the missing values the
 # overall `L_comb` prevalence among examined non-pregnant adults lies between 13.9 % and 18.1 % (width 0.042,
 # narrower than the naive 0.049 because missing-HbA1c adults who self-report diabetes are known positives); for
 # NH Black adults the bounds are 21.5–28.4 % (width 0.069) against 12.4–15.9 % for NH White adults. The cohort stays complete-case

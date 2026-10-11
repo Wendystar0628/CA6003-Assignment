@@ -260,14 +260,12 @@ print(f"top-codes in training part: age 80 = {n_age80}, PIR 5 = {n_pir5}")
 S6["B4"] = dict(mnar=mnar.set_index("column").to_dict("index"), n_age_top=n_age80, n_pir_top=n_pir5)
 
 # %% [markdown]
-# **So what.** The picture is uneven. Missing waist circumference is strongly informative (prevalence 29.8 % vs
-# 16.4 % – waist is not measured when the exam is not possible, e.g. in very heavy or immobile people), whereas
-# missing income is almost uninformative for the label (17.4 % vs 16.9 %). An indicator can only exploit the
-# former, so the effect on discrimination is expected to be negligible, and the calibration benefit for people with
-# missing income (hypothesis B4) is now *less* likely than assumed when B4 was drafted. Because this table was seen
-# before the lock, B4 carries `prior_exposure = descriptive_seen`.
-# Top-coding turns "80" into "80 or older" and "5" into "5 or more"; the flags let the model treat the
-# boundary as a category instead of a number.
+# **So what.** Missing waist circumference is strongly informative (prevalence 29.8 % vs 16.4 %; waist is not
+# measured when the exam is not possible), missing income almost not (17.4 % vs 16.9 %). The effect on
+# discrimination is therefore expected to be negligible, and the calibration benefit for people with missing income
+# (hypothesis B4) is less likely than assumed when B4 was drafted; because this table was seen before the lock, B4
+# carries `prior_exposure = descriptive_seen`. The top-code flags let the model treat "80 or older" and "5 or
+# more" as categories instead of numbers.
 
 # %% [markdown]
 # ## 7 B5 representation: skewness, splines, scaling, rare levels
