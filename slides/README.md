@@ -4,13 +4,15 @@
 |---|---|
 | `storyboard.md` | 12-minute plan: slide ids, time budgets, titles, figures, one-line captions, speaker notes, declared numbers, cut order |
 | `deck.md` | Marp slide deck (16:9) that implements the storyboard; one figure per slide, notes in HTML comments |
-| `check_numbers.py` | Verifies every number in both files against `results/S10/numbers_on_slides.csv` |
+| `check_numbers.py` | Verifies every number (titles, captions, notes and footers) in both files against `results/S10/numbers_on_slides.csv` and the sample sizes in `results/metrics_S4.json` / `metrics_S7.json`; checks that footer section marks exist as notebook headings |
+| `make_slide_figures.py` | Draws the slide versions in `slides/figures/` (14 pt or larger, 200 dpi, Okabe-Ito palette) from stored results only; no refitting. Run `.venv/Scripts/python slides/make_slide_figures.py` after any change to `results/` |
+| `figures/` | Slide versions of nine notebook figures plus a one-line caption `.txt` for each |
 
 Presenter assignment is decided by the team and is not planned in these files.
 
 ## Render
 
-Figures are referenced as `../figures/<name>.png`, so keep `deck.md` inside `slides/`.
+Notebook figures are referenced as `../figures/<name>.png` and slide versions as `figures/<name>.png`, so keep `deck.md` inside `slides/`.
 
 **VS Code.** Install the extension "Marp for VS Code", open `slides/deck.md`, use the preview, then the Marp icon in the editor title bar and "Export Slide Deck" (PDF, PPTX or HTML). Presenter notes are the HTML comments under each slide.
 
@@ -23,7 +25,7 @@ npx @marp-team/marp-cli slides/deck.md --pptx --allow-local-files -o slides/deck
 npx @marp-team/marp-cli slides/deck.md --images png --allow-local-files -o slides/png/s.png
 ```
 
-`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (26 slides, 22 figures).
+`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (27 slides, 24 figures).
 
 **Number check** (run before every rehearsal and after any change to results):
 
@@ -40,14 +42,14 @@ Target 11:20, cap 11:40, hard limit 12:00 for the upload.
 | Segment | Window | Budget (s) | Slides |
 |---|---|---|---|
 | V1 Scope and design | 0:00–1:30 | 90 | V0, V1.1 to V1.4 |
-| V2 Cost of naive cleaning | 1:30–2:15 | 45 | V2.1 |
+| V2 Governance and cleaning | 1:30–2:15 | 45 | V2.1 (governance and data quality), V2.2 (cost of naive cleaning) |
 | V3 Leakage gate | 2:15–3:30 | 75 | V3.1, V3.2 |
 | V4 Redundancy and skewness | 3:30–4:30 | 60 | V4.1 to V4.3 |
 | V5 Fallacies | 4:30–6:00 | 90 | V5.1, V5.2 |
 | V6 Label and measurement bias | 6:00–8:30 | 150 | V6.1 to V6.5 |
 | V7 Experiments synthesis | 8:30–10:15 | 105 | V7.1 to V7.5 |
 | V8 Conclusions, limitations, GenAI | 10:15–11:20 | 65 | V8.1 to V8.3 |
-| Total | 0:00–11:20 | 680 | 26 |
+| Total | 0:00–11:20 | 680 | 27 |
 
 Per-slide budgets, with the clock at each slide start, are in `storyboard.md`. Speaker notes are written at about 2.2 words per second, so reading them at a normal pace fits the budget.
 
@@ -70,7 +72,7 @@ Start after content freeze. Rehearsal passes when the total is between 11:00 and
 
 Reserve cuts beyond the process document, only with team agreement: calibration sentence in V6.5 (5 s), robustness slide V7.5 folded into V7.4 (10 s).
 
-Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), minimal versus systematic (V7.2), label bias (V6.1 to V6.4), contributions (V8.3).
+Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), minimal versus systematic (V7.2), label bias (V6.1 to V6.4), governance and data quality (V2.1), contributions (V8.3).
 
 ## To fill in before recording
 
@@ -93,5 +95,6 @@ Rules from the assignment: one video, at most 12 minutes, all members on camera,
 
 ## Known gaps
 
-- Plot text may still be small at slide size on tall figures (`S8_group_tpr`, right panel of `S7_coef_forest`; the S4 clustermap, DAG and log-odds figures were re-rendered with larger fonts, check the render). The slide caption carries the message; the presenter should point at the relevant part, or the figure owner can re-export larger fonts.
-- Numbers not in `numbers_on_slides.csv` are not used on any slide (for example subgroup sizes, the 0.70 and 0.52 TPR of diagnosed and undiagnosed positives, the Asian observed-to-expected ratio of 1.35). Add them to the CSV first if the team wants them shown.
+- The notebook version of `S9_robustness_summary`, `S9_holdout_vs_cv` and the other unchanged figures keeps its original font size; the caption carries the message. The slide version of `S7_coef_forest` shows only the BMI coefficient panel (the 22-coefficient panel is not stored in `results/`), and the V4.1 slide shows variance inflation factors and correlation clusters because the Spearman matrix is not stored either.
+- Numbers outside `numbers_on_slides.csv` and the JSON rows of `check_numbers.py` are not used on any slide. Add them there first if the team wants them shown (for example the count of robustness analyses behind V7.5).
+- Segment windows quoted in `governance/claims.csv` (`video_seg`) are unchanged; only the content of V2 changed (V2.1 governance, V2.2 cleaning).
