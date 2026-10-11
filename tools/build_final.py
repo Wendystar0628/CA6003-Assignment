@@ -79,6 +79,19 @@ SEED_RESULTS = [
     "results/S9/holdout_metrics.csv",        # ... per-arm metrics ...
     "results/S9/holdout_pairs.csv",          # ... and paired differences; FAST displays them, FINAL must reproduce them
 ]
+
+# Section files that hold two stages: the part from the heading `at` onwards becomes its own section `§no title`
+# (same namespace: no new_section() between the parts, the code is unchanged). `head_title` retitles the first part;
+# `head_map` renames headings of the first part (so its single item is N.1, not N.0).
+SPLITS = {
+    "02_profiling.py": dict(at="## 1 XPT read artefact", no=3, title="Data profiling and quality audit (Stage S3)",
+                            head_title="Data provenance, specification and minimisation (Stage S2)",
+                            head_map={"## 0 Provenance, specification and minimisation (Stage S2 checks)":
+                                      "## 1 Provenance, specification and minimisation"},
+                            intro=("This section continues §2 in the same workspace state (the helper functions and result "
+                                   "dictionaries defined there are reused; no `new_section()` in between). It holds the nine audit "
+                                   "items listed at the start of §2 (§3.1–§3.9) and the decision register of Stages S2 and S3.")),
+}
 CODEBOOK_DIR = "data/nhanes_2021_2023/codebooks"
 
 BOOTSTRAP_LINES = [
@@ -394,6 +407,26 @@ def renumber(cells: list, sec_no: int, name: str, preset_idx: set[int] | None = 
         c.source = "\n".join(lines)
 
 
+def split_section(cells: list, no: int, cfg: dict, name: str) -> list[tuple[int, list, bool]]:
+    """Split one section file into two consecutive sections at the markdown heading cfg['at'] (see SPLITS)."""
+    k = next((j for j, c in enumerate(cells) if c.cell_type == "markdown"
+              and any(line.strip().startswith(cfg["at"]) for line in c.source.split("\n"))), None)
+    if k is None:
+        raise SystemExit(f"{name}: split heading {cfg['at']!r} not found")
+    if cfg["no"] != no + 1:
+        raise SystemExit(f"{name}: split section must be §{no + 1}, got §{cfg['no']}")
+    head, tail = cells[:k], cells[k:]
+    lines = head[0].source.split("\n")
+    lines[0] = f"# §{no} {cfg['head_title']}"
+    head[0].source = "\n".join(lines)
+    for c in head:
+        if c.cell_type == "markdown":
+            for old, new in cfg.get("head_map", {}).items():
+                c.source = c.source.replace(old, new)
+    title = v4.new_markdown_cell(f"# §{cfg['no']} {cfg['title']}\n\n{cfg['intro']}")
+    return [(no, head, True), (cfg["no"], [title] + tail, False)]
+
+
 def section_number(cells: list, path: Path) -> tuple[int, str]:
     first = cells[0].source.split("\n")[0]
     m = TITLE_RE.match(first)
@@ -449,8 +482,9 @@ def front_matter(args, n_sections: int, runtime_marker: str) -> list:
         "(rendered here verbatim).\n\n" + genai_table()))
     cells.append(md(
         "## Reading guide\n\n"
-        "- **Structure.** §0 prepares the workspace and checks the environment; §1–§2 state the question, the governance rules and the data audit; "
-        "the later sections follow the data lifecycle (EDA and fallacies, labels and bias, preparation design, experiments, fairness, robustness, synthesis). "
+        "- **Structure.** §0 prepares the workspace and checks the environment; §1 states the question and the governance rules; §2 checks "
+        "provenance, specification and minimisation and §3 audits data quality; §4–§10 follow the data lifecycle (EDA and fallacies, labels "
+        "and bias, preparation design, experiments, fairness, robustness, synthesis). "
         "The appendix holds the merged decision register, the pre-registration text and the references.\n"
         "- **Every analysis step has three parts:** a *Why* paragraph (the question and the method), the code, and a *So what* paragraph "
         "(the concrete numbers that code printed and what they mean). Each number in the text is produced by a code cell and asserted.\n"
@@ -703,23 +737,31 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path]]:
     for i, path in enumerate(section_files):
         cells = strip_bootstrap(load_section(path), path.name)
         no, title = section_number(cells, path)
-        if seen_nos and no <= seen_nos[-1]:
-            print(f"WARN {path.name}: section number §{no} is not greater than the previous §{seen_nos[-1]}")
-        seen_nos.append(no)
         section_sha[path.name] = sha256_text(read_text(path.relative_to(ROOT).as_posix()))
-        renumber(cells, no, path.name, preset_idx={0} if i == 0 else None)
-        for c in cells:
-            c.metadata["tags"] = [f"sec-{no}"] + ([t for t in c.metadata.get("tags", [])])
-        if i == 0:
-            # title + intro markdown, then the generated setup, then the remaining cells
-            k = next((j for j, c in enumerate(cells) if c.cell_type == "code"), len(cells))
-            gen = setup_cells(no)
-            for c in gen:
-                c.metadata["tags"] = [f"sec-{no}"] + c.metadata.get("tags", [])
-            body += cells[:k] + gen + cells[k:]
-        else:
-            start = code("new_section()", tags=[f"sec-{no}", "section-start"])
-            body += [cells[0], start] + cells[1:]
+        parts = [(no, cells, True)]
+        if path.name in SPLITS:
+            parts = split_section(cells, no, SPLITS[path.name], path.name)
+        for no, cells, starts_file in parts:
+            if seen_nos and no != seen_nos[-1] + 1:
+                print(f"WARN {path.name}: section §{no} does not follow §{seen_nos[-1]} (numbering gap or repeat)")
+            seen_nos.append(no)
+            renumber(cells, no, path.name, preset_idx={0} if i == 0 else None)
+            for c in cells:
+                c.metadata["tags"] = [f"sec-{no}"] + ([t for t in c.metadata.get("tags", [])])
+            if i == 0:
+                # title + intro markdown, then the generated setup, then the remaining cells
+                k = next((j for j, c in enumerate(cells) if c.cell_type == "code"), len(cells))
+                gen = setup_cells(no)
+                for c in gen:
+                    c.metadata["tags"] = [f"sec-{no}"] + c.metadata.get("tags", [])
+                body += cells[:k] + gen + cells[k:]
+            elif starts_file:
+                start = code("new_section()", tags=[f"sec-{no}", "section-start"])
+                body += [cells[0], start] + cells[1:]
+            else:                      # second part of a split file: same namespace, no new_section()
+                body += cells
+    if not args.sections and seen_nos != list(range(seen_nos[0], seen_nos[0] + len(seen_nos))):
+        raise SystemExit(f"section numbers are not consecutive: {seen_nos}")
     appendix = appendix_cells(section_files, section_sha)
     for c in appendix:
         c.metadata["tags"] = ["appendix"] + [t for t in c.metadata.get("tags", []) if t != "appendix"]
