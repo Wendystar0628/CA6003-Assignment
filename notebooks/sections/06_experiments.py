@@ -1022,8 +1022,8 @@ S7["posthoc_c_sensitivity"] = dict(table=c_sens.to_dict("records"), unscaled_non
 # **So what (exploratory).** As the penalty is relaxed towards an unpenalised fit the B3 ratio grows several-fold, so
 # the L2 penalty and pruning are partly *substitutes*. The large unscaled ratios (cum+B1/cum+B3; M1/S-linear behind
 # H2b-c) come from fits that hit the iteration limit in every fold, so they are not used to argue for B3. The post-audit
-# check in §9 shows that stopping early shrinks the coefficients and the M1 BMI SD (a converged M1 has a larger SD,
-# 0.355 against 0.301) and adds sign flips; it also shows that scaling alone explains the stability edge of S-linear.
+# check in §9.12 shows that stopping early shrinks the coefficients and the M1 BMI SD (a converged M1 has a larger
+# BMI SD) and adds sign flips; it also shows that scaling alone explains the stability edge of S-linear.
 # The stored SD ratio is therefore not an optimiser-noise inflation.
 
 # %% [markdown]
