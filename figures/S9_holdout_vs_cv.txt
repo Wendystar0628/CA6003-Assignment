@@ -1,0 +1,1 @@
+F9-6. ROC-AUC on the 20 % hold-out (blue; models refitted once on the whole training part, evaluated once after exp-freeze) against the pooled out-of-fold estimate on the training part (grey), with 95 % bootstrap CIs; E-ALL left, E-SCREEN right (about 25 hold-out positives).

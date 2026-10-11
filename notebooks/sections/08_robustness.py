@@ -1319,6 +1319,30 @@ else:
     S9["holdout"] = dict(status=GATE_STATUS)
 
 # %% [markdown]
+# **So what.** The one-shot hold-out (1,146 adults, 194 L_comb positives; E-SCREEN 977 adults, 25 positives; SHA-256
+# verified and logged) confirms the cross-validated picture and does not change a single verdict.
+# * **No optimism.** None of the 20 arm × population rows is more than 2 SE below its CV estimate (0 flags). On E-ALL
+#   every model scores slightly *higher* on the hold-out than in CV (+0.45 to +1.55 SE; S Tier 1 0.851 [0.823, 0.878]
+#   vs CV 0.836, M1 0.848 vs 0.828). The unfitted integer ADA-lite score is also 0.018 higher, so most of this is
+#   the hold-out sample being slightly easier, not extra training rows. On E-SCREEN the gaps run from −0.39 to +1.14 SE,
+#   and with 25 positives each interval is about ±0.08 wide.
+# * **Headline contrast.** S − M1 on the hold-out is +0.0035 [−0.0070, +0.0138] on E-ALL (Tier 2 +0.0095 [−0.0010,
+#   +0.0197]) and −0.0053 [−0.0289, +0.0159] on E-SCREEN: *inconclusive* everywhere, as in CV (+0.0079 and +0.0085).
+#   The hold-out does not license calling S "better" or "equivalent".
+# * **Other contrasts.** Removing the leaky items (M1 − M0) costs −0.117 [−0.145, −0.092] on E-ALL (*supported*,
+#   lower by at least 0.05) but only −0.037 [−0.117, +0.047] on E-SCREEN (*inconclusive*). S vs the ADA-lite points score
+#   on E-SCREEN is +0.029 [−0.037, +0.098] (*inconclusive*). Dropping the care-contact items costs −0.010 on E-ALL
+#   but not on E-SCREEN (+0.018), the same pattern as the leak hunt.
+# * **Calibration and thresholds.** M1 is close to calibrated on E-ALL (slope 1.07, CITL 0.11, Brier 0.107). S ranks as
+#   well but over-predicts by design (balanced class weights: CITL −1.72, Brier 0.171), so its probabilities are not
+#   risks. On E-SCREEN every model over-predicts (CITL M1 −1.96, BL-ADAlite-LR −1.98, S −3.81), because all of them
+#   were fitted to the E-ALL prevalence; calibration plots show this as curves well below the diagonal. At the training-derived specificity-0.80 thresholds, the fitted models reach a hold-out specificity of 0.80–0.83, and
+#   recall is 0.67 (M1) and 0.70 (S) on E-ALL but 0.48 for both (12 of 25) on E-SCREEN.
+#
+# Nothing was re-tuned after these numbers were seen. A re-execution of this notebook must reproduce them exactly
+# (asserted against `results/S9/holdout_metrics.csv`).
+
+# %% [markdown]
 # ## 12 Storage
 # **Why.** S10 (claims and robustness grades) and S11 (notebook, slides) read every number from stored artefacts:
 # `results/metrics_S9.json`, the tables in `results/S9/`, the F9 figures and the S9 decision-register fragment

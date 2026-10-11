@@ -1,0 +1,36 @@
+{
+  "first_run_utc": "2026-10-11T05:35:17+00:00",
+  "last_run_utc": "2026-10-11T05:35:17+00:00",
+  "n_executions": 1,
+  "sha256_test_seqn": "616fd0590bec7b9256cd9704f62dfcd147f31d83a56b1f6969e1d613010659c3",
+  "n_test": 1146,
+  "exp_freeze_commit": "37a2387af1b6bf7bf3ed3aa4b192e5f817e5c738",
+  "head_at_first_run": "9691c8c6f8c78bcae329542cc922662beec3d042",
+  "arms": [
+    "BL0 T1",
+    "BL-ADAlite T1",
+    "BL-ADAlite-LR T1",
+    "M0 T1",
+    "M1 T1",
+    "S T1",
+    "T1-minus-care T1",
+    "M0 T2",
+    "M1 T2",
+    "S T2"
+  ],
+  "threshold_rule": "specificity 0.80 on training-part predictions of the refitted model",
+  "nb_mode_first_run": "FINAL",
+  "frozen": {
+    "C0": 0.1,
+    "folds_hash": "0d20f8f706ebf1e1103d23a4326e6d1a8cf0632c2a88417aac52cc8add4303ce",
+    "holdout_sha256": "616fd0590bec7b9256cd9704f62dfcd147f31d83a56b1f6969e1d613010659c3"
+  },
+  "gate": {
+    "FINAL mode": true,
+    "exp-freeze tag exists": true,
+    "C0 = frozen": true,
+    "folds_hash = frozen": true,
+    "holdout_sha256 = frozen": true,
+    "modelling sources unchanged since tag (5 files)": true
+  }
+}
