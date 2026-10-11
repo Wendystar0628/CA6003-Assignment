@@ -1,8 +1,8 @@
 # %% [markdown]
-# # §6 Preparation Design (Stage S6)
+# # §6 Preparation design
 #
-# This section turns the findings of S3–S5 into **fourteen switchable preparation steps** (P01–P14),
-# groups them into **six reporting blocks** (B1–B6) and fixes the **arms** that S7 compares:
+# This section turns the findings of §3–§5 into **fourteen switchable preparation steps** (P01–P14),
+# groups them into **six reporting blocks** (B1–B6) and fixes the **arms** that §7 compares:
 #
 # * **M0** – the naive analyst: every column except id/design/label, blanket recode of 7/9/77/99/…,
 #   median imputation, one-hot encoding, logistic regression. Leakage included.
@@ -10,11 +10,7 @@
 # * **S** – all steps on (P14 WHtR stays a separate arm).
 #
 # The headline "minimal vs systematic" comparison is **M1 vs S** (same model); **M0 → M1 is the
-# leak gate**. The pre-registered hypotheses for the blocks are locked here, before any ablation.
-#
-# Contents: 1 inputs · 2 step catalogue · 3 B1 integrity · 4 B2 admissibility · 5 B3 redundancy ·
-# 6 B4 missingness · 7 B5 representation · 8 B6 weights · 9 arms · 10 pipeline assertions ·
-# 11 hypotheses and lock · 12 decisions and storage
+# leak gate**. The block hypotheses are locked here (§6.11), before any ablation.
 
 # %%
 import sys, pathlib
@@ -28,6 +24,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
+from IPython.display import display
+import textwrap
 
 from src import nhanes_io as io, labels as L, prep as P, evalkit as ek
 
@@ -41,9 +39,9 @@ S6 = {}
 # **Why.** Every preparation decision must happen *inside* the model pipeline so that it is refitted in
 # each training fold. The pipeline therefore receives the **raw** cohort (XPT artefact not repaired,
 # no sentinel recode) and the naive column set. The frozen evaluation label `L_comb` comes from the
-# per-variable cohort (S5). Descriptive design statistics below use the **training part** only: the
+# per-variable cohort (§5). Descriptive design statistics below use the **training part** only: the
 # 20 % hold-out (label × race stratified, `evalkit.make_holdout`, created once and persisted) is not
-# looked at until S9.
+# looked at until the one-shot evaluation in §9.11.
 
 # %%
 raw = P.raw_cohort()
@@ -65,7 +63,7 @@ S6["inputs"] = dict(n_cohort=len(raw), n_train=len(train_idx), n_holdout=len(tes
 # **So what.** A naive analyst hands the model 52 (Tier 1) or 54 (Tier 2) columns, and the role table shows
 # what that includes: leakage items (glucose, treatment, age at diagnosis, DIQ160/DIQ180),
 # audit-only variables (race, insurance, usual place of care), side and optional variables. Only the rows
-# with admissibility T1/T2 pass the S1 availability rule; everything else is a trap that M0 keeps on
+# with admissibility T1/T2 pass the availability rule (§1.3); everything else is a trap that M0 keeps on
 # purpose.
 
 # %% [markdown]
@@ -85,45 +83,45 @@ sk_bmi = sk4.query("variable == 'BMXBMI' and subsample == 'cohort'")["skew_raw"]
 sk_tg = sk4[(sk4["variable"] == "LBXTLG") & sk4["subsample"].str.startswith("fasting")]["skew_raw"].iloc[0]
 gain = {g: auc5[f"NH {g}|WHtR \u2212 BMI (paired)"]["auc"] for g in ("Asian", "White")}
 ev = {
-    "P04": f"S4: 6 BP readings VIF {vbp.min():.1f}-{vbp.max():.1f} vs means {vbm.max():.1f}; PA skip pattern",
-    "P05": f"S4: weight VIF {vraw['BMXWT']:.1f}, BMI {vraw['BMXBMI']:.1f}; keep BMI + waist",
+    "P04": f"§4.9: 6 BP readings VIF {vbp.min():.1f}-{vbp.max():.1f} vs means {vbm.max():.1f}; PA skip pattern",
+    "P05": f"§4.9: weight VIF {vraw['BMXWT']:.1f}, BMI {vraw['BMXBMI']:.1f}; keep BMI + waist",
     "P06": f"cohort: PIR missing {raw['INDFMPIR'].isna().mean():.1%}; MNAR-suspect list",
-    "P08": f"S4: |skew| > 1 (BMI {sk_bmi:.2f}, TG {sk_tg:.2f} fasting)",
+    "P08": f"§4.10: |skew| > 1 (BMI {sk_bmi:.2f}, TG {sk_tg:.2f} fasting)",
     "P11": f"prevalence {clean['L_comb'].mean():.1%}; balanced weights",
-    "P13": "S4: RCS LR chi2 " + ", ".join(f"{lab} {lin4.loc[v, 'chi2']:.1f}" for v, lab in
+    "P13": "§4.11: RCS LR chi2 " + ", ".join(f"{lab} {lin4.loc[v, 'chi2']:.1f}" for v, lab in
                                            (("RIDAGEYR", "age"), ("BMXBMI", "BMI"), ("LBDHDD", "HDL"), ("LBXTC", "TC"))),
-    "P14": f"S5: WHtR-BMI AUC gain Asian {gain['Asian']:+.3f} vs White {gain['White']:+.3f}",
+    "P14": f"§5.5: WHtR-BMI AUC gain Asian {gain['Asian']:+.3f} vs White {gain['White']:+.3f}",
 }
 catalogue = pd.DataFrame([
-    ("P01", "xpt_zero_fix", "B1", "stateless", "S3: zero stored as 5.4e-79; mask() keeps NaN"),
-    ("P02", "sentinel_by_var", "B1", "stateless", "S3: blanket recode wipes valid values; off = blanket (M0)"),
-    ("P03", "admissibility", "B2", "stateless", "S1 availability rule; spec column `admissible`"),
+    ("P01", "xpt_zero_fix", "B1", "stateless", "§3.1: zero stored as 5.4e-79; mask() keeps NaN"),
+    ("P02", "sentinel_by_var", "B1", "stateless", "§3.4: blanket recode wipes valid values; off = blanket (M0)"),
+    ("P03", "admissibility", "B2", "stateless", "§1.3 availability rule; spec column `admissible`"),
     ("P04", "aggregate", "B3", "stateless", ev["P04"]),
     ("P05", "prune", "B3", "fitted in-fold (X)", ev["P05"]),
     ("P06", "missing_indicator", "B4", "stateless", ev["P06"]),
-    ("P07", "topcode_flag", "B4", "stateless", "S2/S3: age top-coded 80, PIR 5"),
+    ("P07", "topcode_flag", "B4", "stateless", "§3.6: age top-coded 80, PIR 5"),
     ("P08", "yeo_johnson", "B5", "fitted in-fold (X)", ev["P08"]),
     ("P09", "scale", "B5", "fitted in-fold (X)", "L2 penalty is scale dependent; unscaled fits fail to converge"),
     ("P10", "rare_categories", "B5", "fitted in-fold (X)", "levels < 2 % grouped as infrequent"),
     ("P11", "class_weight", "B6a", "estimator", ev["P11"]),
-    ("P12", "survey_weight", "B6b", "estimator", "S4: WTPH2YR for HbA1c cohort; mean 1"),
+    ("P12", "survey_weight", "B6b", "estimator", "§4.1: WTPH2YR for HbA1c cohort; mean 1"),
     ("P13", "splines", "B5", "fitted in-fold (X)", ev["P13"]),
     ("P14", "whtr", "(arm)", "stateless", ev["P14"]),
 ], columns=["step", "name", "block", "learns from", "evidence"])
 assert list(catalogue["step"]) == list(P.STEPS)
 assert all(P.STEP_BLOCK[s] == b or b == "(arm)" for s, b in zip(catalogue["step"], catalogue["block"]))
 catalogue.to_csv(OUT / "step_catalogue.csv", index=False)
-print(catalogue.to_string(index=False))
+display(catalogue)
 
 # %% [markdown]
 # **So what.** Seven steps are stateless, five are fitted on the training fold's **features** only, and two act
-# on the estimator. No step uses the label – section 10 tests this with a random label. Two steps are
+# on the estimator. No step uses the label – §6.10 tests this with a random label. Two steps are
 # *switches* rather than on/off toggles because M0 already does something at that point: P02 (off = blanket
 # recode) and P10 (off = plain one-hot).
 
 # %% [markdown]
 # ## 3 B1 integrity: XPT zeros and sentinel codes
-# **Why.** S3 showed that the XPT reader turns stored zeros into 5.4e-79 and that a blanket
+# **Why.** §3.1 and §3.4 showed that the XPT reader turns stored zeros into 5.4e-79 and that a blanket
 # `replace({7, 9, 77, 99, ...}, NaN)` destroys valid measurements. The naive analyst also builds the
 # *label* from recoded data, so HbA1c values of exactly 7.0 % and 9.0 % disappear before `L_comb` is formed.
 
@@ -156,18 +154,17 @@ S6["B1"] = dict(n_artefact_cells_train_t1=n_artefact, artefact_by_column=art[art
 
 # %% [markdown]
 # **So what.** The zero artefact sits almost entirely in the activity frequencies and the income ratio. As a number it is
-# harmless (5.4e-79 ≈ 0), but every *equality test* on zero fails: without P01 the skip-pattern rule of P04
-# ("0 sessions → 0 minutes") silently turns the non-exercisers printed above into missing values. P01 is a
-# fidelity fix whose cost only shows downstream. The blanket recode is not harmless: it deletes valid
-# answers (e.g. 7 sessions of activity per week, 77-year-olds, a diastolic pressure of 77) and costs the
-# naive label 29 HbA1c-based positives, of which 6 are not rescued by self-report. These numbers agree with the
-# profiling in §3 (1,496 wiped cells were counted there on 20 continuous candidates in the whole cohort; here the count
-# refers to the model's feature frame in the training part). Expected model effect: small (hypothesis B1).
+# harmless, but every *equality test* on zero fails: without P01 the skip-pattern rule of P04 ("0 sessions →
+# 0 minutes") silently turns the non-exercisers printed above into missing values. The blanket recode deletes valid
+# answers (7 activity sessions per week, 77-year-olds, a diastolic pressure of 77) and costs the naive label 29
+# HbA1c-based positives, 6 of them not rescued by self-report. This agrees with §3.4 (1,496 cells there counts 20
+# continuous candidates in the whole cohort; here the model's feature frame in the training part). Expected model
+# effect: small (hypothesis B1).
 
 # %% [markdown]
 # ## 4 B2 admissibility (availability rule)
 # **Why.** The use case is screening *before any glucose test*. A feature is admissible only if it exists at
-# that moment (S1). The rule is applied from the spec, not by judging variables one at a time.
+# that moment (§1.3). The rule is applied from the spec, not by judging variables one at a time.
 
 # %%
 rows = []
@@ -185,7 +182,8 @@ assert not missing_from_rule, missing_from_rule
 assert set(P.P03_EXCLUDED) - set(X1.columns) == {"LBXGH"}  # LBXGH defines the label, never a feature
 assert (p03["admissible"] == "N").all()
 kept_t1 = sorted(P.Admissibility(1).transform(X1).columns)
-print(f"P03 removes {len(excl_t1)} of {X1.shape[1]} Tier-1 columns; kept ({len(kept_t1)}): {kept_t1}")
+print(f"P03 removes {len(excl_t1)} of {X1.shape[1]} Tier-1 columns; kept ({len(kept_t1)}):")
+print(textwrap.fill(", ".join(kept_t1), width=110, initial_indent="  ", subsequent_indent="  "))
 print(p03[p03["tier"] == 1].groupby("role")["column"].apply(list).to_string())
 S6["B2"] = dict(n_excluded_t1=len(excl_t1), n_kept_t1=len(kept_t1), kept_t1=kept_t1,
                 excluded_t1=sorted(excl_t1))
@@ -193,14 +191,14 @@ S6["B2"] = dict(n_excluded_t1=len(excl_t1), n_kept_t1=len(kept_t1), kept_t1=kept
 # %% [markdown]
 # **So what.** P03 removes every column with admissibility `N`: the glucose test, treatment and diagnosis
 # history (leakage), race, insurance and usual place of care (audit-only by design), and optional/side
-# variables outside the frozen T1 list. The explicit S1 list (LBXGLU, DIQ050, DIQ070, DID040, DID060,
+# variables outside the frozen T1 list. The explicit list of §1.3 (LBXGLU, DIQ050, DIQ070, DID040, DID060,
 # DIQ160, DIQ180, RIDRETH3, HIQ011, HUQ030) is contained in it (asserted). BPQ020 (told high blood pressure) and
 # BPQ080 (told high cholesterol) pass the timing rule but are traces of earlier care; the **T1-minus-care** arm
-# removes them so S7 can measure how much of the signal is "being known to the health system".
+# removes them so §7 can measure how much of the signal is "being known to the health system".
 
 # %% [markdown]
 # ## 5 B3 redundancy: aggregation and pruning
-# **Why.** Six blood-pressure readings measure the same thing (VIF 8.8–11.7, S4), and weight, height and BMI
+# **Why.** Six blood-pressure readings measure the same thing (VIF 8.8–11.7, §4.9), and weight, height and BMI
 # are linked by a formula (VIF ≈ 96). The physical-activity block has a skip pattern: people who report
 # zero sessions are never asked how long a session lasts, so their duration is *structurally* missing – median
 # imputation would give a non-exerciser the median session length.
@@ -224,7 +222,7 @@ print(f"PA skip pattern: {skip_mod:,} with 0 moderate sessions and no duration (
 print(f"weekly moderate minutes: median {agg['pa_mod_min_wk'].median():.0f}, share 0 = {agg['pa_mod_min_wk'].eq(0).mean():.1%}")
 print(f"6 raw BP readings: VIF {raw6.min():.1f}-{raw6.max():.1f}")
 print(f"P05 drops: {pr.dropped_}")
-print(vif_tab.to_string())
+display(vif_tab)
 S6["B3"] = dict(pa_skip_moderate=skip_mod, pa_skip_vigorous=skip_vig, pa_naive_median_minutes=med_mod,
                 vif_bp_raw_min=float(raw6.min()), vif_bp_raw_max=float(raw6.max()),
                 p05_dropped={c: v for c, v in pr.dropped_},
@@ -266,14 +264,14 @@ S6["B4"] = dict(mnar=mnar.set_index("column").to_dict("index"), n_age_top=n_age8
 # 16.4 % – waist is not measured when the exam is not possible, e.g. in very heavy or immobile people), whereas
 # missing income is almost uninformative for the label (17.4 % vs 16.9 %). An indicator can only exploit the
 # former, so the effect on discrimination is expected to be negligible, and the calibration benefit for people with
-# missing income (hypothesis B4) is now *less* likely than the design phase assumed. Because this table was seen
+# missing income (hypothesis B4) is now *less* likely than assumed when B4 was drafted. Because this table was seen
 # before the lock, B4 carries `prior_exposure = descriptive_seen`.
 # Top-coding turns "80" into "80 or older" and "5" into "5 or more"; the flags let the model treat the
 # boundary as a category instead of a number.
 
 # %% [markdown]
 # ## 7 B5 representation: skewness, splines, scaling, rare levels
-# **Why.** S4 found monotone but curved relations for age and BMI (and HDL/TC in Tier 2) – a linear term
+# **Why.** §4.11 found monotone but curved relations for age and BMI (and HDL/TC in Tier 2) – a linear term
 # would be misspecified – and right-skewed variables. Splines keep the model a GLM; Yeo-Johnson is fitted in-fold
 # only on columns with |skew| > 1 that are not already splined.
 
@@ -292,25 +290,27 @@ rare_nop4 = {c: [f"{k} ({v:.1%})" for k, v in pre_nop4[c].value_counts(normalize
 rare_nop4 = {c: v for c, v in rare_nop4.items() if v}
 print("training-fold skewness (Tier 2, before P08):"); print(skew.to_string())
 print(f"P08 transforms {yj.cols_}; skewness after: { {k: round(v, 2) for k, v in skew_after.items()} }")
-print(f"P13 splines: {dict(P.SPLINE_COLS)} with {C.SPLINE_KW}")
-print(f"P10 levels below {P.RARE_MIN_FREQ:.0%} with P04 on: {rare}; with P04 off: {rare_nop4}")
+print("P13 splines:", "; ".join(f"Tier {k}: {', '.join(v)}" for k, v in P.SPLINE_COLS.items()))
+print("    settings:", ", ".join(f"{k}={v}" for k, v in C.SPLINE_KW.items()))
+print(f"P10 levels below {P.RARE_MIN_FREQ:.0%} with P04 on: {rare or 'none'}")
+print(f"P10 levels below {P.RARE_MIN_FREQ:.0%} with P04 off:")
+for c_, v_ in rare_nop4.items():
+    print(textwrap.fill(f"{c_}: {', '.join(v_)}", width=110, initial_indent="  ", subsequent_indent="    "))
 S6["B5"] = dict(skew=skew.to_dict(), yj_columns=yj.cols_, skew_after_yj=skew_after,
                 spline_cols={k: list(v) for k, v in P.SPLINE_COLS.items()}, spline_kw=C.SPLINE_KW, rare_levels=rare, rare_levels_without_p04=rare_nop4)
 
 # %% [markdown]
 # **So what.** Only the activity minutes and hip circumference exceed |skew| = 1 once BMI is splined; Yeo-Johnson
-# brings them close to symmetric. Note that in the *S-linear* arm BMI is not splined and is therefore
-# Yeo-Johnson transformed (skew 1.22 in S4). Splines add 5 basis columns per variable (B-spline basis, not a
-# restricted cubic spline). With P04 on, no admissible category falls below 2 % in the training part, so P10 is
-# inert in S and acts only as a guard against unseen levels in small folds. This depends on P04: without it the
-# activity *unit* columns (day / week / month / year) stay in the model and their rare levels (printed) are grouped by
-# P10 – so P10 matters only in arms that switch P04 off. For trees P08/P09 are monotone per column and must leave predictions unchanged (section 10).
+# brings them close to symmetric (in the *S-linear* arm BMI, skew 1.22 in §4.10, is transformed instead). Splines
+# add 5 B-spline basis columns per variable. With P04 on, no admissible category falls below 2 %, so P10 is inert
+# in S; without P04 the activity *unit* columns keep rare levels (printed) that P10 groups, so P10 matters only in
+# arms that switch P04 off. For trees, P08/P09 are monotone per column and must leave predictions unchanged (§6.10).
 
 # %% [markdown]
 # ## 8 B6 class and survey weights
 # **Why.** `class_weight='balanced'` (P11) trades calibration for sensitivity at the default threshold; survey
 # weights (P12, WTPH2YR, mean 1) make the fit target the population rather than the sample (60+ are
-# over-represented: 46.2 % vs 31.4 % weighted, S5).
+# over-represented: 46.2 % vs 31.4 % weighted, §1.10).
 
 # %%
 w = P.survey_weights(raw_tr)
@@ -339,7 +339,7 @@ for a, cfg in P.ARMS.items():
     for t, X in ((1, X1_tr), (2, X2_tr)):
         nfeat[(a, t)] = Pipeline(P.preprocessor_steps(cfg, t)).fit_transform(X).shape[1]
 nfeat = pd.Series(nfeat).unstack().rename(columns={1: "n_features_T1", 2: "n_features_T2"})
-print(arms.join(nfeat).to_string())
+display(arms.join(nfeat))
 S6["arms"] = {a: {**{k: bool(v) for k, v in c.items()}, "n_features_t1": int(nfeat.loc[a, "n_features_T1"]),
                   "n_features_t2": int(nfeat.loc[a, "n_features_T2"])} for a, c in P.ARMS.items()}
 
@@ -358,7 +358,7 @@ plt.show()
 # **So what.** M0 feeds 88 columns (Tier 1) to the model, M1 46 and S 42. S is *narrower* than M1 although it adds
 # spline bases, indicators and flags, because aggregation and pruning remove redundant columns. Every arm
 # differs from its comparator in exactly the steps named in its label, which is what makes the paired
-# differences in S7 interpretable.
+# differences in §7 interpretable.
 
 # %% [markdown]
 # ## 10 Pipeline assertions
@@ -404,7 +404,7 @@ S6["assertions"] = checks
 
 # %% [markdown]
 # **So what.** All four checks pass: (a) the switch machinery with everything off reproduces the naive M0 to machine
-# precision (max |Δp| printed), so "M0" in S7 is the naive analyst and not an artefact of our code; (b) the tree
+# precision (max |Δp| printed), so "M0" in §7 is the naive analyst and not an artefact of our code; (b) the tree
 # arm is exactly invariant to P08/P09, as monotone transforms must be; (c) fitting the preparation on a permuted
 # label gives bit-identical design matrices for S, S+WHtR and M1 – no step peeks at y; (d) disabled toggles
 # return their input unchanged.
@@ -428,7 +428,7 @@ blocks_h = hyp[hyp["hyp_id"].str.match(r"^(B\d|P14)")]
 assert set(blocks_h["hyp_id"]) >= {"B1", "B2", "B2t", "B3", "B4", "B5", "B6a", "B6b", "P14"}
 assert blocks_h["prior_exposure"].str.match(r"^(none|analysis_seen|descriptive_seen|prototype_seen)").all()
 _show = blocks_h.assign(prior=blocks_h["prior_exposure"].str.split(" ").str[0], sesoi=blocks_h["sesoi"].str[:40])
-print(_show[["hyp_id", "direction", "sesoi", "prior"]].to_string(index=False))
+display(_show[["hyp_id", "direction", "sesoi", "prior"]])
 print("\nprior_exposure counts (all hypotheses):", hyp["prior_exposure"].str.split(" ").str[0].value_counts().to_dict())
 
 sha_now = hashlib.sha256(HYP.read_bytes()).hexdigest()
@@ -469,16 +469,19 @@ S6["hypotheses"] = dict(n_total=len(hyp), block_ids=list(blocks_h["hyp_id"]), sh
 
 # %% [markdown]
 # **So what.** Nine block-level hypotheses join the eight scope hypotheses. Only B2t, B6a and B6b are genuine
-# pre-registrations (`none`); B1 rests on damage counted in S3/S6, B2 and B3 on an earlier pilot analysis, B4 on the
-# missingness table of section 6, B5 on the S4 linearity tests and P14 on the S5 single-feature AUCs – all
-# disclosed. The lock commit, its timestamp and the SHA-256 recomputed from that commit are printed above;
-# S7 results are committed only after it.
+# pre-registrations (`none`); B1 rests on damage counted in §3.4/§6.3, B2 and B3 on an earlier pilot analysis, B4
+# on the missingness table of §6.6, B5 on the linearity tests of §4.11 and P14 on the single-feature AUCs of §5.5 –
+# all disclosed. The lock commit, its timestamp and the SHA-256 recomputed from that commit are printed above; §7
+# results were committed only after it.
 
 # %% [markdown]
-# ## 12 Decisions and storage
+# ## 12 Outputs
+#
+# Decisions of this section (`governance/register/S6.csv`) and the stored results (`results/metrics_S6.json`,
+# `results/S6/`).
 
 # %%
 reg = pd.read_csv(C.GOVERNANCE_DIR / "register" / "S6.csv")
-print(reg[["dr_id", "type", "decision"]].to_string(index=False, max_colwidth=110))
+display(reg[["dr_id", "type", "decision"]])
 R.save_section("S6", S6)
 print("saved results/metrics_S6.json")
