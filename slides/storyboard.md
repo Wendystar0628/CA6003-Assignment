@@ -24,9 +24,9 @@ Models are used as measuring instruments. Each finding is something the instrume
 | V4 Redundancy and skewness | 3:30–4:30 | 60 | 3 | RB3 |
 | V5 Fallacies | 4:30–6:00 | 90 | 2 | RB3 |
 | V6 Label and measurement bias | 6:00–8:30 | 150 | 5 | RB4 |
-| V7 Experiments synthesis | 8:30–10:15 | 105 | 5 | RB4, HR1, HR2, HR3, HR4 |
+| V7 Experiments synthesis | 8:30–10:15 | 105 | 4 | RB4, HR1, HR2, HR3, HR4 |
 | V8 Conclusions, limitations, ethics, GenAI | 10:15–11:20 | 65 | 3 | RB2, HR5 |
-| Total | 0:00–11:20 | 680 | 27 | cap 11:40 leaves a 20 s reserve |
+| Total | 0:00–11:20 | 680 | 26 | cap 11:40 leaves a 20 s reserve |
 
 Speaker notes are sized at about 2.2 words per second, so a slide's notes fit its budget.
 
@@ -41,7 +41,7 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **takeaway**: Basic machine-learning models as measuring instruments on NHANES 2021–23 adult diabetes data.
 - **notes**: We treat basic machine-learning models as measuring instruments. The question is what they reveal about the data, not how well they score.
 - **numbers used**: none
-- **footer**: CA6003 Data Governance · Group [N] · NHANES 2021–23
+- **footer**: CA6003 Data Governance · [TEAM TO FILL: group no.] · NHANES 2021–23
 - **claims**: none
 
 ### V1.1 · Cohort Funnel
@@ -109,7 +109,7 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **time**: 45 s (2:15–3:00)
 - **figure**: `figures/S7_leak_gate.png`
 - **takeaway**: Removing leakage drops E-ALL AUC from 0.961 to 0.828.
-- **notes**: The naive model M0 reaches AUC 0.961 on all adults. Remove treatment and skip-logic items and M1 falls to 0.828, a drop of 0.131, interval minus 0.148 to minus 0.114. That excess was leakage, not insight. Among the undiagnosed the drop is smaller, minus 0.072.
+- **notes**: The naive model M0 reaches AUC 0.961 on all adults. Remove inadmissible items (treatment, diagnosis history, glucose testing) and M1 falls to 0.828, a drop of 0.131, interval minus 0.148 to minus 0.114. That excess was leakage, not insight. Among the undiagnosed the drop is smaller, minus 0.072.
 - **numbers used**: V3 · AUC M0 E-ALL = 0.961 | V3 · AUC M1 E-ALL = 0.828 | V3 · leak gate dAUC = -0.131 | V3 · leak gate CI low = -0.148 | V3 · leak gate CI high = -0.114 | V3 · leak gate dAUC E-SCREEN = -0.072 | V7 · training part adults = 4,584 | V7 · training part E-SCREEN positives = 127
 - **footer**: n = 4,584 (E-ALL), 127 positives (E-SCREEN) · paired CV, unweighted · §7.5
 - **claims**: C01
@@ -236,7 +236,7 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 
 ### V7.2 · Minimal versus Systematic Preparation
 - **type**: figure
-- **time**: 35 s (8:40–9:15)
+- **time**: 40 s (8:40–9:20)
 - **figure**: `slides/figures/S10_scoreboard_forest.png`
 - **takeaway**: S minus M1 ΔAUC +0.008 [+0.000, +0.016]; without class weights +0.007, Brier -0.002; inconclusive.
 - **notes**: Minimal M1 against systematic S, same model. The AUC gain is plus 0.008, interval 0.000 to 0.016, minimum detectable difference 0.011, so inconclusive. Class weights alone worsen Brier by 0.076. Without them S gains 0.007 AUC and improves Brier by 0.002. M1 hit its iteration limit in 25 folds, but converged or scaled variants keep the verdict.
@@ -246,7 +246,7 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 
 ### V7.3 · Recognition versus Screening
 - **type**: figure
-- **time**: 40 s (9:15–9:55)
+- **time**: 35 s (9:20–9:55)
 - **figure**: `slides/figures/S10_recognition_vs_screening.png`
 - **takeaway**: Whole-sample AUC overstates screening, 0.836 on E-ALL against 0.781 on E-SCREEN (gap +0.055).
 - **notes**: Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on the undiagnosed, a gap of 0.055. Whole-sample AUC measures recognition. Removing care-trace items lowers E-ALL by 0.016 yet raises E-SCREEN by 0.019. Against ADA-lite, S leads by 0.055 in cross-validation but only 0.029 on the hold-out, interval minus 0.037 to 0.098, inconclusive.
@@ -254,25 +254,15 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **footer**: n = 4,584 / 127 positives · paired CV, unweighted · §7.9, §9.11, §10.6
 - **claims**: C07, C08, C09
 
-### V7.4 · Hold-Out Confirmation
+### V7.4 · Hold-Out and Robustness
 - **type**: figure
-- **time**: 10 s (9:55–10:05)
+- **time**: 20 s (9:55–10:15)
 - **figure**: `figures/S9_holdout_vs_cv.png`
-- **takeaway**: Hold-out shows cross-validated AUCs carry over, arm S 0.851 E-ALL, 0.791 E-SCREEN.
-- **notes**: One shot, evaluated once. Arm S scores 0.851 and 0.791, matching cross-validation. The leak gate holds, M0 0.964 against M1 0.848.
-- **numbers used**: V7 · hold-out AUC S E-ALL = 0.851 | V7 · hold-out AUC S E-SCREEN = 0.791 | V7 · hold-out AUC M0 E-ALL = 0.964 | V7 · hold-out AUC M1 E-ALL = 0.848 | V7 · hold-out n = 1,146
-- **footer**: one-shot hold-out n = 1,146 · unweighted · §9.11
-- **claims**: C25
-
-### V7.5 · Robustness Checks
-- **type**: figure
-- **time**: 10 s (10:05–10:15)
-- **figure**: `figures/S9_robustness_summary.png`
-- **takeaway**: The S minus M1 verdict is unchanged across all robustness analyses.
-- **notes**: Seeds, specifications, grouped cross-validation, weights and missing-data scenarios leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
-- **numbers used**: V7 · permutation null mean (S) = 0.501 | V7 · training part adults = 4,584
-- **footer**: n = 4,584 (training part) · unweighted · §9.10
-- **claims**: C22
+- **takeaway**: Hold-out matches cross-validation, arm S 0.851 and 0.791; robustness checks leave S minus M1 unchanged.
+- **notes**: One shot, evaluated once. Arm S scores 0.851 and 0.791, close to cross-validation, but the screening hold-out has few positives. Seeds, specifications, grouped cross-validation and weights leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
+- **numbers used**: V7 · hold-out AUC S E-ALL = 0.851 | V7 · hold-out AUC S E-SCREEN = 0.791 | V7 · permutation null mean (S) = 0.501 | V7 · hold-out n = 1,146 | V7 · training part adults = 4,584
+- **footer**: hold-out n = 1,146 · robustness on training part, n = 4,584 · unweighted · §9.10, §9.11
+- **claims**: C22, C25
 
 ### V8.1 · Conclusions
 - **type**: text
@@ -301,7 +291,7 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 - **takeaway**: Contribution table and GenAI statement (template, team fills in).
 - **notes**: Each member names their role and notebook sections on screen. For GenAI, Claude assisted planning, code drafting and audits under our direction. No LLM sits in the pipeline, and every number was recomputed and checked by us.
 - **numbers used**: none
-- **footer**: §0 contribution table · GenAI log in governance/genai_log.csv
+- **footer**: front-matter contribution table · GenAI log in governance/genai_log.csv
 - **claims**: none
 
 ## Cut priority (rehearsal loop L6)
@@ -327,7 +317,7 @@ Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), mi
 - V2.1 (governance and data quality) is new and takes 20 s of the V2 segment; the former V2.1 (cost of naive cleaning) is now V2.2 with 25 s.
 - The insurance and Asian fallacies share one figure (`S4_crude_vs_std`, which shows both); the mediator DAG has its own slide.
 - The skewness slide uses `S4_triglyceride_skew` (raw against log scale); the HbA1c outlier-fence figure `S3_iqr_fence_harm` is the optional backup visual.
-- V7 adds the hold-out confirmation (V7.4) and a robustness slide (V7.5) from S10; the ADA-lite sentence sits in V7.3 together with the hold-out contrast (+0.029, inconclusive).
+- V7.4 combines the one-shot hold-out and the robustness checks in one slide (the robustness summary figure `S9_robustness_summary` is the optional backup visual); the ADA-lite sentence sits in V7.3 together with the hold-out contrast (+0.029, inconclusive). The freed seconds went to V7.2 (40 s).
 - Slides V1.4, V2.1, V4.1, V4.2, V5.2, V6.5, V7.1, V7.2 and V7.3 use simplified slide versions of the notebook figures (`slides/figures/`); the V4.1 slide shows variance inflation factors and correlation clusters instead of the full clustered heatmap, and the V4.2 slide shows only the left panel of the coefficient figure (the 22-coefficient panel is not stored in `results/`).
 - Text slides (V0, V8.1, V8.2, V8.3) carry no figure.
 

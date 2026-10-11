@@ -22,7 +22,7 @@ style: |
 ---
 
 <!-- _class: V0 title -->
-<!-- _footer: "CA6003 Data Governance · Group [N] · NHANES 2021–23" -->
+<!-- _footer: "CA6003 Data Governance · [TEAM TO FILL: group no.] · NHANES 2021–23" -->
 
 # Who Gets Labelled Diabetic? Basic Models as Instruments on NHANES 2021–2023
 
@@ -134,7 +134,7 @@ Recoding questionnaire sentinel codes to missing looks like routine cleaning. It
 Removing leakage drops E-ALL AUC from 0.961 to 0.828.
 
 <!--
-The naive model M0 reaches AUC 0.961 on all adults. Remove treatment and skip-logic items and M1 falls to 0.828, a drop of 0.131, interval minus 0.148 to minus 0.114. That excess was leakage, not insight. Among the undiagnosed the drop is smaller, minus 0.072.
+The naive model M0 reaches AUC 0.961 on all adults. Remove inadmissible items (treatment, diagnosis history, glucose testing) and M1 falls to 0.828, a drop of 0.131, interval minus 0.148 to minus 0.114. That excess was leakage, not insight. Among the undiagnosed the drop is smaller, minus 0.072.
 -->
 
 ---
@@ -350,31 +350,16 @@ Same predictions, two populations. Arm S scores 0.836 on all adults but 0.781 on
 ---
 
 <!-- _class: V7_4 -->
-<!-- _footer: "one-shot hold-out n = 1,146 · unweighted · §9.11" -->
+<!-- _footer: "hold-out n = 1,146 · robustness on training part, n = 4,584 · unweighted · §9.10, §9.11" -->
 
-# Hold-Out Confirmation
+# Hold-Out and Robustness
 
 ![fig h:455](../figures/S9_holdout_vs_cv.png)
 
-Hold-out shows cross-validated AUCs carry over, arm S 0.851 E-ALL, 0.791 E-SCREEN.
+Hold-out matches cross-validation, arm S 0.851 and 0.791; robustness checks leave S minus M1 unchanged.
 
 <!--
-One shot, evaluated once. Arm S scores 0.851 and 0.791, matching cross-validation. The leak gate holds, M0 0.964 against M1 0.848.
--->
-
----
-
-<!-- _class: V7_5 -->
-<!-- _footer: "n = 4,584 (training part) · unweighted · §9.10" -->
-
-# Robustness Checks
-
-![fig h:455](../figures/S9_robustness_summary.png)
-
-The S minus M1 verdict is unchanged across all robustness analyses.
-
-<!--
-Seeds, specifications, grouped cross-validation, weights and missing-data scenarios leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
+One shot, evaluated once. Arm S scores 0.851 and 0.791, close to cross-validation, but the screening hold-out has few positives. Seeds, specifications, grouped cross-validation and weights leave S minus M1 small and inconclusive. Permuted labels give AUC 0.501.
 -->
 
 ---
@@ -412,18 +397,18 @@ Limits are observational US data, not Singapore, and only 152 screening positive
 ---
 
 <!-- _class: V8_3 template -->
-<!-- _footer: "§0 contribution table · GenAI log in governance/genai_log.csv" -->
+<!-- _footer: "front-matter contribution table · GenAI log in governance/genai_log.csv" -->
 
 # Contributions and GenAI
 
 | Member | Role | Notebook sections | Video segment |
 |---|---|---|---|
-| [Name] | [Role] | [§ list] | [segment] |
-| [Name] | [Role] | [§ list] | [segment] |
-| [Name] | [Role] | [§ list] | [segment] |
-| [Name] | [Role] | [§ list] | [segment] |
+| [TEAM TO FILL: name] | [TEAM TO FILL: role] | [TEAM TO FILL: § list] | [TEAM TO FILL: mm:ss–mm:ss] |
+| [TEAM TO FILL: name] | [TEAM TO FILL: role] | [TEAM TO FILL: § list] | [TEAM TO FILL: mm:ss–mm:ss] |
+| [TEAM TO FILL: name] | [TEAM TO FILL: role] | [TEAM TO FILL: § list] | [TEAM TO FILL: mm:ss–mm:ss] |
+| [TEAM TO FILL: name] | [TEAM TO FILL: role] | [TEAM TO FILL: § list] | [TEAM TO FILL: mm:ss–mm:ss] |
 
-GenAI. Claude (Anthropic) supported planning, code drafting and audits; no LLM in the pipeline. [TODO team confirms wording]
+GenAI. Claude (Anthropic) supported planning, code drafting and audits; no LLM in the pipeline. [TEAM TO FILL: confirm wording against the declaration in the front matter]
 
 <!--
 Each member names their role and notebook sections on screen. For GenAI, Claude assisted planning, code drafting and audits under our direction. No LLM sits in the pipeline, and every number was recomputed and checked by us.

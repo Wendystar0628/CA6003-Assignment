@@ -39,6 +39,7 @@ sys.path.insert(0, str(ROOT))
 from src import config as C  # noqa: E402  (palette and SESOI only)
 
 OI = C.OKABE_ITO
+NEUTRAL = "#222222"
 RES = ROOT / "results"
 OUT = ROOT / "slides" / "figures"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -292,25 +293,33 @@ def fig_scoreboard() -> None:
         r = pl[(pl["variant"] == variant) & (pl["a"] == a) & (pl["pop"] == "E-ALL") & (pl["metric"] == metric)].iloc[0]
         return r["est"], r["lo"], r["hi"], r["verdict_equivalence"]
     vcol = {"supported": OI["green"], "refuted": OI["vermillion"], "inconclusive": OI["grey"], "equivalent": OI["blue"]}
-    auc_rows = [("S − M1 (locked test)", row(stored, "S", "roc_auc")), ("S without class weights − M1", row(stored, "S-B6a", "roc_auc")),
-                ("S − M1 at exact optimum", row(exact, "S", "roc_auc")), ("S − (M1 + scaling)", row(scaled, "S", "roc_auc"))]
-    br_rows = [("S − M1", row(stored, "S", "brier")), ("S w/o class\nweights − M1", row(stored, "S-B6a", "brier"))]
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.6, 5.4), gridspec_kw={"width_ratios": [1.45, 1]})
+    # locked rows carry the equivalence-rule verdict colour; exploratory and post-lock rows are neutral (no verdict)
+    auc_rows = [("S − M1 (locked test)", row(stored, "S", "roc_auc"), True), ("S without class weights − M1\n(exploratory)", row(stored, "S-B6a", "roc_auc"), False),
+                ("S − M1 at exact optimum\n(post-lock)", row(exact, "S", "roc_auc"), False), ("S − (M1 + scaling)\n(post-lock)", row(scaled, "S", "roc_auc"), False)]
+    br_rows = [("S − M1\n(locked test)", row(stored, "S", "brier"), True), ("S w/o class weights\n− M1 (exploratory)", row(stored, "S-B6a", "brier"), False)]
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.8, 5.6), gridspec_kw={"width_ratios": [1.45, 1]})
     for ax_, rows_, band, lim in ((ax, auc_rows, C.SESOI["roc_auc"], (-0.012, 0.024)), (ax2, br_rows, C.SESOI["brier"], (-0.012, 0.095))):
-        for i, (lab, (est, lo, hi, v)) in enumerate(rows_):
-            ax_.errorbar(est, i, xerr=[[est - lo], [hi - est]], fmt="o", color=vcol[v], capsize=6, ms=11, lw=3)
+        for i, (lab, (est, lo, hi, v), locked) in enumerate(rows_):
+            if locked:
+                ax_.errorbar(est, i, xerr=[[est - lo], [hi - est]], fmt="o", color=vcol[v], capsize=6, ms=11, lw=3)
+            else:
+                ax_.errorbar(est, i, xerr=[[est - lo], [hi - est]], fmt="s", color=NEUTRAL, mfc="white", mew=2, capsize=6, ms=10, lw=2.4)
             ax_.text(hi + (lim[1] - lim[0]) * 0.025, i, f"{est:+.3f}", va="center", fontsize=14, color="black")
         ax_.axvspan(-band, band, color=OI["sky"], alpha=0.2, lw=0); ax_.axvline(0, color="black", lw=1)
         ax_.set_xlim(lim); ax_.invert_yaxis(); ax_.set_yticks(range(len(rows_)), [r[0] for r in rows_]); ax_.grid(axis="y", visible=False)
     ax.set_xticks([-0.01, 0, 0.01, 0.02]); ax2.set_xticks([0, 0.025, 0.05, 0.075]); ax2.set_ylim(1.6, -0.6)
     ax.set_title("AUC difference, E-ALL", loc="left"); ax.set_xlabel("ΔROC-AUC (95 % CI)")
     ax2.set_title("Brier difference, E-ALL", loc="left"); ax2.set_xlabel("ΔBrier (95 % CI), lower is better")
-    fig.text(0.99, 0.0, "colour = verdict: green supported, red refuted, grey inconclusive · shaded band = ±SESOI", ha="right", va="bottom", fontsize=14, color="#52606d")
-    fig.tight_layout(rect=[0, 0.06, 1, 1])
+    from matplotlib.lines import Line2D
+    hand = [Line2D([], [], marker="o", ls="", color=OI["grey"], label="locked test, colour = verdict (grey inconclusive, red refuted)"),
+            Line2D([], [], marker="s", ls="", color=NEUTRAL, mfc="white", mew=2, label="exploratory or post-lock, no verdict (neutral)"),
+            plt.Rectangle((0, 0), 1, 1, color=OI["sky"], alpha=0.3, label="±SESOI band")]
+    fig.legend(handles=hand, loc="lower center", ncol=3, fontsize=14, bbox_to_anchor=(0.5, -0.02), handlelength=1.4, columnspacing=1.2)
+    fig.tight_layout(rect=[0, 0.1, 1, 1])
     save(fig, "S10_scoreboard_forest",
          "Paired cross-validated difference of arm S against M1 on E-ALL (training part, 5x5 CV; shaded band = smallest effect of interest). Left: AUC for the locked "
          "comparison, S without class weights, and two post-lock variants of M1 (exact optimum; scaling only). Right: Brier score, where the deterioration comes from class weights. "
-         "Colours are the equivalence-rule verdicts. Source: results/S7/postlock_m1_sensitivity.csv.")
+         "Filled circles are locked tests coloured by their equivalence-rule verdict; hollow neutral squares are exploratory or post-lock rows and carry no verdict. Source: results/S7/postlock_m1_sensitivity.csv.")
 
 
 # --------------------------------------------------------------------------------------------- V1.4

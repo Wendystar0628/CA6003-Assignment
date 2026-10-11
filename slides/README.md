@@ -25,7 +25,7 @@ npx @marp-team/marp-cli slides/deck.md --pptx --allow-local-files -o slides/deck
 npx @marp-team/marp-cli slides/deck.md --images png --allow-local-files -o slides/png/s.png
 ```
 
-`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (27 slides, 23 figures).
+`--allow-local-files` is required for the figures. Do not commit rendered files. The deck was rendered with Marp CLI to PNG and HTML to check layout (26 slides, 22 figures).
 
 **Number check** (run before every rehearsal and after any change to results):
 
@@ -47,9 +47,9 @@ Target 11:20, cap 11:40, hard limit 12:00 for the upload.
 | V4 Redundancy and skewness | 3:30–4:30 | 60 | V4.1 to V4.3 |
 | V5 Fallacies | 4:30–6:00 | 90 | V5.1, V5.2 |
 | V6 Label and measurement bias | 6:00–8:30 | 150 | V6.1 to V6.5 |
-| V7 Experiments synthesis | 8:30–10:15 | 105 | V7.1 to V7.5 |
+| V7 Experiments synthesis | 8:30–10:15 | 105 | V7.1 to V7.4 |
 | V8 Conclusions, limitations, GenAI | 10:15–11:20 | 65 | V8.1 to V8.3 |
-| Total | 0:00–11:20 | 680 | 27 |
+| Total | 0:00–11:20 | 680 | 26 |
 
 Per-slide budgets, with the clock at each slide start, are in `storyboard.md`. Speaker notes are written at about 2.2 words per second, so reading them at a normal pace fits the budget.
 
@@ -76,7 +76,7 @@ Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), mi
 
 ## To fill in before recording
 
-- Group number: `[N]` in the title-slide footer (`deck.md`, `storyboard.md` V0) and in the YouTube title.
+- Group number: `[TEAM TO FILL: group no.]` in the title-slide footer (`deck.md`, `storyboard.md` V0) and in the YouTube title.
 - Contribution table and GenAI sentence on V8.3 (template). The GenAI sentence must match the declaration in notebook section 0 and `governance/genai_log.csv`.
 - Segment-to-member assignment, decided by the team.
 

@@ -386,7 +386,7 @@ def main() -> int:
         n_checked += check_slide_numbers(where, {"title": s["title"], "takeaway": f["takeaway"],
                                                   "notes": f["notes"], "footer": f["footer"]},
                                          declared, rows, definitional)
-        if re.search(r"\[(N|TODO[^\]]*)\]", f["footer"] + f["takeaway"]):
+        if re.search(r"\[TEAM TO FILL[^\]]*\]", f["footer"] + f["takeaway"]):
             warn(where, "placeholder to be filled by the team")
 
     total = clock
