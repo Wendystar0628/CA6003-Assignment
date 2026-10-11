@@ -6,6 +6,7 @@
     .venv/Scripts/python tools/build_final.py --out some/dir/x.ipynb --sections 00,01
     .venv/Scripts/python tools/build_final.py --validate-only NOTEBOOK   # checks + remaining [TEAM TO FILL] entries
     .venv/Scripts/python tools/build_final.py --fill-team NOTEBOOK       # team cells from notebooks/final/team.json
+    .venv/Scripts/python tools/build_final.py --assemble --from-executed 06,07   # incremental FINAL release (see README)
 
 What it does
   1. Front matter: title (shared with the video), executive Summary (numbers read from
@@ -44,6 +45,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tokenize
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -610,7 +612,7 @@ def summary_md() -> tuple[str, int]:
         f"{ci('S7', 'headline.S_minus_M1_T1_eall')}, {v('S10', 'h2b.subs.(a) AUC.verdict')} (margin ±0.01); "
         f"Brier worsens ({a('S10', 'h2b.subs.(b) Brier.est', True)}, {v('S10', 'h2b.subs.(b) Brier.verdict')}) from class weights "
         f"(without them ΔAUC {a('S10', pp.format('roc_auc'), True)}, ΔBrier {a('S10', pp.format('brier'), True)}).\n\n"
-        f"**One-shot hold-out (n = {n('S9', 'holdout.log.n_test')}):** leak gate "
+        f"**Internal hold-out (n = {n('S9', 'holdout.log.n_test')}):** leak gate "
         f"{a('S9', 'holdout.pairs[comparison=M1 T1 - M0 T1&pop=E-ALL].est', True)}; recognition gap of the same direction and size "
         f"({a('S9', ho.format('E-ALL') + ' MINUS ' + ho.format('E-SCREEN'), True)} vs {a('S7', 'headline.eall_minus_escreen_S_T1.est', True)}), "
         f"not separately testable with {n('S9', 'holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos')} screening positives; "
@@ -1171,7 +1173,7 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
     if not section_files:
         raise SystemExit("no section scripts found")
     team = load_team()
-    body, seen_nos, section_sha = [], [], {}
+    body, seen_nos, section_sha, file_sections = [], [], {}, {}
     for i, path in enumerate(section_files):
         cells = strip_bootstrap(load_section(path), path.name)
         no, title = section_number(cells, path)
@@ -1183,6 +1185,7 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
             if seen_nos and no != seen_nos[-1] + 1:
                 print(f"WARN {path.name}: section §{no} does not follow §{seen_nos[-1]} (numbering gap or repeat)")
             seen_nos.append(no)
+            file_sections.setdefault(path.name, []).append(no)
             renumber(cells, no, path.name, preset_idx={0} if i == 0 else None)
             strip_stage_suffix(cells[0])
             inject_lead(cells[0], no, team)
@@ -1205,7 +1208,10 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
     appendix = appendix_cells(section_files, section_sha)
     for c in appendix:
         c.metadata["tags"] = ["appendix"] + [t for t in c.metadata.get("tags", []) if t != "appendix"]
-    front, info = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER if args.execute else run_line(None))
+    stored = args.execute or getattr(args, "assemble", False)          # the run line is filled in after the outputs exist
+    front, info = front_matter(args, len(section_files), RUNTIME_PLACEHOLDER if stored else run_line(None))
+    info["file_sections"] = file_sections
+    info["section_sha"] = section_sha
     cells = front + body + appendix
     partial = bool(args.sections)
     info["problems"] = resolve_links(cells, partial)
@@ -1218,7 +1224,8 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
     for c in cells:
         if c.cell_type == "markdown" and "@@TOC@@" in c.source:
             c.source = c.source.replace("@@TOC@@", toc)
-    leftover = [i for i, c in enumerate(cells) if c.cell_type == "markdown" and re.search(r"@@[A-Z]+[:@]", c.source)]
+    leftover = [i for i, c in enumerate(cells) if c.cell_type == "markdown"     # the run line is filled in after execution
+                and re.search(r"@@[A-Z]+[:@]", c.source.replace(RUNTIME_PLACEHOLDER, ""))]
     if leftover:
         info["problems"].append(f"unresolved @@ tokens in cells {leftover}")
     nb = v4.new_notebook(cells=cells)
@@ -1232,9 +1239,15 @@ def assemble(args) -> tuple[nbformat.NotebookNode, list[Path], dict]:
 
 
 # ----------------------------------------------------------------------------- execution
+# The checkout path itself (it contains spaces, where ABS_PATH_ANY stops): outputs of sections run in the repository
+# (tools/run_section.py, used by --assemble) or warnings from the project's .venv must not keep a fragment of it.
+ROOT_PATH = re.compile(r"(?i)" + r"[\\/]+".join(re.escape(part) for part in ROOT.as_posix().split("/")) + r"(?:[\\/][^\s\"'<>|)\]]*)?")
+
+
 def scrub(text: str) -> tuple[str, int]:
-    new, n = ABS_PATH_ANY.subn("<path>", text)
-    return new, n
+    new, n0 = ROOT_PATH.subn("<path>", text)
+    new, n = ABS_PATH_ANY.subn("<path>", new)
+    return new, n0 + n
 
 
 def scrub_outputs(nb) -> int:
@@ -1409,6 +1422,8 @@ def fill_team(path: Path) -> int:
 
 def stored_run_line() -> str:
     rec = json.loads((FINAL_DIR / "build_record.json").read_text(encoding="utf-8"))
+    if rec.get("stored_run_line"):                 # written by --assemble (the outputs do not come from one full run)
+        return rec["stored_run_line"]
     mode = rec.get("stored_outputs_mode")
     run = (rec.get("runs") or {}).get(mode or "", {})
     return run_line(mode, run.get("runtime_seconds"), run.get("cores") or run.get("cpu_count"))
@@ -1473,6 +1488,416 @@ def run_check_repo(path: Path) -> str:
     return (r.stdout + r.stderr).strip().replace("\n", " | ")
 
 
+# ----------------------------------------------------------------------------- incremental release (--assemble)
+# The notebook is built from the current sources exactly as above; the code-cell outputs are then taken from
+#   (a) notebooks/executed/<file>.ipynb for the files named in --from-executed (tools/run_section.py, release mode),
+#   (b) the previous release (--base) for every other section, after a token check that its code is unchanged,
+#   (c) the base, or a synthesised "Writing <path>" / Path(...) result, for the generated §0.0 file cells,
+#   (d) a small fresh execution (workspace setup + appendix cells, current results/) for the appendix.
+EXECUTED_DIR = ROOT / "notebooks" / "executed"
+GEN_TAGS = {"setup", "setup-file", "section-start"}
+BOOT_MODULES = {"config", "plots", "results_io"}           # imported by the global bootstrap: every section uses them
+RUN_RECORDED = ("src/", "config/", "governance/", "requirements.txt")   # inputs whose hashes tools/run_section.py records
+WRITEFILE_RE = re.compile(r"^%%writefile\s+(\S+)")
+WRITETEXT_RE = re.compile(r"^write_text\((['\"])(.+?)\1")
+
+
+class AssembleError(Exception):
+    pass
+
+
+def cell_kind(c) -> str:
+    tags = set(c.metadata.get("tags", []))
+    if tags & GEN_TAGS:
+        return "gen"
+    return "appendix" if "appendix" in tags else "section"
+
+
+def cell_sec(c) -> int | None:
+    t = next((t for t in c.metadata.get("tags", []) if t.startswith("sec-")), None)
+    return int(t[4:]) if t else None
+
+
+def code_tokens(src: str) -> list:
+    """Comment-free token stream of a code cell (the tokenize check used for comment-only commits). Comments and
+    blank lines are ignored; statement structure (NEWLINE/INDENT/DEDENT) and every code, string and number token
+    count. IPython magic and shell lines are compared verbatim."""
+    lines = src.split("\n")
+    magic = [("MAGIC", ln.strip()) for ln in lines if ln.lstrip().startswith(("%", "!"))]
+    body = "\n".join("pass" if ln.lstrip().startswith(("%", "!")) else ln for ln in lines) + "\n"
+    toks = []
+    try:
+        for t in tokenize.generate_tokens(io.StringIO(body).readline):
+            if t.type in (tokenize.COMMENT, tokenize.NL, tokenize.ENDMARKER):
+                continue
+            toks.append((t.type, "" if t.type in (tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT) else t.string))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return [("RAW", ln.rstrip()) for ln in lines if ln.strip() and not ln.lstrip().startswith("#")]
+    return toks + magic
+
+
+def first_code_line(src: str) -> str:
+    return next((ln.strip() for ln in src.split("\n") if ln.strip() and not ln.lstrip().startswith("#")), "")[:60]
+
+
+def compare_code(new: list, old: list) -> str | None:
+    """None if the two lists of code cells are pairwise token-identical, else the first difference."""
+    for j, (a, b) in enumerate(zip(new, old)):
+        if code_tokens(a.source) != code_tokens(b.source):
+            return f"code cell {j + 1} of {len(new)} ({first_code_line(a.source)!r}) differs"
+    if len(new) != len(old):
+        return f"{len(new)} code cells now, {len(old)} before"
+    return None
+
+
+def src_imports(text: str) -> set[str]:
+    """Project modules imported by a section or module (from src import a, b / from src.a import / from . import a)."""
+    mods = set()
+    for m in re.finditer(r"from\s+(?:src|\.)\s+import\s+(\([^)]*\)|[^\n]+)", text):
+        for part in m.group(1).split("#")[0].strip("() ").split(","):
+            name = part.strip().split()[0] if part.strip() else ""
+            if name.isidentifier():
+                mods.add(name)
+    mods |= set(re.findall(r"from\s+(?:src)?\.(\w+)\s+import", text))
+    mods |= set(re.findall(r"\bimport\s+src\.(\w+)", text))
+    return mods
+
+
+def section_deps(code_text: str) -> set[str]:
+    """Inlined repository files a section can depend on: the project modules it imports (transitively, plus the
+    bootstrap modules) and every inlined text input or stored artefact whose file name occurs in its code or in
+    one of those modules."""
+    texts = {p.stem: read_text(p.relative_to(ROOT).as_posix()) for p in (ROOT / "src").glob("*.py")}
+    todo, mods = list(src_imports(code_text) | BOOT_MODULES), set()
+    while todo:
+        m = todo.pop()
+        if m in mods or m not in texts:
+            continue
+        mods.add(m)
+        todo += list(src_imports(texts[m]))
+    deps = {f"src/{m}.py" for m in mods} | {"src/__init__.py"}
+    corpus = code_text + "\n".join(texts[m] for m in mods)
+    for rel in TEXT_INPUTS + SEED_RESULTS:
+        if Path(rel).name in corpus:
+            deps.add(rel)
+    return deps
+
+
+def gen_keys(cells: list) -> list[tuple]:
+    """Stable key of each generated cell: ('file', path), ('codebooks',), ('setup', k) or ('start', §)."""
+    keys, k = [], 0
+    for c in cells:
+        tags = c.metadata.get("tags", [])
+        first = c.source.split("\n", 1)[0]
+        if "section-start" in tags:
+            keys.append(("start", cell_sec(c)))
+        elif "setup-file" in tags:
+            m = WRITEFILE_RE.match(first) or WRITETEXT_RE.match(first)
+            keys.append(("file", m.group(m.lastindex)) if m else
+                        (("codebooks",) if "CODEBOOKS_SHA256" in c.source else ("setup-file", first)))
+        else:
+            keys.append(("setup", k))
+            k += 1
+    return keys
+
+
+def notebook_mode(nb) -> str | None:
+    """NB_MODE printed by the workspace cell of an executed notebook."""
+    for c in nb.cells:
+        if c.cell_type == "code" and c.source.startswith("import os, sys, time, pathlib"):
+            for o in c.get("outputs", []):
+                m = re.search(r"NB_MODE = (\w+)", "".join(o.get("text", "")))
+                if m:
+                    return m.group(1)
+    return None
+
+
+def load_executed(name: str, mode: str):
+    path = EXECUTED_DIR / (Path(name).stem + ".ipynb")
+    rel = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else str(path)
+    rerun = f"run `tools/run_section.py notebooks/sections/{name} --mode {mode}`"
+    if not path.exists():
+        raise AssembleError(f"{rel} does not exist: {rerun}")
+    enb = nbformat.read(path, as_version=4)
+    meta = enb.metadata.get("ca6003")
+    if not meta:
+        raise AssembleError(f"{rel} has no run record (written by an older tools/run_section.py, mode unknown): {rerun}")
+    if meta.get("mode") != mode:
+        raise AssembleError(f"{rel} was run in {meta.get('mode')} mode, the release is {mode}: {rerun}")
+    cells = strip_bootstrap(list(enb.cells), name)
+    return [c for c in cells if c.cell_type == "code"], meta, path
+
+
+def local_date(utc: str | None) -> str:
+    """Local calendar date of an ISO UTC timestamp (as git's %cs date of the base run)."""
+    try:
+        return datetime.fromisoformat(utc).astimezone().date().isoformat()
+    except (TypeError, ValueError):
+        return ""
+
+
+def section_ranges(nos) -> str:
+    groups: list[list[int]] = []
+    for n in sorted(nos):
+        if groups and n == groups[-1][1] + 1:
+            groups[-1][1] = n
+        else:
+            groups.append([n, n])
+    return ", ".join(f"§{a}" if a == b else (f"§{a}–§{b}" if b > a + 1 else f"§{a}, §{b}") for a, b in groups)
+
+
+def base_provenance(base, base_path: Path, mode: str, nos: list[int]) -> dict[str, dict]:
+    """Where the outputs of each section of the base notebook come from: inherited from an earlier assembly, else
+    the full run recorded in build_record.json (commit at which the outputs were executed, per-section seconds)."""
+    prev = (base.metadata.get("ca6003_build") or {}).get("sections")
+    if prev:
+        return {k: dict(v) for k, v in prev.items()}
+    rec = {}
+    if base_path.resolve() == (FINAL_DIR / OUT_NAME).resolve() and (FINAL_DIR / "build_record.json").exists():
+        rec = json.loads((FINAL_DIR / "build_record.json").read_text(encoding="utf-8"))
+    commit = ((rec.get("outputs_carried_over") or {}).get("outputs_executed_at_commit") or rec.get("source_commit")
+              or git("log", "-1", "--format=%H", "--", str(base_path)) or "unknown")
+    date = git("show", "-s", "--format=%cs", commit) if commit != "unknown" else ""
+    secs = ((rec.get("runs") or {}).get(mode) or {}).get("per_section_seconds") or {}
+    return {f"§{n}": {"source": "full run", "mode": mode, "commit": commit[:7], "date": date,
+                      "seconds": secs.get(f"§{n}")} for n in nos}
+
+
+def assembled_run_line(prov: dict[str, dict], mode: str) -> tuple[str, float]:
+    groups: dict[str, list[int]] = {}
+    for k, p in prov.items():
+        if p["source"] == "section run":
+            label = f"re-run section by section on {p['date']}"
+        else:
+            label = (f"from the full {p['mode']} run at commit {p['commit']}" + (f" ({p['date']})" if p.get("date") else ""))
+        groups.setdefault(label, []).append(int(k[1:]))
+    parts = [f"{section_ranges(nos)} {label}" for label, nos in sorted(groups.items(), key=lambda kv: min(kv[1]))]
+    total = sum(p.get("seconds") or 0 for p in prov.values())
+    unknown = [int(k[1:]) for k, p in prov.items() if p.get("seconds") is None and not p.get("run_shared_with")]
+    t = (f"; section runtimes sum to {int(total // 60)} min {total % 60:02.0f} s"
+         + (f" (none recorded for {section_ranges(unknown)})" if unknown else ""))
+    return (f"stored from {mode} runs: " + "; ".join(parts) + t
+            + "; a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)"), total
+
+
+def run_appendix(nb, mode: str, timeout: int) -> float:
+    """Execute only the workspace setup (without the codebooks and the raw data) and the appendix code cells in a
+    fresh temp workspace that holds a copy of the repository's results/; copy the appendix outputs into `nb`."""
+    import copy
+    setup = [c for c in nb.cells if c.cell_type == "code" and set(c.metadata.get("tags", [])) & {"setup", "setup-file"}
+             and "CODEBOOKS_SHA256" not in c.source and c.source != DATA_CODE.strip("\n")]
+    app = [c for c in nb.cells if c.cell_type == "code" and cell_kind(c) == "appendix"]
+    mini = v4.new_notebook(cells=[copy.deepcopy(c) for c in setup + app])
+    mini.metadata["kernelspec"] = nb.metadata["kernelspec"]
+    work = Path(tempfile.mkdtemp(prefix="ca6003_app_"))
+    try:
+        shutil.copytree(ROOT / "results", work / "ca6003_workspace" / "results")
+        wall = execute(mini, mode, work, timeout, download=True)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    for dst, src in zip(app, mini.cells[len(setup):]):
+        dst.outputs = src.outputs
+    return wall
+
+
+def write_record(path: Path, rec_new: dict) -> None:
+    """Write the build record; the clean-room runtimes (`runs`) and the previous record are kept."""
+    old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    keep = {"runs": old["runs"], "runs_note": "runtimes of the last full clean-room executions (--execute)"} if old.get("runs") else {}
+    previous = {k: v for k, v in old.items() if k not in ("runs", "runs_note", "previous_record")}
+    rec = {**rec_new, **keep, "previous_record": previous}
+    path.write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+
+
+def assemble_release(args, out: Path) -> int:
+    t0 = time.time()
+    if args.sections or args.execute:
+        raise SystemExit("--assemble builds the whole notebook: do not combine it with --sections or --execute")
+    base_path = Path(args.base).resolve()
+    base = nbformat.read(base_path, as_version=4)
+    mode = notebook_mode(base)
+    if mode != "FINAL":
+        raise SystemExit(f"base {base_path.name}: stored outputs are from a {mode} run; a release base must be FINAL")
+    nb, section_files, info = assemble(args)
+    names = [p.name for p in section_files]
+    wanted = {s.strip() for s in args.from_executed.split(",") if s.strip()}
+    unknown = wanted - {n[:2] for n in names}
+    if unknown:
+        raise SystemExit(f"--from-executed: no section file starts with {sorted(unknown)}")
+    print(f"assembled {len(nb.cells)} cells from {len(names)} sections; release mode {mode}; base {base_path.name}")
+    problems = list(info["problems"])
+    if info["summary_words"] > SUMMARY_MAX_WORDS:
+        problems.append(f"summary has {info['summary_words']} words (> {SUMMARY_MAX_WORDS})")
+    errors: list[str] = []
+
+    # 1. generated cells: identical source -> base output; a changed or new file cell -> its standard output
+    gen_new = [c for c in nb.cells if c.cell_type == "code" and cell_kind(c) == "gen"]
+    gen_old = [c for c in base.cells if c.cell_type == "code" and cell_kind(c) == "gen"]
+    old_by_key = dict(zip(gen_keys(gen_old), gen_old))
+    path_cls = next((m.group(1) for c in gen_old for o in c.get("outputs", []) if o.output_type == "execute_result"
+                     for m in [re.match(r"(\w*Path)\('", str((o.get("data") or {}).get("text/plain", "")))] if m),
+                    "WindowsPath" if sys.platform == "win32" else "PosixPath")
+    changed_files, synthesised, reused = set(), [], 0
+    for key, c in zip(gen_keys(gen_new), gen_new):
+        old = old_by_key.get(key)
+        if old is not None and old.source == c.source:
+            c.outputs, reused = old.outputs, reused + 1
+        elif key[0] == "start" and c.source == "new_section()":
+            c.outputs = []                                   # new_section() prints nothing
+        elif key[0] == "file":
+            if c.source.startswith("%%writefile"):           # IPython's own message in a fresh workspace
+                c.outputs = [v4.new_output("stream", name="stdout", text=f"Writing {key[1]}\n")]
+            else:                                            # write_text() returns the Path, shown as the cell result
+                c.outputs = [v4.new_output("execute_result", data={"text/plain": f"{path_cls}('{key[1]}')"})]
+            changed_files.add(key[1])
+            synthesised.append(key[1] + (" (new)" if old is None else ""))
+        else:
+            errors.append(f"generated cell {key} ({first_code_line(c.source)!r}) differs from the base and its output "
+                          "cannot be synthesised: build with --execute")
+
+    # 2. sections: from the executed notebooks (--from-executed) or from the base
+    def sec_code(cells, nos):
+        return [c for c in cells if c.cell_type == "code" and cell_kind(c) == "section" and cell_sec(c) in nos]
+
+    current = {rel: sha256_text(read_text(rel)) for rel in
+               [p.relative_to(ROOT).as_posix() for p in (ROOT / "src").glob("*.py")] + TEXT_INPUTS if (ROOT / rel).exists()}
+    prov = base_provenance(base, base_path, mode, sum(info["file_sections"].values(), []))
+    sources, executed_meta, first_rerun = {}, {}, None
+    for name in names:
+        nos = info["file_sections"][name]
+        tag = section_ranges(nos)
+        new = sec_code(nb.cells, nos)
+        deps = section_deps("\n".join(c.source for c in new))
+        rerun = f"run `tools/run_section.py notebooks/sections/{name} --mode {mode}` and pass {name[:2]} to --from-executed"
+        if name[:2] in wanted:
+            try:
+                donor, meta, epath = load_executed(name, mode)
+            except AssembleError as e:
+                errors.append(f"{tag}: {e}")
+                continue
+            diff = compare_code(new, donor)
+            if diff:
+                errors.append(f"{tag} ({name}): {diff} relative to {epath.name}: the section changed after its run; {rerun}")
+                continue
+            stale = sorted(d for d in deps if d.startswith(RUN_RECORDED) and d in current
+                           and (meta.get("inputs_sha256") or {}).get(d) != current[d])
+            if stale:
+                errors.append(f"{tag} ({name}): {', '.join(stale)} changed after the run recorded in {epath.name}; {rerun}")
+                continue
+            first_rerun = first_rerun or tag
+            same = meta.get("source_sha256") == info["section_sha"][name]
+            sources[name] = {"from": f"notebooks/executed/{epath.name}", "mode": meta["mode"], "seconds": meta.get("seconds"),
+                             "run_utc": meta.get("run_utc"),
+                             "executed_sha256": hashlib.sha256(epath.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+                             "section_sha256_at_run": meta.get("source_sha256"), "section_sha256_now": info["section_sha"][name],
+                             "note": "section source unchanged since the run" if same else
+                                     "section source changed after the run in comments/markdown only (code tokens verified)"}
+            executed_meta[name] = meta
+            for j, n in enumerate(nos):
+                prov[f"§{n}"] = {"source": "section run", "mode": meta["mode"], "file": name,
+                                 "date": local_date(meta.get("run_utc")), "seconds": meta.get("seconds") if j == 0 else None,
+                                 **({"run_shared_with": f"§{nos[0]}"} if j else {})}
+        else:
+            donor = sec_code(base.cells, nos)
+            diff = compare_code(new, donor)
+            if diff:
+                errors.append(f"section {tag} code changed ({name}: {diff} relative to the base): {rerun}")
+                continue
+            hit = sorted(deps & changed_files)
+            if hit:
+                errors.append(f"section {tag} ({name}) is taken from the base, but {', '.join(hit)} changed since the base run; {rerun}")
+                continue
+            if first_rerun:
+                print(f"WARN {tag} is taken from the base but runs after the re-run {first_rerun}: if it reads their results, re-run it too")
+            sources[name] = {"from": f"base ({base_path.name})"}
+        for dst, src in zip(new, donor):
+            dst.outputs = src.get("outputs", [])
+    order = [n for n in names if n in executed_meta]
+    for a, b in zip(order, order[1:]):
+        if (executed_meta[a].get("run_utc") or "") > (executed_meta[b].get("run_utc") or ""):
+            print(f"WARN {b} was run before {a}: if it reads results of {a}, run them again in file order")
+
+    # 3. the appendix check reads results/: it must come from runs in the release mode
+    for f in sorted((ROOT / "results").glob("metrics_S*.json")):
+        m = json.loads(f.read_text(encoding="utf-8")).get("_meta", {}).get("nb_mode")
+        if m != mode:
+            errors.append(f"results/{f.name} was written by a {m} run; the release needs {mode} results")
+    if errors:
+        for e in errors:
+            print("FAIL", e)
+        print(f"assemble FAILED ({len(errors)} problems); nothing written")
+        return 1
+
+    # 4. appendix: execute (workspace setup + appendix cells) against the current results/
+    print("executing the appendix cells in a temp workspace ...")
+    try:
+        app_secs = run_appendix(nb, mode, args.timeout)
+    except Exception as e:  # noqa: BLE001
+        print(f"FAIL appendix execution: {type(e).__name__}: {str(e)[:3000]}")
+        return 1
+
+    # 5. renumber, scrub, run line, validate, write
+    code_cells = [c for c in nb.cells if c.cell_type == "code"]
+    for n, c in enumerate(code_cells, 1):
+        c.execution_count = n
+        for o in c.outputs:
+            if o.output_type == "execute_result":
+                o.execution_count = n
+    n_scr = scrub_outputs(nb)
+    line, total = assembled_run_line(prov, mode)
+    for c in nb.cells:
+        if c.cell_type == "markdown" and RUNTIME_PLACEHOLDER in c.source:
+            c.source = c.source.replace(RUNTIME_PLACEHOLDER, line)
+    nb.metadata["language_info"] = base.metadata.get("language_info", {"name": "python"})
+    nb.metadata["ca6003_build"] = {"procedure": "assembled", "mode": mode, "sections": prov}
+    problems += validate(nb, out, True)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    nbformat.write(nb, out)
+    refcheck = next(("".join(o.get("text", "")).strip() for c in code_cells if cell_kind(c) == "appendix"
+                     for o in c.outputs if "reference quantities" in "".join(o.get("text", ""))), "no FINAL_REF cell")
+    print(f"wrote {out}")
+    for name in names:
+        print(f"   {section_ranges(info['file_sections'][name]):<10} {name:<26} <- {sources[name]['from']}")
+    print(f"generated cells: {reused} reused from the base, synthesised: {synthesised or 'none'}")
+    print(f"appendix executed in {app_secs:.0f} s: {refcheck}")
+    print(f"scrubbed {n_scr} absolute-path strings from outputs")
+    print("stored-run line:", line)
+    print(size_report(out, nb))
+    print("code-cell SHA-256:", code_hash(nb))
+    print("check_repo:", run_check_repo(out))
+    left = placeholders(nb)
+    print(f"WARN {len(left)} team placeholders left (fill before submission; --validate-only lists them)" if left else "team placeholders: none left")
+
+    def rel_or_name(p: Path) -> str:
+        return p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else p.name
+
+    rec = {"notebook": rel_or_name(out), "stored_outputs_mode": mode, "source_commit": source_commit()[:7],
+           "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+           "procedure": "assembled",
+           "procedure_note": ("tools/build_final.py --assemble: notebook built from the current sources; the outputs of each "
+                              "section come from its own run in the release mode (tools/run_section.py, repository context, "
+                              "notebooks/executed) or from the base release after a comment-insensitive token check of its code "
+                              "and of the inlined files it uses; changed workspace file cells get the standard write output; "
+                              "the appendix cells are executed against the current results/"),
+           "base": {"notebook": rel_or_name(base_path),
+                    "sha256": hashlib.sha256(base_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()},
+           "sections": sources, "section_provenance": prov,
+           "generated_cells": {"reused_from_base": reused, "synthesised": synthesised},
+           "appendix": {"executed_seconds": round(app_secs, 1), "final_ref": refcheck},
+           "stored_run_line": line, "section_runtime_seconds_sum": round(total, 1),
+           "code_cell_sha256": code_hash(nb),
+           "notebook_sha256": hashlib.sha256(out.read_bytes().replace(b"\r\n", b"\n")).hexdigest() + " (LF line endings)",
+           "front_matter_words": front_word_counts(nb), "team_placeholders_left": len(left),
+           "validation": "OK" if not problems else problems}
+    rec_path = FINAL_DIR / "build_record.json" if out == (FINAL_DIR / OUT_NAME).resolve() else out.with_suffix(".build_record.json")
+    write_record(rec_path, rec)
+    print(f"build record: {rec_path}")
+    for p in problems:
+        print("PROBLEM", p)
+    print(f"assemble {'FAILED' if problems else 'OK'} ({time.time() - t0:.0f} s total)")
+    return 1 if problems else 0
+
+
 # ----------------------------------------------------------------------------- main
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1493,6 +1918,11 @@ def main() -> int:
                     "notebook from notebooks/final/team.json (code cells and outputs unchanged) and exit")
     ap.add_argument("--refresh-front", metavar="NOTEBOOK", help="replace the front matter of an existing notebook with the "
                     "current layout and text (code cells and outputs unchanged) and exit")
+    ap.add_argument("--assemble", action="store_true", help="incremental release: build from the current sources and take the "
+                    "outputs from per-section runs (--from-executed) and from the base release (no full re-execution)")
+    ap.add_argument("--from-executed", default="", metavar="NN,NN", help="with --assemble: section file prefixes whose outputs "
+                    "come from notebooks/executed/<file>.ipynb (tools/run_section.py in the release mode)")
+    ap.add_argument("--base", default=str(FINAL_DIR / OUT_NAME), help="with --assemble: previous release notebook (FINAL outputs)")
     args = ap.parse_args()
 
     if args.make_final_ref:
@@ -1520,6 +1950,10 @@ def main() -> int:
         return refresh_front(Path(args.refresh_front).resolve())
 
     out = Path(args.out).resolve()
+    if args.assemble:
+        if "course" in out.parts:
+            raise SystemExit("refusing to write into course/")
+        return assemble_release(args, out)
     t0 = time.time()
     nb, section_files, info = assemble(args)
     print(f"assembled {len(nb.cells)} cells from {len(section_files)} sections: " + ", ".join(p.name[:2] for p in section_files))

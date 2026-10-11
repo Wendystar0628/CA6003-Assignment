@@ -32,6 +32,25 @@
 
 An executed build also appends a line to `notebooks/final/runtime_log.md` (mode, total, seconds per section).
 
+## Incremental release (`--assemble`) or full run (`--execute`)
+
+A full FINAL `--execute` takes about 26 min (§7 about 11 min, §9 about 13 min). Each section starts from `new_section()`, re-loads the data and reads upstream results from `results/`, so a change confined to a few sections can be released without re-running the rest:
+
+```bash
+# 1. re-run the changed sections in the release mode, in file order (writes results/ and notebooks/executed/<file>.ipynb
+#    with a run record: mode, seconds, SHA-256 of the section and of src/*.py, config and governance inputs)
+.venv/Scripts/python tools/run_section.py notebooks/sections/06_experiments.py notebooks/sections/07_fairness.py \
+    notebooks/sections/08_robustness.py notebooks/sections/09_synthesis.py --mode FINAL
+# 2. if reference numbers moved: refresh final_ref.json (A.5)
+.venv/Scripts/python tools/build_final.py --make-final-ref
+# 3. assemble: current sources; outputs from those runs and, for every other section, from the previous release
+.venv/Scripts/python tools/build_final.py --assemble --from-executed 06,07,08,09
+```
+
+`--assemble` builds the notebook from the current sources exactly like the build-only path and then fills the outputs. **Sections in `--from-executed`** take them from `notebooks/executed/<file>.ipynb`; **all others** from `--base` (default: the committed release, which must hold FINAL outputs). It fails, naming the section and cell, when a section's code cells are not token-identical to the source of their outputs (comments and blank lines may differ), when an executed notebook has no run record or a different mode, when a module or governance input the section uses changed after its run, or when a section taken from the base uses an inlined file that changed (for example `governance/genai_log.csv` for §0 and §10). Changed or new `src/*.py` and governance file cells get their standard output (`Writing <path>`, or the returned path). The appendix cells are executed in a temp workspace against the current `results/` (A.1 register, A.5 FINAL_REF check). Execution counts are renumbered and absolute paths scrubbed; the title table says which sections were re-run and when; `build_record.json` records `procedure: "assembled"`, the source of every section and the executed-notebook hashes.
+
+Use **`--execute`** for a clean-room run from an empty folder: after changes to §0–§6 or `src/` modules that most sections use, before the final submission if time allows, and as the FAST reproducibility check. Limitation of `--assemble`: re-run sections are executed in the repository (not in a fresh workspace), and a section taken from the base is not checked for reading results that a re-run section changed (re-run all downstream sections; the tool warns when a base section follows a re-run one).
+
 ## What the builder does
 
 | Step | Content |
@@ -70,7 +89,7 @@ The execution directory holds only the notebook-created workspace, so anything a
 ## Files
 
 * `CA6003_NHANES_Diabetes.ipynb` – the assembled notebook (stored outputs from a FINAL execution of a clean `git archive` export).
-* `build_record.json` – how the committed notebook was produced: source commit, mode of the stored outputs, FAST and FINAL runtimes per section, code-cell SHA-256 (S12 markdown-only check), file SHA-256, validation and FINAL_REF results.
+* `build_record.json` – how the committed notebook was produced (`procedure`: full run or `assembled`, with the source of each section's outputs): source commit, mode of the stored outputs, FAST and FINAL runtimes per section, code-cell SHA-256 (S12 markdown-only check), file SHA-256, validation and FINAL_REF results.
 * `final_ref.json` – reference values (`REF_SPECS` in the builder, including the numbers quoted in the Summary) for the appendix check; regenerate with `--make-final-ref` after the FINAL run.
 * `team.json` – group number, video link, A-D responsibilities, evidence-linked verification records, role-specific AI use, shared human-AI workflow and section leads. Group/matric/video entries remain to be supplied; members confirm their individual participation.
 * `runtime_log.md` – one line per executed build.
