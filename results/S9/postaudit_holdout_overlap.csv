@@ -1,0 +1,4 @@
+sample,n,n_holdout,holdout_pos,holdout_share
+"cohort (labels, binned age)",5730,1146,194,0.2
+"§4.11 linearity / §4.12 interactions A, C (complete cases, 7 predictors)",4478,901,155,0.20120589548905762
+§4.12 interaction spec B (BMI present),5649,1127,191,0.19950433705080545

@@ -1,0 +1,41 @@
+attribute,weighting,group,pos_rate_pct
+race,none,NH White,14.770642201834864
+race,none,NH Black,24.705882352941178
+race,none,NH Asian,13.333333333333334
+race,none,Mexican American,24.110671936758894
+race,none,Other Hispanic,17.098445595854923
+race,none,Other/Multi,18.421052631578945
+race,survey only,NH White,13.131053387288466
+race,survey only,NH Black,22.2663154354583
+race,survey only,NH Asian,9.420180905256863
+race,survey only,Mexican American,17.791073085995322
+race,survey only,Other Hispanic,11.768391736757458
+race,survey only,Other/Multi,14.6855917941726
+race,as fitted (unweighted-count RW x survey),NH White,15.122409077782805
+race,as fitted (unweighted-count RW x survey),NH Black,15.133493526594455
+race,as fitted (unweighted-count RW x survey),NH Asian,12.133045158079575
+race,as fitted (unweighted-count RW x survey),Mexican American,12.214617006972981
+race,as fitted (unweighted-count RW x survey),Other Hispanic,11.668562329628557
+race,as fitted (unweighted-count RW x survey),Other/Multi,13.47362137078029
+race,corrected (weighted-count RW x survey),NH White,14.209599869637568
+race,corrected (weighted-count RW x survey),NH Black,14.209599869637568
+race,corrected (weighted-count RW x survey),NH Asian,14.209599869637564
+race,corrected (weighted-count RW x survey),Mexican American,14.209599869637568
+race,corrected (weighted-count RW x survey),Other Hispanic,14.209599869637568
+race,corrected (weighted-count RW x survey),Other/Multi,14.209599869637568
+insurance,none,insured,17.30424387328153
+insurance,none,uninsured,13.375796178343949
+insurance,survey only,insured,14.721589463823822
+insurance,survey only,uninsured,9.740034419892822
+insurance,as fitted (unweighted-count RW x survey),insured,14.421600151127322
+insurance,as fitted (unweighted-count RW x survey),uninsured,12.492095950497246
+insurance,corrected (weighted-count RW x survey),insured,14.209599869637568
+insurance,corrected (weighted-count RW x survey),uninsured,14.209599869637568
+low_access,none,usual access,18.267665255617064
+low_access,none,low access,10.135135135135135
+low_access,survey only,usual access,15.983902484353168
+low_access,survey only,low access,6.869378898254267
+low_access,as fitted (unweighted-count RW x survey),usual access,14.811970454574633
+low_access,as fitted (unweighted-count RW x survey),low access,11.78503096522716
+low_access,corrected (weighted-count RW x survey),usual access,14.209599869637564
+low_access,corrected (weighted-count RW x survey),low access,14.209599869637568

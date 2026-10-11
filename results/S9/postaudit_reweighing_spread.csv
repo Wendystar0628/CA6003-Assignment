@@ -1,0 +1,10 @@
+attribute,weighting,spread_pp_mean,spread_pp_max
+race,survey only,11.132058144046749,13.40355535164219
+race,as fitted (unweighted-count RW x survey),3.9731473991599584,5.871761057810179
+race,corrected (weighted-count RW x survey),6.0396132539608514e-15,1.2434497875801753e-14
+insurance,survey only,4.499325973196131,6.3023908248258085
+insurance,as fitted (unweighted-count RW x survey),1.0938030675169086,2.336795245526446
+insurance,corrected (weighted-count RW x survey),1.9184653865522706e-15,8.881784197001252e-15
+low_access,survey only,8.716587942992595,10.002792059684712
+low_access,as fitted (unweighted-count RW x survey),2.5282610838529127,3.6598968384598756
+low_access,corrected (weighted-count RW x survey),1.7053025658242404e-15,5.329070518200751e-15
