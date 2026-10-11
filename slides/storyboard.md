@@ -136,11 +136,11 @@ Field legend. `type` is figure, text, template or title. `takeaway` is the one-l
 ### V4.3 · Skewness and Outlier Fences
 - **type**: figure
 - **time**: 20 s (4:10–4:30)
-- **figure**: `figures/S3_iqr_fence_harm.png`
-- **takeaway**: Triglyceride skewness is 6.62 against 1.22 for BMI; fences would delete true cases.
-- **notes**: Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails carry signal, not noise. A Tukey fence on HbA1c would delete diagnostic values, so we transform instead of trimming.
-- **numbers used**: V4 · skew triglycerides (fasting) = 6.62 | V4 · skew BMI = 1.22 | V1 · analytic cohort = 5,730
-- **footer**: n = 5,730 · unweighted · §2, §4
+- **figure**: `figures/S4_triglyceride_skew.png`
+- **takeaway**: Triglyceride skewness is 6.62 against 1.22 for BMI; a log transform tames it.
+- **notes**: Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails need a transform, not trimming. A Tukey fence on HbA1c would instead delete diagnostic values.
+- **numbers used**: V4 · skew triglycerides (fasting) = 6.62 | V4 · skew BMI = 1.22
+- **footer**: fasting subsample · unweighted · §4
 - **claims**: none
 
 ### V5.1 · Age Standardisation
@@ -313,7 +313,7 @@ Never cut: leakage gate (V3.1, V3.2), redundancy and skewness (V4.1 to V4.3), mi
 - Final numbers replace the prototype ones in `development_process.md`: leak gate 0.961 to 0.828 (not 0.96 to 0.86), triglyceride skewness 6.62, BMI coefficient SD ratios 2.87 and 1.36, variance inflation factors 95.7 and 97.6.
 - The NCHS Data Brief 516 check sits in V1.3 because `governance/claims.csv` maps claim C23 to the scope segment. It counts as governance detail in the cut order.
 - The insurance and Asian fallacies share one figure (`S4_crude_vs_std`, which shows both); the mediator DAG has its own slide.
-- The skewness slide uses `S3_iqr_fence_harm`, the only figure on heavy right tails; no saved figure shows the triglyceride histogram.
+- The skewness slide uses `S4_triglyceride_skew` (raw against log scale); the HbA1c outlier-fence figure `S3_iqr_fence_harm` is the optional backup visual.
 - V7 adds the hold-out confirmation (V7.4) and a robustness slide (V7.5) from S10; the ADA-lite sentence sits in V7.3.
 - Text slides (V0, V8.1, V8.2, V8.3) carry no figure.
 

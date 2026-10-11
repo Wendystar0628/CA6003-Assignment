@@ -93,6 +93,5 @@ Rules from the assignment: one video, at most 12 minutes, all members on camera,
 
 ## Known gaps
 
-- Plot text is small at slide size on tall figures (`S4_spearman_clustermap`, `S4_dag`, `S8_group_tpr`, `S4_binned_logodds`, right panel of `S7_coef_forest`). The slide caption carries the message; the presenter should point at the relevant part, or the figure owner can re-export larger fonts.
-- There is no figure of the triglyceride distribution. The skewness slide (V4.3) uses the HbA1c outlier-fence figure and quotes the skewness values in the caption.
+- Plot text may still be small at slide size on tall figures (`S8_group_tpr`, right panel of `S7_coef_forest`; the S4 clustermap, DAG and log-odds figures were re-rendered with larger fonts, check the render). The slide caption carries the message; the presenter should point at the relevant part, or the figure owner can re-export larger fonts.
 - Numbers not in `numbers_on_slides.csv` are not used on any slide (for example subgroup sizes, the 0.70 and 0.52 TPR of diagnosed and undiagnosed positives, the Asian observed-to-expected ratio of 1.35). Add them to the CSV first if the team wants them shown.

@@ -170,16 +170,16 @@ Redundancy destabilises explanation, not prediction. Without pruning, the bootst
 ---
 
 <!-- _class: V4_3 -->
-<!-- _footer: "n = 5,730 · unweighted · §2, §4" -->
+<!-- _footer: "fasting subsample · unweighted · §4" -->
 
 # Skewness and Outlier Fences
 
-![fig h:455](../figures/S3_iqr_fence_harm.png)
+![fig h:455](../figures/S4_triglyceride_skew.png)
 
-Triglyceride skewness is 6.62 against 1.22 for BMI; fences would delete true cases.
+Triglyceride skewness is 6.62 against 1.22 for BMI; a log transform tames it.
 
 <!--
-Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails carry signal, not noise. A Tukey fence on HbA1c would delete diagnostic values, so we transform instead of trimming.
+Fasting triglycerides have skew 6.62, BMI 1.22. Heavy right tails need a transform, not trimming. A Tukey fence on HbA1c would instead delete diagnostic values.
 -->
 
 ---
