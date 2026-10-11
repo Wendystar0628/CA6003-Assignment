@@ -41,7 +41,7 @@ OUT = C.RESULTS_DIR / "S8"
 OUT.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("PYTHONWARNINGS", "ignore::UserWarning")
 N_JOBS = min(12, max(1, (os.cpu_count() or 2) - 2))
-N_PERM_GROUP = 200          # group-label permutations (process doc S8 step 2)
+N_PERM_GROUP = 200          # group-label permutations for the fairness null (§8.3)
 SPEC = C.SPEC_FIXED
 GAP, GAP_SUB = C.SESOI["group_tpr_gap"], C.SESOI["group_tpr_gap_substantive"]
 AUC_SESOI = C.SESOI["roc_auc"]
