@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 13 · Three data versions</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 13 · Three data versions · docs/video_plan.md §4 scene 13 (after figures/S6_arm_matrix.png).
+   Speaker B. One relation: Naive (M0) uses every column, Minimal (M1) adds only the availability rule P03, Systematic (S) switches
+   on all steps; the same simple model is fitted on all three.
+   Numbers: video/data/arms.json (88 / 46 / 42 columns; groups.toggles = which steps each version switches on).
+   Arm S switches on P01-P13; P14 is a separate arm in S6 (arms.json notes), while the storyboard lights all fourteen cells. */
+const K = Kit;
+
+// Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
+const CUES = {
+  labels: 2.6,     // "three versions of the data."          lane labels
+  m0: 3.4,         // "Naive, M0: every column."              hatched frame, "every column"
+  m0n: 4.5,        // (end of the phrase)                     88 columns
+  m1: 5.4,         // "Minimal, M1: naive plus only"          grey lane
+  m1p: 7.6,        // "the rule that bars post-diagnosis"     P03 lit
+  m1n: 9.4,        // 46 columns
+  s: 10.4,         // "Systematic, S: all fourteen steps"     all cells teal
+  sn: 11.9,        // 42 columns
+  merge: 12.7,     // "One simple logistic regression for all three,"  connectors + box
+  lock: 15.0,      // "hypotheses locked first"               padlock
+};
+
+K.createScene({
+  number: 13,
+  name: 'three_versions',
+  duration: 18,
+  layout: 'R',
+  speaker: 'B',
+  title: 'Three versions of the data',
+  source: '§6.4 · S6 · arm_matrix',
+  grid: false,
+  data: '../data/arms.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, S = ctx.S = {};
+    const T = data.groups.toggles, nCells = K.val(data, 'n_steps');
+    const cell = 22, step = 26, cx0 = 316, laneY = [236, 380, 524], laneH = 92;
+    const lanes = [
+      { key: 'M0', name: 'Naive (M0)', n: 'cols_M0', on: T.M0, style: 'leak' },
+      { key: 'M1', name: 'Minimal (M1)', n: 'cols_M1', on: T.M1, style: 'reference' },
+      { key: 'S', name: 'Systematic (S)', n: 'cols_S', on: T.S, style: 'systematic' },
+    ];
+    S.lanes = lanes.map((ln, li) => {
+      const y = laneY[li], g = K.svg('g', {}, fig), parts = {};
+      parts.name = K.svg('g', {}, g);
+      // marker + name (non-colour cue: triangle / circle / square)
+      if (ln.style === 'leak') K.warnTriangle(parts.name, { x: 28, y: y + 26, size: 34 });
+      else if (ln.style === 'reference') K.svg('circle', { cx: 45, cy: y + 46, r: 14, fill: K.C.reference }, parts.name);
+      else K.svg('rect', { x: 31, y: y + 31, width: 28, height: 28, fill: K.C.systematic }, parts.name);
+      K.text(parts.name, { x: 74, y: y + 56, text: ln.name, cls: 'kit-t-note' });
+      // lane body: 14 cells; lit cells are solid in the lane colour, others empty outlines
+      parts.body = K.svg('g', {}, g);
+      const col = ln.style === 'leak' ? K.C.leak : (ln.style === 'reference' ? K.C.reference : K.C.systematic);
+      if (ln.style === 'leak') {   // hatched frame, empty inside
+        K.svg('rect', { x: cx0 - 14, y: y + 4, width: 14 * step + 20, height: laneH - 8, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 3 }, parts.body);
+        K.svg('rect', { x: cx0 - 6, y: y + 12, width: 14 * step + 4, height: laneH - 24, fill: '#fff' }, parts.body);
+      }
+      parts.cells = [];
+      for (let i = 0; i < nCells; i++) {
+        const id = 'P' + String(i + 1).padStart(2, '0');
+        const lit = ln.on.includes(id) || (ln.key === 'S' && id === 'P14');       // S: the storyboard lights all fourteen
+        const r = K.svg('rect', { x: cx0 + i * step, y: y + 35, width: cell, height: cell, fill: '#fff', stroke: ln.style === 'leak' ? 'none' : col, 'stroke-width': 2.5 }, parts.body);
+        parts.cells.push({ r, lit, id, x: cx0 + i * step, y: y + 34 });
+      }
+      if (ln.style === 'leak') parts.every = K.text(parts.body, { x: cx0 + 4, y: y + 56, text: 'every column', cls: 'kit-t-note' });
+      if (ln.key === 'M1') { const c = parts.cells.find((q) => q.lit); parts.p03 = K.text(parts.body, { x: c.x + cell / 2, y: y + 28, text: c.id, anchor: 'middle', cls: 'kit-t-min' }); parts.p03.style.fontFamily = 'var(--font-mono)'; }
+      parts.count = K.text(g, { x: cx0 + 14 * step + 20, y: y + 56, text: K.disp(data, ln.n) + ' columns', cls: 'kit-t-note', weight: 600 });
+      // connector to the shared box
+      parts.conn = K.svg('line', { x1: 914, x2: 936, y1: y + 46, y2: y + 46, stroke: K.C.ink, 'stroke-width': 3 }, g);
+      return { g, parts, ln, col };
+    });
+    S.bar = K.svg('line', { x1: 936, x2: 936, y1: laneY[0] + 46, y2: laneY[2] + 46, stroke: K.C.ink, 'stroke-width': 3 }, fig);
+    S.box = K.svg('g', {}, fig);
+    K.svg('rect', { x: 962, y: 330, width: 240, height: 192, rx: 6, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, S.box);
+    ['one L2 logistic', 'regression', 'same folds'].forEach((ln, k) => K.text(S.box, { x: 980, y: 386 + k * 40, text: ln, cls: 'kit-t-min', weight: k === 2 ? 400 : 600 }));
+    K.svg('line', { x1: 936, x2: 960, y1: 426, y2: 426, stroke: K.C.ink, 'stroke-width': 3 }, S.box);
+    S.lock = K.svg('g', {}, fig);
+    K.svg('rect', { x: 966, y: 262, width: 30, height: 24, rx: 3, fill: K.C.ink }, S.lock);
+    K.svg('path', { d: 'M972 262 v-8 a9 9 0 0 1 18 0 v8', fill: 'none', stroke: K.C.ink, 'stroke-width': 3.5 }, S.lock);
+    K.text(S.lock, { x: 1008, y: 266, text: 'hypotheses', cls: 'kit-t-min' });
+    K.text(S.lock, { x: 1008, y: 304, text: 'locked', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues;
+    const lane = [
+      { show: c.m0, num: c.m0n, lit: null },
+      { show: c.m1, num: c.m1n, lit: c.m1p },
+      { show: c.s, num: c.sn, lit: c.s },
+    ];
+    S.lanes.forEach((L, i) => {
+      const P = L.parts, d = lane[i];
+      K.op(P.name, K.appear(t, c.labels));
+      K.op(P.body, K.appear(t, d.show));
+      const a = d.lit == null ? 0 : K.appear(t, d.lit);
+      P.cells.forEach((q) => { if (q.lit) { q.r.setAttribute('fill', K.mixColor('#FFFFFF', L.col, a)); } });
+      if (P.every) K.op(P.every, K.appear(t, d.show));
+      if (P.p03) K.op(P.p03, K.appear(t, d.lit));
+      K.op(P.count, K.appear(t, d.num));
+      K.op(P.conn, K.appear(t, c.merge));
+    });
+    K.op(S.bar, K.appear(t, c.merge)); K.op(S.box, K.appear(t, c.merge));
+    K.op(S.lock, K.appear(t, c.lock));
+  },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 12 · Fourteen preparation steps</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 12 · Fourteen preparation steps · docs/video_plan.md §4 scene 12 (teal first appears here).
+   Speaker B. One relation: the 14 steps are what Systematic (S) is made of, and each cites its evidence.
+   Numbers: video/data/arms.json (14 steps; groups.steps = P01-P14 with their block). Cards carry no numbers.
+   Legend moment: the teal chip is placed when the first group turns teal (§6.2: legend at the first appearance of a colour),
+   not after all fourteen are lit as the §4 step list words it. */
+const K = Kit;
+const arms = await K.loadJSON('../data/arms.json');
+const nSteps = K.disp(arms, 'n_steps');
+const STEPS = arms.groups.steps;                    // [{step, name, block, evidence}]
+if (STEPS.length !== K.val(arms, 'n_steps')) throw new Error('step count differs from n_steps');
+
+// Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
+const CUES = {
+  cards: 0.7,          // "Every finding became a switchable preparation step,"   14 outlined cards
+  title: 3.4,          // "fourteen in all."                                       title dissolves to the count
+  groups: [4.6, 6.0, 8.3, 11.0, 14.0, 15.4, 16.8, 18.2],   // Repair / Recode / Keep only / Merge+prune / Flag / Tame / weight / splines+whtr
+  all: 19.8,           // "...none ever sees the label" : Systematic (S) label
+  lock: 20.6,          // lock label
+};
+// narration groups: card indexes (P01 = 0) and the plain-text evidence label shown under them
+const GROUPS = [
+  { cards: [0], label: ['file zeros'] },
+  { cards: [1], label: ['codes per', 'variable'] },
+  { cards: [2], label: ['availability', 'rule'] },
+  { cards: [3, 4], label: ['redundancy'] },
+  { cards: [5, 6], label: ['top-code flags'] },
+  { cards: [7, 8, 9], label: ['skew · scale'] },
+  { cards: [10, 11], label: ['class & survey', 'weights'] },
+  { cards: [12, 13], label: ['splines', 'waist-to-height'], split: true },   // P13 'splines', P14 'waist-to-height'
+];
+
+K.createScene({
+  number: 12,
+  name: 'fourteen_steps',
+  duration: 24,
+  layout: 'R',
+  speaker: 'B',
+  title: [
+    { at: 0, text: 'Findings become steps' },
+    { at: CUES.title, text: nSteps + ' steps, each with its evidence' },
+  ],
+  source: '§6.2 · S6 · step_catalogue',
+  grid: false,
+  legendMoment: { key: 'systematic', at: CUES.groups[0] + 0.3 },
+  data: '../data/arms.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig } = ctx, S = ctx.S = {};
+    const cw = 150, gap = 14, x0 = (ctx.W - (7 * cw + 6 * gap)) / 2, ch = 104;
+    const rowY = [262, 520];
+    S.cards = STEPS.map((st, i) => {
+      const r = i < 7 ? 0 : 1, col = i % 7, x = x0 + col * (cw + gap), y = rowY[r];
+      const g = K.svg('g', {}, fig);
+      const rect = K.svg('rect', { x, y, width: cw, height: ch, rx: 6, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, g);
+      const sq = K.svg('rect', { x: x + 14, y: y + 16, width: 18, height: 18, fill: K.C.systematic }, g);
+      const id = K.text(g, { x: x + 42, y: y + 34, text: st.step, cls: 'kit-t-min', weight: 600 });
+      id.style.fontFamily = 'var(--font-mono)';
+      const blk = K.text(g, { x: x + cw / 2, y: y + 84, text: st.block === '(arm)' ? 'arm' : st.block.replace(/[ab]$/, ''), anchor: 'middle', cls: 'kit-t-min' });
+      blk.style.fontFamily = 'var(--font-mono)';
+      return { g, rect, sq, x, y, cw, ch, i };
+    });
+    // evidence labels: centred under each narration group
+    S.groups = GROUPS.map((gr) => {
+      const g = K.svg('g', {}, fig);
+      const cs = gr.cards.map((i) => S.cards[i]);
+      if (gr.split) {   // last group = two separate cards with their own labels
+        const lab = [['splines'], ['waist-to-height']];
+        return { cards: cs, g, parts: cs.map((c, j) => lab[j].map((ln, k) => K.text(g, { x: c.x + c.cw / 2, y: c.y + c.ch + 40 + k * 38, text: ln, anchor: 'middle', cls: 'kit-t-min' }))) };
+      }
+      const cx = (cs[0].x + cs[cs.length - 1].x + cs[0].cw) / 2, by = cs[0].y + cs[0].ch;
+      gr.label.forEach((ln, k) => K.text(g, { x: cx, y: by + 40 + k * 38, text: ln, anchor: 'middle', cls: 'kit-t-min' }));
+      // bracket under multi-card groups
+      if (cs.length > 1) K.svg('path', { d: `M${cs[0].x + 4} ${by + 12} H${cs[cs.length - 1].x + cs[0].cw - 4}`, stroke: K.C.systematic, 'stroke-width': 3, fill: 'none' }, g);
+      return { cards: cs, g };
+    });
+    // Systematic (S) label and the lock label
+    S.sLab = K.svg('g', {}, fig);
+    K.svg('rect', { x: x0, y: 196, width: 22, height: 22, fill: K.C.systematic }, S.sLab);
+    K.text(S.sLab, { x: x0 + 36, y: 217, text: 'Systematic (S) = all ' + nSteps + ' steps', cls: 'kit-t-note', weight: 600 });
+    S.lock = K.svg('g', {}, fig);
+    const lx = x0, ly = 126;
+    K.svg('rect', { x: lx, y: ly + 12, width: 30, height: 24, rx: 3, fill: K.C.ink }, S.lock);
+    K.svg('path', { d: `M${lx + 6} ${ly + 12} v-8 a9 9 0 0 1 18 0 v8`, fill: 'none', stroke: K.C.ink, 'stroke-width': 3.5 }, S.lock);
+    K.text(S.lock, { x: lx + 48, y: ly + 34, text: 'no step reads the label · permuted-label test', cls: 'kit-t-note' });
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues;
+    S.cards.forEach((cd) => K.op(cd.g, K.appear(t, c.cards)));
+    S.groups.forEach((gr, gi) => {
+      const a = K.appear(t, c.groups[gi]);
+      K.op(gr.g, a);
+      gr.cards.forEach((cd) => {
+        cd.rect.setAttribute('fill', K.mixColor('#FFFFFF', '#E2F2EE', a));
+        cd.rect.setAttribute('stroke', K.mixColor(K.C.ink, K.C.systematic, a));
+        cd.rect.setAttribute('stroke-width', 2.5 + 0.7 * a);
+        K.op(cd.sq, a);
+      });
+    });
+    K.op(S.sLab, K.appear(t, c.all));
+    K.op(S.lock, K.appear(t, c.lock));
+  },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 11 · Redundancy and skew</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 11 · Redundancy and skew · docs/video_plan.md §4 scene 11. Speaker B presents C's finding ("found by C · §4").
+   One relation: weight and BMI carry the same information (VIF 95.7 / 97.6), and fasting triglycerides are extremely skewed
+   (6.62 -> -0.009 after Yeo-Johnson), so we prune one column and transform the other.
+   Numbers: video/data/vif_skew.json. Histogram shapes: video/data/hist_geometry.json (aggregates, fasting subsample n = 2,820).
+   Histogram heights are scaled to the same plot height (shape comparison, no y axis). */
+const K = Kit;
+const geo = await K.loadJSON('../data/hist_geometry.json');
+
+// Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
+const CUES = {
+  axis: 4.0,       // "Weight and BMI are nearly the same column:"          M1 VIF axis
+  band: 5.2,       // "...nearly the same column"                            VIF > 10 band
+  bars: 9.6,       // "their variance inflation factors,"                   M2 bars
+  vifW: 12.4,      // "are 95.7"                                            number, weight
+  vifB: 13.3,      // "and 97.6"                                            number, BMI
+  hist: 14.6,      // "Fasting triglycerides"                               M1 + M2 skewed histogram
+  skew: 16.6,      // "have a skewness of 6.62"                             number
+  prune: 19.6,     // "So I prune weight"                                   decision 1
+  morph: 21.4,     // "and transform the skew"                              M6 histogram -> Yeo-Johnson, number counts to -0.009
+  decide2: 22.4,   // decision 2 label
+  byB: 24.2,       // note "implemented by B"
+};
+
+K.createScene({
+  number: 11,
+  name: 'redundancy_skew',
+  duration: 27,
+  layout: 'R',
+  speaker: 'B',
+  title: 'Two structural problems',
+  attribution: 'found by C · §4',
+  source: '§4.9–4.10 · V4 · vif_skew',
+  grid: false,
+  data: '../data/vif_skew.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, S = ctx.S = {};
+    const FILL = '#9AA4B0';
+
+    // ============ left: two VIF bars on a light "VIF > 10" band
+    const y = K.scaleLinear([0, 100], [590, 300]);
+    S.y = y;
+    S.axis = K.axis(fig, y, { orient: 'left', at: 130, ticks: [0, 50, 100], format: (v) => K.fmt(v, 0), title: { text: 'VIF', x: 60, y: 268 } });
+    const thr = K.val(data, 'vif_threshold');
+    S.band = K.svg('g', {}, fig);
+    K.svg('rect', { x: 131, y: 262, width: 440, height: y(thr) - 262, fill: K.C.band }, S.band);
+    K.svg('line', { x1: 131, x2: 571, y1: y(thr), y2: y(thr), stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '9 6' }, S.band);
+    K.text(S.band, { x: 131, y: 250, text: 'VIF > ' + K.disp(data, 'vif_threshold') + ': severe', cls: 'kit-t-note' });
+    S.vif = [['vif_weight', 190, 'Weight'], ['vif_bmi', 390, 'BMI']].map(([id, bx, name]) => {
+      const it = K.item(data, id);
+      const bar = K.bar(fig, { scale: y, base: 0, x: bx, width: 140, styles: ['ink'] });
+      const lab = K.text(fig, { x: bx + 70, y: 636, text: name, anchor: 'middle', cls: 'kit-t-note' });
+      const num = K.text(fig, { x: bx + 70, y: 372, text: it.display, anchor: 'middle', cls: 'kit-t-second' });
+      return { it, bar, num, lab };
+    });
+
+    // ============ right: skewed histogram -> Yeo-Johnson, same box
+    const R = geo.groups.tg_raw_hist, Y = geo.groups.tg_yj_hist;
+    const N = R.counts.length, bx0 = 690, bw = 480, by = 590, bh = 270;
+    const rawMax = Math.max(...R.counts), yjMax = Math.max(...Y.counts);
+    const rawH = R.counts.map((cn) => cn / rawMax);
+    const yjC = Y.counts.map((cn) => cn / yjMax);
+    // resample the 40 Yeo-Johnson bins onto the 70 raw bin positions (shape only)
+    const yjH = rawH.map((_, i) => {
+      const u = (i + 0.5) / N * Y.counts.length - 0.5, i0 = Math.max(0, Math.min(Y.counts.length - 1, Math.floor(u))), i1 = Math.min(Y.counts.length - 1, i0 + 1);
+      return yjC[i0] + (yjC[i1] - yjC[i0]) * Math.max(0, Math.min(1, u - i0));
+    });
+    S.N = N; S.rawH = rawH; S.yjH = yjH; S.box = { x0: bx0, w: bw, y: by, h: bh };
+    S.hist = K.svg('g', {}, fig);
+    K.svg('line', { x1: bx0, x2: bx0 + bw, y1: by, y2: by, stroke: K.C.ink, 'stroke-width': 2 }, S.hist);
+    S.hrects = rawH.map(() => K.svg('rect', { fill: FILL, stroke: '#fff', 'stroke-width': 0.6 }, S.hist));
+    // dashed ghost of the raw shape (stays in the last frame so the contrast survives)
+    const gp = rawH.map((h, i) => `${i ? 'L' : 'M'}${(bx0 + (i / N) * bw).toFixed(1)} ${(by - h * bh).toFixed(1)} L${(bx0 + ((i + 1) / N) * bw).toFixed(1)} ${(by - h * bh).toFixed(1)}`).join(' ');
+    S.ghost = K.svg('path', { d: gp, fill: 'none', stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '7 6' }, fig);
+    S.histCap = K.text(S.hist, { x: bx0, y: 650, text: 'Fasting triglycerides · n = ' + K.disp(data, 'skew_tg_n'), cls: 'kit-t-note' });
+    S.skewNum = K.callout(fig, { x: bx0, y: 205, size: 'main', label: 'skewness' });
+    S.skewNum.label.setAttribute('y', 205 + 74);
+    S.wasRaw = K.text(fig, { x: bx0 + 230, y: 279, text: 'was ' + K.disp(data, 'skew_tg'), cls: 'kit-t-note' });
+    S.sRaw = K.val(data, 'skew_tg'); S.sYJ = K.val(data, 'skew_tg_yj'); S.dYJ = K.disp(data, 'skew_tg_yj'); S.dRaw = K.disp(data, 'skew_tg');
+
+    // ============ decisions
+    S.d1 = K.text(fig, { x: 100, y: 716, text: '→ prune weight (P05)', cls: 'kit-t-note', weight: 600 });
+    S.d2 = K.text(fig, { x: bx0, y: 716, text: '→ transform skew (P08)', cls: 'kit-t-note', weight: 600 });
+    S.byB = K.text(fig, { x: 100, y: 762, text: 'implemented by B', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues, d = ctx.data;
+    // ---- left
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 3 }));
+    K.op(S.band, K.appear(t, c.band));
+    S.vif.forEach((v, i) => {
+      const g = K.M2_barGrow(t, c.bars, { index: i });
+      v.bar.update({ value: v.it.value, grow: g });
+      K.op(v.num, K.appear(t, i ? c.vifB : c.vifW)); K.op(v.lab, K.appear(t, c.bars));
+    });
+    // ---- right: raw shape grows (M2), then M6 morphs it in place to the Yeo-Johnson shape
+    const grow = K.M2_barGrow(t, c.hist), m = K.M6_morph(t, c.morph);
+    const B = S.box, w = B.w / S.N;
+    S.hrects.forEach((r, i) => {
+      const h = K.lerp(S.rawH[i], S.yjH[i], m) * B.h * grow;
+      r.setAttribute('x', B.x0 + i * w); r.setAttribute('width', w); r.setAttribute('y', B.y - h); r.setAttribute('height', h);
+    });
+    K.op(S.hist, K.appear(t, c.hist, 0.2));
+    K.op(S.ghost, 0.45 * m);
+    const val = K.M10_count(t, c.morph, S.sRaw, S.sYJ);
+    const txt = m <= 0 ? S.dRaw : (t >= c.morph + K.T.M10.dur ? S.dYJ : K.fmt(val, 2));
+    S.skewNum.update({ text: txt, number: K.appear(t, c.skew), label: K.appear(t, c.skew + K.T.appear) });
+    K.op(S.wasRaw, K.appear(t, c.morph + K.T.M10.dur));
+    // ---- decisions
+    K.op(S.d1, K.appear(t, c.prune)); K.op(S.d2, K.appear(t, c.decide2)); K.op(S.byB, K.appear(t, c.byB));
+  },
+});
+</script>
+</body>
+</html>

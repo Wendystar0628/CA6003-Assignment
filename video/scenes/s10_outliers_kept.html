@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 10 · Outliers kept</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 10 · Outliers kept · docs/video_plan.md §4 scene 10.
+   Speaker B. One relation: the textbook 1.5 x IQR fence flags 542 HbA1c values, and 519 of them are diabetic, so we keep them.
+   Numbers: video/data/iqr_fence.json (6.8 %, 542, 519, 1.5). Histogram bins and the lower fence: video/data/hist_geometry.json
+   (build_geometry_s10_11_15.py, aggregates of the analysis cohort). The flagged values are not Systematic (S): ink only, no teal. */
+const K = Kit;
+const geo = await K.loadJSON('../data/hist_geometry.json');
+
+// Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
+const CUES = {
+  axis: 0.3,         // "Second decision: outliers."                                 M1 axis
+  bars: 1.4,         // "The textbook rule deletes anything"                         M2 histogram grows
+  fence: 4.6,        // "beyond one and a half interquartile ranges"                 fence + M11 arrow
+  flag: 8.0,         // "that flags 542 adults"                                      M3 on the flagged values, 542, one dot per value
+  diabetic: 9.9,     // "and 519 of them have diabetes"                              M10: 519 dots turn solid
+  del: 11.6,         // "Those are not errors. They are the disease."                "delete?" label
+  steps: 15.0,       // "We flagged them, checked them,"                              M12 dissolve into Flag -> Review -> Keep
+  keep: 17.6,        // "and kept every one"                                          ink check on Keep
+  title: 8.0,
+};
+
+K.createScene({
+  number: 10,
+  name: 'outliers_kept',
+  duration: 22,
+  layout: 'R',
+  speaker: 'B',
+  title: [
+    { at: 0, text: 'Delete the outliers?' },
+    { at: CUES.title, text: '519 of 542 flagged are diabetic' },
+  ],
+  source: '§3.5 · V2 · iqr_fence',
+  data: '../data/iqr_fence.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, S = ctx.S = {};
+    const H = geo.groups.a1c_hist, fence = K.item(data, 'fence'), flagged = K.item(data, 'flagged'), pos = K.item(data, 'flagged_pos');
+    const lowF = K.item(geo, 'a1c_fence_lower').value;
+    const x = K.scaleLinear([H.edges[0], H.edges[H.edges.length - 1]], [110, 1150]);
+    const maxC = Math.max(...H.counts);
+    const y = K.scaleLinear([0, maxC], [560, 300]);
+    S.axis = K.axis(fig, x, { orient: 'bottom', at: 560, ticks: [4, 6, 8, 10, 12, 14, 16], format: (v) => K.fmt(v, 0), title: { text: 'HbA1c, %', x: 110, y: 662 } });
+
+    // ---- histogram (neutral ink-tint bars); bars outside the fences are the flagged ones
+    S.bars = K.svg('g', {}, fig);
+    S.rects = H.counts.map((cn, i) => {
+      const mid = (H.edges[i] + H.edges[i + 1]) / 2, flag = mid > fence.value || mid < lowF;
+      const r = K.svg('rect', { fill: '#9AA4B0', stroke: '#fff', 'stroke-width': 1 }, S.bars);
+      return { r, i, cn, flag, x0: x(H.edges[i]), w: x(H.edges[i + 1]) - x(H.edges[i]) };
+    });
+    // 2 px ink outline on the flagged bars (drawn as their own layer so the focus can fade it in)
+    S.flagOutline = K.svg('g', {}, fig);
+    S.rects.filter((b) => b.flag && b.cn > 0).forEach((b) => { b.o = K.svg('rect', { fill: 'none', stroke: K.C.ink, 'stroke-width': 2 }, S.flagOutline); });
+
+    // ---- fences (dashed ink), upper one labelled
+    S.fences = K.svg('g', {}, fig);
+    [fence.value, lowF].forEach((v) => K.svg('line', { x1: x(v), x2: x(v), y1: 300, y2: 560, stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '9 6' }, S.fences));
+    S.fenceLab = K.text(S.fences, { x: x(fence.value), y: 284, text: fence.display, anchor: 'middle', cls: 'kit-t-tick' });
+    S.arrow = K.arrow(fig, { x1: x(fence.value) + 120, y1: 352, x2: x(fence.value) + 10, y2: 380, label: { x: x(fence.value) + 134, y: 362, text: '1.5 × IQR fence', anchor: 'start', cls: 'kit-t-note' } });
+
+    // ---- 542 callout and one dot per flagged value (519 diabetic, 23 not)
+    S.flagNum = K.svg('g', {}, fig);
+    S.n542 = K.callout(S.flagNum, { x: 110, y: 170, size: 'main', label: 'flagged values' });
+    S.n542.label.setAttribute('y', 170 + 74);
+    const cols = 33, pitch = 11, ox = 800, oy = 128;
+    S.dots = [];
+    for (let k = 0; k < flagged.value; k++) {
+      const cx = ox + (k % cols) * pitch, cy = oy + Math.floor(k / cols) * pitch;
+      S.dots.push(K.svg('circle', { cx, cy, r: 3.9, fill: '#fff', stroke: K.C.ink, 'stroke-width': 1.6 }, S.flagNum));
+    }
+    S.nPos = pos.value;
+    S.key = K.svg('g', {}, fig);
+    const ky = oy + Math.ceil(flagged.value / cols) * pitch + 50;
+    K.svg('circle', { cx: ox + 8, cy: ky - 9, r: 9, fill: K.C.ink, stroke: K.C.ink, 'stroke-width': 2 }, S.key);
+    S.n519 = K.text(S.key, { x: ox + 30, y: ky, text: pos.display + ' diabetic', cls: 'kit-t-note', weight: 600 });
+    K.svg('circle', { cx: ox + 8, cy: ky + 37, r: 9, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2 }, S.key);
+    K.text(S.key, { x: ox + 30, y: ky + 46, text: 'not diabetic', cls: 'kit-t-note' });
+
+    // ---- decision strip: "delete?" -> Flag -> Review -> Keep (ink)
+    S.strip = K.svg('g', {}, fig);
+    const sy = 690, bh = 64;
+    const box = (parent, bx, w, label, dashed) => {
+      K.svg('rect', { x: bx, y: sy, width: w, height: bh, rx: 4, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': dashed ? '8 6' : null }, parent);
+      return K.text(parent, { x: bx + w / 2, y: sy + 43, text: label, anchor: 'middle', cls: 'kit-t-note' });
+    };
+    S.del = K.svg('g', {}, S.strip); box(S.del, 110, 190, 'delete?', true);
+    S.steps = K.svg('g', {}, S.strip);
+    box(S.steps, 360, 170, 'Flag'); K.text(S.steps, { x: 545, y: sy + 45, text: '→', cls: 'kit-t-note' });
+    box(S.steps, 590, 190, 'Review'); K.text(S.steps, { x: 795, y: sy + 45, text: '→', cls: 'kit-t-note' });
+    box(S.steps, 840, 170, 'Keep');
+    S.check = K.feedback(S.steps, { kind: 'supported', x: 1030, y: sy + 9, size: 46 });
+    S.maxC = maxC; S.y = y; S.x = x; S.fenceV = fence.value; S.lowF = lowF;
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues, y = S.y;
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 7 }));
+    const grow = K.M2_barGrow(t, c.bars);
+    const f = K.M3_focus(t, c.flag);
+    S.rects.forEach((b) => {
+      const h = (y(0) - y(b.cn)) * grow;
+      b.r.setAttribute('x', b.x0 + 0.5); b.r.setAttribute('width', Math.max(0, b.w - 1)); b.r.setAttribute('y', y(0) - h); b.r.setAttribute('height', h);
+      b.r.style.opacity = String(b.flag ? 1 : f.others);
+      if (b.o) { b.o.setAttribute('x', b.x0 + 0.5); b.o.setAttribute('width', Math.max(0, b.w - 1)); b.o.setAttribute('y', y(0) - h - 1); b.o.setAttribute('height', h + 1); }
+    });
+    K.op(S.bars, grow > 0 ? 1 : 0);
+    K.op(S.flagOutline, f.outline);
+    // fence + arrow (M11), lower fence appears with it
+    K.op(S.fences, K.appear(t, c.fence));
+    S.arrow.update(K.M11_arrow(t, c.fence + 0.2));
+    // 542 and one dot per flagged value, then 519 turn solid (M10)
+    K.op(S.flagNum, K.appear(t, c.flag));
+    S.n542.update({ text: K.disp(ctx.data, 'flagged'), number: 1, label: K.appear(t, c.flag + K.T.appear) });
+    const k = Math.round(K.M10_count(t, c.diabetic, 0, S.nPos));
+    S.dots.forEach((d, i) => d.setAttribute('fill', i < k ? K.C.ink : '#fff'));
+    K.op(S.key, K.appear(t, c.diabetic));
+    // decision strip: "delete?" appears, then dissolves to three cells (the delete box stays as a faint dashed ghost)
+    const d = K.M12_dissolve(t, c.steps);
+    K.op(S.del, K.appear(t, c.del) * (1 - 0.7 * d));
+    K.op(S.steps, d);
+    S.check.update(K.appear(t, c.keep));
+  },
+});
+</script>
+</body>
+</html>
