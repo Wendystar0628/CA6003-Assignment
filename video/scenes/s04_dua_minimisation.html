@@ -3,35 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scene 04 · DUA and minimisation</title>
+<title>Scene 04 · Data governance</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../kit/tokens.css">
 <script src="../kit/kit.js"></script>
 </head>
 <body>
 <script>
-/* Scene 04 · Data use agreement and minimisation · docs/video_plan.md §4 scene 04.
-   Speaker A. One relation: of the 175 source columns only 78 were kept (the other 97 dimmed to 25 %),
-   after the DUA check. Verified-by-fingerprint and locked-by-fingerprint are secondary, screen-only.
-   The 175 squares are the real per-file column counts (video/data/minimisation.json, groups.per_file):
-   file by file, kept columns first. Ink only: nothing here is a semantic colour. */
+/* Scene 04 · Data governance · docs/video_plan.md §7.1–7.2 scene 04.
+   Speaker: member 0. One relation: after the data use agreement check, only 78 of the 175 source columns
+   were kept (the other 97 dim to 25 %, M3, while the count runs 175 -> 78, M10). Hash-verified files and
+   hash-locked hypotheses follow as two ink lines. The 175 squares are the real per-file column counts
+   (video/data/minimisation.json, groups.per_file), file by file, kept columns first. Ink only. */
 
-// Cue times in scene seconds, estimated from the §4 narration (replace with the take, §8.3 step 5).
 const CUES = {
-  dua: 2.1,      // "The data user agreement forbids ..."   checklist line
-  check: 4.9,    // "... so we did neither."                 ink check (feedback: supported)
-  grid: 6.4,     // before "We kept only"                    175 squares appear
-  keep: 7.9,     // "seventy-eight"                          97 squares dim (M3) + count 175 -> 78 (M10)
-  of: 8.9,       // "of 175 columns"                         label
-  title2: 8.6,   // title settles on the screen text (M12 dissolve)
-  files: 11.2,   // "Files are verified by fingerprint"      fingerprint 1
-  locks: 13.7,   // "hypotheses were locked by fingerprint"  fingerprint 2
-  simple: 16.0,  // "... before any experiment"              simple models only
+  dua: 'data use agreement',     // DUA line
+  check: 'did neither',          // ink check (supported)
+  grid: 'We kept',               // 175 squares appear
+  keep: '78',                    // 97 squares dim (M3), count 175 -> 78 (M10)
+  of: 'of 175',                  // "of 175 columns" label
+  files: 'verified every',       // fingerprint line 1
+  locks: 'locked our',           // fingerprint line 2
 };
 
-const GRID = { cols: 25, cell: 24, gap: 8, x0: 60, y0: 190 };
+const GRID = { cols: 25, cell: 24, gap: 8, x0: 48, y0: 132 };
 
-/** Fingerprint icon (ink line art, 40x40 box) drawn locally; the kit has no such icon. */
+/** Fingerprint icon (ink line art, 40x40 box). */
 function fingerprint(parent, x, y, size) {
   const g = Kit.svg('g', { transform: `translate(${x},${y}) scale(${size / 40})`, fill: 'none', stroke: Kit.C.ink, 'stroke-width': 2.2, 'stroke-linecap': 'round' }, parent);
   g.innerHTML = '<path d="M7 17c0-8 6-13 13-13s13 5 13 13"/><path d="M12 17c0-5 3.5-8.5 8-8.5s8 3.5 8 8.5v3"/><path d="M17 18c0-2 1.3-3.5 3-3.5s3 1.5 3 3.5v6c0 4-2 7-4 9"/><path d="M12 22v4c0 4-1 7-3 9"/><path d="M28 22v6c0 3-1 6-2.5 8"/><path d="M7 21v3"/><path d="M33 21v3"/>';
@@ -41,68 +38,54 @@ function fingerprint(parent, x, y, size) {
 Kit.createScene({
   number: 4,
   name: 'dua_minimisation',
-  duration: 18,
-  layout: 'R',
-  speaker: 'A',
-  title: [
-    { at: 0, text: 'Governance came first' },
-    { at: CUES.title2, text: '…' },       // filled from the data in setup()
-  ],
-  source: '§1 · S1_minimisation',
+  title: 'Data governance',
+  subtitle: 'Data use agreement, column minimisation, hash-verified files and locked hypotheses',
+  pointer: '1.8–1.9',
   data: '../data/minimisation.json',
   cues: CUES,
 
   setup(ctx) {
-    const { fig, data, ui } = ctx, K = Kit;
+    const { fig, data } = ctx, K = Kit;
     const S = ctx.S = {};
     const g = K.svg('g', {}, fig);
-    const raw = K.val(data, 'raw'), kept = K.val(data, 'kept');
-    S.raw = raw; S.kept = kept;
-    ui.titles[1].el.textContent = 'Keep ' + K.disp(data, 'kept') + ' of ' + K.disp(data, 'raw') + ' columns';
+    S.raw = K.val(data, 'raw'); S.kept = K.val(data, 'kept');
 
-    // 1. DUA checklist line with an ink check
-    S.dua = K.svg('g', {}, g);
-    K.text(S.dua, { x: 126, y: 100, text: 'DUA: no re-identification · no linkage', cls: 'kit-t-note' });
-    S.check = K.feedback(g, { kind: 'supported', x: 60, y: 62, size: 46 });
+    // 1. data use agreement, with an ink check
+    S.dua = K.text(g, { x: 116, y: 70, text: 'NCHS data use agreement: no re-identification · no linkage', cls: 'kit-t-note' });
+    S.check = K.feedback(g, { kind: 'supported', x: 48, y: 30, size: 48 });
 
-    // 2. 175 squares: file by file, kept columns first (real per-file counts)
+    // 2. 175 squares, file by file, kept columns first (real per-file counts)
     const order = [];
     data.groups.per_file.forEach((f) => { for (let i = 0; i < f.raw; i++) order.push(i < f.kept); });
-    if (order.length !== raw) throw new Error('per-file counts do not add up to the raw column count');
+    if (order.length !== S.raw) throw new Error('per-file counts do not add up to the raw column count');
     S.sq = order.map((isKept, k) => {
       const col = k % GRID.cols, row = Math.floor(k / GRID.cols);
       const r = K.svg('rect', { x: GRID.x0 + col * (GRID.cell + GRID.gap), y: GRID.y0 + row * (GRID.cell + GRID.gap), width: GRID.cell, height: GRID.cell, fill: K.C.ink }, g);
       return { r, kept: isKept };
     });
-    S.grid = K.svg('g', {}, g);
-    S.count = K.callout(g, { x: 892, y: 330, size: 'main' });
-    S.countLab = K.text(g, { x: 892, y: 398, text: 'of ' + K.disp(data, 'raw') + ' columns', cls: 'kit-t-min' });
+    S.count = K.callout(g, { x: 900, y: 270, size: 'main' });
+    S.countLab = K.text(g, { x: 900, y: 352, text: 'of ' + K.disp(data, 'raw') + ' columns kept', cls: 'kit-t-note' });
 
-    // 3. fingerprints and the model note
+    // 3. hash-verified files, hash-locked hypotheses
     S.fp1 = K.svg('g', {}, g);
-    fingerprint(S.fp1, 60, 524, 76);
-    K.text(S.fp1, { x: 152, y: 576, text: 'files: SHA-256 verified', cls: 'kit-t-note' });
+    fingerprint(S.fp1, 48, 404, 60);
+    K.text(S.fp1, { x: 132, y: 446, text: K.disp(data, 'files_verified') + ' raw files: hash-verified (SHA-256)', cls: 'kit-t-note' });
     S.fp2 = K.svg('g', {}, g);
-    fingerprint(S.fp2, 640, 524, 76);
-    K.text(S.fp2, { x: 732, y: 576, text: 'hypotheses: SHA-256 locked', cls: 'kit-t-note' });
-    S.simple = K.text(g, { x: 60, y: 704, text: 'simple models only: L2 logistic · shallow tree', cls: 'kit-t-note' });
+    fingerprint(S.fp2, 48, 500, 60);
+    K.text(S.fp2, { x: 132, y: 542, text: 'Hypotheses: locked by hash before any results', cls: 'kit-t-note' });
   },
 
   render(t, ctx) {
     const K = Kit, S = ctx.S, c = ctx.cues;
     K.op(S.dua, K.appear(t, c.dua));
     S.check.update(K.appear(t, c.check));
-
-    // squares: appear together, then the dropped 97 dim to 25 % (M3) while the number counts (M10)
     const a = K.appear(t, c.grid), foc = K.M3_focus(t, c.keep);
     S.sq.forEach((q) => K.op(q.r, a * (q.kept ? 1 : foc.others)));
     const n = K.M10_count(t, c.keep, S.raw, S.kept);
-    S.count.update({ text: K.fmt(n, 0), number: K.appear(t, c.keep) });
+    S.count.update({ text: K.fmt(n, 0), number: K.appear(t, c.grid) });
     K.op(S.countLab, K.appear(t, c.of));
-
     K.op(S.fp1, K.appear(t, c.files));
     K.op(S.fp2, K.appear(t, c.locks));
-    K.op(S.simple, K.appear(t, c.simple));
   },
 });
 </script>

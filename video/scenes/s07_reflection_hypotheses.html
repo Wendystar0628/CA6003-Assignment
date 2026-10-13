@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 07 · Most unexpected finding (pre-registered hypotheses)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 07 · Most unexpected finding: the pre-registered hypotheses · docs/video_plan.md §5.3 (reflection pages).
+   Speaker: member 0. Reflection page: one serif sentence, a small figure, the hand-off line.
+   Of the six hypotheses locked before any related data were seen, three were supported and three
+   inconclusive: six neutral squares become feedback shapes (ink only: solid check = supported, dashed box
+   with "?" = inconclusive). Never "10 of 17": the six are the pre-registered ones
+   (video/data/hypotheses.json, prereg_*). */
+
+const CUES = {
+  line: 'only three',             // the reflection sentence, as the verdicts land
+  six: 'of six hypotheses',       // six neutral squares
+  flip: 'only three',             // squares become feedback shapes
+  handoff: 'Now',                 // "Next: Data quality · presented by <Name:1>"
+};
+
+const SQ = { size: 100, gap: 28, x: 0, y: [40, 196] };
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+
+Kit.createScene({
+  number: 7,
+  name: 'reflection_hypotheses',
+  page: 'reflection',
+  title: 'Most unexpected finding',
+  subtitle: '<Name> on the pre-registered hypotheses and their verdicts',
+  pointer: '10.2',
+  data: '../data/hypotheses.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { data } = ctx, K = Kit;
+    const nSup = K.val(data, 'prereg_supported'), nInc = K.val(data, 'prereg_inconclusive'), nAll = K.val(data, 'prereg_n');
+    if (nSup + nInc !== nAll) throw new Error('verdict counts do not add up');
+    const w = (n) => WORDS[n];
+    const R = ctx.S = K.reflection(ctx, {
+      line: 'Of ' + w(nAll) + ' pre-registered hypotheses, ' + w(nSup) + ' were supported and ' + w(nInc) + ' inconclusive.',
+      handoff: 'Next: Data quality · presented by <Name:1>', figureHeight: 300 });
+    R.cells = [];
+    [[nSup, 'supported'], [nInc, 'inconclusive']].forEach(([n, kind], row) => {
+      for (let i = 0; i < n; i++) {
+        const x = SQ.x + i * (SQ.size + SQ.gap), y = SQ.y[row];
+        const neutral = K.svg('rect', { x: x + 1.5, y: y + 1.5, width: SQ.size - 3, height: SQ.size - 3, rx: 10, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, R.g);
+        const shape = K.feedback(R.g, { kind, x, y, size: SQ.size });
+        R.cells.push({ neutral, shape });
+      }
+    });
+    const lx = SQ.x + Math.max(nSup, nInc) * (SQ.size + SQ.gap) + 12;
+    R.labs = [
+      K.text(R.g, { x: lx, y: SQ.y[0] + 62, text: K.disp(data, 'prereg_supported') + ' supported', cls: 'kit-t-note' }),
+      K.text(R.g, { x: lx, y: SQ.y[1] + 62, text: K.disp(data, 'prereg_inconclusive') + ' inconclusive', cls: 'kit-t-note' }),
+    ];
+  },
+
+  render(t, ctx) {
+    const K = Kit, R = ctx.S, c = ctx.cues;
+    R.update({ line: K.appear(t, c.line), figure: 1, handoff: K.appear(t, c.handoff) });
+    const flip = K.progress(t, c.flip, 0.4, K.ease.morph);
+    R.cells.forEach((cl, k) => {
+      const a = K.appear(t, c.six + k * 0.1);
+      K.op(cl.neutral, a * (1 - flip));
+      cl.shape.update(a * flip);
+    });
+    R.labs.forEach((l) => K.op(l, flip));
+  },
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 01 · Title, hook and team</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 01 · Title card, AUC hook, team page · docs/video_plan.md §5.3 (opening), §7.1–7.2 scene 01.
+   Speaker: member 0. Three phases, one layout:
+     a 0–1.5 s   title card (silent; no progress bar in 01)
+     b 1.5–13 s  "How good is AUC 0.961?": horizontal AUC axis 0.5–1.0 (truncated, "axis starts at 0.5"),
+                 ink pointer rises to 0.961 (M10); "suspiciously high" puts the M3 outline on the number
+     c 13–29 s   "Team and roles": four role cards (name / role / sections presented); the member being
+                 named keeps 100 % and a 2 px ink outline, the others drop to 25 %; "We present" restores all.
+   Ink only (red is kept for the leakage check, scene 17). The one number, 0.961, and the axis start
+   come from video/data/leak_gate.json; names come from the kit ("[Name]" until team.json has real names). */
+
+const CUES = {
+  axis: 1.6,                                   // as the title card leaves                         M1
+  rise: 'AUC',                                 // "at an AUC of 0.961"                            M10 pointer 0.5 -> 0.961
+  num: '0.961',                                //                                                  number fully in
+  high: 'suspiciously high',                   //                                                  M3 outline on the number
+  team: 13.05,                                 // team page dissolves in just before "I'm <Name>" (13.3 s) M12;
+                                               // kept off a whole second so the 1 s audit never samples a cross-fade
+  m0: "I'm",                                   // named card 0
+  m1: '<Name:1> led data',                     // named card 1
+  m2: '<Name:2> exploration',                  // named card 2
+  m3: 'and <Name:3> modelling',                // named card 3
+  all: 'We present',                           // all cards back to 100 %
+};
+
+const AX = { x0: 150, x1: 1150, y: 430 };     // panel coordinates, main area (x <= 1272, y < 648)
+
+Kit.createScene({
+  number: 1,
+  name: 'hook_team',
+  progress: false,                             // the progress bar first appears at the end of scene 02
+  cards: [{ type: 'title', at: 0, until: 1.5, title: 'Who gets labelled diabetic?',
+    subtitle: 'Basic models as instruments on NHANES 2021–2023',
+    line: 'Presented by <Name> · {role} · Problem & data', small: 'CA6003 · Group {group}' }],
+  phases: [
+    { at: 0, page: 'evidence', title: 'How good is AUC {auc}?', subtitle: 'One logistic regression on all available columns, all adults', pointer: '7.5' },
+    { at: 13.05, page: 'team', title: 'Team and roles', subtitle: 'Four members, their roles, and the sections each presents', pointer: null },
+  ],
+  data: '../data/leak_gate.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const auc = K.item(data, 'auc_m0_eall'), base = K.val(data, 'axis_start');
+    S.auc = auc; S.base = base;
+    // the title carries the one number; fill it from the data
+    ui.runs.title.forEach((r) => { if (r.el && r.text.includes('{auc}')) { r.text = r.text.replace('{auc}', auc.display); r.el.textContent = r.text; } });
+
+    // ---- phase b: AUC axis and pointer
+    S.hook = K.svg('g', {}, fig);
+    const x = S.x = K.scaleLinear([base, 1.0], [AX.x0, AX.x1]);
+    S.axis = K.axis(S.hook, x, { orient: 'bottom', at: AX.y, ticks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0], format: (v) => K.fmt(v, 1),
+      truncated: { text: 'axis starts at ' + K.disp(data, 'axis_start'), x: AX.x0 - 30, y: AX.y + 104 } });
+    K.text(S.hook, { x: AX.x1 + 24, y: AX.y + 10, text: 'AUC', cls: 'kit-t-min' });
+    // pointer: a stem from the axis up to the number, with a triangle on the axis
+    S.ptr = K.svg('g', {}, S.hook);
+    K.svg('line', { x1: 0, x2: 0, y1: AX.y - 14, y2: AX.y - 150, stroke: K.C.ink, 'stroke-width': 3 }, S.ptr);
+    K.svg('path', { d: `M0 ${AX.y - 2} l-14 -24 h28 z`, fill: K.C.ink }, S.ptr);
+    S.num = K.callout(S.hook, { x: 0, y: AX.y - 178, size: 'main', anchor: 'middle' });
+    S.label = K.text(S.hook, { x: 0, y: AX.y - 330, text: 'naive preparation · all adults', cls: 'kit-t-min', anchor: 'middle' });
+    S.ring = K.focusRing(S.hook, { x: x(auc.value) - 210, y: AX.y - 300, w: 420, h: 140 });
+
+    // ---- phase c: four role cards (kit team page)
+    S.team = K.teamCards(ctx, { y: 150 });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    const toTeam = K.M12_dissolve(t, c.team);
+
+    // phase b
+    K.op(S.hook, 1 - toTeam);
+    const m1 = K.M1_axisDraw(t, c.axis, { nTicks: 6 });
+    const foc = K.M3_focus(t, c.high);
+    S.axis.update(m1);
+    K.op(S.axis.g, foc.others);
+    const v = K.M10_count(t, c.rise, S.base, S.auc.value), px = S.x(v);
+    S.ptr.setAttribute('transform', `translate(${px},0)`);
+    K.op(S.ptr, K.appear(t, c.rise) * foc.others);
+    S.num.g.setAttribute('transform', `translate(${px},0)`);
+    S.label.setAttribute('x', px);
+    const landed = t >= c.rise + K.T.M10.dur;
+    S.num.update({ text: landed ? S.auc.display : K.fmt(v, 3), number: K.appear(t, c.rise) });
+    K.op(S.label, K.appear(t, c.num) * foc.others);
+    S.ring.update(foc);
+
+    // phase c: named card keeps 100 % + outline, the others 25 %; "We present" restores all
+    const marks = [c.m0, c.m1, c.m2, c.m3];
+    let focus = null;
+    marks.forEach((m, i) => { if (t >= m && t < c.all) focus = i; });
+    const f = K.M3_focus(t, c.m0, c.all);
+    S.team.update({ opacity: toTeam, focus: t < c.all + K.T.M3.dur ? (focus == null ? 3 : focus) : null, outline: f.outline, others: f.others });
+    if (t < c.m0) S.team.update({ opacity: toTeam, focus: null });
+  },
+});
+</script>
+</body>
+</html>

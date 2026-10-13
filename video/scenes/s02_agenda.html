@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 02 · Overview and agenda</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 02 · Overview and agenda · docs/video_plan.md §7.4 (02), §2.3 (research questions).
+   Speaker: member 0. An agenda page, ink only (no semantic colour before its first use):
+     Question  "How accurate can a model get?" dims, then dissolves into the real question (M12)
+     Data      NHANES 2021–23 (CDC) · 5,730 adults (video/data/funnel.json)
+     Design    one L2 logistic regression · same folds; a 3 x 2 grid (preparations x evaluation populations),
+               rows and then columns outlined as they are named
+     Research questions  RQ1 · Labels → RQ2a · Leakage → RQ2b · Preparation (same order as the narration)
+     Sections  the seven-section route, with presenters, in the upper side area; at the end it morphs (M6)
+               into the progress bar at the top of the stage, which then stays for the rest of the film.
+   Deviation from the plan: the route sits in the upper side area (it does not fit at 24 px in x 48–1272),
+   and the other rows stay at 100 % at the end so the final frame reads on its own. */
+
+const CUES = {
+  dimQ: 'who gets labelled',                    // placeholder question dims (M3), then M12 into the real one
+  data: 'change',                               // data row
+  design: 'The design:',                         // design line
+  grid: 'one L2',                               // 3 x 2 grid
+  r0: 'naive', r1: 'minimal', r2: 'systematic', // rows outlined in turn
+  c0: 'all adults', c1: 'not yet diagnosed',    // columns outlined in turn
+  route: { phrase: 'not yet diagnosed', end: true },   // the route draws during the pause
+  rq: 'Our research questions:',
+  q1: 'what does the label', q2: 'Is the high AUC', q3: 'Does systematic preparation',
+  note: ['Does systematic preparation', 1.0],
+  morph: 24.9,                                  // M6 route -> progress bar (0.9 s)
+};
+const MORPH_END = CUES.morph + 0.9;
+
+const COL = { label: 48, content: 300, right: 1272 };
+const ROW = { q: [56, 100], data: 166, design: 232, gridHead: 280, gridTop: 300, cellH: 42, rq: [478, 522, 566], note: 614 };
+const GRID3 = { rowLabelX: 300, cols: [{ x: 520, w: 300 }, { x: 836, w: 400 }] };
+const SIDE = { x: 1320, right: 1704, head: 44, y0: 100, dy: 44 };
+const SPEAKERS = { 1: '<Name:0>', 2: '<Name:1>', 3: '<Name:1>', 4: '<Name:2>', 5: '<Name:2> · <Name:3>', 6: '<Name:3>', 7: '<Name:3>' };
+
+// RQ2a quotes the headline AUC (leak_gate.json); the scene's own data file is funnel.json, so the second
+// file is read before the scene is created (the renderer waits for SCENE_READY).
+Kit.loadJSON('../data/leak_gate.json').then((LG) => Kit.createScene({
+  number: 2,
+  name: 'agenda',
+  page: 'agenda',
+  title: 'Overview and agenda',
+  subtitle: 'Question, data, design, research questions and the sections of this talk',
+  pointer: '1.3–1.5',
+  progress: { at: MORPH_END - 0.2, dur: 0.3 },
+  data: '../data/funnel.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const label = (y, txt) => K.text(g, { x: COL.label, y, text: txt, cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    const fit = (el, max, floor = 28) => {      // shrink a line to its column (never below 28 px)
+      const w = K.textWidth(el), fs = parseFloat(getComputedStyle(el).fontSize);
+      if (w > max) el.style.fontSize = Math.max(floor, Math.floor(fs * max / w)) + 'px';
+      return el;
+    };
+    const line = (parent, y, txt, size = 34) => fit(K.text(parent, { x: COL.content, y, text: txt, cls: 'kit-t-note', size }), COL.right - COL.content);
+
+    // Question
+    S.qLab = label(ROW.q[0], 'Question');
+    S.q0 = line(g, ROW.q[0], 'How accurate can a model get?');
+    S.q1 = K.svg('g', {}, g);
+    line(S.q1, ROW.q[0], 'Who gets labelled diabetic,');
+    line(S.q1, ROW.q[1], 'and what do preparation decisions change?');
+    // Data
+    S.data = K.svg('g', {}, g);
+    K.text(S.data, { x: COL.label, y: ROW.data, text: 'Data', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    line(S.data, ROW.data, 'NHANES 2021–23 (CDC) · ' + K.disp(data, 'n_cohort') + ' adults with an HbA1c result');
+    // Design line + 3 x 2 grid (ink hairlines, no fill)
+    S.design = K.svg('g', {}, g);
+    K.text(S.design, { x: COL.label, y: ROW.design, text: 'Design', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    line(S.design, ROW.design, 'One L2 logistic regression · same folds');
+    S.grid = K.svg('g', {}, g);
+    const rows = ['Naive', 'Minimal', 'Systematic'], cols = ['All adults', 'Not-yet-diagnosed adults'];
+    const gx0 = GRID3.cols[0].x, gx1 = GRID3.cols[1].x + GRID3.cols[1].w, gy0 = ROW.gridTop, gy1 = gy0 + 3 * ROW.cellH;
+    cols.forEach((c, j) => K.text(S.grid, { x: GRID3.cols[j].x + GRID3.cols[j].w / 2, y: ROW.gridHead, text: c, cls: 'kit-t-min', anchor: 'middle' }));
+    rows.forEach((r, i) => K.text(S.grid, { x: GRID3.rowLabelX, y: gy0 + i * ROW.cellH + 31, text: r, cls: 'kit-t-min' }));
+    rows.forEach((_, i) => GRID3.cols.forEach((c) => K.svg('rect', { x: c.x, y: gy0 + i * ROW.cellH, width: c.w, height: ROW.cellH, fill: 'none', stroke: K.C.ink, 'stroke-width': 1.5 }, S.grid)));
+    // focus outlines: one per row (label + cells), one per column (header + cells)
+    S.rowRing = rows.map((_, i) => K.focusRing(g, { x: GRID3.rowLabelX - 8, y: gy0 + i * ROW.cellH, w: gx1 - GRID3.rowLabelX + 8, h: ROW.cellH }));
+    S.colRing = GRID3.cols.map((c) => K.focusRing(g, { x: c.x, y: ROW.gridHead - 30, w: c.w, h: gy1 - (ROW.gridHead - 30) }));
+    // Research questions (notebook numbering; same text and order as the answers in scene 24)
+    S.rqLab = K.text(g, { x: COL.label, y: ROW.rq[0], text: 'Research', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    S.rqLab2 = K.text(g, { x: COL.label, y: ROW.rq[0] + 36, text: 'questions', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    const RQ = [['RQ1 · Labels:', ' What do self-report and HbA1c each measure?'],
+      ['RQ2a · Leakage:', ' Does AUC ' + K.disp(LG, 'auc_m0_eall') + ' survive excluding post-diagnosis items?'],
+      ['RQ2b · Preparation:', ' Does systematic beat minimal preparation, same model?']];
+    S.rq = RQ.map(([head, body], i) => {
+      const el = K.text(g, { x: COL.content, y: ROW.rq[i], text: '', cls: 'kit-t-note', size: 32 });
+      const b = K.svg('tspan', { 'font-weight': 600 }, el); b.textContent = head;
+      const r = K.svg('tspan', {}, el); r.textContent = body;
+      return el;
+    });
+    S.rq.forEach((el) => fit(el, COL.right - COL.content));
+    S.note = K.text(g, { x: COL.content, y: ROW.note, text: 'RQ3 (label matrix) and RQ4 (BMI bias): in the notebook', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+
+    // Sections route (upper side area), presenters on the right
+    S.side = K.svg('g', {}, fig);
+    S.sideHead = K.text(S.side, { x: SIDE.x, y: SIDE.head, text: 'Sections', cls: 'kit-t-min', fill: 'var(--ink-60)' });
+    S.route = K.TIMELINE.sections.map((sec, i) => {
+      const y = SIDE.y0 + i * SIDE.dy;
+      const lab = K.text(S.side, { x: SIDE.x, y, text: sec.label, cls: 'kit-t-min' });
+      const w = K.textWidth(lab);
+      const rule = K.svg('rect', { x: SIDE.x, y: y + 9, width: w, height: 4, fill: K.C.line }, S.side);
+      const who = K.text(S.side, { x: SIDE.right, y, text: Kit.names(SPEAKERS[sec.n]), cls: 'kit-t-min', anchor: 'end', fill: 'var(--ink-60)' });
+      return { lab, rule, who, x: SIDE.x, y, w };
+    });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    // Question: placeholder dims at "who gets labelled", dissolves 0.4 s later
+    // (out, then in: the two questions never overlap on screen)
+    K.op(S.q0, K.M3_focus(t, c.dimQ).others * (1 - K.progress(t, c.dimQ + 0.4, 0.2)));
+    K.op(S.q1, K.progress(t, c.dimQ + 0.6, 0.3));
+    K.op(S.data, K.appear(t, c.data));
+    K.op(S.design, K.appear(t, c.design));
+    K.op(S.grid, K.appear(t, c.grid));
+    // rows, then columns, outlined while they are named
+    const rowOn = [[c.r0, c.r1], [c.r1, c.r2], [c.r2, c.c0]];
+    S.rowRing.forEach((r, i) => r.update({ outline: K.appear(t, rowOn[i][0], 0.2) * (1 - K.appear(t, rowOn[i][1], 0.2)) }));
+    const colOn = [[c.c0, c.c1], [c.c1, c.route + 0.4]];
+    S.colRing.forEach((r, j) => r.update({ outline: K.appear(t, colOn[j][0], 0.2) * (1 - K.appear(t, colOn[j][1], 0.2)) }));
+    // research questions, in the spoken order
+    K.op(S.rqLab, K.appear(t, c.rq)); K.op(S.rqLab2, K.appear(t, c.rq));
+    [c.q1, c.q2, c.q3].forEach((q, i) => K.op(S.rq[i], K.appear(t, q)));
+    K.op(S.note, K.appear(t, c.note));
+
+    // route: rows draw in turn (M1 rhythm), then M6 into the kit progress bar
+    const segs = K.progressSegments(ctx);
+    const p = K.M6_morph(t, c.morph);
+    const py = K.clamp(p * 1.6), pxp = K.clamp((p - 0.3) / 0.7);   // rise first, then spread right (stays clear of the PiP)
+    const fadeOut = 1 - K.clamp(p * 4);
+    K.op(S.sideHead, K.appear(t, c.route) * fadeOut);
+    const P = Kit.GRID.panel, done = t >= MORPH_END + 0.1;
+    S.route.forEach((r, i) => {
+      const a = K.progress(t, c.route + i * 0.12, 0.3, K.ease.enter);
+      const s = segs[i];
+            const rx = s ? s.x - P.x : r.x, ry = s ? 70 - P.y : r.y + 9, rw = s ? s.w : r.w;
+      // labels and presenters fade as the rules rise into the bar; the bar's own labels fade in at the end
+      K.op(r.lab, a * fadeOut);
+      r.rule.setAttribute('x', K.lerp(r.x, rx, pxp)); r.rule.setAttribute('y', K.lerp(r.y + 9, ry, py));
+      r.rule.setAttribute('width', K.lerp(r.w, rw, pxp));
+      K.op(r.rule, done ? 0 : a);
+      K.op(r.who, a * fadeOut);
+    });
+  },
+}));
+</script>
+</body>
+</html>
