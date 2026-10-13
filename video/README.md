@@ -110,6 +110,8 @@ The audit fails any figure element, card text or legend chip that enters the kee
 
   `Kit.cueAt([scene,] 'phrase', {nth, end, offset})` returns the scene time. When the captions are re-timed, the animation moves with them. A missing phrase stops the scene with an error.
 
+  Matching ignores case and punctuation inside words: 'the design' matches "design:", '5,730' and 'self-reported' match as written. These times also accept a cue name or a phrase: `legendMoment.at`, `cards[].at` / `until`, `phases[].at`, `progress.at` and `titleFadeIn`.
+
 ## Write a scene
 
 1. Copy `scenes/_template.html` to `scenes/<file>.html`, using the file name from `timeline.json`.

@@ -106,7 +106,7 @@ export function timeWords(scene, cfg, team, ov = {}) {
   });
 }
 
-const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9<>:.%]+/g, '').replace(/\.(?!\d)|(?<!\d)\./g, '');   // same key as Kit.cueAt
+const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9<>:.%]+/g, '').replace(/\.(?!\d)|(?<!\d)\./g, '').replace(/:(?!\d>)/g, '');   // same key as Kit.cueAt
 /** Index of the first word of `phrase` in `raws` (or of its last word with last = true); -1 if absent. */
 export function findPhrase(raws, phrase, last = false, nth = 1) {
   const W = raws.map((r) => norm(r)), P = String(phrase).split(/\s+/).map(norm).filter(Boolean);

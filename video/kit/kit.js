@@ -718,7 +718,7 @@
   function sceneInfo(n) { return STATE.timeline && STATE.timeline.byNumber[n == null ? STATE.scene : n]; }
 
   /** One token -> comparable key: lower case, no punctuation ("5,730" -> "5730", "don't" -> "dont", "0.961." -> "0.961"). */
-  const normWord = (s) => String(s).toLowerCase().replace(/[^a-z0-9<>:.%]+/g, '').replace(/\.(?!\d)|(?<!\d)\./g, '');
+  const normWord = (s) => String(s).toLowerCase().replace(/[^a-z0-9<>:.%]+/g, '').replace(/\.(?!\d)|(?<!\d)\./g, '').replace(/:(?!\d>)/g, '');
   /** Word clock of a scene: [{w (narration token), t (as captioned), s, e}] in scene seconds. */
   function words(n) {
     const sc = STATE.words && STATE.words.scenes && STATE.words.scenes[n == null ? STATE.scene : n];
@@ -1284,6 +1284,13 @@
       if (info && Math.abs(info.duration - cfg.duration) > 1e-6) scene.durationMismatch = `duration ${cfg.duration} s differs from timeline.json (${info.duration} s)`;
       const cueSrc = typeof cfg.cues === 'function' ? cfg.cues(Kit) : cfg.cues;
       Object.assign(scene.cues, resolveCues(cueSrc));
+      // any other time in cfg may also be a cue name or a narration phrase
+      const when = (v) => (typeof v === 'string' && scene.cues[v] != null ? scene.cues[v] : (v == null || typeof v === 'number' ? v : resolveCues({ v }).v));
+      if (cfg.legendMoment) cfg.legendMoment.at = when(cfg.legendMoment.at);
+      (cfg.cards || []).forEach((c) => { c.at = when(c.at); if (c.until != null) c.until = when(c.until); });
+      if (Array.isArray(cfg.phases)) cfg.phases.forEach((p) => { p.at = when(p.at); });
+      if (cfg.progress && typeof cfg.progress === 'object') cfg.progress.at = when(cfg.progress.at);
+      if (cfg.titleFadeIn != null) cfg.titleFadeIn = when(cfg.titleFadeIn);
 
       const ui = buildChrome(cfg, stage);
       ui.afterMeasure = [];

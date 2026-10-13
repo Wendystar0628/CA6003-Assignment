@@ -39,7 +39,7 @@ const VARIANTS = {
       { at: 4.2, page: 'evidence', title: 'Effect on diabetes labels', subtitle: 'HbA1c-positive cases hit by the global recode, and label flips',
         credit: 'Analysis by <Name:2>', pointer: '3.4' },
     ],
-    legendMoment: { key: 'leak', at: 7.0 },
+    legendMoment: { key: 'leak', at: 'bars' },        // a cue name, a phrase or seconds
     setup(ctx) {
       const K = Kit, S = ctx.S = {}, d = ctx.data;
       S.bs = K.blockStart(ctx, { sections: [
