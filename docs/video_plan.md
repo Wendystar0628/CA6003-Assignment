@@ -492,7 +492,7 @@ y1000   ● reference baseline  ▨ harmed or leaked data  ■ Systematic prepar
 - **讲者不用颜色编码**：名签、角色卡一律墨色。
 - **面积有主次。** 饱和色只用于线、点、数字、小色块和描边；大面积用同色相极浅底加同色描边。语义色只出现在白色纸面面板上。
 
-**字体**（本地打包或 Google Fonts，离线有备用栈）：标题 Source Serif 4（主标题 64 px，章节卡 80 px，片头 88 px，片尾 120 px）；正文 IBM Plex Sans（副标题与标注 34 px，下限 28 px），字幕 IBM Plex Sans Medium；数字 IBM Plex Mono tabular-nums（主数字 120–168 px，次级 48–64 px，区间 36 px）。只有底栏的图例行与 notebook 指引、24 px 脚注可用 24 px。
+**字体**（本地打包或 Google Fonts，离线有备用栈）：标题 Source Serif 4（主标题 64 px，章节卡 80 px，片头 88 px，片尾 120 px）；正文 IBM Plex Sans（副标题与标注 34 px，下限 28 px），字幕 IBM Plex Sans 500（34 px）；数字 IBM Plex Mono tabular-nums（主数字 120–168 px，次级 48–64 px，区间 36 px）。只有底栏的图例行与 notebook 指引、24 px 脚注可用 24 px。
 
 ### 6.3 层次与装饰
 
@@ -532,13 +532,13 @@ y1000   ● reference baseline  ▨ harmed or leaked data  ■ Systematic prepar
 - 除 08、16 的两次推近外，焦点一律用 M3，不用缩放。
 - 禁止：飞入、弹跳、旋转、视差、粒子、闪烁、持续的背景动画、打字机效果、3D 翻转、印章砸下。
 - 动效总时长不超过场景时长的 40 %；场景切走前，末帧必须能独立读懂。
-- 小窗、名签、字幕从不加动画。
+- 小窗、名签从不加动画；字幕只做 0.1 s 淡入淡出。
 
 ### 6.5 可读性与无障碍
 
 | 项 | 规则 |
 |---|---|
-| 字号 | 内容文字 ≥ 28 px；主数字 ≥ 96 px；字幕为 ASS 字号 46；只有底栏和脚注可用 24 px |
+| 字号 | 内容文字 ≥ 28 px；主数字 ≥ 96 px；字幕 34 px；只有底栏和脚注可用 24 px |
 | 对比度 | 正文 ≥ 4.5:1，大字 ≥ 3:1；ink 16.5、structure 10.6、red 6.6、blue 6.0、grey 5.9、teal 5.3（白纸面板上） |
 | 不只靠颜色 | 红 = 斜纹 + 三角；青 = 实心填充 + 文字标签；蓝 = 空心方块；灰 = 实心圆；结构色 = 位置与细线；反馈 = ✓ / 虚线框 + “?” / ✗ |
 | 色觉差异 | 红永远带斜纹，青永远不带；结构靛蓝不进图形 |
@@ -828,10 +828,11 @@ y1000   ● reference baseline  ▨ harmed or leaked data  ■ Systematic prepar
 | 形式 | 烧录进画面的开放字幕；同一份文字另出 `.srt` 供 YouTube |
 | 字幕区 | 舞台 x 96–1368，y 872–988（面板坐标 x 0–1272，y 648–764）：图区面板左下的一条，位于避让区左侧 |
 | 对齐 | 在字幕区内水平居中、底端对齐；单行时贴底 |
-| 字体 | IBM Plex Sans Medium，ASS 字号 46，墨色 #15202B，2 px 白色描边；无阴影、无底板（面板是白纸，对比度 16.5:1）；末行基线约在 y 974 |
+| 字体 | IBM Plex Sans 500，34 px，行高约 42 px（ASS 文件写 Fontsize 44，因为 libass 按上伸加下伸、即 1.3 em 计字号）；墨色 #15202B，2 px 白色描边（白纸上看不出）；无阴影、无底板（对比度 16.5:1）；末行基线约在 y 974 |
 | 行数与长度 | 最多 2 行，每行最多 42 个字符 |
-| 显示时长 | 每条至少 1.0 s，尽量不超过 6.5 s；相邻两条间隔不足 0.3 s 时前一条延到后一条开始，避免闪烁；阅读速度 ≤ 17 字符/秒 |
-| 出入 | 直接出现、直接消失；不做动画 |
+| 显示时长 | 每条 1.0–6.0 s；相邻两条间隔不足 0.3 s 时前一条延到后一条开始，避免闪烁 |
+| 阅读速度 | 目标 ≤ 17 字符/秒，只作警告：按比例估时，在 130–140 wpm 下信息密集的分句会到 18–22 字符/秒。`build_subs.mjs` 打印最差的几条，录像后用 `overrides.json` 修正 |
+| 出入 | 0.1 s 淡入淡出；不做其他动画 |
 | 不出字幕 | 片头卡、片尾卡、段首页与章节卡的静默 1.2 s、停顿期间（停顿不进字幕） |
 | 不冲突 | 字幕区不放任何图形内容；小窗、名签、图例行、notebook 指引都在字幕区之外。kit 审计在任何内容进入字幕区时报错 |
 
@@ -848,7 +849,7 @@ y1000   ● reference baseline  ▨ harmed or leaked data  ■ Systematic prepar
 1. **生成：** `node video/subtitles/build_subs.mjs` 读 `video/timeline/timeline.json` 与 `notebooks/final/team.json`，写出 `video/subtitles/full.srt`（YouTube）、`full.ass`、每段的 `block_<n>.srt` / `block_<n>.ass`，以及 `words.json`（逐词时钟，场景的构建 cue 也从这里取）。
 2. **录像前（估计）：** 每个场景的讲话窗口是 `[silentLead + 0.3, (speechEnd 或 duration) − 0.5]`（`timeline.json` 的 `subtitles.leadIn` / `leadOut`）。窗口内按估计音节数把时间分给各词，标点处加短停顿，`{pause}` 处加读数停顿；断条在句末优先，其次在冒号、分号、逗号处。名字记号按 2 个音节计，所以填入真名不会移动 cue。
 3. **录像后（重新定时）：** 听每段录像，在 `video/subtitles/overrides.json` 里按场景写入整体平移（`shift`）、讲话结束时刻（`speechEnd`）、额外停顿或逐条字幕的起止（`chunks`），重新运行 `build_subs.mjs`，再重渲染受影响的场景并重新合成该段。动画 cue 读同一个 `words.json`，所以字幕与动画一起移动。若某个场景实测时长变化，先改 `timeline.json` 的 `duration`，进度条与起止时间会跟着变。
-4. **检查：** 抽查每段 3 处，字幕出现与开口相差 ≤ 0.3 s；没有一条超过 2 行 × 42 字符；字幕区无冲突（审计全绿）。
+4. **检查：** 抽查每段 3 处，字幕出现与开口相差 ≤ 0.3 s；没有一条超过 2 行 × 42 字符；`build_subs.mjs` 报出的超速字幕已修正；字幕区无冲突（审计全绿）。
 
 ### 8.4 烧录与 YouTube
 
@@ -911,12 +912,12 @@ HTML/SVG 场景 → Playwright 逐帧截图 → ffmpeg。场景复用项目的�
 |---|---|
 | `version`、`fps` | 版本号；30 |
 | `sections[]` | `{n 1–7, label, scope}`（5.1 节） |
-| `members[]` | `{index 0–3, roleKey governance / quality / labels / modelling, role, owns}`（3.2 节）；名字不在这里，在 `team.json` |
+| `members[]` | `{index 0–3, roleKey governance / quality / labels / modelling, role, owns, presents}`（3.2 节；`presents` 是团队页卡片第 3 行）；名字不在这里，在 `team.json` |
 | `blocks[]` | `{n 1–4, speaker, scenes[]}` |
-| `scenes[]` | `{n, file, block, speaker（成员序号，从不用字母）, section, duration, silentLead, speechEnd?, narration}`；`narration` 用 `<Name>` / `<Name:i>` 记号和 `{pause s}` |
+| `scenes[]` | `{n, file, block, speaker（成员序号，从不用字母）, section, duration, silentLead, speechEnd?, narration}`；`narration` 用 `<Name>` / `<Name:i>` 记号和 `{pause s}`（放在最后一个词之后时，在场景末尾留出静默） |
 | `subtitles` | `{leadIn, leadOut}` |
 
-起止时间不存，由时长求和。录像后按实测回填 `duration`。
+起止时间不存，由时长求和。录像后按实测回填 `duration`。署名行（例如 24 的 “Robustness checks led by `<Name:1>`”）不在 `timeline.json`，写在场景配置的 `credit` 字段。
 
 ### 9.6 步骤
 
@@ -933,8 +934,8 @@ HTML/SVG 场景 → Playwright 逐帧截图 → ffmpeg。场景复用项目的�
    node video/render/compose_block.mjs 1                                          # 占位小窗
    node video/render/compose_block.mjs 2 --take video/takes/block_2.mp4 --take-offset 3.4
    ```
-   `--take-offset` 是录像里本段第 1 帧对应的秒数。
-5. **成片。** 四段拼接并做响度归一（−16 LUFS），YouTube 字幕用 `video/subtitles/full.srt`。
+   `--take-offset` 是录像里本段第 1 帧对应的秒数；也可写进 `video/subtitles/overrides.json` 的 `"takes": {"1": {"offset": 2.4}}`。录像放在 `video/takes/block_<n>.mp4`（git 忽略）。
+5. **成片。** `compose_film.mjs` 把 `video/out/block_1.mp4`–`block_4.mp4` 拼接并做响度归一（loudnorm，−16 LUFS）；YouTube 字幕用 `video/subtitles/full.srt`。
    ```bash
    node video/render/compose_film.mjs    # → video/out/film.mp4
    ```
