@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 05 · NCHS replication</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 05 · Re-running NCHS Data Brief 516 · docs/video_plan.md §4 scene 05.
+   Speaker A. One relation: our survey code gives the published numbers (15.79 vs 15.8 for the total;
+   diagnosed and undiagnosed match too). Two columns, one solid ink check per row (feedback: supported).
+   The badge states how many published estimates were compared and the largest gap.
+   Numbers: video/data/db516.json. Ink only. */
+
+// Cue times in scene seconds, estimated from the §4 narration (replace with the take, §8.3 step 5).
+const CUES = {
+  frame: 2.7,    // "We re-ran a published NCHS report"       table frame: headers, row names
+  ours: 8.0,     // "15.79 percent for us"                    number appears when spoken
+  nchs: 10.9,    // "15.8 for NCHS"
+  check1: 11.7,  // ink check on the total row
+  title2: 11.6,  // title settles on the screen text (M12 dissolve)
+  rows: 13.3,    // "Diagnosed and undiagnosed shares match too"   rows 2 and 3 (screen-only numbers)
+  checks: 15.0,  // checks on rows 2 and 3
+  badge: 17.2,   // "In all, 27 published estimates"          badge
+};
+
+const COL = { label: 60, ours: 420, nchs: 780, check: 1128 };
+const ROWY = [300, 430, 560];     // number baselines
+
+Kit.createScene({
+  number: 5,
+  name: 'nchs_replication',
+  duration: 21,
+  layout: 'R',
+  speaker: 'A',
+  title: [
+    { at: 0, text: 'Can we trust the numbers?' },
+    { at: CUES.title2, text: '…' },       // filled from the data in setup()
+  ],
+  source: '§4 · S4_db516',
+  data: '../data/db516.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    ui.titles[1].el.textContent = 'Ours ' + K.disp(data, 'total_ours') + ' = NCHS ' + K.disp(data, 'total_nchs');
+
+    // frame: column headers, hairlines, row names (names come from the data groups)
+    S.frame = K.svg('g', {}, g);
+    K.text(S.frame, { x: COL.ours, y: 150, text: 'Ours', cls: 'kit-sans', size: 34, weight: 600 });
+    K.text(S.frame, { x: COL.nchs, y: 150, text: 'NCHS Data Brief 516', cls: 'kit-sans', size: 34, weight: 600 });
+    K.svg('line', { x1: 60, x2: 1164, y1: 176, y2: 176, stroke: K.C.ink, 'stroke-width': 2 }, S.frame);
+    const names = { total: 'Total', diagnosed: 'Diagnosed', undiagnosed: 'Undiagnosed' };
+    S.rows = data.groups.rows.map((r, i) => {
+      const y = ROWY[i];
+      K.svg('line', { x1: 60, x2: 1164, y1: y + 44, y2: y + 44, stroke: K.C.line, 'stroke-width': 2 }, S.frame);
+      const row = { r, y };
+      row.name = K.text(g, { x: COL.label, y, text: names[r.measure], cls: 'kit-t-note' });
+      row.ours = K.text(g, { x: COL.ours, y, text: K.disp(data, r.ours), cls: 'kit-t-second' });
+      row.nchs = K.text(g, { x: COL.nchs, y, text: K.disp(data, r.nchs), cls: 'kit-t-second' });
+      row.check = K.feedback(g, { kind: 'supported', x: COL.check, y: y - 44, size: 52 });
+      return row;
+    });
+
+    // badge: how many published estimates, and the largest gap
+    S.badge = K.svg('g', {}, g);
+    K.svg('rect', { x: 60, y: 650, width: 760, height: 76, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, S.badge);
+    K.text(S.badge, { x: 88, y: 700, text: K.disp(data, 'n_estimates') + ' estimates · max gap ' + K.disp(data, 'max_gap'), cls: 'kit-mono', size: 34, fill: K.C.ink });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    K.op(S.frame, K.appear(t, c.frame));
+    const when = [{ name: c.frame, ours: c.ours, nchs: c.nchs, check: c.check1 }, { name: c.rows, ours: c.rows, nchs: c.rows, check: c.checks }, { name: c.rows, ours: c.rows, nchs: c.rows, check: c.checks }];
+    S.rows.forEach((r, i) => {
+      const w = when[i];
+      K.op(r.name, K.appear(t, w.name));
+      K.op(r.ours, K.appear(t, w.ours));
+      K.op(r.nchs, K.appear(t, w.nchs));
+      r.check.update(K.appear(t, w.check));
+    });
+    K.op(S.badge, K.appear(t, c.badge));
+  },
+});
+</script>
+</body>
+</html>

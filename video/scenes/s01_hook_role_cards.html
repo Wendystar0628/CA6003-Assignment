@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 01 · Hook and role cards</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_phases.js"></script>
+</head>
+<body>
+<script>
+/* Scene 01 · Hook and role cards (signature visual 12 "Role cards & chain", first half) · docs/video_plan.md §4 scene 01, §7 visual 12.
+   Speaker A. Two relations in two layouts (the kit has one layout per scene, so _phases.js re-positions the chrome):
+   S 0-15 s  the AUC ruler: a basic model scores 0.961; 0.5 is a coin flip; "is that good?" (everything else dims to 25 %).
+             Left half is the camera slot (portrait), the lower-third names A for 4 s.
+   R 15-35 s four role cards appear (ink only, no photos), the member being named stays at 100 %, then the cards
+             shrink (M6) onto the A B C D badges that stay in the right column for the rest of the film;
+             the current speaker's badge is structure-colour solid, the others ink outline (kit badge row).
+   No red here: red is kept for the leak reveal (scene 18). The only number is 0.961 (video/data/leak_gate.json);
+   the 0.5 baseline is the AUC definition (leak_gate.json axis_start). The cards carry no numbers (docs/team_roles.md). */
+
+// Cue times in scene seconds, estimated from the §4 narration (replace with A's take, §8.3 step 5).
+const CUES = {
+  cardOut: 0.8,    // opening title card dissolves into the ruler panel (M12)
+  axis: 0.9,       // "A basic model scores"                        M1
+  num: 2.0,        // "0.961"                                       pointer rises 0.5 -> 0.961 (M10), number appears
+  coin: 11.4,      // "0.5 is a coin flip"                          M3 on the 0.5 tick
+  good: 13.0,      // "So, is that good?"                           everything else to 25 %; title stays
+  toR: 15.0,       // layout S -> R
+  cards: 15.2,     // "Four of us, four roles."                     four cards appear in place (0.25 s apart)
+  A: 17.7, B: 21.9, C: 24.9, D: 28.1,   // "I'm A / B owns / C owns / D owns"   the named card stays at 100 %
+  each: 30.9,      // "Each of us presents one part"                all cards back to 100 %
+  collapse: 32.4,  // "in that order"                               M6: cards shrink onto the badges
+};
+const NAMED = ['A', 'B', 'C', 'D'];
+
+/** Ruler (vertical AUC axis from 0.5 to 1.0) at a given geometry; returns the parts a scene needs. */
+function buildRuler(parent, o) {
+  const K = Kit, g = K.svg('g', {}, parent), y = K.scaleLinear([o.d0, o.d1], [o.y0, o.y1]);
+  const axis = K.axis(g, y, { orient: 'left', at: o.x, ticks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    format: (v) => (v === o.d1 ? 'perfect' : ''), truncated: o.truncated });
+  const ptr = K.svg('path', { d: `M${o.x + 5} ${y(o.d0)} l32 -15 v30 z`, fill: K.C.ink }, g);
+  const num = K.callout(g, { x: o.x + 80, y: y(o.d0) + o.numDy, size: 'main' });
+  num.num.style.fontSize = o.numSize + 'px';
+  const coin = K.text(parent, { x: o.x - 18, y: y(o.d0) + 10, text: 'coin flip', cls: 'kit-t-tick', anchor: 'end' });
+  return { g, y, axis, ptr, num, coin };
+}
+
+Kit.createScene({
+  number: 1,
+  name: 'hook_role_cards',
+  duration: 35,
+  layout: 'R',
+  speaker: 'A',
+  title: [
+    { at: 0, text: '…' },                             // "AUC 0.961 — good?", filled from the data in setup()
+    { at: CUES.toR, text: 'Four of us, four roles' },
+  ],
+  source: '§7.5 · S7_leak_gate · docs/team_roles',
+  lowerThird: { at: 0 },
+  badges: true,
+  data: '../data/leak_gate.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    ctx.PH = Phases.create(ctx, [{ at: 0, layout: 'S' }, { at: CUES.toR, layout: 'R' }]);
+    const m0 = K.item(data, 'auc_m0_eall'), base = K.val(data, 'axis_start');
+    S.m0 = m0; S.base = base;
+    ui.titles[0].el.textContent = 'AUC ' + m0.display + ' — good?';
+
+    // ---- opening title card (stage level, right half; the camera slot is the left half)
+    const ovl = K.svg('svg', { width: 1920, height: 1080, viewBox: '0 0 1920 1080' }, ui.stage);
+    ovl.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;overflow:visible';
+    S.card = K.svg('g', {}, ovl);
+    ['Who gets', 'labelled', 'diabetic?'].forEach((ln, i) => K.text(S.card, { x: 1008, y: 410 + i * 126, text: ln, cls: 'kit-serif', size: 120, weight: 600 }));
+    K.text(S.card, { x: 1008, y: 800, text: 'CA6003 · Group [no.]', cls: 'kit-mono', size: 28, fill: K.C.ink });
+
+    // ---- S phase (panel 816 x 792): AUC ruler, pointer, number, coin-flip ring
+    S.gS = K.svg('g', {}, fig);
+    S.dim = K.svg('g', {}, S.gS);
+    S.rS = buildRuler(S.dim, { x: 330, d0: base, d1: 1.0, y0: 650, y1: 150, numDy: 44, numSize: 112,
+      truncated: { text: 'axis starts at ' + K.disp(data, 'axis_start'), x: 48, y: 752 } });
+    // the coin label is drawn outside the dimming group so it can stay at 100 % during the M3 focus
+    S.rS.coin.remove(); S.gS.appendChild(S.rS.coin);
+    S.ring = K.focusRing(S.gS, { x: 140, y: S.rS.y(base) - 22, w: 194, h: 38 });
+
+    // ---- R phase (panel 1224 x 792): faint recap of the ruler on the left, role cards on the right
+    S.gR = K.svg('g', {}, fig);
+    S.recap = K.svg('g', {}, S.gR);
+    S.rR = buildRuler(S.recap, { x: 230, d0: base, d1: 1.0, y0: 640, y1: 140, numDy: 40, numSize: 100 });
+    S.cards = NAMED.map((k, i) => {
+      const sp = K.SPEAKERS[k], x = 640, w = 550, h = 160, y = 28 + i * 192, cx = x + 56, cy = y + h / 2;
+      const grp = K.svg('g', {}, S.gR);
+      const rect = K.svg('rect', { x, y, width: w, height: h, rx: 10, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, grp);
+      const body = K.svg('g', {}, grp);
+      K.text(body, { x: x + 106, y: cy - 2, text: sp.role, cls: 'kit-t-note' });
+      K.text(body, { x: x + 106, y: cy + 40, text: sp.sec, cls: 'kit-t-tick' });
+      const ltr = K.svg('g', {}, grp);
+      const disc = K.svg('circle', { r: 28.75, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, ltr);
+      const letter = K.text(ltr, { x: 0, y: 11, text: k, cls: 'kit-sans', size: 32, weight: 600, anchor: 'middle' });
+      const ring = K.focusRing(grp, { x, y, w, h });
+      // badge target in figure coordinates (kit badge row: x 1344 + 60 + 120 i, y 866; panel origin 96, 168)
+      return { k, grp, rect, body, ltr, disc, letter, ring, x, y, w, h, cx, cy, bx: 1344 + 60 + 120 * i - 96, by: 866 - 168 };
+    });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, ui = ctx.ui;
+    const L = ctx.PH.apply(t);
+    const isS = L === 'S';
+    K.op(S.gS, isS ? 1 : 0); K.op(S.gR, isS ? 0 : 1);
+
+    // ---- opening card -> panel
+    const cardP = K.M12_dissolve(t, c.cardOut);
+    K.op(S.card, 1 - cardP);
+    K.op(ui.panel, isS ? cardP : 1);
+
+    // ---- title: appears with the question, then dissolves into the role-card title (kit drives title 2)
+    K.op(ui.titles[0].el, K.appear(t, c.good) * (1 - K.M12_dissolve(t, c.toR)));
+
+    // ---- S phase
+    const r = S.rS, v = S.m0.value;
+    r.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 6 }));
+    const value = K.M10_count(t, c.num, S.base, v), numA = K.appear(t, c.num);
+    r.ptr.setAttribute('transform', `translate(0, ${r.y(value) - r.y(S.base)})`);
+    K.op(r.ptr, numA);
+    r.num.g.setAttribute('transform', `translate(0, ${r.y(value) - r.y(S.base)})`);
+    r.num.update({ text: t >= c.num + K.T.M10.dur ? S.m0.display : K.fmt(value, 3), number: numA });
+    // M3 on the coin-flip tick, then everything but the title drops to 25 %
+    const foc = K.M3_focus(t, c.coin), allDim = K.progress(t, c.good, 0.4, K.ease.morph);
+    K.op(S.dim, foc.others);
+    K.op(r.coin, K.M1_axisDraw(t, c.axis, { nTicks: 6 }).labels * (1 - 0.75 * allDim));
+    S.ring.update({ outline: foc.outline * (1 - allDim) });
+
+    // ---- R phase: recap ruler, cards
+    const R = S.rR;
+    R.axis.update(K.M1_axisDraw(1e9, 0, { nTicks: 6 }));
+    R.ptr.setAttribute('transform', `translate(0, ${R.y(v) - R.y(S.base)})`);
+    R.num.g.setAttribute('transform', `translate(0, ${R.y(v) - R.y(S.base)})`);
+    R.num.update({ text: S.m0.display, number: 1 });
+    K.op(S.recap, 0.25);
+
+    // named member at 100 %, the others at 25 %; "each of us" restores all
+    const starts = [c.A, c.B, c.C, c.D], p = K.M6_morph(t, c.collapse);
+    const any = K.progress(t, c.A, 0.4, K.ease.morph) * (1 - K.progress(t, c.each, 0.4, K.ease.morph));
+    const land = K.clamp((p - 0.85) / 0.15);
+    S.cards.forEach((cd, i) => {
+      const act = K.progress(t, starts[i], 0.4, K.ease.morph) * (1 - K.progress(t, i < 3 ? starts[i + 1] : c.each, 0.4, K.ease.morph));
+      const dimmed = K.lerp(1, K.lerp(0.25, 1, act), any);
+      const appear = K.progress(t, c.cards + i * 0.25, 0.4, K.ease.enter);
+      cd.ring.update({ outline: act * any * (1 - p) });
+      // M6: rect -> badge circle, letter disc -> badge position, text fades first
+      const rx = K.lerp(cd.x, cd.bx - 30, p), ry = K.lerp(cd.y, cd.by - 30, p), rw = K.lerp(cd.w, 60, p), rh = K.lerp(cd.h, 60, p);
+      cd.rect.setAttribute('x', rx); cd.rect.setAttribute('y', ry); cd.rect.setAttribute('width', rw); cd.rect.setAttribute('height', rh);
+      cd.rect.setAttribute('rx', K.lerp(10, 30, p));
+      cd.rect.style.opacity = String(1 - K.clamp((p - 0.5) / 0.5));
+      const lx = K.lerp(cd.cx, cd.bx, p), ly = K.lerp(cd.cy, cd.by, p), cur = cd.k === 'A';
+      cd.ltr.setAttribute('transform', `translate(${lx},${ly})`);
+      cd.disc.style.fill = cur ? K.mixColor('#ffffff', K.C.structure, p) : '#fff';
+      cd.disc.setAttribute('stroke', cur ? K.mixColor(K.C.ink, K.C.structure, p) : K.C.ink);
+      cd.letter.style.fill = cur ? K.mixColor(K.C.ink, '#ffffff', p) : K.C.ink;
+      K.op(cd.body, 1 - K.clamp(p * 2.5));
+      K.op(cd.grp, appear * dimmed * (1 - land));
+    });
+    // the kit's own badge row (current speaker solid) takes over when the cards have landed
+    K.op(ui.badges, land);
+  },
+});
+</script>
+</body>
+</html>

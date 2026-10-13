@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 03 · Cohort funnel</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 03 · Data and cohort (signature visual 2, "Cohort funnel") · docs/video_plan.md §4 scene 03, §7 visual 2.
+   Speaker A. One relation: 11,933 NHANES participants narrow to the 5,730 "All adults" the project studies,
+   and 14.0 % of them are positive (label = self-report OR HbA1c >= 6.5 %).
+   Grey is introduced here (legend moment): the last bar is the reference population, solid grey + solid circle.
+   Every number comes from video/data/funnel.json. */
+
+// Cue times in scene seconds, estimated from the §4 narration (replace with the take, §8.3 step 5).
+const CUES = {
+  top: 0.5,        // "The data: NHANES ..."                       M2 (ink outline)
+  funnel: 1.7,     // "... a US health survey from the CDC."       M5, four levels (0.5 s + 0.4 s pause)
+  fill: 5.0,       // "We study 5,730 adults"                      last bar solid grey + circle marker
+  num: 5.4,        // "5,730" spoken                               number appears
+  legend: 6.3,     // legend chip "grey = reference" (2.5 s), then folds into the bottom row
+  pos1: 12.3,      // "a self-reported diagnosis"                  first set
+  pos2: 14.3,      // "or HbA1c of 6.5 percent or more"            second set
+  merge: 16.1,     // sets merge into "positive"                   M6
+  weighted: 17.9,  // "Weighted, 14.0 percent"                     callout + interval 0.3 s later
+  tag: 18.6,       // source tag in the title band
+  title2: 17.9,    // title settles on the screen text (M12 dissolve)
+};
+
+const BAR = { x0: 330, maxW: 600, h: 44, cy: [150, 235, 320, 405, 490] };
+
+Kit.createScene({
+  number: 3,
+  name: 'cohort_funnel',
+  duration: 22,
+  layout: 'R',
+  speaker: 'A',
+  title: [
+    { at: 0, text: 'Who is in the data?' },
+    { at: CUES.title2, text: '…' },       // numbers are filled from the data in setup()
+  ],
+  attribution: 'NHANES 2021–23 · CDC',
+  source: '§2 · S1_funnel',
+  grid: false,                            // dense scene: stage colour only (§6.5)
+  legendMoment: { key: 'reference', at: CUES.legend },
+  data: '../data/funnel.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    ui.titles[1].el.textContent = 'All adults: ' + K.disp(data, 'n_cohort') + ' · ' + K.disp(data, 'prev_w');
+
+    // ---- funnel rows (ink outline bars, geometry from the stored counts)
+    const stages = data.groups.stages;
+    const nMax = K.val(data, stages[0].item);
+    S.rows = stages.map((st, i) => {
+      const it = K.item(data, st.item), cy = BAR.cy[i];
+      const w = it.value / nMax * BAR.maxW;
+      const last = i === stages.length - 1;
+      const row = { w, cy, it };
+      row.ghost = K.svg('rect', { fill: 'none', stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '7 5', y: cy - BAR.h / 2, height: BAR.h }, g);
+      row.bar = K.svg('rect', { fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5, y: cy - BAR.h / 2, height: BAR.h }, g);
+      row.grey = last ? K.svg('rect', { x: BAR.x0, y: cy - BAR.h / 2, width: w, height: BAR.h, fill: K.C.reference }, g) : null;
+      row.label = K.text(g, { x: 296, y: cy - 10, text: last ? it.label : st.label, cls: 'kit-t-min', anchor: 'end' });
+      row.num = K.text(g, { x: 296, y: cy + 32, text: it.display, cls: 'kit-t-tick', anchor: 'end' });
+      if (last) {
+        row.marker = K.svg('circle', { cx: 312, cy, r: 10, fill: K.C.reference }, g);
+        row.tag = K.text(g, { x: BAR.x0, y: cy + 56, text: 'E-ALL', cls: 'kit-t-tick' });
+      }
+      return row;
+    });
+    S.main = K.callout(g, { x: 680, y: BAR.cy[4] + 36, size: 'main', fill: K.C.reference });
+
+    // ---- label definition: two sets merge into "positive" (circle area ∝ n)
+    const nSelf = K.val(data, 'pos_self'), nA1c = K.val(data, 'pos_a1c'), nPos = K.val(data, 'pos_eall');
+    const cut = K.disp(data, 'a1c_cut');
+    S.def = { cy: 668, rS: 58, rA: K.radiusForArea(nA1c, nSelf, 58), xS: 300, xA0: 560, gap: 84 };
+    const d = S.def;
+    S.def.g = K.svg('g', {}, g);
+    d.cS = K.svg('circle', { cy: d.cy, r: d.rS, fill: 'none', stroke: K.C.ink, 'stroke-width': 2.5 }, d.g);
+    d.cA = K.svg('circle', { cy: d.cy, r: d.rA, fill: 'none', stroke: K.C.ink, 'stroke-width': 2.5 }, d.g);
+    d.union = K.svg('path', { fill: 'none', stroke: K.C.ink, 'stroke-width': 5, 'stroke-linejoin': 'round' }, d.g);
+    d.lS = K.text(d.g, { x: 0, y: d.cy + 10, text: 'self-report', cls: 'kit-t-min', anchor: 'end' });
+    d.lA = K.text(d.g, { x: 0, y: d.cy + 10, text: 'HbA1c ≥ ' + cut, cls: 'kit-t-min' });
+    d.lP = K.text(d.g, { x: 0, y: d.cy - d.rS - 18, text: 'positive', cls: 'kit-sans', anchor: 'middle', size: 34, weight: 600 });
+    S.nPos = nPos;
+
+    // ---- weighted prevalence callout with its interval
+    const iv = K.interval(data, 'prev_ci');
+    S.prev = K.callout(g, { x: 860, y: 640, size: 'second', interval: iv.bracket, label: 'weighted to US adults' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, d = ctx.data, ui = ctx.ui;
+    // rows: top bar M2, then M5 narrowing; dropped part becomes an ink ghost fading to 20 %
+    const steps = K.M5_funnel(t, c.funnel, 4);
+    S.rows.forEach((r, i) => {
+      let w, vis, ghostA = 0, gx = 0, gw = 0;
+      if (i === 0) { const grow = K.M2_barGrow(t, c.top); w = r.w * grow; vis = grow > 0 ? 1 : 0; }
+      else {
+        const s = steps[i - 1], prev = S.rows[i - 1].w;
+        w = K.lerp(prev, r.w, s.narrow); vis = s.narrow > 0 ? 1 : 0;
+        gx = BAR.x0 + w; gw = prev - w; ghostA = s.narrow > 0 ? s.ghost : 0;
+      }
+      r.bar.setAttribute('x', BAR.x0); r.bar.setAttribute('width', Math.max(0, w)); K.op(r.bar, vis);
+      r.ghost.setAttribute('x', gx); r.ghost.setAttribute('width', Math.max(0, gw)); K.op(r.ghost, gw > 0.5 ? ghostA : 0);
+      const shown = i === 0 ? K.appear(t, c.top + 0.5) : K.appear(t, c.funnel + (i - 1) * 0.9 + 0.5);
+      K.op(r.label, shown); K.op(r.num, shown);
+    });
+    const last = S.rows[4], gf = K.appear(t, c.fill);
+    K.op(last.grey, gf); K.op(last.marker, gf); K.op(last.tag, gf);
+    S.main.update({ text: K.disp(d, 'n_cohort'), number: K.appear(t, c.num) });
+
+    // label definition
+    const d0 = S.def, m = K.M6_morph(t, c.merge);
+    const xA = K.lerp(d0.xA0, d0.xS + d0.gap, m);
+    d0.cS.setAttribute('cx', d0.xS); d0.cA.setAttribute('cx', xA);
+    d0.lS.setAttribute('x', d0.xS - d0.rS - 14); d0.lA.setAttribute('x', xA + d0.rA + 14);
+    K.op(d0.cS, K.appear(t, c.pos1)); K.op(d0.lS, K.appear(t, c.pos1));
+    K.op(d0.cA, K.appear(t, c.pos2)); K.op(d0.lA, K.appear(t, c.pos2));
+    // union outline (exact union of two circles on a horizontal line) once they overlap
+    const dist = xA - d0.xS, rS = d0.rS, rA = d0.rA;
+    if (dist < rS + rA - 1) {
+      const a = (rS * rS - rA * rA + dist * dist) / (2 * dist), h = Math.sqrt(Math.max(0, rS * rS - a * a));
+      const ix = d0.xS + a, y0 = d0.cy;
+      d0.union.setAttribute('d', `M${ix} ${y0 - h} A${rS} ${rS} 0 1 0 ${ix} ${y0 + h} A${rA} ${rA} 0 1 0 ${ix} ${y0 - h} Z`);
+      K.op(d0.union, K.clamp((m - 0.8) / 0.2));
+    } else K.op(d0.union, 0);
+    d0.lP.setAttribute('x', (d0.xS - rS + xA + rA) / 2);
+    K.op(d0.lP, K.appear(t, c.merge + K.T.M6.dur));
+
+    // 14.0 % callout, interval 0.3 s later; source tag in the title band
+    const a = K.appear(t, c.weighted);
+    S.prev.update({ text: K.disp(d, 'prev_w'), number: a, interval: K.appear(t, c.weighted + K.T.appear), label: K.appear(t, c.weighted + K.T.appear) });
+    if (ui.attrib) K.op(ui.attrib, K.appear(t, c.tag));
+  },
+});
+</script>
+</body>
+</html>

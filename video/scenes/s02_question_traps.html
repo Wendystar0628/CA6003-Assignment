@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 02 · Question and three traps</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_phases.js"></script>
+</head>
+<body>
+<script>
+/* Scene 02 · The question and the three traps (signature visual 1) · docs/video_plan.md §4 scene 02, §7 visual 1.
+   Speaker A. One relation: the question is not "how accurate" but "who gets labelled"; three trap
+   cards (Leak / Label / Little gain) appear one by one and then collapse into the trap bar that the
+   kit draws in the title band for scenes 2-25 (the cards morph onto the measured kit cells).
+   No numbers in this scene. Ink line icons only; the structure colour marks the card being named. */
+
+// Cue times in scene seconds, estimated from the §4 narration after the 1.2 s chapter card
+// (replace with the times marked on A's take, §8.3 step 5).
+const CUES = {
+  not: 2.3,                    // "not 'how accurate?'"                       M3 (title dims to 25 %)
+  title2: 4.5,                 // "who gets labelled diabetic"                M12 dissolve
+  note: 6.7,                   // "what do our data decisions change?"        annotation
+  cards: [10.6, 13.15, 15.8],  // "One / Two / Three"                         cards appear in place (0.4 s)
+  hint: 12.3,                  // "leakage"                                   term explained on the Leak card
+  collapse: 17.4,              // after "Three: careful preparation ..."      M6, cards -> trap bar (0.9 s)
+};
+
+const CARD = { w: 360, h: 420, gap: 36, y: 215 };
+const CARDS = [
+  { key: 'leak', icon: 'bucket', name: 'Leak', q: 'High AUC = skill?', hint: ['the model peeks', 'at the answer'] },
+  { key: 'label', icon: 'ruler', name: 'Label', q: 'Label = truth?' },
+  { key: 'gain', icon: 'balance', name: 'Little gain', q: 'Does prep pay?' },
+];
+
+Kit.createScene({
+  number: 2,
+  name: 'question_traps',
+  duration: 20,
+  layout: 'R',
+  speaker: 'A',
+  title: [
+    { at: 0, text: 'How accurate can we get?' },
+    { at: CUES.title2, text: 'Who gets labelled diabetic?' },
+  ],
+  source: '§1 · three traps',
+  chapterCard: { at: 0, title: 'The question', item: '02 · The question · §1–§2' },
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const x0 = (ctx.W - (3 * CARD.w + 2 * CARD.gap)) / 2;
+
+    S.note = K.text(g, { x: 60, y: 118, text: 'What do data decisions change?', cls: 'kit-t-note', size: 44 });
+
+    // target cells: the real kit trap bar, measured now (the bar itself stays hidden until the cards land)
+    const P = ui.P;
+    S.cells = [...ui.trapbar.children].map((cell) => {
+      const r = Phases.stageRect(cell, ui.stage), lab = cell.querySelector('span');
+      const lr = Phases.stageRect(lab, ui.stage);
+      return { x: r.x - P.x, y: r.y - P.y, w: r.w, h: r.h, lx: lr.x - P.x, cy: r.y - P.y + r.h / 2, ix: r.x - P.x + 12 };
+    });
+
+    const makeCard = (parent, c, x, y) => {
+      const grp = K.svg('g', {}, parent);
+      const rect = K.svg('rect', { x, y, width: CARD.w, height: CARD.h, rx: 12, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, grp);
+      const icon = K.icon(grp, c.icon, { x: x + 30, y: y + 32, size: 96, strokeWidth: 2 });
+      const name = K.text(grp, { x: x + 30, y: y + 236, text: c.name, cls: 'kit-sans', size: 48, weight: 600 });
+      const q = K.text(grp, { x: x + 30, y: y + 296, text: c.q, cls: 'kit-t-note', size: 32 });
+      let hint = null;
+      if (c.hint) {
+        hint = K.svg('g', {}, grp);
+        c.hint.forEach((ln, k) => K.text(hint, { x: x + 30, y: y + 358 + k * 38, text: ln, cls: 'kit-t-min' }));
+      }
+      return { grp, rect, icon, name, q, hint, x, y };
+    };
+    // faint dashed ghosts of the three cards stay behind (final frame keeps what the bar stands for)
+    S.ghosts = CARDS.map((c, i) => {
+      const gh = makeCard(g, c, x0 + i * (CARD.w + CARD.gap), CARD.y);
+      gh.rect.setAttribute('stroke-dasharray', '8 6'); gh.rect.setAttribute('fill', 'none');
+      return gh;
+    });
+    S.cards = CARDS.map((c, i) => makeCard(g, c, x0 + i * (CARD.w + CARD.gap), CARD.y));
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, ui = ctx.ui;
+    // title 1 dims at "not", then dissolves into title 2 (the kit drives title 2; title 1 is overridden here)
+    const dis = K.M12_dissolve(t, c.title2);
+    K.op(ui.titles[0].el, K.M3_focus(t, c.not).others * (1 - dis));
+    K.op(S.note, K.appear(t, c.note));
+
+    const p = K.M6_morph(t, c.collapse);
+    const land = K.clamp((p - 0.85) / 0.15);
+    S.cards.forEach((cd, i) => {
+      const T = S.cells[i];
+      const a = K.progress(t, c.cards[i], 0.4, K.ease.enter);
+      // current card: structure-colour thin frame while it is being named
+      const named = t >= c.cards[i] && (i === 2 || t < c.cards[i + 1]) && p === 0;
+      cd.rect.setAttribute('stroke', named ? K.C.structure : K.C.ink);
+      cd.rect.setAttribute('stroke-width', named ? 4 : 2.5);
+      // morph: card rect -> kit cell, icon -> cell icon, name -> cell label (28 px)
+      const rx = K.lerp(cd.x, T.x, p), ry = K.lerp(cd.y, T.y, p), rw = K.lerp(CARD.w, T.w, p), rh = K.lerp(CARD.h, T.h, p);
+      cd.rect.setAttribute('x', rx); cd.rect.setAttribute('y', ry); cd.rect.setAttribute('width', rw); cd.rect.setAttribute('height', rh);
+      cd.rect.setAttribute('rx', K.lerp(12, 4, p));
+      cd.rect.style.opacity = String(1 - K.clamp((p - 0.7) / 0.3));
+      const isz = K.lerp(96, 40, p), ix = K.lerp(cd.x + 30, T.ix, p), iy = K.lerp(cd.y + 32, T.cy - 20, p);
+      cd.icon.setAttribute('transform', `translate(${ix},${iy}) scale(${isz / 40})`);
+      const nx = K.lerp(cd.x + 30, T.lx, p), ny = K.lerp(cd.y + 236, T.cy + 10, p);
+      cd.name.setAttribute('x', nx); cd.name.setAttribute('y', ny); cd.name.style.fontSize = K.lerp(48, 28, p) + 'px';
+      cd.name.style.fontWeight = p > 0.5 ? 400 : 600;
+      const fade = 1 - K.clamp(p * 2.5);
+      K.op(cd.q, fade);
+      if (cd.hint) K.op(cd.hint, K.appear(t, c.hint) * fade);
+      K.op(cd.grp, a * (1 - land));
+    });
+    S.ghosts.forEach((gh) => K.op(gh.grp, 0.25 * K.clamp(p * 2)));
+    // the kit's own trap bar takes over when the cards land on it
+    K.op(ui.trapbar, land);
+  },
+});
+</script>
+</body>
+</html>
