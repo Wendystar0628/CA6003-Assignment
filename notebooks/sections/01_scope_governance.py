@@ -1,5 +1,18 @@
 # %% [markdown]
-# # §1 Problem and governance
+# # Who gets labelled diabetic? A data-centric study of NHANES 2021–2023
+#
+# ## The three questions we set out to answer — before touching any model
+# In this project, machine learning is an instrument for measuring data quality, not the goal. Before we trained any model, we suspected three hidden traps in the data:
+#
+# 1. **Trap 1: A high AUC may be leakage, not skill.** What looks like a great screening model may just be memorising post-diagnosis information that would never be available at a real screening visit.
+# 2. **Trap 2: The label itself is biased.** "Told by a doctor you have diabetes" measures access to healthcare, not just disease — uninsured people are systematically under-diagnosed, and a model trained on this label will reproduce that gap.
+# 3. **Trap 3: Hours of pre-processing may not improve AUC at all.** If systematic cleaning only changes model interpretability, fairness and robustness — but barely moves the score — is that work worth doing?
+#
+# Every section that follows answers one of these questions. We use only basic interpretable models (L2 logistic regression, depth-3 decision tree), lock all hypotheses before experiments, and evaluate the holdout set exactly once.
+#
+# ---
+#
+# ## §1 Problem and governance
 #
 # This section states what is asked, of whom, and under which rules: use case, training target, the two evaluation populations, the feature-availability rule, research questions and hypotheses, and the obligations that come with the data. The text lives in `governance/S1_scope.md`, `governance/hypotheses.md` and `governance/datasheet.md`; the notebook renders it and **recomputes every number it contains** from the raw files.
 

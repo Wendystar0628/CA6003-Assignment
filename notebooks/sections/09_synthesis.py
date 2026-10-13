@@ -1,5 +1,24 @@
 # %% [markdown]
-# # §10 Synthesis and Interpretation
+# # # Final answers: What did we learn about the data?
+#
+# We return to the three questions we asked at the very start — before we trained any model.
+#
+# ---
+#
+# ### Answer to Trap 1: Is AUC = 0.96 real skill?
+# **No.** It was leakage. Removing post-diagnosis variables (medication, diagnosis age, prior glucose testing) dropped AUC from 0.961 to 0.828 — that 0.13 jump was the model memorising information it would never have at a real screening visit.
+#
+# ### Answer to Trap 2: Does "told by a doctor" measure disease?
+# **No. It measures access to care.** κ between self-report and HbA1c is only 0.70; 152 people with HbA1c ≥6.5% are undiagnosed, and they are concentrated among people without insurance or a regular care site (+23.2 pp). A model trained only on self-report will systematically miss these people.
+#
+# ### Answer to Trap 3: Was all that pre-processing worth it?
+# **Yes — even though AUC barely moved.** Systematic preparation only lifted E-ALL AUC by +0.008 (underpowered to even call that), but on the actual screening population E-SCREEN, it gained +0.019 AUC. More importantly: coefficients became more stable, group fairness gaps narrowed, and the model stopped relying on care traces that penalise people with worse access.
+#
+# > **The big takeaway:** In data-centric ML, the best model is not the one with the highest AUC — it is the one you understand, trust, and know will not systematically fail the people who need screening the most.
+#
+# ---
+#
+# ## §10 Synthesis and Interpretation
 #
 # This section turns the numbers of §1–§9 into **claims** with an honest strength, scope and falsifier. Nothing is
 # re-estimated: every value is read from the stored results (`results/metrics_S*.json`, `results/S*/`), and every video
