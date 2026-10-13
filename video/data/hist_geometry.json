@@ -1,0 +1,1818 @@
+{
+ "_meta": {
+  "file": "video/data/hist_geometry.json",
+  "visual": "HbA1c histogram, triglyceride histograms, Simpson matrix",
+  "scenes": "10, 11, 15",
+  "generated_by": "video/data/build_geometry_s10_11_15.py (aggregates only: bin edges and counts; no individual rows)",
+  "notes": [
+   "Triglyceride scene uses the Yeo-Johnson transform (skew −0.009, as the plan says); figures/S4_triglyceride_skew.png shows the log transform (0.60).",
+   "All 23 flagged HbA1c values that are not diabetic lie below the lower fence; all 519 diabetic ones lie above the upper fence."
+  ]
+ },
+ "items": {
+  "a1c_fence_lower": {
+   "value": 4.399999999999999,
+   "label": "1.5 × IQR fence (lower)",
+   "display": "4.4 %",
+   "kind": "derived",
+   "source": "derived: Q1 − 1.5·IQR of LBXGH, analysis cohort (02_profiling.py iqr_fence)",
+   "key": null,
+   "csv": null
+  },
+  "a1c_flagged_high": {
+   "value": 519,
+   "label": "Flagged values above the upper fence",
+   "display": "519",
+   "kind": "derived",
+   "source": "derived: count of LBXGH > upper fence; equals flagged_pos (asserted)",
+   "key": null,
+   "csv": null
+  },
+  "a1c_flagged_low": {
+   "value": 23,
+   "label": "Flagged values below the lower fence",
+   "display": "23",
+   "kind": "derived",
+   "source": "derived: flagged − flagged_pos (asserted equal to the count below the lower fence)",
+   "key": null,
+   "csv": null
+  },
+  "a1c_cut": {
+   "value": 6.5,
+   "label": "HbA1c diabetes threshold",
+   "display": "6.5 %",
+   "kind": "definition",
+   "source": "definition: config.HBA1C_DIABETES",
+   "key": null,
+   "csv": null
+  },
+  "tg_raw_max": {
+   "value": 1745.0,
+   "label": "Largest fasting triglyceride value (mg/dL)",
+   "display": "1745",
+   "kind": "derived",
+   "source": "derived: max LBXTLG, fasting subsample",
+   "key": null,
+   "csv": null
+  },
+  "tg_yj_lambda": {
+   "value": -0.34540442163379376,
+   "label": "Yeo-Johnson lambda",
+   "display": "-0.35",
+   "kind": "derived",
+   "source": "derived: scipy.stats.yeojohnson (equals S4 skew_table yj_lambda)",
+   "key": null,
+   "csv": null
+  }
+ },
+ "intervals": {},
+ "groups": {
+  "a1c_hist": {
+   "edges": [
+    3.0,
+    3.2,
+    3.4,
+    3.6,
+    3.8,
+    4.0,
+    4.2,
+    4.4,
+    4.6,
+    4.8,
+    5.0,
+    5.2,
+    5.4,
+    5.6,
+    5.8,
+    6.0,
+    6.2,
+    6.4,
+    6.6,
+    6.8,
+    7.0,
+    7.2,
+    7.4,
+    7.6,
+    7.8,
+    8.0,
+    8.2,
+    8.4,
+    8.6,
+    8.8,
+    9.0,
+    9.2,
+    9.4,
+    9.6,
+    9.8,
+    10.0,
+    10.2,
+    10.4,
+    10.6,
+    10.8,
+    11.0,
+    11.2,
+    11.4,
+    11.6,
+    11.8,
+    12.0,
+    12.2,
+    12.4,
+    12.6,
+    12.8,
+    13.0,
+    13.2,
+    13.4,
+    13.6,
+    13.8,
+    14.0,
+    14.2,
+    14.4,
+    14.6,
+    14.8,
+    15.0,
+    15.2,
+    15.4,
+    15.6,
+    15.8,
+    16.0,
+    16.2,
+    16.4,
+    16.6,
+    16.8,
+    17.0,
+    17.2,
+    17.4
+   ],
+   "counts": [
+    0,
+    1,
+    0,
+    2,
+    4,
+    5,
+    11,
+    36,
+    118,
+    255,
+    575,
+    901,
+    1014,
+    899,
+    578,
+    330,
+    206,
+    129,
+    110,
+    73,
+    60,
+    54,
+    49,
+    38,
+    23,
+    33,
+    25,
+    19,
+    13,
+    21,
+    14,
+    14,
+    7,
+    9,
+    11,
+    9,
+    8,
+    8,
+    5,
+    5,
+    9,
+    6,
+    2,
+    4,
+    2,
+    5,
+    2,
+    3,
+    0,
+    3,
+    3,
+    3,
+    2,
+    5,
+    1,
+    2,
+    1,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "bin_width": 0.2
+  },
+  "tg_raw_hist": {
+   "edges": [
+    0.0,
+    25.0,
+    50.0,
+    75.0,
+    100.0,
+    125.0,
+    150.0,
+    175.0,
+    200.0,
+    225.0,
+    250.0,
+    275.0,
+    300.0,
+    325.0,
+    350.0,
+    375.0,
+    400.0,
+    425.0,
+    450.0,
+    475.0,
+    500.0,
+    525.0,
+    550.0,
+    575.0,
+    600.0,
+    625.0,
+    650.0,
+    675.0,
+    700.0,
+    725.0,
+    750.0,
+    775.0,
+    800.0,
+    825.0,
+    850.0,
+    875.0,
+    900.0,
+    925.0,
+    950.0,
+    975.0,
+    1000.0,
+    1025.0,
+    1050.0,
+    1075.0,
+    1100.0,
+    1125.0,
+    1150.0,
+    1175.0,
+    1200.0,
+    1225.0,
+    1250.0,
+    1275.0,
+    1300.0,
+    1325.0,
+    1350.0,
+    1375.0,
+    1400.0,
+    1425.0,
+    1450.0,
+    1475.0,
+    1500.0,
+    1525.0,
+    1550.0,
+    1575.0,
+    1600.0,
+    1625.0,
+    1650.0,
+    1675.0,
+    1700.0,
+    1725.0,
+    1750.0
+   ],
+   "counts": [
+    0,
+    168,
+    587,
+    692,
+    471,
+    310,
+    194,
+    118,
+    98,
+    49,
+    24,
+    27,
+    25,
+    11,
+    5,
+    9,
+    5,
+    3,
+    2,
+    3,
+    1,
+    3,
+    1,
+    1,
+    1,
+    1,
+    5,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1
+   ],
+   "bin_width": 25.0,
+   "unit": "mg/dL"
+  },
+  "tg_yj_hist": {
+   "edges": [
+    1.955576282781022,
+    1.9735729743912347,
+    1.9915696660014475,
+    2.0095663576116602,
+    2.027563049221873,
+    2.045559740832086,
+    2.0635564324422986,
+    2.081553124052511,
+    2.0995498156627237,
+    2.1175465072729365,
+    2.1355431988831493,
+    2.153539890493362,
+    2.171536582103575,
+    2.1895332737137876,
+    2.2075299653240004,
+    2.225526656934213,
+    2.243523348544426,
+    2.2615200401546387,
+    2.2795167317648515,
+    2.2975134233750643,
+    2.315510114985277,
+    2.3335068065954894,
+    2.351503498205702,
+    2.369500189815915,
+    2.3874968814261277,
+    2.4054935730363405,
+    2.4234902646465533,
+    2.441486956256766,
+    2.459483647866979,
+    2.4774803394771916,
+    2.4954770310874044,
+    2.5134737226976167,
+    2.5314704143078295,
+    2.5494671059180423,
+    2.567463797528255,
+    2.585460489138468,
+    2.6034571807486806,
+    2.6214538723588934,
+    2.639450563969106,
+    2.657447255579319,
+    2.6754439471895317
+   ],
+   "counts": [
+    1,
+    6,
+    1,
+    3,
+    3,
+    14,
+    9,
+    23,
+    20,
+    51,
+    46,
+    80,
+    99,
+    133,
+    119,
+    147,
+    189,
+    186,
+    210,
+    223,
+    198,
+    171,
+    172,
+    167,
+    126,
+    95,
+    108,
+    75,
+    32,
+    38,
+    30,
+    13,
+    10,
+    6,
+    5,
+    6,
+    2,
+    0,
+    1,
+    2
+   ],
+   "scale": "Yeo-Johnson"
+  },
+  "simpson_cells": {
+   "cols": [
+    "age",
+    "race",
+    "income",
+    "bmi",
+    "insurance",
+    "education",
+    "sex"
+   ],
+   "n_rows": 36,
+   "cells": [
+    {
+     "row": 0,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 0,
+     "col": 1,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 0,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 0,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 0,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 0,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 1,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 1,
+     "col": 1,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 1,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 1,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 1,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 1,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 2,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 2,
+     "col": 1,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 2,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 2,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 2,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 2,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 3,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 3,
+     "col": 1,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 3,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 3,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 3,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 3,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 4,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 4,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 4,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 4,
+     "col": 3,
+     "flip": true,
+     "role": "mediator"
+    },
+    {
+     "row": 4,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 4,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 5,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 5,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 5,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 5,
+     "col": 3,
+     "flip": true,
+     "role": "mediator"
+    },
+    {
+     "row": 5,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 5,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 6,
+     "col": 0,
+     "flip": true,
+     "role": "confounder"
+    },
+    {
+     "row": 6,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 6,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 6,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 6,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 6,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 7,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 7,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 7,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 7,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 7,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 7,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 8,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 8,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 8,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 8,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 8,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 8,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 9,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 9,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 9,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 9,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 9,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 9,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 10,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 10,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 10,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 10,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 10,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 10,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 11,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 11,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 11,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 11,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 11,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 11,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 12,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 12,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 12,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 12,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 12,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 12,
+     "col": 5,
+     "flip": true,
+     "role": "mediator"
+    },
+    {
+     "row": 13,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 13,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 13,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 13,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 13,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 13,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 14,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 14,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 14,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 14,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 14,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 14,
+     "col": 5,
+     "flip": true,
+     "role": "mediator"
+    },
+    {
+     "row": 15,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 15,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 15,
+     "col": 2,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 15,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 15,
+     "col": 4,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 15,
+     "col": 5,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 16,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 16,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 16,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 16,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 16,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 16,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 17,
+     "col": 0,
+     "flip": true,
+     "role": "confounder"
+    },
+    {
+     "row": 17,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 17,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 17,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 17,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 17,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 18,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 18,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 18,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 18,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 18,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 18,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 19,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 19,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 19,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 19,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 19,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 19,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 20,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 20,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 20,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 20,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 20,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 20,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 20,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 21,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 21,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 21,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 21,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 21,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 21,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 21,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 22,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 22,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 22,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 22,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 22,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 22,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 22,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 23,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 23,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 23,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 23,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 23,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 23,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 23,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 24,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 24,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 24,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 24,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 24,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 24,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 25,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 25,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 25,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 25,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 25,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 25,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 26,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 26,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 26,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 26,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 26,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 26,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 27,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 27,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 27,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 27,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 27,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 27,
+     "col": 5,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 28,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 28,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 28,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 28,
+     "col": 2,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 28,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 28,
+     "col": 4,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 28,
+     "col": 5,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 2,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 29,
+     "col": 4,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 29,
+     "col": 5,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 2,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 30,
+     "col": 4,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 30,
+     "col": 5,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 2,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 31,
+     "col": 4,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 31,
+     "col": 5,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 32,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 32,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 32,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 32,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 32,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 32,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 33,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 33,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 33,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 33,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 33,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 33,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 34,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 34,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 34,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 34,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 34,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 34,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 35,
+     "col": 0,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 35,
+     "col": 6,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 35,
+     "col": 1,
+     "flip": false,
+     "role": "confounder"
+    },
+    {
+     "row": 35,
+     "col": 2,
+     "flip": false,
+     "role": "ambiguous"
+    },
+    {
+     "row": 35,
+     "col": 3,
+     "flip": false,
+     "role": "mediator"
+    },
+    {
+     "row": 35,
+     "col": 4,
+     "flip": false,
+     "role": "ambiguous"
+    }
+   ]
+  }
+ }
+}
