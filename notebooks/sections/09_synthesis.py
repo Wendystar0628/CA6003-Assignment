@@ -1,24 +1,24 @@
 # %% [markdown]
-# # # Final answers: What did we learn about the data?
+# # §10 Synthesis and Interpretation
 #
-# We return to the three questions we asked at the very start — before we trained any model.
+# **Answers to the three traps of §1.**
 #
-# ---
+# * **Trap 1, leakage.** The AUC of 0.961 was not skill: removing the inadmissible items (treatment, diagnosis history,
+#   glucose testing) lowers it to 0.828 on the same folds, and the depth-3 tree splits on an age-at-diagnosis value
+#   that median imputation turned into a label code (§7.5).
+# * **Trap 2, the label.** Self-report and HbA1c agree substantially but not perfectly (unweighted κ = 0.70); 152 adults with HbA1c
+#   ≥ 6.5 % carry no diagnosis, and among adults with HbA1c ≥ 6.5 % the uninsured are +23.2 percentage points
+#   (95 % CI 6.2 to 40.1) more often undiagnosed (§5.4). A whole-sample AUC therefore rewards recognising known
+#   patients: 0.836 on all adults against 0.781 on the not-yet-diagnosed (§7.9).
+# * **Trap 3, preparation.** Systematic preparation barely moves the AUC: +0.008 [0.000, 0.016] over the naive-minimal
+#   arm, inside the ±0.01 margin fixed in advance, so the verdict is *inconclusive*, and its class weights worsen
+#   calibration. Its value lies elsewhere: it prevents leakage, keeps 1,496 valid values that a blanket recode deletes,
+#   and makes the screening evaluation possible. Removing the care-trace items lowers the all-adult AUC but raises the
+#   screening AUC by +0.019 [0.004, 0.034] (§7.9).
 #
-# ### Answer to Trap 1: Is AUC = 0.96 real skill?
-# **No.** It was leakage. Removing post-diagnosis variables (medication, diagnosis age, prior glucose testing) dropped AUC from 0.961 to 0.828 — that 0.13 jump was the model memorising information it would never have at a real screening visit.
+# The best model here is not the one with the highest AUC; it is the one whose data are understood and whose failure
+# modes are known.
 #
-# ### Answer to Trap 2: Does "told by a doctor" measure disease?
-# **No. It measures access to care.** κ between self-report and HbA1c is only 0.70; 152 people with HbA1c ≥6.5% are undiagnosed, and they are concentrated among people without insurance or a regular care site (+23.2 pp). A model trained only on self-report will systematically miss these people.
-#
-# ### Answer to Trap 3: Was all that pre-processing worth it?
-# **Yes — even though AUC barely moved.** Systematic preparation only lifted E-ALL AUC by +0.008 (underpowered to even call that), but on the actual screening population E-SCREEN, it gained +0.019 AUC. More importantly: coefficients became more stable, group fairness gaps narrowed, and the model stopped relying on care traces that penalise people with worse access.
-#
-# > **The big takeaway:** In data-centric ML, the best model is not the one with the highest AUC — it is the one you understand, trust, and know will not systematically fail the people who need screening the most.
-#
-# ---
-#
-# ## §10 Synthesis and Interpretation
 #
 # This section turns the numbers of §1–§9 into **claims** with an honest strength, scope and falsifier. Nothing is
 # re-estimated: every value is read from the stored results (`results/metrics_S*.json`, `results/S*/`), and every video

@@ -1,13 +1,13 @@
 {
   "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
   "stored_outputs_mode": "FINAL",
-  "source_commit": "798deea",
-  "built_utc": "2026-10-11T18:53:52+00:00",
+  "source_commit": "cc3f151",
+  "built_utc": "2026-10-13T11:24:53+00:00",
   "procedure": "assembled",
   "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
   "base": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-    "sha256": "68072cf9b91ae6cb4a53270560be9296e5615b06c0a29b7ee7a7ecfedcbea493"
+    "sha256": "858411bc4fd598e78123a868dd574c1efab13a138336f6b16436fbb10a201e3e"
   },
   "sections": {
     "00_setup.py": {
@@ -35,7 +35,7 @@
       "run_utc": "2026-10-11T17:49:46+00:00",
       "executed_sha256": "6c4422a69a9dfb8d5adce1b3da8d264a57dc0a7d987bc65e0661c01a3e321386",
       "section_sha256_at_run": "9040ea08baa20e1998d3c1f53705aa9b4e6246b7a4f785118002a439be9ea7c8",
-      "section_sha256_now": "133b4eb43abfd91c5e13681385cf015bd8a007baa516d244d683e092c877cc0e",
+      "section_sha256_now": "bd0d9d240a98f4d7d67e3da40ac472ba52ffd6c7bdcff68f02621a385c0ad723",
       "note": "section source changed after the run in comments/markdown only (code tokens verified)"
     },
     "07_fairness.py": {
@@ -65,8 +65,8 @@
       "run_utc": "2026-10-11T18:43:31+00:00",
       "executed_sha256": "a5300edbe651064e6732625595051275347a296c23de552493cbc058d841b434",
       "section_sha256_at_run": "4e148a163927080af264a5558598f49f62975446613535e14ca0fa993511448a",
-      "section_sha256_now": "4e148a163927080af264a5558598f49f62975446613535e14ca0fa993511448a",
-      "note": "section source unchanged since the run"
+      "section_sha256_now": "9a33ea92546355fdb89c5005e60bc690ac776f7cc5dc29a51266430b65c84ca4",
+      "note": "section source changed after the run in comments/markdown only (code tokens verified)"
     }
   },
   "section_provenance": {
@@ -153,22 +153,22 @@
     "synthesised": []
   },
   "appendix": {
-    "executed_seconds": 2.9,
+    "executed_seconds": 4.9,
     "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
   },
   "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 10 min (sizes in §0.2)",
   "section_runtime_seconds_sum": 1468.3,
   "code_cell_sha256": "cfd4420c8d98898bb137d5554427bf0dbb146841d1a0611de6aa27045dee189b",
-  "notebook_sha256": "68072cf9b91ae6cb4a53270560be9296e5615b06c0a29b7ee7a7ecfedcbea493 (LF line endings)",
+  "notebook_sha256": "858411bc4fd598e78123a868dd574c1efab13a138336f6b16436fbb10a201e3e (LF line endings)",
   "front_matter_words": {
     "title": 158,
     "summary": 250,
     "checklist": 74,
-    "team": 402,
-    "genai": 258,
+    "team": 291,
+    "genai": 183,
     "guide": 249
   },
-  "team_placeholders_left": 12,
+  "team_placeholders_left": 7,
   "validation": "OK",
   "runs": {
     "FAST": {
@@ -224,13 +224,13 @@
   "previous_record": {
     "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
     "stored_outputs_mode": "FINAL",
-    "source_commit": "06b7e5a",
-    "built_utc": "2026-10-11T18:43:44+00:00",
+    "source_commit": "798deea",
+    "built_utc": "2026-10-11T18:53:52+00:00",
     "procedure": "assembled",
     "procedure_note": "tools/build_final.py --assemble: notebook built from the current sources; the outputs of each section come from its own run in the release mode (tools/run_section.py, repository context, notebooks/executed) or from the base release after a comment-insensitive token check of its code and of the inlined files it uses; changed workspace file cells get the standard write output; the appendix cells are executed against the current results/",
     "base": {
       "notebook": "notebooks/final/CA6003_NHANES_Diabetes.ipynb",
-      "sha256": "4732b12ed8d4d206bad76c485435eef353bd580f3c89b9ef701662a3ddf6e379"
+      "sha256": "68072cf9b91ae6cb4a53270560be9296e5615b06c0a29b7ee7a7ecfedcbea493"
     },
     "sections": {
       "00_setup.py": {
@@ -376,13 +376,13 @@
       "synthesised": []
     },
     "appendix": {
-      "executed_seconds": 2.5,
+      "executed_seconds": 2.9,
       "final_ref": "52 reference quantities reproduced within tolerance (FINAL mode)"
     },
-    "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 5 min (sizes in §0.2)",
+    "stored_run_line": "stored from FINAL runs: §0–§6 from the full FINAL run at commit 18a4909 (2026-10-11); §7–§10 re-run section by section on 2026-10-12; section runtimes sum to 24 min 28 s (none recorded for §7); a default `NB_MODE=FAST` re-run takes about 10 min (sizes in §0.2)",
     "section_runtime_seconds_sum": 1468.3,
     "code_cell_sha256": "cfd4420c8d98898bb137d5554427bf0dbb146841d1a0611de6aa27045dee189b",
-    "notebook_sha256": "4732b12ed8d4d206bad76c485435eef353bd580f3c89b9ef701662a3ddf6e379 (LF line endings)",
+    "notebook_sha256": "68072cf9b91ae6cb4a53270560be9296e5615b06c0a29b7ee7a7ecfedcbea493 (LF line endings)",
     "front_matter_words": {
       "title": 158,
       "summary": 250,
@@ -392,13 +392,13 @@
       "guide": 249
     },
     "team_placeholders_left": 12,
-    "validation": "OK"
-  },
-  "fast_clean_room_check": {
-    "source_commit": "798deea",
-    "procedure": "git archive into an empty folder; build_final.py --execute (FAST) in a fresh temp workspace",
-    "runtime_seconds": 566,
-    "result": "build OK: no error outputs, validation OK, FINAL_REF asserts within FAST tolerance",
-    "date": "2026-10-12"
+    "validation": "OK",
+    "fast_clean_room_check": {
+      "source_commit": "798deea",
+      "procedure": "git archive into an empty folder; build_final.py --execute (FAST) in a fresh temp workspace",
+      "runtime_seconds": 566,
+      "result": "build OK: no error outputs, validation OK, FINAL_REF asserts within FAST tolerance",
+      "date": "2026-10-12"
+    }
   }
 }

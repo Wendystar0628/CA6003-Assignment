@@ -1,13 +1,10 @@
 # %% [markdown]
-# # # Core finding: The label is not ground truth — it is a biased measurement
+# # §5 Labels and bias audit
 #
-# This is the most important section in the whole project. We go back to **Trap 2**: if we use "told by a doctor you have diabetes" as our label, are we predicting diabetes, or predicting who has good enough healthcare to be diagnosed?
+# **Trap 2: the label is not ground truth.** If "told by a doctor you have diabetes" is the label, a model partly
+# predicts who had enough contact with care to be diagnosed. This section measures that bias and decides how the
+# models are trained and evaluated because of it.
 #
-# The answer changes everything about how we evaluate models.
-#
-# ---
-#
-# ## §5 Labels and bias audit
 #
 # A diabetes label is itself a measurement: self-report records a past diagnosis, HbA1c today's glycaemia under
 # whatever treatment the person receives. This section audits the label and two further bias layers before the
@@ -15,7 +12,7 @@
 #
 # | § | Question we answer |
 # |---|---|
-# | 5.1 | How far do self-report and HbA1c agree? (κ = 0.70 — far from perfect) |
+# | 5.1 | How far do self-report and HbA1c agree? (unweighted κ = 0.70: substantial, not perfect) |
 # | 5.2 | Does treatment hide diabetes from HbA1c? |
 # | 5.3 | What does "undiagnosed" mean? (152 people with HbA1c ≥6.5% who never got a diagnosis) |
 # | 5.4 | Who is undiagnosed? (Answer: people without insurance / regular care — +23.2 pp gap) |

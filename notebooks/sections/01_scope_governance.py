@@ -1,18 +1,19 @@
 # %% [markdown]
-# # Who gets labelled diabetic? A data-centric study of NHANES 2021–2023
+# # §1 Problem and governance
 #
-# ## The three questions we set out to answer — before touching any model
-# In this project, machine learning is an instrument for measuring data quality, not the goal. Before we trained any model, we suspected three hidden traps in the data:
+# **Three traps, stated before any model.** Machine learning is used here as an instrument for measuring the data, not
+# as the goal. The project is organised around three traps a routine analysis would walk into:
 #
-# 1. **Trap 1: A high AUC may be leakage, not skill.** What looks like a great screening model may just be memorising post-diagnosis information that would never be available at a real screening visit.
-# 2. **Trap 2: The label itself is biased.** "Told by a doctor you have diabetes" measures access to healthcare, not just disease — uninsured people are systematically under-diagnosed, and a model trained on this label will reproduce that gap.
-# 3. **Trap 3: Hours of pre-processing may not improve AUC at all.** If systematic cleaning only changes model interpretability, fairness and robustness — but barely moves the score — is that work worth doing?
+# 1. **Trap 1: a high AUC may be leakage, not skill.** A strong-looking model may be reading post-diagnosis information
+#    that does not exist at a real screening visit (answered in §7.5).
+# 2. **Trap 2: the label is a measurement.** "Told by a doctor" records contact with care as well as disease, so a
+#    model trained on it can reproduce who gets diagnosed (answered in §5 and §8).
+# 3. **Trap 3: careful preparation may barely move the AUC.** If systematic preparation changes little in the score,
+#    what does it change, and is it worth doing (answered in §7 and §10)?
 #
-# Every section that follows answers one of these questions. We use only basic interpretable models (L2 logistic regression, depth-3 decision tree), lock all hypotheses before experiments, and evaluate the holdout set exactly once.
+# Only basic interpretable models are used (L2 logistic regression, a depth-3 tree), the hypotheses are locked before
+# the experiments, and the internal hold-out is evaluated once. §10 opens with the answer to each trap.
 #
-# ---
-#
-# ## §1 Problem and governance
 #
 # This section states what is asked, of whom, and under which rules: use case, training target, the two evaluation populations, the feature-availability rule, research questions and hypotheses, and the obligations that come with the data. The text lives in `governance/S1_scope.md`, `governance/hypotheses.md` and `governance/datasheet.md`; the notebook renders it and **recomputes every number it contains** from the raw files.
 

@@ -1,19 +1,14 @@
 # %% [markdown]
-# # # The experiment: What do our data choices actually change?
+# # §7 Experiments and Block Ablation
 #
-# We now test **Trap 1 and Trap 3** head-on. We use the *same* simple logistic regression on three versions of the data — the only thing that changes is how we prepare the data. We do not care which version has the highest AUC for its own sake; we care what each preparation step changes:
+# **Traps 1 and 3, tested with one model.** The same L2 logistic regression is applied to three versions of the data;
+# only the preparation changes. The question is what each preparation step changes, not which arm scores highest:
 #
-# 1. **Arm M0 (naive, all columns):** The first model we built hit AUC = 0.961. We suspected this was cheating (Trap 1) — let's find out what it was peeking at.
-# 2. **Arm M1 (minimal cleaning):** We remove obviously leaky columns. What is the *real* difficulty of this task?
-# 3. **Arm S (systematic preparation):** We add every evidence-based cleaning step. Does it improve screening performance, or just make the model more fair and interpretable (Trap 3)?
+# 1. **M0, naive with all columns:** its AUC of 0.961 is the leakage suspect of Trap 1 (§7.5 shows what it reads).
+# 2. **M1, naive-minimal:** only the availability rule; this is the honest difficulty of the task.
+# 3. **S, systematic:** every evidence-based preparation step; does it change screening performance, calibration,
+#    stability or fairness (Trap 3)?
 #
-# We evaluate on two populations, because the label bias from §5 means they answer different questions:
-# * **E-ALL** – all adults, combined label (this measures how well we can recognise already-diagnosed diabetes)
-# * **E-SCREEN** – never-diagnosed people, HbA1c label (this measures the actual screening value)
-#
-# ---
-#
-# ## §7 Experiments and Block Ablation
 #
 # The model is used as a **measuring instrument** for the preparation decisions of §6: one estimator (L2
 # logistic regression, C frozen) is applied to every arm on the same stored folds, and each block is judged

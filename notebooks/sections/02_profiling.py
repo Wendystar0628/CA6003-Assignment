@@ -1,16 +1,13 @@
 # %% [markdown]
-# # Step 1: Crime scene investigation — what is wrong with the raw data?
+# # §2 Data profiling and quality audit
 #
-# Before cleaning anything, we look at the raw data as-is — like a detective examining a crime scene before moving evidence. Every problem we find here becomes a recorded decision later, with a clear reason.
+# **Look before cleaning.** The raw files are examined as they are, before anything is changed, and every problem
+# found becomes a recorded decision with its reason. Three signals are hunted for:
 #
-# **Three signals we are hunting for:**
-# 1. Are "missing values" actually real numbers encoded as sentinel codes (7, 9, 77, 99)?
-# 2. Which variables are near-duplicates of each other (so they would make coefficients unstable)?
-# 3. Where does missingness itself carry information (e.g. not having a lab test because you have no insurance)?
+# 1. "missing" codes (7, 9, 77, 99, …) that are real values in some variables (§3.3–§3.4);
+# 2. near-duplicate variables that would make coefficients unstable (§4.9);
+# 3. missingness that carries information, for example a lab value missing for reasons linked to the person (§3.7).
 #
-# ---
-#
-# ## §2 Data profiling and quality audit
 #
 # This part works out where the data can be trusted and turns each finding into a recorded decision. §2.1 re-checks provenance, the codebook-derived specification and minimisation; the audit follows in §3:
 #
