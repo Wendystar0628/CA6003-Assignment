@@ -21,15 +21,15 @@ D 7:47–10:41 陷阱三 Little gain：+0.008 不确定 · Brier 恶化 · 全�
              · B 的稳健性核查 · 三个回答 · D 的意外 · 团队回顾、局限、GenAI、结论
 ```
 
-**总时长 10:41**（641 s），上限 12:00，余量 1:19；28 个场景；旁白 1,434 词，平均 134 wpm。
+**总时长 10:41**（641 s），上限 12:00，余量 1:19；28 个场景；旁白 1,437 词，平均 134 wpm。
 
 | 成员 | 段落 | 时长 | 占比 | 旁白词数 | 场景 |
 |---|---|---|---|---|---|
 | A | 0:00–2:30 | 2:30（150 s） | 23 % | 331 | 1–7 |
-| B | 2:30–5:03 | 2:33（153 s） | 24 % | 339 | 8–14 |
+| B | 2:30–5:03 | 2:33（153 s） | 24 % | 342 | 8–14 |
 | C | 5:03–7:47 | 2:44（164 s） | 26 % | 367 | 15–20 |
 | D | 7:47–10:41 | 2:54（174 s） | 27 % | 397 | 21–28 |
-| 合计 | — | 10:41（641 s） | 100 % | 1,434 | 28 |
+| 合计 | — | 10:41（641 s） | 100 % | 1,437 | 28 |
 
 **最重要的决定。**
 1. **一人一段。** 每位成员只在一个连续段落里出镜，没有合影、没有回场、没有末尾的单人短片。每段以自我介绍和 lower-third 开头，以一句 “most unexpected” 和交接句结尾。
@@ -156,7 +156,7 @@ D 7:47–10:41 陷阱三 Little gain：+0.008 不确定 · Brier 恶化 · 全�
 | 10 | B · Ch3 | B | 3:19–3:41 | 22 | 49 | 134 | 离群值 542 个中 519 个是糖尿病：保留 | DI |
 | 11 | B · Ch3 | B | 3:41–4:08 | 27 | 61 | 136 | VIF 95.7 / 97.6；偏度 6.62 → 决定（C 的发现） | DI |
 | 12 | B · Ch3 | B | 4:08–4:32 | 24 | 53 | 133 | 14 个可开关的步骤，各有证据 | Ap |
-| 13 | B · Ch3 | B | 4:32–4:50 | 18 | 40 | 133 | M0 / M1 / S，同一模型 | Ap |
+| 13 | B · Ch3 | B | 4:32–4:50 | 18 | 43 | 143 | M0 / M1 / S，同一模型 | Ap |
 | 14 | B · Ch3 | B | 4:50–5:03 | 13 | 29 | 134 | B 的意外：一行清洗代码删掉 29 个阳性 → 交接 | CC、NV |
 | 15 | C · Ch4 Paradox | C | 5:03–5:32 | 29 | 63 | 130 | Simpson：224 次比较中 6 次翻转；中介 | DI |
 | 16 | C · Ch5 Label | C | 5:32–6:02 | 30 | 67 | 134 | 陷阱二：κ 0.70；250 / 819；165 | DI、NV |
@@ -172,7 +172,7 @@ D 7:47–10:41 陷阱三 Little gain：+0.008 不确定 · Brier 恶化 · 全�
 | 26 | D · Ch9 Close | D | 9:44–10:05 | 21 | 49 | 140 | 三个陷阱，三个回答 | DI、NV |
 | 27 | D · Ch9 | D | 10:05–10:12 | 7 | 14 | 120 | D 的意外：泄漏 ≫ 准备 | CC |
 | 28 | D · Ch9 | D | 10:12–10:41 | 29 | 68 | 141 | 团队回顾、局限、GenAI、结论 | CC |
-| 合计 | — | — | 0:00–10:41 | 641 | 1,434 | 134 | — | — |
+| 合计 | — | — | 0:00–10:41 | 641 | 1,437 | 135 | — | — |
 
 **章级汇总。**
 
@@ -397,15 +397,15 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 
 - **版式：** R
 - **构建：**
-  1. 三条泳道（参照 `figures/S6_arm_matrix.png`）：“Naive (M0)” 红色斜纹描边、内部空白，标签 “every column”；“Minimal (M1)” 灰色实心，只点亮 P03；“Systematic (S)” 青色实心，14 格全亮。
+  1. 三条泳道（参照 `figures/S6_arm_matrix.png`）：“Naive (M0)” 红色斜纹描边、内部空白，标签 “every column”；“Minimal (M1)” 灰色实心，只点亮 P03；“Systematic (S)” 青色实心，P01–P13 共 13 格点亮；P14（WHtR）留空并标 “tested separately”，因为它是单独的对照（S+WHtR），不属于 S。
   2. 每条泳道末端标出列数（数据标签）：88 / 46 / 42 columns。
   3. 三条泳道汇入同一个盒子 “one L2 logistic regression · same folds”，盒子上方出现挂锁 “hypotheses locked”。
 - **旁白：**
-  > **B**：We built three versions of the data. Naive, M0: every column. Minimal, M1: naive plus only the rule that bars post-diagnosis items. Systematic, S: all fourteen steps. One simple logistic regression for all three, hypotheses locked first.
-- **词数：** 40 / 18 s = 133 wpm
+  > **B**：We built three versions of the data. Naive, M0: every column. Minimal, M1: naive plus only the rule that bars post-diagnosis items. Systematic, S: all steps but one, which we test separately. One simple logistic regression for all three, hypotheses locked first.
+- **词数：** 43 / 18 s = 143 wpm
 - **屏幕文字：** “Naive (M0) · Minimal (M1) · Systematic (S)”
 - **术语：** L2 logistic regression（画面标注 “a simple, penalised linear model”）
-- **数字：** 口述 `14`（同场景 12）。仅画面：`88` / `46` / `42` ← 待补登 · S6:arms.M0 / M1 / S.n_features_t1
+- **数字：** 不口述数字（S 实际包含 P01–P13，P14 是单独对照，见 `video/data/arms.json`）。仅画面：`88` / `46` / `42` ← 待补登 · S6:arms.M0 / M1 / S.n_features_t1
 - **衔接：** 泳道暗下，B 转为 S 版式。
 
 #### 场景 14 · B 的意外与交接 · 4:50–5:03 · 13 s · B
@@ -635,7 +635,7 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 
 - **版式：** R 21 s → F 8 s → 片尾卡（最后 2 s，与 “Thank you” 重叠）
 - **构建（视觉 12 Role cards & chain）：**
-  1. 场景 1 的四张角色卡片原位回来（墨色描边，白纸面板），每张加一行纯文字成果：A “rules · replication”，B “the deleted 7.0 · 14 steps”，C “the label · fairness”，D “the leak · the traps answered”。卡片之间画出贡献链 C finds → B implements → D evaluates → C interprets，A 的外框表示 “integrates & checks every number”。念到哪位成员，哪张卡加结构色左侧细线，其余暗到 25 %。
+  1. 场景 1 的四张角色卡片原位回来（墨色描边，白纸面板），每张加一行纯文字成果：A “rules · replication”，B “the deleted 7.0 · 14 switchable steps”，C “the label · fairness”，D “the leak · the traps answered”。卡片之间画出贡献链 C finds → B implements → D evaluates → C interprets，A 的外框表示 “integrates & checks every number”。念到哪位成员，哪张卡加结构色左侧细线，其余暗到 25 %。
   2. 卡片暗下；三枚局限标签依次出现（M3）：“One survey cycle”、“Low response”、“152 Screening-group positives”（蓝色空心方块小图标）。
   3. GenAI 声明卡：“GenAI drafted code & text · reviewed by us · no LLM in the pipeline · every number recomputed”。
   4. 切 F：标题带 “The score is not the finding”。
