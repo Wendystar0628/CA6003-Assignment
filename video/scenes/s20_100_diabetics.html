@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 20 · 100 diabetics</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 20 · C's most unexpected finding (signature visual 11 "100 diabetics") · docs/video_plan.md §4 scene 20, §7 visual 11.
+   Layout S: C's portrait fills the left half (camera slot); this file renders the card on the right.
+   One relation: at one shared cut-off the model flags 70 of 100 diagnosed diabetics but only 52 of 100 in the Screening group.
+   Numbers: video/data/tpr_100.json. The dots are the rates 0.70 and 0.52 scaled to 100: an illustration, not a head count. */
+
+// Cues in scene seconds, estimated at ~141 wpm; replace with the marks on C's take (§8.3 step 5).
+const CUES = {
+  blocks: 2.0,   // "at one cut-off,"                                     two 10 x 10 dot blocks + labels
+  left: 4.4,     // "the model flags 70 of 100 diagnosed diabetics,"      rows light up, M10 count to 70
+  right: 7.4,    // "but only 52 of 100 in the screening group."          rows light up, M10 count to 52
+  focus: 9.8,    // (pause)                                                M3: the 18 positions that differ
+  title: 8.6,    // title settles on the screen text
+};
+
+Kit.createScene({
+  number: 20,
+  name: '100_diabetics',
+  duration: 14,
+  layout: 'S',
+  speaker: 'C',
+  title: [{ at: 0, text: 'Most unexpected finding' }, { at: CUES.title, text: '(set from data)' }],
+  trap: 'leak',
+  source: '§8 · S8_group_tpr',
+  data: '../data/tpr_100.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const nDiag = Math.round(K.val(data, 'per100_diag')), nUndx = Math.round(K.val(data, 'per100_undx'));
+    const gapN = nDiag - nUndx;
+    if (gapN !== K.val(data, 'per100_gap')) throw new Error('tpr_100.json: 70 - 52 no longer equals the stored gap');
+    S.nDiag = nDiag; S.nUndx = nUndx; S.gapN = gapN;
+    DC.fitLegend(ctx, ['reference', 'screen']);
+    DC.setTitle(ctx, 1, 'Flagged: ' + K.disp(data, 'per100_diag') + ' vs ' + K.disp(data, 'per100_undx') + ' of 100');
+
+    const ROWS = 10, COLS = 10, PITCH = 34;
+    const total = ROWS * COLS;
+    const blocks = [
+      { key: 'diag', x0: 40, kind: 'circle', label: total + ' ' + K.item(data, 'tpr_diag').label.toLowerCase(), n: nDiag },
+      { key: 'undx', x0: 436, kind: 'square', label: total + ' in ' + K.item(data, 'tpr_undx').label, n: nUndx },
+    ];
+    const top = 118;
+    S.blocks = blocks.map((b) => {
+      b.g = K.svg('g', {}, g);
+      b.lab = K.text(b.g, { x: b.x0, y: 78, text: b.label, cls: 'kit-t-min' });
+      b.cells = [];
+      for (let i = 0; i < total; i++) {
+        const r = Math.floor(i / COLS), c = i % COLS;
+        const cx = b.x0 + c * PITCH + PITCH / 2, cy = top + r * PITCH + PITCH / 2;
+        const cell = { i, cx, cy, g: K.svg('g', {}, b.g) };
+        if (b.kind === 'circle') {
+          cell.off = K.svg('circle', { cx, cy, r: 11, fill: '#fff', stroke: K.C.ink, 'stroke-width': 1.8 }, cell.g);
+          cell.on = K.svg('circle', { cx, cy, r: 12, fill: K.C.ink }, cell.g);
+        } else {
+          cell.off = K.svg('rect', { x: cx - 10, y: cy - 10, width: 20, height: 20, fill: '#fff', stroke: K.C.screen, 'stroke-width': 1.8 }, cell.g);
+          cell.on = K.svg('rect', { x: cx - 11, y: cy - 11, width: 22, height: 22, fill: K.C.screenTint, stroke: K.C.screen, 'stroke-width': 4.5 }, cell.g);
+        }
+        // the positions that differ between the blocks: indices nUndx .. nDiag - 1
+        if (i >= nUndx && i < nDiag) {
+          cell.ring = b.kind === 'circle'
+            ? K.svg('circle', { cx, cy, r: 16, fill: 'none', stroke: K.C.ink, 'stroke-width': 2 }, cell.g)
+            : K.svg('rect', { x: cx - 15, y: cy - 15, width: 30, height: 30, rx: 2, fill: 'none', stroke: K.C.ink, 'stroke-width': 2 }, cell.g);
+        }
+        b.cells.push(cell);
+      }
+      b.num = K.callout(b.g, { x: b.x0 + (COLS * PITCH) / 2, y: top + ROWS * PITCH + 84, anchor: 'middle', size: 'second', label: 'flagged' });
+      return b;
+    });
+    const cap = data.groups.label.split('·').map((s) => s.trim());   // "one shared cut-off · specificity 0.80 · rates per 100"
+    if (!cap[1].endsWith(K.disp(data, 'spec'))) throw new Error('tpr_100.json: caption and specificity differ');
+    S.cap1 = K.text(g, { x: 408, y: 690, text: cap[0] + ' · ' + cap[1], anchor: 'middle', cls: 'kit-t-min' });
+    S.cap2 = K.text(g, { x: 408, y: 732, text: cap[2], anchor: 'middle', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, data = ctx.data;
+    const focus = K.M3_focus(t, c.focus);            // 0..1 outline, others 25 %
+    const vis = K.appear(t, c.blocks);
+    S.blocks.forEach((b) => {
+      const start = b.key === 'diag' ? c.left : c.right;
+      const count = K.M10_count(t, start, 0, b.n);   // M10: linear start, slows at the end
+      const lit = Math.floor(count + 1e-6);
+      K.op(b.lab, vis); K.op(b.g, vis > 0 ? 1 : 0);
+      b.cells.forEach((cell) => {
+        const on = cell.i < lit;
+        K.op(cell.on, on ? 1 : 0); K.op(cell.off, on ? 0 : 1);
+        K.op(cell.g, vis * (cell.ring ? 1 : K.lerp(1, 0.25, focus.outline)));
+        if (cell.ring) K.op(cell.ring, focus.outline);
+      });
+      b.num.update({ text: String(Math.round(count)), number: K.appear(t, start), label: K.appear(t, start + K.T.appear) });
+    });
+    K.op(S.cap1, K.appear(t, c.focus + 0.2)); K.op(S.cap2, K.appear(t, c.focus + 0.2));
+  },
+});
+</script>
+</body>
+</html>

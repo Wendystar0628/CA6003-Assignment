@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 19 · The tree and the 50</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 19 · How did the model cheat? (signature visual 5 "Tree and the 50") · docs/video_plan.md §4 scene 19, §7 visual 5.
+   Speaker C presents D's tree. One relation: the age split sits at the median that was filled in for the people never asked.
+   Numbers: video/data/tree.json (86 %, 50). The tree structure comes from tree.json groups.nodes (executed notebook output,
+   depth 3: root = treatment item, level 1 = age at diagnosis on the not-taking-pills branch). */
+
+// Cues in scene seconds, estimated at ~139 wpm (no chapter card); replace with the marks on C's take (§8.3 step 5).
+const CUES = {
+  tree: 2.0,     // "D's shallow decision tree shows it."          tree grows, node 0.3 s / edge 0.4 s
+  root: 6.0,     // "Its root is a treatment question."            root becomes leaked (red hatch) + note
+  split: 8.8,    // "Then it splits on age at diagnosis."          age node becomes leaked
+  axis: 10.2,    // "But 86 percent were never asked that,"        histogram axis (M1)
+  blank: 11.8,   // "86 percent"                                   blank box + number
+  fill: 15.0,    // "so filling blanks with the median"            M6: the blank box moves to 50 and turns red hatch
+  fifty: 16.4,   // "put 50 in all of them."                       number 50
+  arrow: 19.0,   // "The tree learned a code for 'never diagnosed'." M11 arrow to the split node
+  title: 22.0,   // "A skip pattern became a label."               title dissolve
+};
+
+Kit.createScene({
+  number: 19,
+  name: 'tree_and_50',
+  duration: 25,
+  layout: 'R',
+  speaker: 'C',
+  title: [{ at: 0, text: 'How did the model cheat?' }, { at: CUES.title, text: '(set from data)' }],
+  attribution: 'experiment: D · §7',
+  trap: 'leak',
+  source: '§7 · S7_tree_m0',
+  data: '../data/tree.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, defs } = ctx, K = Kit, S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const miss = K.item(data, 'did040_missing'), fill = K.item(data, 'did040_fill');
+    DC.setTitle(ctx, 1, miss.display + ' never asked → imputed ' + fill.display);
+
+    // ---------------- tree (right zone): structure read from the executed-notebook export, depth 3
+    const raw = data.groups.nodes.tree;                  // two level-1 branches of the root (no: age branch, yes: glucose branch)
+    const yesBranch = raw[0], noBranch = raw[1];
+    const lvl1Age = noBranch;                            // age <= 49.5 (leaf) | age > 49.5 -> age <= 50.5 | > 50.5
+    const lvl1Glu = yesBranch;                           // glucose test (leaf) | LDL split
+    const X = { root: 830, age: 690, glu: 1050, ageLeaf: 580, age2: 800, gluLeaf: 960, ldl: 1140, a3a: 730, a3b: 870, l3a: 1090, l3b: 1190 };
+    const Y = { root: 130, l1: 290, l2: 455, l3: 615 };
+    S.nodes = []; S.edges = [];
+    const node = (depth, x, y, kind, extra = {}) => { const n = Object.assign({ depth, x, y, kind }, extra); S.nodes.push(n); return n; };
+    const edge = (depth, a, b, label) => { S.edges.push({ depth, a, b, label }); };
+    const rootN = node(0, X.root, Y.root, 'label', { text: K.disp(data, 'root_variable'), w: 400, h: 62 });
+    const ageN = node(1, X.age, Y.l1, 'label', { text: K.item(data, 'level2_right').display.replace('diabetes ', '') + ' ≈ ' + fill.display, w: 400, h: 62 });
+    const gluN = node(1, X.glu, Y.l1, 'dot');
+    const ageLeaf = node(2, X.ageLeaf, Y.l2, 'leaf'), age2 = node(2, X.age2, Y.l2, 'dot');
+    const gluLeaf = node(2, X.gluLeaf, Y.l2, 'leaf'), ldl = node(2, X.ldl, Y.l2, 'dot');
+    const l3 = [node(3, X.a3a, Y.l3, 'leaf'), node(3, X.a3b, Y.l3, 'leaf'), node(3, X.l3a, Y.l3, 'leaf'), node(3, X.l3b, Y.l3, 'leaf')];
+    // sanity: the exported tree has 6 leaves and the age branch has two nested age splits (49.5 and 50.5)
+    if (data.groups.nodes.n_leaves !== 6 || !(lvl1Age.children[1].children || []).length || !(lvl1Glu.children[1].children || []).length) throw new Error('tree.json structure changed');
+    edge(1, rootN, ageN, 'no'); edge(1, rootN, gluN, 'yes');
+    edge(2, ageN, ageLeaf); edge(2, ageN, age2); edge(2, gluN, gluLeaf); edge(2, gluN, ldl);
+    edge(3, age2, l3[0]); edge(3, age2, l3[1]); edge(3, ldl, l3[2]); edge(3, ldl, l3[3]);
+    S.rootN = rootN; S.ageN = ageN; S.age2 = age2;
+
+    const halfH = (n) => (n.kind === 'label' ? n.h / 2 : n.kind === 'dot' ? 16 : 13);
+    S.edgeEls = S.edges.map((e) => {
+      const x1 = e.a.x, y1 = e.a.y + halfH(e.a), x2 = e.b.x, y2 = e.b.y - halfH(e.b);
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      e.el = K.svg('line', { x1, y1, x2, y2, stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': `${len} ${len}` }, g);
+      e.len = len;
+      if (e.label) {
+        const lx = (x1 + x2) / 2 + (x2 < x1 ? -34 : 34), ly = (y1 + y2) / 2 + 10;
+        e.lab = DC.halo(K.text(g, { x: lx, y: ly, text: e.label, anchor: 'middle', cls: 'kit-t-min' }));
+      }
+      return e;
+    });
+    const drawNode = (n) => {
+      n.g = K.svg('g', {}, g);
+      if (n.kind === 'label') {
+        const x = n.x - n.w / 2, y = n.y - n.h / 2;
+        K.svg('rect', { x, y, width: n.w, height: n.h, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, n.g);
+        n.frame = K.svg('rect', { x, y, width: n.w, height: n.h, rx: 8, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 3 }, n.g);
+        K.svg('rect', { x: x + 8, y: y + 8, width: n.w - 16, height: n.h - 16, rx: 4, fill: '#fff' }, n.g);
+        n.tri = K.warnTriangle(n.g, { x: x + 14, y: n.y - 15, size: 30 });
+        K.text(n.g, { x: x + 56, y: n.y + 10, text: n.text, cls: 'kit-t-min' });
+      } else if (n.kind === 'dot') {
+        K.svg('circle', { cx: n.x, cy: n.y, r: 16, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, n.g);
+        n.frame = K.svg('circle', { cx: n.x, cy: n.y, r: 16, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 3 }, n.g);
+      } else {
+        K.svg('rect', { x: n.x - 13, y: n.y - 13, width: 26, height: 26, rx: 3, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, n.g);
+      }
+    };
+    S.nodes.forEach(drawNode);
+    S.rootNote = K.text(g, { x: X.root, y: 78, text: 'treatment item', anchor: 'middle', cls: 'kit-t-min' });
+
+    // ---------------- histogram of "age at diagnosis" (left zone): the blank 86 % moves to 50
+    S.hist = K.svg('g', {}, g);
+    K.text(S.hist, { x: 60, y: 50, text: 'Age at diagnosis', cls: 'kit-t-min' });
+    const ax = K.scaleLinear([20, 80], [200, 440]);
+    S.ax = K.axis(S.hist, ax, { orient: 'bottom', at: 700, ticks: [20, 40, 60, 80], format: (v) => String(v) });
+    const hy = K.scaleLinear([0, 1], [700, 370]);
+    S.top = hy(miss.value);
+    S.box = { x0: 60, w0: 90, x1: ax(fill.value) - 20, w1: 40 };
+    S.boxPlain = K.svg('rect', { fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, S.hist);
+    S.boxHatch = K.svg('rect', { fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 3 }, S.hist);
+    S.ghost = K.svg('rect', { x: S.box.x0, y: S.top, width: S.box.w0, height: 700 - S.top, fill: 'none', stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '8 6' }, S.hist);
+    S.blankLab = K.text(S.hist, { x: S.box.x0 + S.box.w0 / 2, y: 744, text: 'blank', anchor: 'middle', cls: 'kit-t-min' });
+    S.pct = K.callout(S.hist, { x: 60, y: 215, size: 'main', label: 'never asked' });
+    S.pct.label.setAttribute('y', 215 + 74);
+    S.fifty = K.callout(S.hist, { x: S.box.x1 + 20, y: 396, anchor: 'middle', size: 'second' });
+    S.median = K.text(S.hist, { x: S.box.x1 + 20, y: 320, text: 'median', anchor: 'middle', cls: 'kit-t-min' });
+    S.arrow = K.arrow(g, { x1: S.box.x1 + 46, y1: 470, x2: ageN.x - ageN.w / 2 - 8, y2: ageN.y + 8,
+      label: { x: 372, y: 520, text: 'imputed,', cls: 'kit-t-min' } });
+    S.arrowLab2 = K.text(g, { x: 372, y: 558, text: 'not measured', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, data = ctx.data;
+    // ---- tree growth: depth d nodes after their edges (node 0.3 s, edge 0.4 s)
+    const d0 = c.tree, step = K.T.M7.dur + 0.45;   // 0.7 s per level: edge 0.4 + node 0.3
+    const edgeStart = (d) => d0 + 0.3 + (d - 1) * 0.7, nodeStart = (d) => (d === 0 ? d0 : edgeStart(d) + 0.4);
+    S.edges.forEach((e) => {
+      const p = K.progress(t, edgeStart(e.depth), 0.4, K.ease.enter);
+      e.el.setAttribute('stroke-dashoffset', e.len * (1 - p)); K.op(e.el, p > 0 ? 1 : 0);
+      if (e.lab) K.op(e.lab, K.appear(t, nodeStart(e.depth)));
+    });
+    const leakRoot = K.progress(t, c.root, 0.4, K.ease.morph), leakAge = K.progress(t, c.split, 0.4, K.ease.morph);
+    S.nodes.forEach((n) => {
+      K.op(n.g, K.appear(t, nodeStart(n.depth)));
+      if (n === S.rootN) { K.op(n.frame, leakRoot); K.op(n.tri, leakRoot); }
+      if (n === S.ageN) { K.op(n.frame, leakAge); K.op(n.tri, leakAge); }
+      if (n === S.age2) K.op(n.frame, leakAge);
+    });
+    K.op(S.rootNote, K.appear(t, c.root + 0.3));
+
+    // ---- histogram: axis, blank 86 %, M6 move to 50, number 50
+    S.ax.update(K.M1_axisDraw(t, c.axis, { nTicks: 4 }));
+    const appear = K.appear(t, c.blank), m6 = K.M6_morph(t, c.fill);
+    const x = K.lerp(S.box.x0, S.box.x1, m6), w = K.lerp(S.box.w0, S.box.w1, m6);
+    [S.boxPlain, S.boxHatch].forEach((r) => { r.setAttribute('x', x); r.setAttribute('width', w); r.setAttribute('y', S.top); r.setAttribute('height', 700 - S.top); });
+    K.op(S.boxPlain, appear * (1 - m6)); K.op(S.boxHatch, appear * m6);
+    K.op(S.ghost, 0.35 * m6);
+    K.op(S.blankLab, appear);
+    S.pct.update({ text: K.disp(data, 'did040_missing'), number: appear, label: K.appear(t, c.blank + K.T.appear) });
+    const f = K.appear(t, c.fifty);
+    S.fifty.update({ text: K.disp(data, 'did040_fill'), number: f }); K.op(S.median, f);
+    // ---- M11 arrow from the tall bar to the split node
+    const m11 = K.M11_arrow(t, c.arrow);
+    S.arrow.update(m11); K.op(S.arrowLab2, m11.label);
+  },
+});
+</script>
+</body>
+</html>

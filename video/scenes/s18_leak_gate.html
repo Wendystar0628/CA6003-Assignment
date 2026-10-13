@@ -78,6 +78,15 @@ Kit.createScene({
     t0.setAttribute('x', x0 + 40);
     S.lab1 = K.text(g, { x: 280, y: 716, text: m1.label, anchor: 'middle', cls: 'kit-t-note' });
 
+    // ---- final-frame ghost of the "before" bar (faint dashed ink outline, no fill) + its label
+    S.ghost = K.svg('g', {}, g);
+    const gy = y(m0.value), gb = y(base);
+    S.ghostBox = K.svg('rect', { x: 201, y: gy, width: 158, height: gb - gy, fill: 'none', stroke: K.C.ink,
+      'stroke-width': 2.5, 'stroke-dasharray': '8 6' }, S.ghost);
+    const gl = S.ghostLab = K.text(S.ghost, { x: 200, y: gy - 20, text: m0.display + ' · ' + m0.label, cls: 'kit-t-note' });
+    gl.setAttribute('stroke', K.C.paper); gl.setAttribute('stroke-width', 8); gl.setAttribute('stroke-linejoin', 'round');
+    gl.setAttribute('paint-order', 'stroke');
+
     // ---- main number, fixed above the bar (does not move during M8)
     S.num = K.callout(g, { x: 280, y: 208, anchor: 'middle', size: 'main' });
 
@@ -122,6 +131,8 @@ Kit.createScene({
     // label swaps in place: old name out in the first half of M8, new name in during the second
     K.op(S.lab0, labA * (1 - K.clamp(m8.fill * 2)));
     K.op(S.lab1, K.clamp(m8.fill * 2 - 1));
+    K.op(S.ghostBox, 0.35 * m8.fill);   // ghost of 0.961 stays at full height after M8 (ink, ~35 %)
+    K.op(S.ghostLab, 0.7 * m8.fill);    // its muted label
     // number: appears when spoken, counts linearly during M8; colour red -> grey with the fill
     const txt = m8.p <= 0 ? S.m0.display : (m8.p >= 1 ? S.m1.display : K.fmt(m8.value, 3));
     S.num.update({ text: txt, number: K.appear(t, c.number), fill: K.mixColor(K.C.leak, K.C.reference, m8.fill) });
