@@ -54,8 +54,8 @@ The stage is 1920×1080 and scales down to fit the window. Fonts come from Googl
 ## Render
 
 ```bash
-node video/render/render.mjs video/scenes/s18_leak_gate.html            # -> video/out/leak_gate.mp4 + s18_leak_gate_last.png
-node video/render/render.mjs video/scenes/s18_leak_gate.html --fps 30 --out video/out/leak_gate --crf 18
+node video/render/render.mjs video/scenes/s18_leak_gate.html            # -> video/out/s18_leak_gate.mp4 + s18_leak_gate_last.png
+node video/render/render.mjs video/scenes/s18_leak_gate.html --fps 30 --out video/out/s18_leak_gate --crf 18
 node video/render/render.mjs video/scenes/s18_leak_gate.html --from 18 --to 23   # partial range
 node video/render/render.mjs video/scenes/<scene>.html --alpha       # transparent camera slot -> <name>_alpha.mov
 node video/render/render_all.mjs --jobs 3                            # all scenes, seconds per scene
