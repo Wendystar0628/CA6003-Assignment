@@ -11,7 +11,7 @@ video/
 │   └── kit.js           timeline, easing, M1–M12 helpers, SVG marks, chrome, audit (window.Kit)
 ├── scenes/
 │   ├── _template.html   skeleton for a new scene (files starting with "_" are never rendered)
-│   └── leak_gate.html   reference scene: scene 18, visual 4 "Leak gate"
+│   └── s18_leak_gate.html   reference scene: scene 18, visual 4 "Leak gate"
 ├── data/                numbers for the scenes, written by data/build_data.py (never typed into a scene)
 ├── render/
 │   ├── package.json     playwright-core only; uses the installed Chrome, downloads no browser
@@ -36,7 +36,7 @@ The renderer needs Chrome at `C:/Program Files/Google/Chrome/Application/chrome.
 Scenes read `../data/*.json` with `fetch()`, which Chrome blocks on `file://` pages. Serve the folder instead:
 
 ```bash
-node video/render/serve.mjs            # http://127.0.0.1:8130/scenes/leak_gate.html
+node video/render/serve.mjs            # http://127.0.0.1:8130/scenes/s18_leak_gate.html
 # or: npx http-server video -p 8130
 ```
 
@@ -54,12 +54,12 @@ The stage is 1920×1080 and scales down to fit the window. Fonts come from Googl
 ## Render
 
 ```bash
-node video/render/render.mjs video/scenes/leak_gate.html            # -> video/out/leak_gate.mp4 + leak_gate_last.png
-node video/render/render.mjs video/scenes/leak_gate.html --fps 30 --out video/out/leak_gate --crf 18
-node video/render/render.mjs video/scenes/leak_gate.html --from 18 --to 23   # partial range
+node video/render/render.mjs video/scenes/s18_leak_gate.html            # -> video/out/leak_gate.mp4 + s18_leak_gate_last.png
+node video/render/render.mjs video/scenes/s18_leak_gate.html --fps 30 --out video/out/leak_gate --crf 18
+node video/render/render.mjs video/scenes/s18_leak_gate.html --from 18 --to 23   # partial range
 node video/render/render.mjs video/scenes/<scene>.html --alpha       # transparent camera slot -> <name>_alpha.mov
 node video/render/render_all.mjs --jobs 3                            # all scenes, seconds per scene
-node video/render/snap.mjs video/scenes/leak_gate.html 5.6 16 20.1   # stills -> video/out/<name>_at_<t>.png
+node video/render/snap.mjs video/scenes/s18_leak_gate.html 5.6 16 20.1   # stills -> video/out/<name>_at_<t>.png
 ```
 
 The renderer opens the page at 1920×1080 with deviceScaleFactor 1 and waits for fonts and data. For each frame *i* it calls `SCENE.seek(i / fps)`, captures a PNG, and streams the PNGs into ffmpeg: H.264, yuv420p, CRF 18, BT.709 tags. The final frame is also saved as `<name>_last.png`. After rendering, it prints the kit **audit** of the last frame: text under 28 px, overlapping text, text outside the panel, anything over the camera slot, and a title running into the trap bar. Fix every audit line before you commit.
