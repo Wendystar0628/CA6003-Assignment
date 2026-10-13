@@ -1,0 +1,15 @@
+{
+  "name": "ca6003-video-render",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frame-exact renderer for the CA6003 explainer video scenes (HTML/SVG -> PNG frames -> ffmpeg).",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs",
+    "render:all": "node render_all.mjs",
+    "serve": "node serve.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.64.0"
+  }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene NN · Name</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene NN · <name> · docs/video_plan.md §4 scene NN (and §7 visual N if it is a signature visual).
+   One relation: "the viewer can point at ___".  Copy this file, rename it (no leading "_"),
+   then fill in cfg, setup() and render(). Files starting with "_" are never rendered. */
+
+// Build cues in scene seconds, one per narration phrase (§4). Replace the estimates with the
+// times marked on the recorded take (§8.3 step 5). Keep >= 1.5 s between two actions.
+const CUES = {
+  axis: 0.6,     // "..."   M1 axis draw
+  bars: 2.4,     // "..."   M2 bars grow
+  value: 4.0,    // "..."   the number appears when it is spoken
+};
+
+Kit.createScene({
+  number: 99,                 // scene number from §3 (drives the trap bar and the legend row)
+  name: 'template',
+  duration: 8,                // seconds, from §3
+  layout: 'R',                // F | R | X | S (§6.3)
+  speaker: 'A',               // current speaker badge (structure colour)
+  title: 'One short title',   // <= 6 words; or [{at: 0, text: '...'}, {at: 5, text: '...'}] (M12 dissolve)
+  // attribution: 'work: C · §4',                   // when presenting someone else's work
+  // trap: 'leak' | 'label' | 'gain',               // active trap cell (scenes 2-25 show the bar)
+  source: '§0 · source_key',                         // bottom-left source tag
+  // chapterCard: { at: 0, title: 'Is the label the truth?', item: 'Trap 2 · §5' },  // 1.2 s, static
+  // lowerThird: { at: 0 },                          // 4 s, segment openings only
+  // legendMoment: { key: 'reference', at: 3.0 },    // first use of a semantic colour (§6.2 table)
+  // grid: false,                                    // dense scenes 3, 11, 12, 13, 22 drop the motif
+  data: '../data/funnel.json',                       // numbers come from video/data/*.json, never typed in
+  cues: CUES,
+
+  // setup(ctx): build every element once. ctx.fig is the panel SVG (ctx.W x ctx.H px).
+  setup(ctx) {
+    const K = Kit, S = ctx.S = {};
+    const g = K.svg('g', {}, ctx.fig);
+    const x = K.scaleLinear([0, 1], [120, ctx.W - 80]);
+    S.axis = K.axis(g, x, { orient: 'bottom', at: 520, ticks: [0, 0.5, 1], format: (v) => K.fmt(v, 1) });
+    S.bar = K.bar(g, { scale: x, base: 0, orient: 'h', y: 300, width: 120, styles: ['reference'] });
+    S.num = K.callout(g, { x: 120, y: 240, size: 'second', label: 'example label' });
+    // Real data: const it = K.item(ctx.data, '<item id>'); use it.value for geometry, it.display for text.
+  },
+
+  // render(t, ctx): set every element from t alone. No timers, no transitions, no Math.random().
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 3 }));
+    S.bar.update({ value: 0.62, grow: K.M2_barGrow(t, c.bars) });
+    S.num.update({ text: '0.62', number: K.appear(t, c.value), label: K.appear(t, c.value + K.T.appear) });
+  },
+});
+</script>
+</body>
+</html>

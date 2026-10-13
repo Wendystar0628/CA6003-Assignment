@@ -1,0 +1,7 @@
+# Renderer dependencies (run npm install in video/render/)
+render/node_modules/
+
+# Render outputs: mp4s and frame folders stay local; only the last-frame
+# previews (<scene>_last.png) are tracked, for review and thumbnails.
+out/*
+!out/*_last.png

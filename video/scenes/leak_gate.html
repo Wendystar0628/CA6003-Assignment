@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 18 · Leak gate</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 18 · Trap 1: the leak gate (signature visual 4) · docs/video_plan.md §4 scene 18, §7 visual 4.
+   Speaker C presents D's experiment. One relation: same model, same folds, the availability
+   rule removes three item groups and the AUC drops 0.961 -> 0.828 (paired difference -0.131).
+   All numbers come from video/data/leak_gate.json (video/data/build_data.py). */
+
+// Build cues in scene seconds. Estimated from the §4 narration at ~131 wpm after the 1.2 s
+// chapter card; replace with the times marked on C's recorded take (§8.3 step 5).
+const CUES = {
+  axis: 1.6,                 // "Trap one comes from D's experiments."      M1
+  bar: 4.6,                  // "The naive model, M0,"                      M2
+  number: 6.5,               // "scores 0.961"                              number appears when spoken
+  rule: 8.3,                 // "One rule: keep only what exists ..."       rule + the three item groups
+  strike: [13.4, 14.0, 15.3],// "treatment, diagnosis history and prior glucose testing"  M7 (ink)
+  change: 19.8,              // "The AUC falls to 0.828"  (>= 1.5 s pause before)            M8
+  diff: 22.0,                // "0.131 lower"             paired difference, static
+  check: 24.3,               // "A correct deterioration" ink check
+  screen: 26.6,              // secondary note, screen only
+  title: 29.0,               // title band settles on the screen text (M12 dissolve)
+};
+
+Kit.createScene({
+  number: 18,
+  name: 'leak_gate',
+  duration: 34,
+  layout: 'R',
+  speaker: 'C',
+  title: [
+    { at: 0, text: 'Is 0.961 skill?' },
+    { at: CUES.title, text: '0.961 → 0.828: leakage removed' },
+  ],
+  attribution: 'experiment: D · §7',
+  trap: 'leak',
+  source: '§7.5 · S7_leak_gate',
+  chapterCard: { at: 0, title: 'Is 0.961 skill?', item: 'Trap 1 · §7' },
+  // red is first used in scene 8, so no legend moment here (the row already lists it)
+  data: '../data/leak_gate.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit;
+    const m0 = K.item(data, 'auc_m0_eall'), m1 = K.item(data, 'auc_m1_eall');
+    const d = K.interval(data, 'diff_eall_ci');
+    const scr = K.item(data, 'diff_escreen');
+    const removed = data.groups.removed_order.map((id) => K.item(data, id));
+    const base = K.val(data, 'axis_start');
+    const g = K.svg('g', {}, fig);
+    const S = ctx.S = {};
+    S.m0 = m0; S.m1 = m1;
+
+    // ---- AUC axis (left zone), starts at 0.5, labelled
+    const y = K.scaleLinear([base, 1.0], [652, 280]);
+    S.y = y;
+    S.axis = K.axis(g, y, {
+      orient: 'left', at: 150, ticks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0], format: (v) => K.fmt(v, 1),
+      grid: { from: 151, to: 390 },
+      title: { text: 'AUC · All adults', x: 48, y: 50 },
+      truncated: { text: 'axis starts at ' + K.disp(data, 'axis_start'), x: 48, y: 760 },
+    });
+
+    // ---- the bar: Naive (M0) red hatch -> Minimal (M1) grey solid (M8)
+    S.bar = K.bar(g, { scale: y, base, x: 200, width: 160, styles: ['leak', 'reference'] });
+    S.lab0 = K.svg('g', {}, g);
+    const t0 = K.text(S.lab0, { x: 0, y: 716, text: m0.label, cls: 'kit-t-note' });
+    const w0 = K.textWidth(t0), tw = 30 + 10 + w0, x0 = 280 - tw / 2;
+    K.warnTriangle(S.lab0, { x: x0, y: 687, size: 30 });
+    t0.setAttribute('x', x0 + 40);
+    S.lab1 = K.text(g, { x: 280, y: 716, text: m1.label, anchor: 'middle', cls: 'kit-t-note' });
+
+    // ---- main number, fixed above the bar (does not move during M8)
+    S.num = K.callout(g, { x: 280, y: 208, anchor: 'middle', size: 'main' });
+
+    // ---- availability rule and the three removed item groups (middle zone)
+    S.rule = K.svg('g', {}, g);
+    K.text(S.rule, { x: 430, y: 330, text: 'availability rule', cls: 'kit-t-min', weight: 600 });
+    K.svg('line', { x1: 431, x2: 431, y1: 354, y2: 514, stroke: K.C.ink, 'stroke-width': 2 }, S.rule);
+    S.items = removed.map((it, i) => K.text(S.rule, { x: 452, y: 394 + i * 56, text: it.label, cls: 'kit-t-note' }));
+    S.strikes = S.items.map((el) => K.strike(S.rule, el, { color: 'ink' }));
+
+    // ---- paired difference (right zone), drawn statically
+    S.diff = K.svg('g', {}, g);
+    K.text(S.diff, { x: 800, y: 50, text: 'AUC change', cls: 'kit-t-min' });
+    S.diffNum = K.callout(S.diff, { x: 800, y: 208, size: 'second', interval: d.bracket, label: 'paired across folds' });
+    const dx = K.scaleLinear([-0.16, 0.02], [812, 1168]);
+    const dax = K.axis(S.diff, dx, { orient: 'bottom', at: 440, ticks: [-0.15, -0.10, -0.05, 0], format: (v) => K.fmt(v, 2) });
+    dax.update(K.M1_axisDraw(1e9, 0, { nTicks: 4 }));
+    K.sesoiBand(S.diff, dx, { lo: -0.01, hi: 0.01, from: 372, to: 440 }).update(1);
+    K.dotWhisker(S.diff, dx, { orient: 'h', at: 406, est: d.est, lo: d.lo, hi: d.hi, role: 'reference', shape: 'circle' }).update({ dot: 1, whisker: 1 });
+    S.diffD = d;
+
+    // ---- secondary note: Screening group (blue hollow square marker, §6.6)
+    S.scr = K.svg('g', {}, g);
+    K.svg('rect', { x: 801.5, y: 545.5, width: 21, height: 21, fill: '#fff', stroke: K.C.screen, 'stroke-width': 3 }, S.scr);
+    K.text(S.scr, { x: 838, y: 568, text: scr.label + ':', cls: 'kit-t-note' });
+    const sn = K.text(S.scr, { x: 838, y: 628, text: scr.display, cls: 'kit-t-second' });
+    sn.style.fontSize = '48px';
+
+    // ---- feedback: correct deterioration (ink, solid check)
+    S.check = K.feedback(g, { kind: 'supported', x: 430, y: 682, size: 46, label: 'correct deterioration' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    // 1 axis
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 6 }));
+    // 2 bar grows to 0.961 (red hatch); 4 M8 in place: shorter, count down, red hatch -> grey solid
+    const grow = K.M2_barGrow(t, c.bar);
+    const m8 = K.M8_valueChange(t, c.change, S.m0.value, S.m1.value);
+    S.bar.update({ value: m8.length, grow, mix: m8.fill });
+    const labA = K.appear(t, c.bar);
+    // label swaps in place: old name out in the first half of M8, new name in during the second
+    K.op(S.lab0, labA * (1 - K.clamp(m8.fill * 2)));
+    K.op(S.lab1, K.clamp(m8.fill * 2 - 1));
+    // number: appears when spoken, counts linearly during M8; colour red -> grey with the fill
+    const txt = m8.p <= 0 ? S.m0.display : (m8.p >= 1 ? S.m1.display : K.fmt(m8.value, 3));
+    S.num.update({ text: txt, number: K.appear(t, c.number), fill: K.mixColor(K.C.leak, K.C.reference, m8.fill) });
+    // 3 availability rule + item groups, then ink strikes (intentional removal)
+    K.op(S.rule, K.appear(t, c.rule));
+    S.strikes.forEach((s, i) => s.update(K.M7_strike(t, c.strike[i])));
+    // 5 paired difference (static), interval 0.3 s after its number
+    const a = K.appear(t, c.diff);
+    K.op(S.diff, a);
+    S.diffNum.update({ text: K.disp(ctx.data, 'diff_eall'), number: 1, interval: K.appear(t, c.diff + K.T.appear), label: K.appear(t, c.diff + K.T.appear) });
+    // 6 ink check, then the secondary Screening group note
+    S.check.update(K.appear(t, c.check));
+    K.op(S.scr, K.appear(t, c.screen));
+  },
+});
+</script>
+</body>
+</html>
