@@ -1,0 +1,191 @@
+{
+  "_meta": {
+    "file": "video/data/minimisation.json",
+    "visual": "Data minimisation",
+    "scenes": "4",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "raw": {
+      "value": 175,
+      "label": "Columns in the 16 source files",
+      "display": "175",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: minimisation.raw_columns",
+      "key": "S1:minimisation.raw_columns",
+      "csv": null
+    },
+    "kept": {
+      "value": 78,
+      "label": "Columns kept",
+      "display": "78",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: minimisation.kept",
+      "key": "S1:minimisation.kept",
+      "csv": null
+    },
+    "dropped": {
+      "value": 97,
+      "label": "Columns dropped",
+      "display": "97",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: minimisation.dropped",
+      "key": "S1:minimisation.dropped",
+      "csv": null
+    },
+    "files_verified": {
+      "value": 16,
+      "label": "Raw files verified by SHA-256",
+      "display": "16",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S2.json :: raw_files_verified",
+      "key": "S2:raw_files_verified",
+      "csv": null
+    },
+    "hash_mismatches": {
+      "value": 0,
+      "label": "Hash mismatches",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S2.json :: hash_mismatches",
+      "key": "S2:hash_mismatches",
+      "csv": null
+    },
+    "lock_sha": {
+      "value": "de032f4d200fa1ff9e51affd75d35183bf351714374cb35acf261b66b611610c",
+      "label": "hypotheses.md SHA-256 (locked)",
+      "display": "de032f4d200f…",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S6.json :: hypotheses.lock.sha256",
+      "key": "S6:hypotheses.lock.sha256",
+      "csv": null
+    }
+  },
+  "groups": {
+    "per_file": [
+      {
+        "file": "DEMO_L",
+        "raw": 27,
+        "kept": 13,
+        "dropped": 14
+      },
+      {
+        "file": "GHB_L",
+        "raw": 3,
+        "kept": 3,
+        "dropped": 0
+      },
+      {
+        "file": "GLU_L",
+        "raw": 4,
+        "kept": 3,
+        "dropped": 1
+      },
+      {
+        "file": "BMX_L",
+        "raw": 22,
+        "kept": 7,
+        "dropped": 15
+      },
+      {
+        "file": "BPXO_L",
+        "raw": 12,
+        "kept": 10,
+        "dropped": 2
+      },
+      {
+        "file": "TCHOL_L",
+        "raw": 4,
+        "kept": 2,
+        "dropped": 2
+      },
+      {
+        "file": "HDL_L",
+        "raw": 4,
+        "kept": 2,
+        "dropped": 2
+      },
+      {
+        "file": "TRIGLY_L",
+        "raw": 10,
+        "kept": 3,
+        "dropped": 7
+      },
+      {
+        "file": "DIQ_L",
+        "raw": 9,
+        "kept": 9,
+        "dropped": 0
+      },
+      {
+        "file": "BPQ_L",
+        "raw": 6,
+        "kept": 3,
+        "dropped": 3
+      },
+      {
+        "file": "MCQ_L",
+        "raw": 35,
+        "kept": 6,
+        "dropped": 29
+      },
+      {
+        "file": "INQ_L",
+        "raw": 5,
+        "kept": 3,
+        "dropped": 2
+      },
+      {
+        "file": "HIQ_L",
+        "raw": 11,
+        "kept": 2,
+        "dropped": 9
+      },
+      {
+        "file": "HUQ_L",
+        "raw": 6,
+        "kept": 2,
+        "dropped": 4
+      },
+      {
+        "file": "SMQ_L",
+        "raw": 9,
+        "kept": 2,
+        "dropped": 7
+      },
+      {
+        "file": "PAQ_L",
+        "raw": 8,
+        "kept": 8,
+        "dropped": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,235 @@
+{
+  "_meta": {
+    "file": "video/data/hypotheses.json",
+    "visual": "Hypotheses",
+    "scenes": "7, 26",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Never say '10 of 17 confirmed': most supported verdicts are for hypotheses with prior exposure (analysis_seen)."
+    ]
+  },
+  "items": {
+    "n_total": {
+      "value": 17,
+      "label": "Hypotheses locked",
+      "display": "17",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S6.json :: hypotheses.n_total",
+      "key": "S6:hypotheses.n_total",
+      "csv": null
+    },
+    "prereg_n": {
+      "value": 6,
+      "label": "Genuine pre-registrations (prior exposure none)",
+      "display": "6",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: count of S10:scoreboard rows with prior_exposure = none",
+      "key": null,
+      "csv": null
+    },
+    "prereg_supported": {
+      "value": 3,
+      "label": "Supported",
+      "display": "3",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts_prereg_none.supported",
+      "key": "S10:verdict_counts_prereg_none.supported",
+      "csv": null
+    },
+    "prereg_inconclusive": {
+      "value": 3,
+      "label": "Inconclusive",
+      "display": "3",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts_prereg_none.inconclusive",
+      "key": "S10:verdict_counts_prereg_none.inconclusive",
+      "csv": null
+    },
+    "prereg_refuted": {
+      "value": 0,
+      "label": "Refuted",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts_prereg_none.refuted",
+      "key": "S10:verdict_counts_prereg_none.refuted",
+      "csv": null
+    },
+    "all_supported": {
+      "value": 10,
+      "label": "All 17: supported",
+      "display": "10",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts.supported",
+      "key": "S10:verdict_counts.supported",
+      "csv": {
+        "slide_id": "V8",
+        "label": "hypotheses supported",
+        "csv_value": "10"
+      }
+    },
+    "all_inconclusive": {
+      "value": 6,
+      "label": "All 17: inconclusive",
+      "display": "6",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts.inconclusive",
+      "key": "S10:verdict_counts.inconclusive",
+      "csv": {
+        "slide_id": "V8",
+        "label": "hypotheses inconclusive",
+        "csv_value": "6"
+      }
+    },
+    "all_mixed": {
+      "value": 1,
+      "label": "All 17: mixed",
+      "display": "1",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts.mixed",
+      "key": "S10:verdict_counts.mixed",
+      "csv": {
+        "slide_id": "V8",
+        "label": "hypotheses mixed",
+        "csv_value": "1"
+      }
+    },
+    "all_refuted": {
+      "value": 0,
+      "label": "All 17: refuted",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: verdict_counts.refuted",
+      "key": "S10:verdict_counts.refuted",
+      "csv": null
+    },
+    "prior_analysis_seen": {
+      "value": 5,
+      "label": "Prior exposure: analysis_seen",
+      "display": "5",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: count of S10:scoreboard rows by prior_exposure",
+      "key": null,
+      "csv": null
+    },
+    "prior_none": {
+      "value": 6,
+      "label": "Prior exposure: none",
+      "display": "6",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: count of S10:scoreboard rows by prior_exposure",
+      "key": null,
+      "csv": null
+    },
+    "prior_descriptive_seen": {
+      "value": 4,
+      "label": "Prior exposure: descriptive_seen",
+      "display": "4",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: count of S10:scoreboard rows by prior_exposure",
+      "key": null,
+      "csv": null
+    },
+    "prior_prototype_seen": {
+      "value": 2,
+      "label": "Prior exposure: prototype_seen",
+      "display": "2",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: count of S10:scoreboard rows by prior_exposure",
+      "key": null,
+      "csv": null
+    },
+    "sub_supported": {
+      "value": 18,
+      "label": "Sub-claims (locked): supported",
+      "display": "18",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: subclaim_verdict_counts.locked.supported",
+      "key": "S10:subclaim_verdict_counts.locked.supported",
+      "csv": null
+    },
+    "sub_inconclusive": {
+      "value": 5,
+      "label": "Sub-claims (locked): inconclusive",
+      "display": "5",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: subclaim_verdict_counts.locked.inconclusive",
+      "key": "S10:subclaim_verdict_counts.locked.inconclusive",
+      "csv": null
+    },
+    "sub_refuted": {
+      "value": 3,
+      "label": "Sub-claims (locked): refuted",
+      "display": "3",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: subclaim_verdict_counts.locked.refuted",
+      "key": "S10:subclaim_verdict_counts.locked.refuted",
+      "csv": null
+    }
+  },
+  "groups": {
+    "prereg_ids": [
+      "H2b",
+      "H2c",
+      "H3",
+      "B2t",
+      "B6a",
+      "B6b"
+    ]
+  }
+}

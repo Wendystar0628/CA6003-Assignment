@@ -1,0 +1,153 @@
+{
+  "_meta": {
+    "file": "video/data/age_std.json",
+    "visual": "Age confounding",
+    "scenes": "6",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Supports 'the insured are older' (plan scene 6) with a stored number: 34 % of insured vs 10 % of uninsured adults are 60 or older."
+    ]
+  },
+  "items": {
+    "crude": {
+      "value": 5.305529853010037,
+      "label": "Insured − uninsured, crude",
+      "display": "+5.3 pp",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.crude",
+      "key": "S4:standardisation.insured_uninsured.crude",
+      "csv": {
+        "slide_id": "V5",
+        "label": "insurance gap crude (pp)",
+        "csv_value": "+5.3"
+      }
+    },
+    "crude_lo": {
+      "value": 1.777940873070928,
+      "label": "CI low",
+      "display": "+1.8",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.crude_ci[0]",
+      "key": "S4:standardisation.insured_uninsured.crude_ci[0]",
+      "csv": null
+    },
+    "crude_hi": {
+      "value": 8.833118832949145,
+      "label": "CI high",
+      "display": "+8.8",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.crude_ci[1]",
+      "key": "S4:standardisation.insured_uninsured.crude_ci[1]",
+      "csv": null
+    },
+    "std": {
+      "value": 0.6854571595387438,
+      "label": "Insured − uninsured, age-standardised",
+      "display": "+0.7 pp",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.std",
+      "key": "S4:standardisation.insured_uninsured.std",
+      "csv": {
+        "slide_id": "V5",
+        "label": "insurance gap standardised (pp)",
+        "csv_value": "+0.7"
+      }
+    },
+    "std_lo": {
+      "value": -2.55918127926507,
+      "label": "CI low",
+      "display": "−2.6",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.std_ci[0]",
+      "key": "S4:standardisation.insured_uninsured.std_ci[0]",
+      "csv": null
+    },
+    "std_hi": {
+      "value": 3.9300955983425574,
+      "label": "CI high",
+      "display": "+3.9",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.std_ci[1]",
+      "key": "S4:standardisation.insured_uninsured.std_ci[1]",
+      "csv": null
+    },
+    "attenuation": {
+      "value": 0.8708032602719488,
+      "label": "Share of the gap explained by age",
+      "display": "87 %",
+      "fmt": ".0f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.attenuation_share",
+      "key": "S4:standardisation.insured_uninsured.attenuation_share",
+      "csv": null
+    },
+    "older_uninsured": {
+      "value": 10.034973312812284,
+      "label": "Uninsured aged 60+",
+      "display": "10 %",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.uninsured_share_60plus",
+      "key": "S4:standardisation.insured_uninsured.uninsured_share_60plus",
+      "csv": null
+    },
+    "older_insured": {
+      "value": 33.6555099380785,
+      "label": "Insured aged 60+",
+      "display": "34 %",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: standardisation.insured_uninsured.insured_share_60plus",
+      "key": "S4:standardisation.insured_uninsured.insured_share_60plus",
+      "csv": null
+    }
+  },
+  "intervals": {
+    "crude_ci": {
+      "label": "Crude gap (pp, 95 % CI)",
+      "est": "crude",
+      "lo": "crude_lo",
+      "hi": "crude_hi",
+      "display": "+5.3 pp [+1.8, +8.8]"
+    },
+    "std_ci": {
+      "label": "Age-standardised gap (pp, 95 % CI)",
+      "est": "std",
+      "lo": "std_lo",
+      "hi": "std_hi",
+      "display": "+0.7 pp [−2.6, +3.9]"
+    }
+  }
+}

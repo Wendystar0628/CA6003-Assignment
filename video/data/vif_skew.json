@@ -1,0 +1,319 @@
+{
+  "_meta": {
+    "file": "video/data/vif_skew.json",
+    "visual": "VIF and skewness",
+    "scenes": "11, 12",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Plan 'VIF 8.8–11.7' for BP readings is the pooled-cohort S4 value; S6 stores 8.68–11.70 on the training part only (not used)."
+    ]
+  },
+  "items": {
+    "vif_weight": {
+      "value": 95.6797633660612,
+      "label": "Weight",
+      "display": "95.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXWT",
+      "key": "S4:vif.raw_anthropometry.BMXWT",
+      "csv": {
+        "slide_id": "V4",
+        "label": "VIF weight",
+        "csv_value": "95.7"
+      }
+    },
+    "vif_bmi": {
+      "value": 97.64211874350215,
+      "label": "BMI",
+      "display": "97.6",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXBMI",
+      "key": "S4:vif.raw_anthropometry.BMXBMI",
+      "csv": {
+        "slide_id": "V4",
+        "label": "VIF BMI",
+        "csv_value": "97.6"
+      }
+    },
+    "vif_height": {
+      "value": 21.55706211319521,
+      "label": "Height",
+      "display": "21.6",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXHT",
+      "key": "S4:vif.raw_anthropometry.BMXHT",
+      "csv": null
+    },
+    "vif_waist": {
+      "value": 7.055686168753325,
+      "label": "Waist circumference",
+      "display": "7.1",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXWAIST",
+      "key": "S4:vif.raw_anthropometry.BMXWAIST",
+      "csv": null
+    },
+    "vif_hip": {
+      "value": 7.680033080845346,
+      "label": "Hip circumference",
+      "display": "7.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXHIP",
+      "key": "S4:vif.raw_anthropometry.BMXHIP",
+      "csv": null
+    },
+    "vif_arm": {
+      "value": 6.562435605531485,
+      "label": "Arm circumference",
+      "display": "6.6",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.raw_anthropometry.BMXARMC",
+      "key": "S4:vif.raw_anthropometry.BMXARMC",
+      "csv": null
+    },
+    "vif_BPXOSY1": {
+      "value": 10.466909694010178,
+      "label": "Systolic BP (reading 1)",
+      "display": "10.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXOSY1",
+      "key": "S4:vif.bp_readings.BPXOSY1",
+      "csv": null
+    },
+    "vif_BPXOSY2": {
+      "value": 11.748938806517772,
+      "label": "Systolic BP (reading 2)",
+      "display": "11.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXOSY2",
+      "key": "S4:vif.bp_readings.BPXOSY2",
+      "csv": null
+    },
+    "vif_BPXOSY3": {
+      "value": 10.91117587045077,
+      "label": "Systolic BP (reading 3)",
+      "display": "10.9",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXOSY3",
+      "key": "S4:vif.bp_readings.BPXOSY3",
+      "csv": null
+    },
+    "vif_BPXODI1": {
+      "value": 8.841780874048872,
+      "label": "Diastolic BP (reading 1)",
+      "display": "8.8",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXODI1",
+      "key": "S4:vif.bp_readings.BPXODI1",
+      "csv": null
+    },
+    "vif_BPXODI2": {
+      "value": 9.715548177699883,
+      "label": "Diastolic BP (reading 2)",
+      "display": "9.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXODI2",
+      "key": "S4:vif.bp_readings.BPXODI2",
+      "csv": null
+    },
+    "vif_BPXODI3": {
+      "value": 9.773623395490356,
+      "label": "Diastolic BP (reading 3)",
+      "display": "9.8",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_readings.BPXODI3",
+      "key": "S4:vif.bp_readings.BPXODI3",
+      "csv": null
+    },
+    "vif_bp_min": {
+      "value": 8.841780874048872,
+      "label": "Six BP readings, lowest VIF",
+      "display": "8.8",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: min over S4:vif.bp_readings",
+      "key": null,
+      "csv": null
+    },
+    "vif_bp_max": {
+      "value": 11.748938806517772,
+      "label": "Six BP readings, highest VIF",
+      "display": "11.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: max over S4:vif.bp_readings",
+      "key": null,
+      "csv": null
+    },
+    "vif_bp_mean_sys": {
+      "value": 1.5862008149152762,
+      "label": "Mean systolic BP",
+      "display": "1.6",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: vif.bp_means.bp_sys_mean",
+      "key": "S4:vif.bp_means.bp_sys_mean",
+      "csv": null
+    },
+    "vif_threshold": {
+      "value": 10,
+      "label": "VIF reference line",
+      "display": "10",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: VIF > 10 'severe' (§4)",
+      "key": null,
+      "csv": null
+    },
+    "skew_tg": {
+      "value": 6.622983965691647,
+      "label": "Fasting triglycerides, raw skewness",
+      "display": "6.62",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: skew.LBXTLG|fasting (WTSAF2YR > 0).raw",
+      "key": "S4:skew.LBXTLG|fasting (WTSAF2YR > 0).raw",
+      "csv": {
+        "slide_id": "V4",
+        "label": "skew triglycerides (fasting)",
+        "csv_value": "6.62"
+      }
+    },
+    "skew_tg_log": {
+      "value": 0.6042557344866982,
+      "label": "Fasting triglycerides, after log",
+      "display": "0.60",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: skew.LBXTLG|fasting (WTSAF2YR > 0).log",
+      "key": "S4:skew.LBXTLG|fasting (WTSAF2YR > 0).log",
+      "csv": null
+    },
+    "skew_tg_yj": {
+      "value": -0.009185326107955697,
+      "label": "Fasting triglycerides, after Yeo-Johnson",
+      "display": "−0.009",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: skew.LBXTLG|fasting (WTSAF2YR > 0).yj",
+      "key": "S4:skew.LBXTLG|fasting (WTSAF2YR > 0).yj",
+      "csv": {
+        "slide_id": "V4",
+        "label": "skew triglycerides after Yeo-Johnson",
+        "csv_value": "-0.009"
+      }
+    },
+    "skew_tg_n": {
+      "value": 2820,
+      "label": "Fasting subsample (n)",
+      "display": "2,820",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: skew.LBXTLG|fasting (WTSAF2YR > 0).n",
+      "key": "S4:skew.LBXTLG|fasting (WTSAF2YR > 0).n",
+      "csv": {
+        "slide_id": "V4",
+        "label": "fasting subsample n (triglycerides)",
+        "csv_value": "2,820"
+      }
+    },
+    "skew_bmi": {
+      "value": 1.2225907632940765,
+      "label": "BMI, raw skewness",
+      "display": "1.22",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: skew.BMXBMI|cohort.raw",
+      "key": "S4:skew.BMXBMI|cohort.raw",
+      "csv": {
+        "slide_id": "V4",
+        "label": "skew BMI",
+        "csv_value": "1.22"
+      }
+    },
+    "skew_threshold": {
+      "value": 1,
+      "label": "Skewness rule (|skew| above)",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: S6 step P08 evidence '|skew| > 1' (results/S6/step_catalogue.csv)",
+      "key": null,
+      "csv": null
+    }
+  },
+  "groups": {
+    "bp_readings": [
+      "vif_BPXOSY1",
+      "vif_BPXOSY2",
+      "vif_BPXOSY3",
+      "vif_BPXODI1",
+      "vif_BPXODI2",
+      "vif_BPXODI3"
+    ]
+  }
+}

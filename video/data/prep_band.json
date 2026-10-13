@@ -1,0 +1,239 @@
+{
+  "_meta": {
+    "file": "video/data/prep_band.json",
+    "visual": "Preparation against the band",
+    "scenes": "21, 26, 27",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "d_auc": {
+      "value": 0.00790745997840257,
+      "label": "Systematic (S) − Minimal (M1)",
+      "display": "+0.008",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.S_minus_M1_T1_eall.est",
+      "key": "S7:headline.S_minus_M1_T1_eall.est",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S - M1 dAUC",
+        "csv_value": "+0.008"
+      }
+    },
+    "d_auc_lo": {
+      "value": 1.0781488333326539e-05,
+      "label": "CI low",
+      "display": "0.000",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.S_minus_M1_T1_eall.lo",
+      "key": "S7:headline.S_minus_M1_T1_eall.lo",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S - M1 CI low",
+        "csv_value": "+0.000"
+      }
+    },
+    "d_auc_hi": {
+      "value": 0.015804138468471812,
+      "label": "CI high",
+      "display": "0.016",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.S_minus_M1_T1_eall.hi",
+      "key": "S7:headline.S_minus_M1_T1_eall.hi",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S - M1 CI high",
+        "csv_value": "+0.016"
+      }
+    },
+    "mdd": {
+      "value": 0.011175091582012645,
+      "label": "Smallest detectable difference",
+      "display": "0.011",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.S_minus_M1_T1_eall.mdd",
+      "key": "S7:headline.S_minus_M1_T1_eall.mdd",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S - M1 MDD",
+        "csv_value": "0.011"
+      }
+    },
+    "sesoi": {
+      "value": 0.01,
+      "label": "Margin fixed in advance (+/-)",
+      "display": "0.01",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=primary&pop=E-ALL&tier=1].sesoi",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=primary&pop=E-ALL&tier=1].sesoi",
+      "csv": null,
+      "note": "hypotheses.md H2b: absolute delta AUC below 0.01"
+    },
+    "verdict": {
+      "value": "inconclusive",
+      "label": "Locked verdict",
+      "display": "inconclusive",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=primary&pop=E-ALL&tier=1].verdict",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=primary&pop=E-ALL&tier=1].verdict",
+      "csv": null
+    },
+    "d_auc_c": {
+      "value": 0.006772,
+      "label": "Systematic (S) − Minimal-with-P02 (M1c), post-audit",
+      "display": "+0.007",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: h2b.postaudit.S_minus_M1c_eall.est",
+      "key": "S10:h2b.postaudit.S_minus_M1c_eall.est",
+      "csv": null
+    },
+    "d_auc_c_lo": {
+      "value": -0.000845,
+      "label": "CI low",
+      "display": "−0.001",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: h2b.postaudit.S_minus_M1c_eall.lo",
+      "key": "S10:h2b.postaudit.S_minus_M1c_eall.lo",
+      "csv": null
+    },
+    "d_auc_c_hi": {
+      "value": 0.01439,
+      "label": "CI high",
+      "display": "+0.014",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: h2b.postaudit.S_minus_M1c_eall.hi",
+      "key": "S10:h2b.postaudit.S_minus_M1c_eall.hi",
+      "csv": null
+    },
+    "d_auc_c_verdict": {
+      "value": "inconclusive",
+      "label": "Post-audit verdict",
+      "display": "inconclusive",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: h2b.postaudit.S_minus_M1c_eall.verdict",
+      "key": "S10:h2b.postaudit.S_minus_M1c_eall.verdict",
+      "csv": null
+    },
+    "d_auc_screen": {
+      "value": 0.00847,
+      "label": "Screening group: S − M1",
+      "display": "+0.008",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].est",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].est",
+      "csv": null
+    },
+    "d_auc_screen_lo": {
+      "value": -0.00758,
+      "label": "CI low",
+      "display": "−0.008",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].lo",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].lo",
+      "csv": null
+    },
+    "d_auc_screen_hi": {
+      "value": 0.02454,
+      "label": "CI high",
+      "display": "+0.025",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].hi",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(a) AUC&role=secondary&pop=E-SCREEN&tier=1].hi",
+      "csv": null
+    },
+    "axis_min": {
+      "value": -0.04,
+      "label": "Difference axis, minimum",
+      "display": "−0.04",
+      "fmt": "+.2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: plan scene 21 (axis −0.04 … +0.04, reused in scene 24)",
+      "key": null,
+      "csv": null
+    },
+    "axis_max": {
+      "value": 0.04,
+      "label": "Difference axis, maximum",
+      "display": "+0.04",
+      "fmt": "+.2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: plan scene 21",
+      "key": null,
+      "csv": null
+    }
+  },
+  "intervals": {
+    "d_auc_ci": {
+      "label": "AUC change, All adults, paired across folds",
+      "est": "d_auc",
+      "lo": "d_auc_lo",
+      "hi": "d_auc_hi",
+      "display": "+0.008 [0.000, 0.016]"
+    },
+    "d_auc_c_ci": {
+      "label": "Post-audit row: S − M1c, All adults",
+      "est": "d_auc_c",
+      "lo": "d_auc_c_lo",
+      "hi": "d_auc_c_hi",
+      "display": "+0.007 [−0.001, +0.014]"
+    },
+    "d_auc_screen_ci": {
+      "label": "AUC change, Screening group",
+      "est": "d_auc_screen",
+      "lo": "d_auc_screen_lo",
+      "hi": "d_auc_screen_hi",
+      "display": "+0.008 [−0.008, +0.025]"
+    }
+  }
+}

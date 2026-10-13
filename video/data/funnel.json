@@ -1,0 +1,359 @@
+{
+  "_meta": {
+    "file": "video/data/funnel.json",
+    "visual": "Cohort funnel",
+    "scenes": "3, 28",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "n_demo": {
+      "value": 11933,
+      "label": "Participants",
+      "display": "11,933",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: funnel.DEMO_L participants",
+      "key": "S1:funnel.DEMO_L participants",
+      "csv": {
+        "slide_id": "V1",
+        "label": "adults in DEMO_L",
+        "csv_value": "11,933"
+      }
+    },
+    "n_age20": {
+      "value": 7809,
+      "label": "Age ≥ 20",
+      "display": "7,809",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: funnel.Age >= 20",
+      "key": "S1:funnel.Age >= 20",
+      "csv": null
+    },
+    "n_exam": {
+      "value": 6064,
+      "label": "Examined",
+      "display": "6,064",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: funnel.Interviewed and MEC-examined (RIDSTATR = 2)",
+      "key": "S1:funnel.Interviewed and MEC-examined (RIDSTATR = 2)",
+      "csv": null
+    },
+    "n_a1c": {
+      "value": 5767,
+      "label": "HbA1c measured",
+      "display": "5,767",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: funnel.HbA1c measured (LBXGH present)",
+      "key": "S1:funnel.HbA1c measured (LBXGH present)",
+      "csv": null
+    },
+    "n_cohort": {
+      "value": 5730,
+      "label": "All adults",
+      "display": "5,730",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: n_cohort",
+      "key": "S1:n_cohort",
+      "csv": {
+        "slide_id": "V1",
+        "label": "analytic cohort",
+        "csv_value": "5,730"
+      }
+    },
+    "dropped_1": {
+      "value": 4124,
+      "label": "Dropped: under 20",
+      "display": "4,124",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: n_demo − n_age20",
+      "key": null,
+      "csv": null
+    },
+    "dropped_2": {
+      "value": 1745,
+      "label": "Dropped: not examined",
+      "display": "1,745",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: n_age20 − n_exam",
+      "key": null,
+      "csv": null
+    },
+    "dropped_3": {
+      "value": 297,
+      "label": "Dropped: HbA1c missing",
+      "display": "297",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: n_exam − n_a1c",
+      "key": null,
+      "csv": null
+    },
+    "dropped_4": {
+      "value": 37,
+      "label": "Dropped: pregnant",
+      "display": "37",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: n_a1c − n_cohort",
+      "key": null,
+      "csv": null
+    },
+    "prev_w": {
+      "value": 0.14035739528195537,
+      "label": "Positive, weighted to US adults",
+      "display": "14.0 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: prevalence_comb.weighted",
+      "key": "S1:prevalence_comb.weighted",
+      "csv": {
+        "slide_id": "V1",
+        "label": "weighted prevalence L_comb",
+        "csv_value": "14.0%"
+      }
+    },
+    "prev_lo": {
+      "value": 0.12438333225970571,
+      "label": "Weighted prevalence, CI low",
+      "display": "12.4 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: prevalence_comb.ci_low",
+      "key": "S1:prevalence_comb.ci_low",
+      "csv": null
+    },
+    "prev_hi": {
+      "value": 0.15633145830420503,
+      "label": "Weighted prevalence, CI high",
+      "display": "15.6 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: prevalence_comb.ci_high",
+      "key": "S1:prevalence_comb.ci_high",
+      "csv": null
+    },
+    "prev_unw": {
+      "value": 0.1694589877835951,
+      "label": "Positive, unweighted",
+      "display": "16.9 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: prevalence_comb.unweighted",
+      "key": "S1:prevalence_comb.unweighted",
+      "csv": null
+    },
+    "pos_eall": {
+      "value": 971,
+      "label": "Positives, All adults",
+      "display": "971",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: labels.L_comb",
+      "key": "S1:labels.L_comb",
+      "csv": {
+        "slide_id": "V1",
+        "label": "L_comb positives",
+        "csv_value": "971"
+      }
+    },
+    "pos_self": {
+      "value": 819,
+      "label": "Self-reported diagnosis",
+      "display": "819",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: labels.L_self",
+      "key": "S1:labels.L_self",
+      "csv": {
+        "slide_id": "V1",
+        "label": "self-reported diabetes (L_self)",
+        "csv_value": "819"
+      }
+    },
+    "pos_a1c": {
+      "value": 721,
+      "label": "HbA1c ≥ 6.5 %",
+      "display": "721",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.a1c_positives",
+      "key": "S3:blanket_recode.a1c_positives",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c positives",
+        "csv_value": "721"
+      }
+    },
+    "n_screen": {
+      "value": 4911,
+      "label": "Screening group (not yet diagnosed)",
+      "display": "4,911",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: e_screen.rows",
+      "key": "S1:e_screen.rows",
+      "csv": {
+        "slide_id": "V1",
+        "label": "E-SCREEN cohort (not diagnosed)",
+        "csv_value": "4,911"
+      }
+    },
+    "pos_screen": {
+      "value": 152,
+      "label": "Screening group positives",
+      "display": "152",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: e_screen.positives",
+      "key": "S1:e_screen.positives",
+      "csv": {
+        "slide_id": "V1",
+        "label": "E-SCREEN positives",
+        "csv_value": "152"
+      }
+    },
+    "resp_interview": {
+      "value": 0.346,
+      "label": "Interview response rate",
+      "display": "34.6 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: response_rates.interview",
+      "key": "S1:response_rates.interview",
+      "csv": {
+        "slide_id": "V1",
+        "label": "interview response rate",
+        "csv_value": "34.6%"
+      }
+    },
+    "resp_mec": {
+      "value": 0.257,
+      "label": "Examination response rate",
+      "display": "25.7 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: response_rates.mec",
+      "key": "S1:response_rates.mec",
+      "csv": {
+        "slide_id": "V1",
+        "label": "examination response rate",
+        "csv_value": "25.7%"
+      }
+    },
+    "a1c_cut": {
+      "value": 6.5,
+      "label": "HbA1c diagnostic threshold",
+      "display": "6.5 %",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "definition",
+      "source": "definition: src/labels.py A1C_CUT = config.HBA1C_DIABETES (6.5 %)",
+      "key": null,
+      "csv": null
+    }
+  },
+  "intervals": {
+    "prev_ci": {
+      "label": "Weighted prevalence of the combined label (95 % CI, jackknife)",
+      "est": "prev_w",
+      "lo": "prev_lo",
+      "hi": "prev_hi",
+      "display": "14.0 % [12.4 %, 15.6 %]"
+    }
+  },
+  "groups": {
+    "stages": [
+      {
+        "item": "n_demo",
+        "label": "Participants",
+        "long_label": "NHANES 2021–23 participants",
+        "stored_stage": "DEMO_L participants"
+      },
+      {
+        "item": "n_age20",
+        "label": "Age ≥ 20",
+        "long_label": "Adults aged 20 or older",
+        "stored_stage": "Age >= 20",
+        "dropped_item": "dropped_1"
+      },
+      {
+        "item": "n_exam",
+        "label": "Examined",
+        "long_label": "Interviewed and examined",
+        "stored_stage": "Interviewed and MEC-examined (RIDSTATR = 2)",
+        "dropped_item": "dropped_2"
+      },
+      {
+        "item": "n_a1c",
+        "label": "HbA1c measured",
+        "long_label": "HbA1c result available",
+        "stored_stage": "HbA1c measured (LBXGH present)",
+        "dropped_item": "dropped_3"
+      },
+      {
+        "item": "n_cohort",
+        "label": "All adults",
+        "long_label": "Not pregnant = analytic cohort",
+        "stored_stage": "Not pregnant (RIDEXPRG != 1)",
+        "dropped_item": "dropped_4"
+      }
+    ],
+    "label_definition": "positive = self-reported diagnosis OR HbA1c ≥ 6.5 % (src/labels.py: L_comb)"
+  }
+}

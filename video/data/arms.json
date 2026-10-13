@@ -1,0 +1,178 @@
+{
+  "_meta": {
+    "file": "video/data/arms.json",
+    "visual": "Preparation steps and arms",
+    "scenes": "12, 13",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Arm S switches on P01–P13; P14 (waist-to-height) is a separate arm in S6, although the storyboard lights all fourteen cards."
+    ]
+  },
+  "items": {
+    "n_steps": {
+      "value": 14,
+      "label": "Preparation steps",
+      "display": "14",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S6/step_catalogue.csv :: number of rows (P01 … P14)",
+      "key": null,
+      "csv": null
+    },
+    "cols_M0": {
+      "value": 88,
+      "label": "Naive (M0): design columns",
+      "display": "88",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S6.json :: arms.M0.n_features_t1",
+      "key": "S6:arms.M0.n_features_t1",
+      "csv": null
+    },
+    "cols_M1": {
+      "value": 46,
+      "label": "Minimal (M1): design columns",
+      "display": "46",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S6.json :: arms.M1.n_features_t1",
+      "key": "S6:arms.M1.n_features_t1",
+      "csv": null
+    },
+    "cols_S": {
+      "value": 42,
+      "label": "Systematic (S): design columns",
+      "display": "42",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S6.json :: arms.S.n_features_t1",
+      "key": "S6:arms.S.n_features_t1",
+      "csv": null
+    }
+  },
+  "groups": {
+    "toggles": {
+      "M0": [],
+      "M1": [
+        "P03"
+      ],
+      "S": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13"
+      ]
+    },
+    "steps": [
+      {
+        "step": "P01",
+        "name": "xpt_zero_fix",
+        "block": "B1",
+        "evidence": "§3.1: zero stored as 5.4e-79; mask() keeps NaN"
+      },
+      {
+        "step": "P02",
+        "name": "sentinel_by_var",
+        "block": "B1",
+        "evidence": "§3.4: blanket recode wipes valid values; off = blanket (M0)"
+      },
+      {
+        "step": "P03",
+        "name": "admissibility",
+        "block": "B2",
+        "evidence": "§1.3 availability rule; spec column `admissible`"
+      },
+      {
+        "step": "P04",
+        "name": "aggregate",
+        "block": "B3",
+        "evidence": "§4.9: 6 BP readings VIF 8.8-11.7 vs means 1.6; PA skip pattern"
+      },
+      {
+        "step": "P05",
+        "name": "prune",
+        "block": "B3",
+        "evidence": "§4.9: weight VIF 95.7, BMI 97.6; keep BMI + waist"
+      },
+      {
+        "step": "P06",
+        "name": "missing_indicator",
+        "block": "B4",
+        "evidence": "cohort: PIR missing 12.8%; MNAR-suspect list"
+      },
+      {
+        "step": "P07",
+        "name": "topcode_flag",
+        "block": "B4",
+        "evidence": "§3.6: age top-coded 80, PIR 5"
+      },
+      {
+        "step": "P08",
+        "name": "yeo_johnson",
+        "block": "B5",
+        "evidence": "§4.10: |skew| > 1 (BMI 1.22, TG 6.62 fasting)"
+      },
+      {
+        "step": "P09",
+        "name": "scale",
+        "block": "B5",
+        "evidence": "L2 penalty is scale dependent; unscaled fits fail to converge"
+      },
+      {
+        "step": "P10",
+        "name": "rare_categories",
+        "block": "B5",
+        "evidence": "levels < 2 % grouped as infrequent"
+      },
+      {
+        "step": "P11",
+        "name": "class_weight",
+        "block": "B6a",
+        "evidence": "prevalence 16.9%; balanced weights"
+      },
+      {
+        "step": "P12",
+        "name": "survey_weight",
+        "block": "B6b",
+        "evidence": "§4.1: WTPH2YR for HbA1c cohort; mean 1"
+      },
+      {
+        "step": "P13",
+        "name": "splines",
+        "block": "B5",
+        "evidence": "§4.11: RCS LR chi2 age 57.6, BMI 11.6, HDL 18.5, TC 41.8"
+      },
+      {
+        "step": "P14",
+        "name": "whtr",
+        "block": "(arm)",
+        "evidence": "§5.5: WHtR-BMI AUC gain Asian +0.137 vs White +0.049"
+      }
+    ]
+  }
+}

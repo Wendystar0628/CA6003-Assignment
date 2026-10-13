@@ -1,0 +1,242 @@
+{
+  "_meta": {
+    "file": "video/data/label_split.json",
+    "visual": "Label split",
+    "scenes": "16, 17",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "kappa is an agreement score, not '70 percent agree' (plan scene 16)."
+    ]
+  },
+  "items": {
+    "both": {
+      "value": 569,
+      "label": "Doctor-told and HbA1c ≥ 6.5 %",
+      "display": "569",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: strata_3x3.D_uncontrolled",
+      "key": "S1:strata_3x3.D_uncontrolled",
+      "csv": null
+    },
+    "self_only": {
+      "value": 250,
+      "label": "Doctor-told, HbA1c below 6.5 %",
+      "display": "250",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: strata_3x3.D_controlled",
+      "key": "S1:strata_3x3.D_controlled",
+      "csv": null
+    },
+    "a1c_only": {
+      "value": 152,
+      "label": "HbA1c ≥ 6.5 %, not told",
+      "display": "152",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: strata_3x3.Undiagnosed",
+      "key": "S1:strata_3x3.Undiagnosed",
+      "csv": null
+    },
+    "neither": {
+      "value": 4759,
+      "label": "Neither",
+      "display": "4,759",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: strata_3x3.NonDiabetic",
+      "key": "S1:strata_3x3.NonDiabetic",
+      "csv": null
+    },
+    "self": {
+      "value": 819,
+      "label": "Told by a doctor",
+      "display": "819",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: labels.L_self",
+      "key": "S1:labels.L_self",
+      "csv": {
+        "slide_id": "V1",
+        "label": "self-reported diabetes (L_self)",
+        "csv_value": "819"
+      }
+    },
+    "a1c": {
+      "value": 721,
+      "label": "HbA1c ≥ 6.5 %",
+      "display": "721",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.a1c_positives",
+      "key": "S3:blanket_recode.a1c_positives",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c positives",
+        "csv_value": "721"
+      }
+    },
+    "union": {
+      "value": 971,
+      "label": "Positive (either)",
+      "display": "971",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S1.json :: labels.L_comb",
+      "key": "S1:labels.L_comb",
+      "csv": {
+        "slide_id": "V1",
+        "label": "L_comb positives",
+        "csv_value": "971"
+      }
+    },
+    "masked": {
+      "value": 250,
+      "label": "Told, but HbA1c below 6.5 %",
+      "display": "250",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: masking.below_6_5",
+      "key": "S5:masking.below_6_5",
+      "csv": {
+        "slide_id": "V6",
+        "label": "self-reported with HbA1c < 6.5",
+        "csv_value": "250"
+      }
+    },
+    "masked_med": {
+      "value": 165,
+      "label": "On insulin or pills",
+      "display": "165",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: masking.below_6_5_on_med",
+      "key": "S5:masking.below_6_5_on_med",
+      "csv": null
+    },
+    "masked_untreated": {
+      "value": 85,
+      "label": "Untreated",
+      "display": "85",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: masking.below_6_5_untreated",
+      "key": "S5:masking.below_6_5_untreated",
+      "csv": null
+    },
+    "masked_share": {
+      "value": 0.3052503052503053,
+      "label": "Share of told whose HbA1c is below 6.5 %",
+      "display": "30.5 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: masking.below_6_5_share",
+      "key": "S5:masking.below_6_5_share",
+      "csv": {
+        "slide_id": "V6",
+        "label": "treatment masking share",
+        "csv_value": "30.5%"
+      }
+    },
+    "kappa_unw": {
+      "value": 0.6986263087119772,
+      "label": "Cohen's kappa, unweighted",
+      "display": "0.70",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: labels.agreement_unweighted.kappa",
+      "key": "S5:labels.agreement_unweighted.kappa",
+      "csv": null
+    },
+    "kappa_w": {
+      "value": 0.70874954095544,
+      "label": "Cohen's kappa, survey-weighted",
+      "display": "0.71",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: labels.agreement_weighted.kappa.est",
+      "key": "S5:labels.agreement_weighted.kappa.est",
+      "csv": null
+    },
+    "kappa_w_lo": {
+      "value": 0.6651834559644564,
+      "label": "Cohen's kappa, survey-weighted, CI low",
+      "display": "0.67",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: labels.agreement_weighted.kappa.ci_low",
+      "key": "S5:labels.agreement_weighted.kappa.ci_low",
+      "csv": null
+    },
+    "kappa_w_hi": {
+      "value": 0.7523156259464235,
+      "label": "Cohen's kappa, survey-weighted, CI high",
+      "display": "0.75",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: labels.agreement_weighted.kappa.ci_high",
+      "key": "S5:labels.agreement_weighted.kappa.ci_high",
+      "csv": null
+    },
+    "circle_ratio": {
+      "value": 0.9382653571042044,
+      "label": "Radius ratio of the two circles (HbA1c / told)",
+      "display": "0.938",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: sqrt(L_A1c / L_self); plan section 7 item 6 (0.938)",
+      "key": null,
+      "csv": null
+    }
+  },
+  "intervals": {
+    "kappa_w_ci": {
+      "label": "Cohen's kappa, survey-weighted (95 % CI)",
+      "est": "kappa_w",
+      "lo": "kappa_w_lo",
+      "hi": "kappa_w_hi",
+      "display": "0.71 [0.67, 0.75]"
+    }
+  }
+}

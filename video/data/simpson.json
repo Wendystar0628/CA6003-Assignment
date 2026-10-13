@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "file": "video/data/simpson.json",
+    "visual": "Simpson scan",
+    "scenes": "15",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "n_comparisons": {
+      "value": 224,
+      "label": "Comparisons scanned",
+      "display": "224",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: simpson.n_comparisons",
+      "key": "S4:simpson.n_comparisons",
+      "csv": {
+        "slide_id": "V5",
+        "label": "Simpson comparisons",
+        "csv_value": "224"
+      }
+    },
+    "n_flips": {
+      "value": 6,
+      "label": "Sign flips",
+      "display": "6",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: simpson.n_flips",
+      "key": "S4:simpson.n_flips",
+      "csv": {
+        "slide_id": "V5",
+        "label": "Simpson sign flips",
+        "csv_value": "6"
+      }
+    },
+    "dag_bmi_valid": {
+      "value": false,
+      "label": "Adjusting for BMI is valid",
+      "display": "no (mediator)",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: dag.bmi_adjustment_valid",
+      "key": "S4:dag.bmi_adjustment_valid",
+      "csv": null
+    }
+  }
+}

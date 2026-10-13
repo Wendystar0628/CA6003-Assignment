@@ -1,0 +1,294 @@
+{
+  "_meta": {
+    "file": "video/data/undiagnosed.json",
+    "visual": "Who is undiagnosed",
+    "scenes": "17",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Association, exploratory; the uninsured estimate does not meet the NCHS reliability standard (n = 49, CI width 0.39)."
+    ]
+  },
+  "items": {
+    "rd_uninsured": {
+      "value": 23.157835907921932,
+      "label": "Uninsured − insured",
+      "display": "+23.2 pp",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp",
+      "csv": {
+        "slide_id": "V6",
+        "label": "undiagnosed RD uninsured - insured (pp)",
+        "csv_value": "+23.2"
+      }
+    },
+    "rd_uninsured_lo": {
+      "value": 6.235010286422246,
+      "label": "CI low",
+      "display": "6.2",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_low_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_low_pp",
+      "csv": {
+        "slide_id": "V6",
+        "label": "undiagnosed RD CI low (pp)",
+        "csv_value": "6.2"
+      }
+    },
+    "rd_uninsured_hi": {
+      "value": 40.08066152942161,
+      "label": "CI high",
+      "display": "40.1",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_high_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.ci_high_pp",
+      "csv": {
+        "slide_id": "V6",
+        "label": "undiagnosed RD CI high (pp)",
+        "csv_value": "40.1"
+      }
+    },
+    "n_uninsured": {
+      "value": 49,
+      "label": "Uninsured with HbA1c ≥ 6.5 % (n)",
+      "display": "49",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.uninsured.n",
+      "key": "S5:undiagnosed_inequality.proportions.uninsured.n",
+      "csv": null
+    },
+    "events_uninsured": {
+      "value": 18,
+      "label": "Uninsured, undiagnosed (n)",
+      "display": "18",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.uninsured.n_events",
+      "key": "S5:undiagnosed_inequality.proportions.uninsured.n_events",
+      "csv": null
+    },
+    "share_uninsured": {
+      "value": 0.43020408295723267,
+      "label": "Uninsured: undiagnosed share",
+      "display": "43.0 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.uninsured.est",
+      "key": "S5:undiagnosed_inequality.proportions.uninsured.est",
+      "csv": null
+    },
+    "n_insured": {
+      "value": 670,
+      "label": "Insured with HbA1c ≥ 6.5 % (n)",
+      "display": "670",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.insured.n",
+      "key": "S5:undiagnosed_inequality.proportions.insured.n",
+      "csv": null
+    },
+    "events_insured": {
+      "value": 133,
+      "label": "Insured, undiagnosed (n)",
+      "display": "133",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.insured.n_events",
+      "key": "S5:undiagnosed_inequality.proportions.insured.n_events",
+      "csv": null
+    },
+    "share_insured": {
+      "value": 0.19862572387801336,
+      "label": "Insured: undiagnosed share",
+      "display": "19.9 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.proportions.insured.est",
+      "key": "S5:undiagnosed_inequality.proportions.insured.est",
+      "csv": null
+    },
+    "rd_noplace": {
+      "value": 19.935708936353603,
+      "label": "No usual place of care − usual place",
+      "display": "+19.9 pp",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.no usual place - usual place.rd_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.no usual place - usual place.rd_pp",
+      "csv": null
+    },
+    "rd_noplace_lo": {
+      "value": -1.6054904701312185,
+      "label": "CI low",
+      "display": "−1.6",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.no usual place - usual place.ci_low_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.no usual place - usual place.ci_low_pp",
+      "csv": null
+    },
+    "rd_noplace_hi": {
+      "value": 41.47690834283843,
+      "label": "CI high",
+      "display": "41.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.no usual place - usual place.ci_high_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.no usual place - usual place.ci_high_pp",
+      "csv": null
+    },
+    "rd_asian": {
+      "value": 15.622099842435725,
+      "label": "NH Asian − NH White",
+      "display": "+15.6 pp",
+      "fmt": "+.1f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.rd_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.rd_pp",
+      "csv": null
+    },
+    "rd_asian_lo": {
+      "value": -5.678259847488332,
+      "label": "CI low",
+      "display": "−5.7",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.ci_low_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.ci_low_pp",
+      "csv": null
+    },
+    "rd_asian_hi": {
+      "value": 36.92245953235978,
+      "label": "CI high",
+      "display": "36.9",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.ci_high_pp",
+      "key": "S5:undiagnosed_inequality.risk_differences_pp.NH Asian - NH White.ci_high_pp",
+      "csv": null
+    },
+    "or_uninsured": {
+      "value": 2.2174104738805753,
+      "label": "Adjusted odds ratio, uninsured (age, sex, income)",
+      "display": "2.22",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_inequality.adjusted_logit.uninsured.OR",
+      "key": "S5:undiagnosed_inequality.adjusted_logit.uninsured.OR",
+      "csv": null
+    },
+    "undiagnosed_n": {
+      "value": 152,
+      "label": "Undiagnosed adults with HbA1c ≥ 6.5 %",
+      "display": "152",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S5.json :: undiagnosed_meaning.undiagnosed",
+      "key": "S5:undiagnosed_meaning.undiagnosed",
+      "csv": null
+    }
+  },
+  "intervals": {
+    "rd_uninsured_ci": {
+      "label": "Undiagnosed share among HbA1c ≥ 6.5 %: uninsured − insured (pp, 95 % CI)",
+      "est": "rd_uninsured",
+      "lo": "rd_uninsured_lo",
+      "hi": "rd_uninsured_hi",
+      "display": "+23.2 pp [6.2, 40.1]"
+    },
+    "rd_noplace_ci": {
+      "label": "No usual place − usual place (pp, 95 % CI)",
+      "est": "rd_noplace",
+      "lo": "rd_noplace_lo",
+      "hi": "rd_noplace_hi",
+      "display": "+19.9 pp [−1.6, 41.5]"
+    },
+    "rd_asian_ci": {
+      "label": "NH Asian − NH White (pp, 95 % CI)",
+      "est": "rd_asian",
+      "lo": "rd_asian_lo",
+      "hi": "rd_asian_hi",
+      "display": "+15.6 pp [−5.7, 36.9]"
+    }
+  },
+  "groups": {
+    "flags": {
+      "uninsured": {
+        "n": 49,
+        "nchs_status": "suppress",
+        "flags": "ci_width>=0.30"
+      },
+      "insured": {
+        "n": 670,
+        "nchs_status": "present",
+        "flags": ""
+      },
+      "no usual place": {
+        "n": 41,
+        "nchs_status": "suppress",
+        "flags": "n_eff<30;ci_width>=0.30"
+      },
+      "usual place": {
+        "n": 680,
+        "nchs_status": "present",
+        "flags": ""
+      },
+      "NH Asian": {
+        "n": 40,
+        "nchs_status": "suppress",
+        "flags": "n_eff<30;ci_width>=0.30;df<8"
+      },
+      "NH White": {
+        "n": 362,
+        "nchs_status": "present",
+        "flags": ""
+      }
+    }
+  }
+}

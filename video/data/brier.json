@@ -1,0 +1,375 @@
+{
+  "_meta": {
+    "file": "video/data/brier.json",
+    "visual": "Calibration and Brier",
+    "scenes": "22",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "0.074 is S − M1 (from minimal to systematic); 0.076 is S − S-without-class-weights. Never swap them."
+    ]
+  },
+  "items": {
+    "d_brier": {
+      "value": 0.07392,
+      "label": "Systematic (S) − Minimal (M1), Brier",
+      "display": "+0.074",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].est",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].est",
+      "csv": {
+        "slide_id": "V7",
+        "label": "H2b Brier, S - M1 (different contrast)",
+        "csv_value": "+0.074"
+      }
+    },
+    "d_brier_lo": {
+      "value": 0.06647,
+      "label": "CI low",
+      "display": "+0.066",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].lo",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].lo",
+      "csv": null
+    },
+    "d_brier_hi": {
+      "value": 0.08138,
+      "label": "CI high",
+      "display": "+0.081",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].hi",
+      "key": "S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].hi",
+      "csv": null
+    },
+    "d_brier_cw": {
+      "value": 0.07575,
+      "label": "Class weights alone (S − S without weights), Brier",
+      "display": "+0.076",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est",
+      "key": "S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est",
+      "csv": {
+        "slide_id": "V7",
+        "label": "class weights dBrier",
+        "csv_value": "+0.076"
+      }
+    },
+    "d_brier_cw_lo": {
+      "value": 0.06789,
+      "label": "CI low",
+      "display": "+0.068",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].lo",
+      "key": "S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].lo",
+      "csv": null
+    },
+    "d_brier_cw_hi": {
+      "value": 0.08362,
+      "label": "CI high",
+      "display": "+0.084",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].hi",
+      "key": "S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].hi",
+      "csv": null
+    },
+    "nocw_auc": {
+      "value": 0.007332867558757137,
+      "label": "S without class weights vs M1, AUC",
+      "display": "+0.007",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S-B6a vs M1 dAUC",
+        "csv_value": "+0.007"
+      }
+    },
+    "nocw_auc_lo": {
+      "value": 5.7283367045601365e-05,
+      "label": "CI low",
+      "display": "0.000",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].lo",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].lo",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S-B6a vs M1 dAUC CI low",
+        "csv_value": "+0.000"
+      }
+    },
+    "nocw_auc_hi": {
+      "value": 0.014608451750468671,
+      "label": "CI high",
+      "display": "+0.015",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].hi",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].hi",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S-B6a vs M1 dAUC CI high",
+        "csv_value": "+0.015"
+      }
+    },
+    "nocw_brier": {
+      "value": -0.0018306190971882797,
+      "label": "S without class weights vs M1, Brier",
+      "display": "−0.002",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].diff",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].diff",
+      "csv": {
+        "slide_id": "V7",
+        "label": "S-B6a vs M1 dBrier",
+        "csv_value": "-0.002"
+      }
+    },
+    "nocw_brier_lo": {
+      "value": -0.0036279363578679124,
+      "label": "CI low",
+      "display": "−0.004",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].lo",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].lo",
+      "csv": null
+    },
+    "nocw_brier_hi": {
+      "value": -3.3301836508646977e-05,
+      "label": "CI high",
+      "display": "0.000",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].hi",
+      "key": "S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=brier].hi",
+      "csv": null
+    },
+    "brier_m1": {
+      "value": 0.11189,
+      "label": "Minimal (M1)",
+      "display": "0.112",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S&pop=E-ALL&metric=brier].value_variant",
+      "key": "S7:postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S&pop=E-ALL&metric=brier].value_variant",
+      "csv": null
+    },
+    "brier_s": {
+      "value": 0.185428,
+      "label": "Systematic (S)",
+      "display": "0.185",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S&pop=E-ALL&metric=brier].value_a",
+      "key": "S7:postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S&pop=E-ALL&metric=brier].value_a",
+      "csv": null
+    },
+    "brier_s_nocw": {
+      "value": 0.110053,
+      "label": "S without class weights",
+      "display": "0.110",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S-B6a&pop=E-ALL&metric=brier].value_a",
+      "key": "S7:postlock_m1_sensitivity.rows[variant=M1 stored (lbfgs, max_iter 5,000)&a=S-B6a&pop=E-ALL&metric=brier].value_a",
+      "csv": null
+    },
+    "slope_m1": {
+      "value": 0.9613212231012722,
+      "label": "Minimal (M1): calibration slope",
+      "display": "0.96",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=M1, pop=E-ALL → cal_slope",
+      "key": null,
+      "csv": null
+    },
+    "citl_m1": {
+      "value": 0.00972125709813552,
+      "label": "Minimal (M1): calibration-in-the-large",
+      "display": "+0.01",
+      "fmt": "+.2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=M1, pop=E-ALL → cal_citl",
+      "key": null,
+      "csv": null
+    },
+    "meanp_m1": {
+      "value": 0.16845942093540686,
+      "label": "Minimal (M1): mean predicted risk",
+      "display": "16.8 %",
+      "fmt": ".1f",
+      "scale": 100,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=M1, pop=E-ALL → mean_p",
+      "key": null,
+      "csv": null
+    },
+    "slope_s": {
+      "value": 0.8674229268848792,
+      "label": "Systematic (S): calibration slope",
+      "display": "0.87",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S, pop=E-ALL → cal_slope",
+      "key": null,
+      "csv": null
+    },
+    "citl_s": {
+      "value": -1.817586639375259,
+      "label": "Systematic (S): calibration-in-the-large",
+      "display": "−1.82",
+      "fmt": "+.2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S, pop=E-ALL → cal_citl",
+      "key": null,
+      "csv": null
+    },
+    "meanp_s": {
+      "value": 0.4086465280606184,
+      "label": "Systematic (S): mean predicted risk",
+      "display": "40.9 %",
+      "fmt": ".1f",
+      "scale": 100,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S, pop=E-ALL → mean_p",
+      "key": null,
+      "csv": null
+    },
+    "slope_s_nocw": {
+      "value": 0.9785301364915758,
+      "label": "S without class weights: calibration slope",
+      "display": "0.98",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S-B6a, pop=E-ALL → cal_slope",
+      "key": null,
+      "csv": null
+    },
+    "citl_s_nocw": {
+      "value": 0.027047403671400096,
+      "label": "S without class weights: calibration-in-the-large",
+      "display": "+0.03",
+      "fmt": "+.2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S-B6a, pop=E-ALL → cal_citl",
+      "key": null,
+      "csv": null
+    },
+    "meanp_s_nocw": {
+      "value": 0.1666273369191451,
+      "label": "S without class weights: mean predicted risk",
+      "display": "16.7 %",
+      "fmt": ".1f",
+      "scale": 100,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S-B6a, pop=E-ALL → mean_p",
+      "key": null,
+      "csv": null
+    },
+    "prevalence": {
+      "value": 0.1695026178010471,
+      "label": "Observed prevalence (training part)",
+      "display": "17.0 %",
+      "fmt": ".1f",
+      "scale": 100,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S7/calibration.csv :: arm=S, pop=E-ALL → prevalence",
+      "key": null,
+      "csv": null
+    }
+  },
+  "intervals": {
+    "d_brier_ci": {
+      "label": "Brier change, S − M1, All adults (positive = worse)",
+      "est": "d_brier",
+      "lo": "d_brier_lo",
+      "hi": "d_brier_hi",
+      "display": "+0.074 [+0.066, +0.081]"
+    },
+    "d_brier_cw_ci": {
+      "label": "Brier change from class weights alone",
+      "est": "d_brier_cw",
+      "lo": "d_brier_cw_lo",
+      "hi": "d_brier_cw_hi",
+      "display": "+0.076 [+0.068, +0.084]"
+    },
+    "nocw_auc_ci": {
+      "label": "AUC change, S without class weights vs M1",
+      "est": "nocw_auc",
+      "lo": "nocw_auc_lo",
+      "hi": "nocw_auc_hi",
+      "display": "+0.007 [0.000, +0.015]"
+    },
+    "nocw_brier_ci": {
+      "label": "Brier change, S without class weights vs M1",
+      "est": "nocw_brier",
+      "lo": "nocw_brier_lo",
+      "hi": "nocw_brier_hi",
+      "display": "−0.002 [−0.004, 0.000]"
+    }
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "_meta": {
+    "file": "video/data/tree.json",
+    "visual": "Tree and the 50",
+    "scenes": "19",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Thresholds 49.5 / 50.5 and the node structure are not in results/metrics_S7.json; they come from the figure caption and the executed notebook."
+    ]
+  },
+  "items": {
+    "root_variable": {
+      "value": "DIQ070",
+      "label": "Root split: taking diabetes pills?",
+      "display": "taking diabetes pills?",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.variable",
+      "key": "S7:tree_roots.M0.variable",
+      "csv": null
+    },
+    "root_feature": {
+      "value": "DIQ070_2.0",
+      "label": "Root feature (design-matrix column)",
+      "display": "DIQ070_2.0",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.root_feature",
+      "key": "S7:tree_roots.M0.root_feature",
+      "csv": null
+    },
+    "root_role": {
+      "value": "leak",
+      "label": "Root role in the availability rule",
+      "display": "leaked treatment item",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.role",
+      "key": "S7:tree_roots.M0.role",
+      "csv": null
+    },
+    "root_threshold": {
+      "value": 0.5,
+      "label": "Root threshold (0/1 indicator)",
+      "display": "0.50",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.threshold",
+      "key": "S7:tree_roots.M0.threshold",
+      "csv": null
+    },
+    "level2_left": {
+      "value": "DIQ180_2.0",
+      "label": "Second-level split, left branch",
+      "display": "blood-glucose test in past 3 years",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.level2[0] (DIQ180_2.0)",
+      "key": null,
+      "csv": null
+    },
+    "level2_right": {
+      "value": "DID040",
+      "label": "Second-level split, right branch",
+      "display": "age at diabetes diagnosis",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_roots.M0.level2[1] (DID040)",
+      "key": null,
+      "csv": null
+    },
+    "did040_missing": {
+      "value": 0.8582024432809773,
+      "label": "Age at diagnosis: never asked",
+      "display": "86 %",
+      "fmt": ".0f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_m0.did040_missing_share",
+      "key": "S7:tree_m0.did040_missing_share",
+      "csv": {
+        "slide_id": "V3",
+        "label": "DID040 missing share",
+        "csv_value": "86%"
+      }
+    },
+    "did040_fill": {
+      "value": 50,
+      "label": "Imputed with the median",
+      "display": "50",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: tree_m0.did040_fill",
+      "key": "S7:tree_m0.did040_fill",
+      "csv": {
+        "slide_id": "V3",
+        "label": "DID040 imputed value",
+        "csv_value": "50"
+      }
+    },
+    "did040_split_lo": {
+      "value": 49.5,
+      "label": "Split just below the imputed value",
+      "display": "49.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "figure-text",
+      "source": "figures/S7_tree_m0.txt (figure caption; thresholds are not in metrics_S7.json)",
+      "key": null,
+      "csv": null
+    },
+    "did040_split_hi": {
+      "value": 50.5,
+      "label": "Split just above the imputed value",
+      "display": "50.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "figure-text",
+      "source": "figures/S7_tree_m0.txt (figure caption; thresholds are not in metrics_S7.json)",
+      "key": null,
+      "csv": null
+    }
+  },
+  "groups": {
+    "nodes": {
+      "source": "notebooks/executed/06_experiments.ipynb (export_text of the depth-3, min-leaf-50 tree on the M0 frame, training part); not stored under results/",
+      "n_leaves": 6,
+      "tree": [
+        {
+          "test": "taking diabetic pills: no <= 0.50",
+          "children": [
+            {
+              "test": "blood-glucose test in past 3 years: no <= 0.50",
+              "children": [],
+              "question": "blood-glucose test in past 3 years",
+              "answer": "yes",
+              "leaf": {
+                "n_no_diabetes": 43.0,
+                "n_diabetes": 17.0,
+                "predicted_class": 0
+              }
+            },
+            {
+              "test": "blood-glucose test in past 3 years: no >  0.50",
+              "children": [
+                {
+                  "test": "LDL cholesterol (mg/dL) <= 119.50",
+                  "children": [],
+                  "leaf": {
+                    "n_no_diabetes": 0.0,
+                    "n_diabetes": 430.0,
+                    "predicted_class": 1
+                  }
+                },
+                {
+                  "test": "LDL cholesterol (mg/dL) >  119.50",
+                  "children": [],
+                  "leaf": {
+                    "n_no_diabetes": 3.0,
+                    "n_diabetes": 47.0,
+                    "predicted_class": 1
+                  }
+                }
+              ],
+              "question": "blood-glucose test in past 3 years",
+              "answer": "no"
+            }
+          ],
+          "question": "taking diabetic pills",
+          "answer": "yes"
+        },
+        {
+          "test": "taking diabetic pills: no >  0.50",
+          "children": [
+            {
+              "test": "age at diabetes diagnosis <= 49.50",
+              "children": [],
+              "leaf": {
+                "n_no_diabetes": 0.0,
+                "n_diabetes": 90.0,
+                "predicted_class": 1
+              }
+            },
+            {
+              "test": "age at diabetes diagnosis >  49.50",
+              "children": [
+                {
+                  "test": "age at diabetes diagnosis <= 50.50",
+                  "children": [],
+                  "leaf": {
+                    "n_no_diabetes": 3766.0,
+                    "n_diabetes": 121.0,
+                    "predicted_class": 0
+                  }
+                },
+                {
+                  "test": "age at diabetes diagnosis >  50.50",
+                  "children": [],
+                  "leaf": {
+                    "n_no_diabetes": 0.0,
+                    "n_diabetes": 67.0,
+                    "predicted_class": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "question": "taking diabetic pills",
+          "answer": "no"
+        }
+      ]
+    }
+  }
+}

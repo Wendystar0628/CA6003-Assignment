@@ -1,0 +1,128 @@
+{
+  "_meta": {
+    "file": "video/data/tpr_100.json",
+    "visual": "100 diabetics",
+    "scenes": "20",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Per-100 dots are the rates 0.70 and 0.52 scaled; they are not people counts."
+    ]
+  },
+  "items": {
+    "tpr_diag": {
+      "value": 0.7015384615384616,
+      "label": "Already diagnosed",
+      "display": "0.70",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S8.json :: gap_decomposition.tpr_diagnosed",
+      "key": "S8:gap_decomposition.tpr_diagnosed",
+      "csv": {
+        "slide_id": "V6",
+        "label": "TPR diagnosed positives (arm S)",
+        "csv_value": "0.70"
+      }
+    },
+    "tpr_undx": {
+      "value": 0.5196850393700787,
+      "label": "Screening group",
+      "display": "0.52",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S8.json :: gap_decomposition.tpr_undiagnosed",
+      "key": "S8:gap_decomposition.tpr_undiagnosed",
+      "csv": {
+        "slide_id": "V6",
+        "label": "TPR undiagnosed positives (arm S)",
+        "csv_value": "0.52"
+      }
+    },
+    "per100_diag": {
+      "value": 70.15384615384616,
+      "label": "Flagged per 100 already diagnosed",
+      "display": "70",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: round(tpr_diagnosed * 100); illustration per 100, not actual counts",
+      "key": null,
+      "csv": null
+    },
+    "per100_undx": {
+      "value": 51.96850393700787,
+      "label": "Flagged per 100 in the Screening group",
+      "display": "52",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: round(tpr_undiagnosed * 100); illustration per 100, not actual counts",
+      "key": null,
+      "csv": null
+    },
+    "per100_gap": {
+      "value": 18,
+      "label": "Positions that differ per 100",
+      "display": "18",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: 70 − 52",
+      "key": null,
+      "csv": null
+    },
+    "spec": {
+      "value": 0.8,
+      "label": "Specificity of the shared cut-off",
+      "display": "0.80",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S8.json :: spec",
+      "key": "S8:spec",
+      "csv": null
+    },
+    "n_diag_train": {
+      "value": 650,
+      "label": "Diagnosed positives behind the 0.70 (training part)",
+      "display": "650",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: S8:label_matrix.strata_train D_uncontrolled + D_controlled",
+      "key": null,
+      "csv": null
+    },
+    "n_undx_train": {
+      "value": 127,
+      "label": "Screening-group positives behind the 0.52 (training part)",
+      "display": "127",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S8.json :: label_matrix.strata_train.Undiagnosed",
+      "key": "S8:label_matrix.strata_train.Undiagnosed",
+      "csv": null
+    }
+  },
+  "groups": {
+    "label": "one shared cut-off · specificity 0.80 · rates per 100"
+  }
+}

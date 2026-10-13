@@ -1,0 +1,185 @@
+{
+  "_meta": {
+    "file": "video/data/care_flip.json",
+    "visual": "Care traces flip",
+    "scenes": "24",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "The Screening-group lower bound 0.004 lies inside the +/-0.01 band (verdict inconclusive); do not pulse it."
+    ]
+  },
+  "items": {
+    "eall": {
+      "value": -0.01587600396805298,
+      "label": "All adults",
+      "display": "−0.016",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_eall.est",
+      "key": "S7:headline.minus_care_eall.est",
+      "csv": {
+        "slide_id": "V7",
+        "label": "minus care traces E-ALL",
+        "csv_value": "-0.016"
+      }
+    },
+    "eall_lo": {
+      "value": -0.02218688631218183,
+      "label": "CI low",
+      "display": "−0.022",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_eall.lo",
+      "key": "S7:headline.minus_care_eall.lo",
+      "csv": null
+    },
+    "eall_hi": {
+      "value": -0.009363492164910532,
+      "label": "CI high",
+      "display": "−0.009",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_eall.hi",
+      "key": "S7:headline.minus_care_eall.hi",
+      "csv": null
+    },
+    "escreen": {
+      "value": 0.019231047655686062,
+      "label": "Screening group",
+      "display": "+0.019",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_escreen.est",
+      "key": "S7:headline.minus_care_escreen.est",
+      "csv": {
+        "slide_id": "V7",
+        "label": "minus care traces E-SCREEN",
+        "csv_value": "+0.019"
+      }
+    },
+    "escreen_lo": {
+      "value": 0.0041034542667982175,
+      "label": "CI low",
+      "display": "0.004",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_escreen.lo",
+      "key": "S7:headline.minus_care_escreen.lo",
+      "csv": null
+    },
+    "escreen_hi": {
+      "value": 0.03446045308166271,
+      "label": "CI high",
+      "display": "0.034",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.minus_care_escreen.hi",
+      "key": "S7:headline.minus_care_escreen.hi",
+      "csv": null
+    },
+    "verdict_eall": {
+      "value": "supported",
+      "label": "Locked verdict, All adults",
+      "display": "supported",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-ALL&role=primary].verdict",
+      "key": "S7:scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-ALL&role=primary].verdict",
+      "csv": null
+    },
+    "verdict_escreen": {
+      "value": "inconclusive",
+      "label": "Locked verdict, Screening group",
+      "display": "inconclusive",
+      "fmt": null,
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-SCREEN&role=primary].verdict",
+      "key": "S7:scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-SCREEN&role=primary].verdict",
+      "csv": null
+    },
+    "sesoi": {
+      "value": 0.01,
+      "label": "Margin fixed in advance (+/-)",
+      "display": "0.01",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-SCREEN&role=primary].sesoi",
+      "key": "S7:scoreboard_detail[hyp_id=H2c&sub=(ii) minus care, E-SCREEN&role=primary].sesoi",
+      "csv": null
+    },
+    "removed_BPQ020": {
+      "value": 1,
+      "label": "told high blood pressure",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S1/availability_rule.csv :: variable=BPQ020, reason 'questionnaire; care-contact trace'",
+      "key": null,
+      "csv": null,
+      "variable": "BPQ020"
+    },
+    "removed_BPQ080": {
+      "value": 1,
+      "label": "told high cholesterol",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S1/availability_rule.csv :: variable=BPQ080, reason 'questionnaire; care-contact trace'",
+      "key": null,
+      "csv": null,
+      "variable": "BPQ080"
+    }
+  },
+  "intervals": {
+    "eall_ci": {
+      "label": "AUC change without care traces, All adults",
+      "est": "eall",
+      "lo": "eall_lo",
+      "hi": "eall_hi",
+      "display": "−0.016 [−0.022, −0.009]"
+    },
+    "escreen_ci": {
+      "label": "AUC change without care traces, Screening group",
+      "est": "escreen",
+      "lo": "escreen_lo",
+      "hi": "escreen_hi",
+      "display": "+0.019 [0.004, 0.034]"
+    }
+  },
+  "groups": {
+    "removed_order": [
+      "removed_BPQ020",
+      "removed_BPQ080"
+    ]
+  }
+}

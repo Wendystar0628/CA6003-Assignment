@@ -1,0 +1,199 @@
+{
+  "_meta": {
+    "file": "video/data/holdout.json",
+    "visual": "Hold-out and post-audit",
+    "scenes": "25",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "metrics_S9 holdout.log shows n_executions = 2 (FINAL-mode re-run that reproduces the single evaluation run); results/S9/holdout_log.json shows 1.",
+      "Two sub-claims (B3-b, H2b-c) were withdrawn as 'not testable' after the audit although the locked verdict table is unchanged; 'changed no locked verdict' needs that nuance if challenged."
+    ]
+  },
+  "items": {
+    "n": {
+      "value": 1146,
+      "label": "Hold-out adults",
+      "display": "1,146",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.log.n_test",
+      "key": "S9:holdout.log.n_test",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out n",
+        "csv_value": "1,146"
+      }
+    },
+    "pos_eall": {
+      "value": 194,
+      "label": "Positives, All adults",
+      "display": "194",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=S&tier=1&pop=E-ALL].n_pos",
+      "key": "S9:holdout.metrics[arm=S&tier=1&pop=E-ALL].n_pos",
+      "csv": null
+    },
+    "n_screen": {
+      "value": 977,
+      "label": "Screening group in the hold-out",
+      "display": "977",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n",
+      "key": "S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n",
+      "csv": null
+    },
+    "pos_screen": {
+      "value": 25,
+      "label": "Screening-group positives",
+      "display": "25",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos",
+      "key": "S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].n_pos",
+      "csv": null
+    },
+    "auc_s_eall": {
+      "value": 0.8511,
+      "label": "Systematic (S), All adults",
+      "display": "0.851",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc",
+      "key": "S9:holdout.metrics[arm=S&tier=1&pop=E-ALL].roc_auc",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out AUC S E-ALL",
+        "csv_value": "0.851"
+      }
+    },
+    "auc_s_escreen": {
+      "value": 0.79076,
+      "label": "Systematic (S), Screening group",
+      "display": "0.791",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc",
+      "key": "S9:holdout.metrics[arm=S&tier=1&pop=E-SCREEN].roc_auc",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out AUC S E-SCREEN",
+        "csv_value": "0.791"
+      }
+    },
+    "auc_m0_eall": {
+      "value": 0.96437,
+      "label": "Naive (M0), All adults",
+      "display": "0.964",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc",
+      "key": "S9:holdout.metrics[arm=M0&tier=1&pop=E-ALL].roc_auc",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out AUC M0 E-ALL",
+        "csv_value": "0.964"
+      }
+    },
+    "auc_m1_eall": {
+      "value": 0.84758,
+      "label": "Minimal (M1), All adults",
+      "display": "0.848",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc",
+      "key": "S9:holdout.metrics[arm=M1&tier=1&pop=E-ALL].roc_auc",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out AUC M1 E-ALL",
+        "csv_value": "0.848"
+      }
+    },
+    "gap_s": {
+      "value": 0.06033999999999995,
+      "label": "Hold-out gap All adults − Screening group (not shown)",
+      "display": "+0.060",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S10.json :: holdout.gap_S_eall_minus_escreen",
+      "key": "S10:holdout.gap_S_eall_minus_escreen",
+      "csv": {
+        "slide_id": "V7",
+        "label": "hold-out gap E-ALL minus E-SCREEN (arm S)",
+        "csv_value": "+0.060"
+      },
+      "note": "Do not show (plan scene 25): only 25 Screening-group positives, claims C25",
+      "on_screen": false
+    },
+    "postaudit_n": {
+      "value": 6,
+      "label": "Issues raised by the external review, checked",
+      "display": "6",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: len(S9:postaudit.summary) (6 rows; register DR-S9-16 … DR-S9-21)",
+      "key": null,
+      "csv": null
+    },
+    "withdrawn_n": {
+      "value": 2,
+      "label": "Sub-claims withdrawn as not testable after the audit",
+      "display": "2",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: len(S10:withdrawn_subclaims)",
+      "key": null,
+      "csv": null
+    },
+    "n_executions_log": {
+      "value": 1,
+      "label": "Hold-out executions in results/S9/holdout_log.json",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S9/holdout_log.json :: n_executions (first scoring run)",
+      "key": null,
+      "csv": null
+    }
+  },
+  "groups": {
+    "timeline": [
+      "hypotheses locked (SHA-256)",
+      "experiments frozen",
+      "hold-out: scored once"
+    ]
+  }
+}

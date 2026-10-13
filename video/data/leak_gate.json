@@ -1,0 +1,267 @@
+{
+  "_meta": {
+    "file": "video/data/leak_gate.json",
+    "visual": "Leak gate",
+    "scenes": "18, 26, 27",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": [
+      "Grouping of variables into the three claim words is ours (C01 names the groups, availability_rule.csv names the variables)."
+    ]
+  },
+  "items": {
+    "auc_m0_eall": {
+      "value": 0.9606127573030646,
+      "label": "Naive (M0)",
+      "display": "0.961",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.auc_M0_eall_T1",
+      "key": "S7:headline.auc_M0_eall_T1",
+      "csv": {
+        "slide_id": "V3",
+        "label": "AUC M0 E-ALL",
+        "csv_value": "0.961"
+      }
+    },
+    "auc_m1_eall": {
+      "value": 0.8284525660412184,
+      "label": "Minimal (M1)",
+      "display": "0.828",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: headline.auc_M1_eall_T1",
+      "key": "S7:headline.auc_M1_eall_T1",
+      "csv": {
+        "slide_id": "V3",
+        "label": "AUC M1 E-ALL",
+        "csv_value": "0.828"
+      }
+    },
+    "diff_eall": {
+      "value": -0.13084083945101074,
+      "label": "Paired difference, All adults",
+      "display": "−0.131",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-ALL.est",
+      "key": "S7:leak_gate.T1_E-ALL.est",
+      "csv": {
+        "slide_id": "V3",
+        "label": "leak gate dAUC",
+        "csv_value": "-0.131"
+      }
+    },
+    "diff_eall_lo": {
+      "value": -0.14788207405092932,
+      "label": "Paired difference CI low",
+      "display": "−0.148",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-ALL.lo",
+      "key": "S7:leak_gate.T1_E-ALL.lo",
+      "csv": {
+        "slide_id": "V3",
+        "label": "leak gate CI low",
+        "csv_value": "-0.148"
+      }
+    },
+    "diff_eall_hi": {
+      "value": -0.11379960485109217,
+      "label": "Paired difference CI high",
+      "display": "−0.114",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-ALL.hi",
+      "key": "S7:leak_gate.T1_E-ALL.hi",
+      "csv": {
+        "slide_id": "V3",
+        "label": "leak gate CI high",
+        "csv_value": "-0.114"
+      }
+    },
+    "diff_escreen": {
+      "value": -0.07183410584315275,
+      "label": "Screening group",
+      "display": "−0.072",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-SCREEN.est",
+      "key": "S7:leak_gate.T1_E-SCREEN.est",
+      "csv": {
+        "slide_id": "V3",
+        "label": "leak gate dAUC E-SCREEN",
+        "csv_value": "-0.072"
+      }
+    },
+    "diff_escreen_lo": {
+      "value": -0.11327424201998396,
+      "label": "Screening group CI low",
+      "display": "−0.113",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-SCREEN.lo",
+      "key": "S7:leak_gate.T1_E-SCREEN.lo",
+      "csv": null
+    },
+    "diff_escreen_hi": {
+      "value": -0.031039847855897418,
+      "label": "Screening group CI high",
+      "display": "−0.031",
+      "fmt": "+.3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S7.json :: leak_gate.T1_E-SCREEN.hi",
+      "key": "S7:leak_gate.T1_E-SCREEN.hi",
+      "csv": null
+    },
+    "bars_gap_rounded": {
+      "value": 0.133,
+      "label": "Gap between the two rounded bars",
+      "display": "0.133",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: 0.961 − 0.828 (rounded bar labels)",
+      "key": null,
+      "csv": null,
+      "note": "Plan scene 18: two bars subtract to 0.133; the slide labels the 0.131 as 'paired'."
+    },
+    "bars_gap_unrounded": {
+      "value": 0.1321601912618462,
+      "label": "Gap between the two bars, unrounded",
+      "display": "0.132",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: auc_M0_eall_T1 − auc_M1_eall_T1",
+      "key": null,
+      "csv": null,
+      "note": "0.1322 pooled vs 0.1308 mean of paired fold differences (stored 'est')."
+    },
+    "axis_start": {
+      "value": 0.5,
+      "label": "AUC axis starts at",
+      "display": "0.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: AUC of a coin flip",
+      "key": null,
+      "csv": null
+    },
+    "removed_treatment": {
+      "value": 3,
+      "label": "treatment",
+      "display": "3",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S1/availability_rule.csv :: admissible=N for DIQ050, DIQ070, DID060; group wording from governance/claims.csv C01",
+      "key": null,
+      "csv": null,
+      "note": "taking insulin; taking diabetic pills; duration of insulin use",
+      "variables": [
+        "DIQ050",
+        "DIQ070",
+        "DID060"
+      ],
+      "variable_reasons": {
+        "DIQ050": "consequence of diagnosis",
+        "DIQ070": "consequence of diagnosis; also asked of undiagnosed respondents",
+        "DID060": "consequence of diagnosis"
+      }
+    },
+    "removed_history": {
+      "value": 1,
+      "label": "diagnosis history",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S1/availability_rule.csv :: admissible=N for DID040; group wording from governance/claims.csv C01",
+      "key": null,
+      "csv": null,
+      "note": "age at diagnosis",
+      "variables": [
+        "DID040"
+      ],
+      "variable_reasons": {
+        "DID040": "consequence of diagnosis"
+      }
+    },
+    "removed_glucose": {
+      "value": 3,
+      "label": "glucose testing",
+      "display": "3",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S1/availability_rule.csv :: admissible=N for LBXGLU, DIQ160, DIQ180; group wording from governance/claims.csv C01",
+      "key": null,
+      "csv": null,
+      "note": "fasting glucose; told prediabetes (consequence of a glucose test); blood sugar tested in past 3 years",
+      "variables": [
+        "LBXGLU",
+        "DIQ160",
+        "DIQ180"
+      ],
+      "variable_reasons": {
+        "LBXGLU": "diagnostic criterion; fasting subsample only",
+        "DIQ160": "consequence of a glucose test; care-contact trace",
+        "DIQ180": "consequence of care contact"
+      }
+    }
+  },
+  "intervals": {
+    "diff_eall_ci": {
+      "label": "Minimal (M1) − Naive (M0), All adults, paired across folds",
+      "est": "diff_eall",
+      "lo": "diff_eall_lo",
+      "hi": "diff_eall_hi",
+      "display": "−0.131 [−0.148, −0.114]"
+    },
+    "diff_escreen_ci": {
+      "label": "Minimal (M1) − Naive (M0), Screening group",
+      "est": "diff_escreen",
+      "lo": "diff_escreen_lo",
+      "hi": "diff_escreen_hi",
+      "display": "−0.072 [−0.113, −0.031]"
+    }
+  },
+  "groups": {
+    "removed_order": [
+      "removed_treatment",
+      "removed_history",
+      "removed_glucose"
+    ]
+  }
+}

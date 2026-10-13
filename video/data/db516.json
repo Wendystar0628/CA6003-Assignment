@@ -1,0 +1,183 @@
+{
+  "_meta": {
+    "file": "video/data/db516.json",
+    "visual": "NCHS replication",
+    "scenes": "5",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "total_ours": {
+      "value": 15.786910949172617,
+      "label": "Total: ours",
+      "display": "15.79 %",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.total",
+      "key": "S4:db516.total",
+      "csv": {
+        "slide_id": "V7",
+        "label": "DB516 total reproduced (%)",
+        "csv_value": "15.79"
+      }
+    },
+    "total_nchs": {
+      "value": 15.8,
+      "label": "Total: NCHS Data Brief 516",
+      "display": "15.8 %",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S4/db516_replication.csv :: measure=total, group=All, kind=crude → nchs (published value)",
+      "key": null,
+      "csv": null
+    },
+    "diagnosed_ours": {
+      "value": 11.299656829208393,
+      "label": "Diagnosed: ours",
+      "display": "11.30 %",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.diagnosed",
+      "key": "S4:db516.diagnosed",
+      "csv": {
+        "slide_id": "V7",
+        "label": "DB516 diagnosed reproduced (%)",
+        "csv_value": "11.30"
+      }
+    },
+    "diagnosed_nchs": {
+      "value": 11.3,
+      "label": "Diagnosed: NCHS Data Brief 516",
+      "display": "11.3 %",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S4/db516_replication.csv :: measure=diagnosed, group=All, kind=crude → nchs (published value)",
+      "key": null,
+      "csv": null
+    },
+    "undiagnosed_ours": {
+      "value": 4.487254119964224,
+      "label": "Undiagnosed: ours",
+      "display": "4.49 %",
+      "fmt": ".2f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.undiagnosed",
+      "key": "S4:db516.undiagnosed",
+      "csv": {
+        "slide_id": "V7",
+        "label": "DB516 undiagnosed reproduced (%)",
+        "csv_value": "4.49"
+      }
+    },
+    "undiagnosed_nchs": {
+      "value": 4.5,
+      "label": "Undiagnosed: NCHS Data Brief 516",
+      "display": "4.5 %",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored-csv",
+      "source": "results/S4/db516_replication.csv :: measure=undiagnosed, group=All, kind=crude → nchs (published value)",
+      "key": null,
+      "csv": null
+    },
+    "n_estimates": {
+      "value": 27,
+      "label": "Published estimates compared",
+      "display": "27",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.n_estimates",
+      "key": "S4:db516.n_estimates",
+      "csv": null
+    },
+    "max_gap": {
+      "value": 0.043663453730061974,
+      "label": "Largest absolute difference",
+      "display": "0.044 pp",
+      "fmt": ".3f",
+      "scale": 1.0,
+      "unit": " pp",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.max_abs_diff_pp",
+      "key": "S4:db516.max_abs_diff_pp",
+      "csv": null
+    },
+    "within_ci": {
+      "value": 24,
+      "label": "Estimates inside the published interval (Korn–Graubard CI)",
+      "display": "24",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.kg_matches_published_ci",
+      "key": "S4:db516.kg_matches_published_ci",
+      "csv": null,
+      "note": "24 of 27: this is why the plan says 'match closely', never '27 / 27 reproduced'"
+    },
+    "ci_overlap": {
+      "value": 27,
+      "label": "Estimates whose intervals overlap the published interval",
+      "display": "27",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S9.json :: external.db516.ci_overlap",
+      "key": "S9:external.db516.ci_overlap",
+      "csv": null
+    },
+    "n_adults": {
+      "value": 2938,
+      "label": "Fasting adults used",
+      "display": "2,938",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S4.json :: db516.n",
+      "key": "S4:db516.n",
+      "csv": null
+    }
+  },
+  "groups": {
+    "rows": [
+      {
+        "measure": "total",
+        "ours": "total_ours",
+        "nchs": "total_nchs"
+      },
+      {
+        "measure": "diagnosed",
+        "ours": "diagnosed_ours",
+        "nchs": "diagnosed_nchs"
+      },
+      {
+        "measure": "undiagnosed",
+        "ours": "undiagnosed_ours",
+        "nchs": "undiagnosed_nchs"
+      }
+    ]
+  }
+}

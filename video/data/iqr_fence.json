@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "file": "video/data/iqr_fence.json",
+    "visual": "IQR fence",
+    "scenes": "10",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "fence": {
+      "value": 6.800000000000001,
+      "label": "1.5 × IQR fence (upper)",
+      "display": "6.8 %",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: outliers.a1c_iqr_fence_upper",
+      "key": "S3:outliers.a1c_iqr_fence_upper",
+      "csv": null
+    },
+    "flagged": {
+      "value": 542,
+      "label": "Values beyond the fence",
+      "display": "542",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: outliers.a1c_iqr_flagged",
+      "key": "S3:outliers.a1c_iqr_flagged",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c values beyond the IQR outlier fence",
+        "csv_value": "542"
+      }
+    },
+    "flagged_pos": {
+      "value": 519,
+      "label": "Of those, diabetic (HbA1c ≥ 6.5 %)",
+      "display": "519",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: outliers.a1c_iqr_flagged_positive",
+      "key": "S3:outliers.a1c_iqr_flagged_positive",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c fence values that are diabetic (>= 6.5)",
+        "csv_value": "519"
+      }
+    },
+    "flagged_other": {
+      "value": 23,
+      "label": "Of those, not diabetic",
+      "display": "23",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: flagged − flagged_positive",
+      "key": null,
+      "csv": null
+    },
+    "flagged_pos_share": {
+      "value": 0.9575645756457565,
+      "label": "Share of flagged values that are diabetic",
+      "display": "96 %",
+      "fmt": ".0f",
+      "scale": 100,
+      "unit": " %",
+      "kind": "derived",
+      "source": "derived: flagged_positive / flagged",
+      "key": null,
+      "csv": null
+    },
+    "pos_beyond_share": {
+      "value": 0.7198335644937587,
+      "label": "Share of HbA1c positives beyond the fence",
+      "display": "72 %",
+      "fmt": ".0f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: outliers.a1c_iqr_positive_share",
+      "key": "S3:outliers.a1c_iqr_positive_share",
+      "csv": null
+    },
+    "rule": {
+      "value": 1.5,
+      "label": "Textbook rule multiplier",
+      "display": "1.5",
+      "fmt": ".1f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "definition",
+      "source": "definition: Tukey rule, notebook §3",
+      "key": null,
+      "csv": null
+    }
+  }
+}

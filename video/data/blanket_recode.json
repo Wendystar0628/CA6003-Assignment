@@ -1,0 +1,707 @@
+{
+  "_meta": {
+    "file": "video/data/blanket_recode.json",
+    "visual": "The struck 7.0",
+    "scenes": "8, 9, 14",
+    "generated_by": "video/data/build_data.py (reads stored results only; no model fitting)",
+    "results_snapshot_utc": "2026-10-11T18:43:30+00:00",
+    "naming": {
+      "E-ALL": "All adults",
+      "E-SCREEN": "Screening group",
+      "M0": "Naive (M0)",
+      "M1": "Minimal (M1)",
+      "S": "Systematic (S)"
+    },
+    "notes": []
+  },
+  "items": {
+    "destroyed": {
+      "value": 1496,
+      "label": "Valid cells destroyed",
+      "display": "1,496",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.valid_cells_destroyed_cohort",
+      "key": "S3:blanket_recode.valid_cells_destroyed_cohort",
+      "csv": {
+        "slide_id": "V2",
+        "label": "valid cells destroyed by blanket recode",
+        "csv_value": "1,496"
+      }
+    },
+    "genuine": {
+      "value": 57,
+      "label": "Genuine codes caught",
+      "display": "57",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_cells",
+      "key": "S3:blanket_recode.questionnaire_only_cells",
+      "csv": null
+    },
+    "harm_gain": {
+      "value": 26.24561403508772,
+      "label": "Harm per genuine code caught",
+      "display": "26×",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "×",
+      "kind": "derived",
+      "source": "derived: valid_cells_destroyed_cohort / questionnaire_only_cells (notebook §3.4: 'about 26-fold')",
+      "key": null,
+      "csv": null,
+      "note": "1,496 / 57 = 26.2"
+    },
+    "a1c_lost": {
+      "value": 29,
+      "label": "HbA1c positives erased",
+      "display": "29",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.a1c_positives_lost",
+      "key": "S3:blanket_recode.a1c_positives_lost",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c positives lost",
+        "csv_value": "29"
+      }
+    },
+    "a1c_pos": {
+      "value": 721,
+      "label": "HbA1c positives",
+      "display": "721",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.a1c_positives",
+      "key": "S3:blanket_recode.a1c_positives",
+      "csv": {
+        "slide_id": "V2",
+        "label": "HbA1c positives",
+        "csv_value": "721"
+      }
+    },
+    "a1c_lost_share": {
+      "value": 0.04022191400832178,
+      "label": "Share of HbA1c positives erased",
+      "display": "4.0 %",
+      "fmt": ".1f",
+      "scale": 100.0,
+      "unit": " %",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.a1c_lost_share",
+      "key": "S3:blanket_recode.a1c_lost_share",
+      "csv": null
+    },
+    "flips": {
+      "value": 6,
+      "label": "Flipped to negative (combined label)",
+      "display": "6",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.l_comb_flips",
+      "key": "S3:blanket_recode.l_comb_flips",
+      "csv": {
+        "slide_id": "V2",
+        "label": "L_comb label flips",
+        "csv_value": "6"
+      }
+    },
+    "lcomb_pos": {
+      "value": 971,
+      "label": "Combined-label positives",
+      "display": "971",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.l_comb_positives",
+      "key": "S3:blanket_recode.l_comb_positives",
+      "csv": null
+    },
+    "a1c_lost_7_0": {
+      "value": 28,
+      "label": "HbA1c values of exactly 7.0 % erased",
+      "display": "28",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S3/blanket_damage.csv :: var=LBXGH → values_hit '7:28, 9:1'",
+      "key": null,
+      "csv": null
+    },
+    "a1c_lost_9_0": {
+      "value": 1,
+      "label": "HbA1c values of exactly 9.0 % erased",
+      "display": "1",
+      "fmt": ".0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored-csv",
+      "source": "results/S3/blanket_damage.csv :: var=LBXGH → values_hit '7:28, 9:1'",
+      "key": null,
+      "csv": null
+    },
+    "var_BPXODI1": {
+      "value": 237,
+      "label": "Diastolic BP (reading 1)",
+      "display": "237",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXODI1",
+      "key": "S3:blanket_recode.per_variable.BPXODI1",
+      "csv": null
+    },
+    "var_BPXODI2": {
+      "value": 224,
+      "label": "Diastolic BP (reading 2)",
+      "display": "224",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXODI2",
+      "key": "S3:blanket_recode.per_variable.BPXODI2",
+      "csv": null
+    },
+    "var_BPXODI3": {
+      "value": 200,
+      "label": "Diastolic BP (reading 3)",
+      "display": "200",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXODI3",
+      "key": "S3:blanket_recode.per_variable.BPXODI3",
+      "csv": null
+    },
+    "var_BPXOPLS1": {
+      "value": 157,
+      "label": "Pulse (reading 1)",
+      "display": "157",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOPLS1",
+      "key": "S3:blanket_recode.per_variable.BPXOPLS1",
+      "csv": null
+    },
+    "var_BPXOPLS3": {
+      "value": 155,
+      "label": "Pulse (reading 3)",
+      "display": "155",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOPLS3",
+      "key": "S3:blanket_recode.per_variable.BPXOPLS3",
+      "csv": null
+    },
+    "var_BPXOPLS2": {
+      "value": 148,
+      "label": "Pulse (reading 2)",
+      "display": "148",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOPLS2",
+      "key": "S3:blanket_recode.per_variable.BPXOPLS2",
+      "csv": null
+    },
+    "var_RIDAGEYR": {
+      "value": 65,
+      "label": "Age",
+      "display": "65",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.RIDAGEYR",
+      "key": "S3:blanket_recode.per_variable.RIDAGEYR",
+      "csv": null
+    },
+    "var_BPXOSY1": {
+      "value": 57,
+      "label": "Systolic BP (reading 1)",
+      "display": "57",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOSY1",
+      "key": "S3:blanket_recode.per_variable.BPXOSY1",
+      "csv": null
+    },
+    "var_BPXOSY3": {
+      "value": 56,
+      "label": "Systolic BP (reading 3)",
+      "display": "56",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOSY3",
+      "key": "S3:blanket_recode.per_variable.BPXOSY3",
+      "csv": null
+    },
+    "var_BPXOSY2": {
+      "value": 54,
+      "label": "Systolic BP (reading 2)",
+      "display": "54",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BPXOSY2",
+      "key": "S3:blanket_recode.per_variable.BPXOSY2",
+      "csv": null
+    },
+    "var_BMXWAIST": {
+      "value": 35,
+      "label": "Waist circumference",
+      "display": "35",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXWAIST",
+      "key": "S3:blanket_recode.per_variable.BMXWAIST",
+      "csv": null
+    },
+    "var_LBDHDD": {
+      "value": 32,
+      "label": "HDL cholesterol",
+      "display": "32",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.LBDHDD",
+      "key": "S3:blanket_recode.per_variable.LBDHDD",
+      "csv": null
+    },
+    "var_LBXGH": {
+      "value": 29,
+      "label": "HbA1c",
+      "display": "29",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.LBXGH",
+      "key": "S3:blanket_recode.per_variable.LBXGH",
+      "csv": null
+    },
+    "var_BMXHIP": {
+      "value": 29,
+      "label": "Hip circumference",
+      "display": "29",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXHIP",
+      "key": "S3:blanket_recode.per_variable.BMXHIP",
+      "csv": null
+    },
+    "var_BMXWT": {
+      "value": 13,
+      "label": "Weight",
+      "display": "13",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXWT",
+      "key": "S3:blanket_recode.per_variable.BMXWT",
+      "csv": null
+    },
+    "var_LBXTC": {
+      "value": 5,
+      "label": "Total cholesterol",
+      "display": "5",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.LBXTC",
+      "key": "S3:blanket_recode.per_variable.LBXTC",
+      "csv": null
+    },
+    "var_BMXHT": {
+      "value": 0,
+      "label": "Height",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXHT",
+      "key": "S3:blanket_recode.per_variable.BMXHT",
+      "csv": null
+    },
+    "var_INDFMPIR": {
+      "value": 0,
+      "label": "Income-to-poverty ratio",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.INDFMPIR",
+      "key": "S3:blanket_recode.per_variable.INDFMPIR",
+      "csv": null
+    },
+    "var_BMXBMI": {
+      "value": 0,
+      "label": "BMI",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXBMI",
+      "key": "S3:blanket_recode.per_variable.BMXBMI",
+      "csv": null
+    },
+    "var_BMXARMC": {
+      "value": 0,
+      "label": "Arm circumference",
+      "display": "0",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.per_variable.BMXARMC",
+      "key": "S3:blanket_recode.per_variable.BMXARMC",
+      "csv": null
+    },
+    "family_diastolic_bp": {
+      "value": 661,
+      "label": "Diastolic BP (3 readings)",
+      "display": "661",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: sum of per_variable damage over the three readings",
+      "key": null,
+      "csv": null
+    },
+    "family_pulse": {
+      "value": 460,
+      "label": "Pulse (3 readings)",
+      "display": "460",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: sum of per_variable damage over the three readings",
+      "key": null,
+      "csv": null
+    },
+    "family_systolic_bp": {
+      "value": 167,
+      "label": "Systolic BP (3 readings)",
+      "display": "167",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "derived",
+      "source": "derived: sum of per_variable damage over the three readings",
+      "key": null,
+      "csv": null
+    },
+    "code_HIQ011": {
+      "value": 9,
+      "label": "Health insurance",
+      "display": "9",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.HIQ011",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.HIQ011",
+      "csv": null
+    },
+    "code_HUQ030": {
+      "value": 1,
+      "label": "Usual place of care",
+      "display": "1",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.HUQ030",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.HUQ030",
+      "csv": null
+    },
+    "code_BPQ020": {
+      "value": 4,
+      "label": "Told high blood pressure",
+      "display": "4",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.BPQ020",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.BPQ020",
+      "csv": null
+    },
+    "code_BPQ080": {
+      "value": 34,
+      "label": "Told high cholesterol",
+      "display": "34",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.BPQ080",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.BPQ080",
+      "csv": null
+    },
+    "code_SMQ020": {
+      "value": 7,
+      "label": "Smoked 100+ cigarettes",
+      "display": "7",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.SMQ020",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.SMQ020",
+      "csv": null
+    },
+    "code_DMDEDUC2": {
+      "value": 2,
+      "label": "Education",
+      "display": "2",
+      "fmt": ",.0f",
+      "scale": 1.0,
+      "unit": "",
+      "kind": "stored",
+      "source": "results/metrics_S3.json :: blanket_recode.questionnaire_only_per_item.DMDEDUC2",
+      "key": "S3:blanket_recode.questionnaire_only_per_item.DMDEDUC2",
+      "csv": null
+    }
+  },
+  "groups": {
+    "per_variable": [
+      {
+        "item": "var_BPXODI1",
+        "var": "BPXODI1",
+        "name": "Diastolic BP (reading 1)",
+        "values_hit": "77:214, 99:23",
+        "zero": false,
+        "spec_note": "Oscillometric DBP reading 1; averaged into `bp_dia_mean`; 77 mmHg is valid"
+      },
+      {
+        "item": "var_BPXODI2",
+        "var": "BPXODI2",
+        "name": "Diastolic BP (reading 2)",
+        "values_hit": "77:209, 99:15",
+        "zero": false,
+        "spec_note": "Oscillometric DBP reading 2; averaged into `bp_dia_mean`; 77 mmHg is valid"
+      },
+      {
+        "item": "var_BPXODI3",
+        "var": "BPXODI3",
+        "name": "Diastolic BP (reading 3)",
+        "values_hit": "77:182, 99:18",
+        "zero": false,
+        "spec_note": "Oscillometric DBP reading 3; averaged into `bp_dia_mean`; 77 mmHg is valid"
+      },
+      {
+        "item": "var_BPXOPLS1",
+        "var": "BPXOPLS1",
+        "name": "Pulse (reading 1)",
+        "values_hit": "77:139, 99:18",
+        "zero": false,
+        "spec_note": "Pulse reading 1"
+      },
+      {
+        "item": "var_BPXOPLS3",
+        "var": "BPXOPLS3",
+        "name": "Pulse (reading 3)",
+        "values_hit": "77:138, 99:17",
+        "zero": false,
+        "spec_note": "Pulse reading 3"
+      },
+      {
+        "item": "var_BPXOPLS2",
+        "var": "BPXOPLS2",
+        "name": "Pulse (reading 2)",
+        "values_hit": "77:127, 99:21",
+        "zero": false,
+        "spec_note": "Pulse reading 2"
+      },
+      {
+        "item": "var_RIDAGEYR",
+        "var": "RIDAGEYR",
+        "name": "Age",
+        "values_hit": "77:65",
+        "zero": false,
+        "spec_note": "Disclosure control: top-coded at 80 (`age_top`); ages 77 would be wiped by a blanket 77 recode"
+      },
+      {
+        "item": "var_BPXOSY1",
+        "var": "BPXOSY1",
+        "name": "Systolic BP (reading 1)",
+        "values_hit": "77:2, 99:55",
+        "zero": false,
+        "spec_note": "Oscillometric SBP reading 1; averaged into `bp_sys_mean`"
+      },
+      {
+        "item": "var_BPXOSY3",
+        "var": "BPXOSY3",
+        "name": "Systolic BP (reading 3)",
+        "values_hit": "77:1, 99:55",
+        "zero": false,
+        "spec_note": "Oscillometric SBP reading 3; averaged into `bp_sys_mean`"
+      },
+      {
+        "item": "var_BPXOSY2",
+        "var": "BPXOSY2",
+        "name": "Systolic BP (reading 2)",
+        "values_hit": "77:1, 99:53",
+        "zero": false,
+        "spec_note": "Oscillometric SBP reading 2; averaged into `bp_sys_mean`"
+      },
+      {
+        "item": "var_BMXWAIST",
+        "var": "BMXWAIST",
+        "name": "Waist circumference",
+        "values_hit": "77:11, 99:24",
+        "zero": false,
+        "spec_note": "WHtR = BMXWAIST / BMXHT (`whtr`), replaces waist in the P14 arm"
+      },
+      {
+        "item": "var_LBDHDD",
+        "var": "LBDHDD",
+        "name": "HDL cholesterol",
+        "values_hit": "77:27, 99:5",
+        "zero": false,
+        "spec_note": "Direct HDL (T2)"
+      },
+      {
+        "item": "var_LBXGH",
+        "var": "LBXGH",
+        "name": "HbA1c",
+        "values_hit": "7:28, 9:1",
+        "zero": false,
+        "spec_note": "Continuous lab measure: codebook lists only Range of Values / Missing, so 7.0 and 9.0 are valid HbA1c values (29 in cohort would be wiped by a blanket recode); special codes: 0=No Lab Result"
+      },
+      {
+        "item": "var_BMXHIP",
+        "var": "BMXHIP",
+        "name": "Hip circumference",
+        "values_hit": "99:29",
+        "zero": false,
+        "spec_note": "Redundant with waist/BMI (VIF 7.7)"
+      },
+      {
+        "item": "var_BMXWT",
+        "var": "BMXWT",
+        "name": "Weight",
+        "values_hit": "77:8, 99:5",
+        "zero": false,
+        "spec_note": "Structural redundancy with BMI/height (VIF ~96); pruning decided in S4/S6"
+      },
+      {
+        "item": "var_LBXTC",
+        "var": "LBXTC",
+        "name": "Total cholesterol",
+        "values_hit": "99:5",
+        "zero": false,
+        "spec_note": "Total cholesterol (T2); statin reverse causation caveat"
+      },
+      {
+        "item": "var_BMXHT",
+        "var": "BMXHT",
+        "name": "Height",
+        "values_hit": null,
+        "zero": true,
+        "spec_note": "Needed for WHtR and BMI recomputation"
+      },
+      {
+        "item": "var_INDFMPIR",
+        "var": "INDFMPIR",
+        "name": "Income-to-poverty ratio",
+        "values_hit": null,
+        "zero": true,
+        "spec_note": "Disclosure control: top-coded at 5 (`pir_top`); missing 12.8% in cohort (`pir_miss`); 100 zeros stored as 5.4e-79 artefact"
+      },
+      {
+        "item": "var_BMXBMI",
+        "var": "BMXBMI",
+        "name": "BMI",
+        "values_hit": null,
+        "zero": true,
+        "spec_note": "ADA-lite BMI item (measured)"
+      },
+      {
+        "item": "var_BMXARMC",
+        "var": "BMXARMC",
+        "name": "Arm circumference",
+        "values_hit": null,
+        "zero": true,
+        "spec_note": "Redundant with BMI (VIF 6.6)"
+      }
+    ],
+    "families": [
+      "family_diastolic_bp",
+      "family_pulse",
+      "family_systolic_bp"
+    ],
+    "genuine_codes_per_item": [
+      {
+        "item": "code_HIQ011",
+        "var": "HIQ011",
+        "name": "Health insurance"
+      },
+      {
+        "item": "code_HUQ030",
+        "var": "HUQ030",
+        "name": "Usual place of care"
+      },
+      {
+        "item": "code_BPQ020",
+        "var": "BPQ020",
+        "name": "Told high blood pressure"
+      },
+      {
+        "item": "code_BPQ080",
+        "var": "BPQ080",
+        "name": "Told high cholesterol"
+      },
+      {
+        "item": "code_SMQ020",
+        "var": "SMQ020",
+        "name": "Smoked 100+ cigarettes"
+      },
+      {
+        "item": "code_DMDEDUC2",
+        "var": "DMDEDUC2",
+        "name": "Education"
+      }
+    ],
+    "rule": "Rule: 7, 9, 77, 99 → missing, in every column (illustrative cell values 77 and 99 on the slide are examples)",
+    "note_562": "S3:sentinel_audit.cells_recoded_cohort = 562 counts the genuine codes recoded by the variable-by-variable rule over all 25 sentinel variables; the video's 57 is the narrower 'questionnaire_only_cells' (items the blanket rule catches correctly). Do not mix the two."
+  }
+}
