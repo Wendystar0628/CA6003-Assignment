@@ -18,13 +18,13 @@ Notation: `CAM=C_block_take2.mp4` is the member's continuous take (§9.6), and `
 The scene mp4 has a flat white slot with a 1 px `#E3E7EC` hairline. Scale the camera, place it on the slot, then redraw the hairline over the clip.
 
 ```bash
-ffmpeg -i video/out/leak_gate.mp4 -ss $OFF -t 34 -i $CAM -filter_complex "\
+ffmpeg -i video/out/s18_leak_gate.mp4 -ss $OFF -t 34 -i $CAM -filter_complex "\
   [1:v]fps=30,scale=480:270:force_original_aspect_ratio=increase,crop=480:270,setsar=1[cam];\
   [0:v][cam]overlay=x=1344:y=168:eof_action=pass,\
   drawbox=x=1344:y=168:w=480:h=270:color=0xE3E7EC:t=1,format=yuv420p[v]" \
   -map "[v]" -map 1:a -c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p \
   -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
-  -c:a aac -b:a 192k -ar 48000 -shortest video/out/comp_18_leak_gate.mp4
+  -c:a aac -b:a 192k -ar 48000 -shortest video/out/comp_s18_leak_gate.mp4
 ```
 
 For layout X, use `overlay=x=1344:y=690` and `drawbox=x=1344:y=690:...`.
@@ -61,7 +61,7 @@ The composited clips share codec, size, frame rate and audio settings, so the co
 file 'comp_15_simpson.mp4'
 file 'comp_16_label.mp4'
 file 'comp_17_screening.mp4'
-file 'comp_18_leak_gate.mp4'
+file 'comp_s18_leak_gate.mp4'
 ...
 ffmpeg -f concat -safe 0 -i video/out/list.txt -c copy video/out/block_C.mp4
 ```

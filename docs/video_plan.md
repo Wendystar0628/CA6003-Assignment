@@ -889,7 +889,7 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 
 **采用 HTML/SVG 场景 → Playwright 逐帧截图 → ffmpeg。** 它直接复用项目页的令牌和字体，动画是时间 t 的纯函数（逐帧确定、可重复），并可直接读 CSV/JSON。其他工具的分工：OBS 录人像（也是回退方案的现场合成工具）；DaVinci Resolve 免费版做收尾；matplotlib 只作应急静帧。Manim 安装重、风格脱节，CapCut 可能带水印，都不用。
 
-环境：本机有 ffmpeg 与 Node 24；`.venv` 没有 Playwright，可用系统 Edge（`channel: 'msedge'`）。
+环境：本机有 ffmpeg 与 Node 24；渲染用 `playwright-core`（只装在 `video/render/`），驱动系统已安装的 Chrome，不下载浏览器。实现见 `video/`，用法见 8.5 节。
 
 ### 8.2 规格
 
@@ -905,10 +905,10 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 
 1. **锁定脚本。** 以第 4 节为准，成员只改读法，不改数字和措辞边界。
 2. **补登数字。** 12.4 节中的值进入 CSV，并通过 §10.11 的断言（见 14 节第 3 项）。
-3. **样板。** 先做视觉 4（Leak gate），渲染 10 s 验证整条管线：令牌（`tokens.css`）、动作（`motion.js`）、逐帧截图、ffmpeg 合成。
+3. **样板。** 已完成：`video/scenes/s18_leak_gate.html`（视觉 4）验证了整条管线：令牌（`video/kit/tokens.css`）、动作与图形组件（`video/kit/kit.js`）、逐帧截图、ffmpeg 合成。
 4. **录制。** 每人一次连续录完自己的段落（9.6 节），文件名如 `B_block_take2.mp4`；选用最好的一条完整 take，不在段内拼接。
 5. **标 cue。** 在每条连续录像的音频上标出每个构建步骤的时刻，写成 `cues.json`（场景、步号、秒数）。先录像再做画面，因为每人语速不同。
-6. **逐帧渲染。** 每个场景一个 HTML 页，暴露 `window.__seek(t)`；Playwright 按帧调用后截图，经管道送入 ffmpeg。分四个进程并行约 15 分钟。
+6. **逐帧渲染。** 每个场景一个 HTML 页，暴露 `window.SCENE.seek(t)`；渲染器按帧调用后截图，经管道送入 ffmpeg。单个场景约等于其时长；28 个场景用 `render_all.mjs --jobs 3` 约 4–5 分钟。
 7. **合成。** 右栏的固定元素（徽章、lower-third、陷阱条、署名与来源标签）与图区一起渲染，摄像头区域留空；ffmpeg `overlay` 按剪辑清单（EDL JSON，含 F/R/X/S 版式和时间码）把每人的连续录像按原时间贴入。四段之间只有 3 个切点。
 8. **收尾。** 在 Resolve 里检查时序与响度，导出 SRT，上传。
 
@@ -924,6 +924,115 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 | 10/16 | 对照粗剪排练；修正同步问题和超时 |
 | 10/17 | 定稿、字幕、上传、无痕窗口核验；填写 team.json |
 | 10/18 | 缓冲，提交 |
+
+
+### 8.5 已制作的动画场景（`video/`）
+
+28 个场景的画面已按第 4、6、7 节制作完毕，集中放在仓库的 `video/` 文件夹。每个场景是一个 HTML/SVG 页面，画面是时间 t 的纯函数：同一时刻永远画出同一帧，所以可以逐帧渲染，也可以在浏览器里拖到任意时刻检查。
+
+#### 文件夹结构
+
+| 路径 | 内容 |
+|---|---|
+| `video/kit/tokens.css` | 第 6 节的颜色角色、字体、1920×1080 网格、四层纵深、固定区域（标题区、图区、右栏摄像头预留位、底栏图例、出处标签、陷阱条） |
+| `video/kit/kit.js` | 时间轴与缓动、M1–M12 动效函数、坐标轴 / 柱 / 置信区间 / SESOI 带 / 判定形状等图形组件、章卡与 lower-third、自动检查（`window.Kit`） |
+| `video/data/build_data.py` | 只读已保存的结果，生成每个场景的数据 JSON（含屏幕标签、显示格式、出处）；并与 `numbers_on_slides.csv` 断言一致 |
+| `video/data/build_geometry_s10_11_15.py` | 场景 10、11、15 需要的直方图分箱与辛普森翻转标记（只含汇总值），与已存结果断言一致 |
+| `video/data/*.json`、`SOURCES.md` | 场景数据与逐值出处；`SOURCES.md` 末尾列出尚未登记进 `numbers_on_slides.csv` 的值 |
+| `video/scenes/sNN_*.html` | 28 个场景，文件编号 = 第 4 节场景编号；`_template.html` 是新场景模板；`_phases.js`、`_d_common.js`、`_label_venn.js` 是场景共用的小工具 |
+| `video/render/` | `render.mjs`（单个场景）、`render_all.mjs`（全部）、`snap.mjs`（指定时刻截图）、`serve.mjs`（本地预览）、`compose_example.md`（合成命令） |
+| `video/out/` | 渲染结果；git 只保留每个场景的最后一帧 `sNN_*_last.png`（用于审阅），MP4 只存本地 |
+| `video/README.md` | 写新场景的规则与完整 API |
+
+#### 场景清单
+
+| 场景 | 文件 | 讲者 | 时长 | 版式 | 数据 |
+|---|---|---|---|---|---|
+| 01 | `s01_hook_role_cards` | A | 35 s | S→R | leak_gate |
+| 02 | `s02_question_traps` | A | 20 s | R | — |
+| 03 | `s03_cohort_funnel` | A | 22 s | R | funnel |
+| 04 | `s04_dua_minimisation` | A | 18 s | R | minimisation |
+| 05 | `s05_nchs_replication` | A | 21 s | R | db516 |
+| 06 | `s06_age_confounding` | A（C 的分析） | 22 s | R | age_std |
+| 07 | `s07_a_surprise` | A | 12 s | S | hypotheses |
+| 08 | `s08_struck_7_0` | B | 28 s | F→R→X | blanket_recode |
+| 09 | `s09_erased_positives` | B | 21 s | R | blanket_recode |
+| 10 | `s10_outliers_kept` | B | 22 s | R | iqr_fence + hist_geometry |
+| 11 | `s11_redundancy_skew` | B（C 的发现） | 27 s | R | vif_skew + hist_geometry |
+| 12 | `s12_fourteen_steps` | B | 24 s | R | arms |
+| 13 | `s13_three_versions` | B | 18 s | R | arms |
+| 14 | `s14_b_reflection` | B | 13 s | S | blanket_recode |
+| 15 | `s15_simpson_dag` | C | 29 s | F→R | simpson + hist_geometry |
+| 16 | `s16_label_trap` | C | 30 s | R | label_split |
+| 17 | `s17_undiagnosed_screening` | C | 32 s | R | label_split + undiagnosed |
+| 18 | `s18_leak_gate` | C（D 的实验） | 34 s | R | leak_gate |
+| 19 | `s19_tree_and_50` | C | 25 s | R | tree |
+| 20 | `s20_100_diabetics` | C | 14 s | S | tpr_100 |
+| 21 | `s21_prep_band` | D | 33 s | F→R | prep_band |
+| 22 | `s22_brier` | D | 22 s | R | brier |
+| 23 | `s23_recognition` | D | 23 s | R | recognition |
+| 24 | `s24_care_flip` | D | 26 s | R | care_flip |
+| 25 | `s25_holdout` | D（B 的工作） | 13 s | R | holdout |
+| 26 | `s26_three_answers` | D | 21 s | R | leak_gate 等 |
+| 27 | `s27_leak_vs_prep` | D | 7 s | S | leak_gate + prep_band |
+| 28 | `s28_close` | D | 29 s | R→F→片尾 | recognition 等 |
+| 合计 | | | 10:41 | | |
+
+时长与第 3、4 节一致（A 2:30、B 2:33、C 2:44、D 2:54）。
+
+#### 一次性准备
+
+```bash
+cd video/render && npm install        # 只装 playwright-core，使用本机 Chrome
+```
+
+需要本机 Chrome（`C:/Program Files/Google/Chrome/Application/chrome.exe`，或设 `CHROME_PATH`）和 PATH 上的 ffmpeg。字体从 Google Fonts 加载，渲染时需联网；离线会退回备用字体。
+
+#### 预览与检查
+
+```bash
+node video/render/serve.mjs     # 浏览器打开 http://127.0.0.1:8130/scenes/s18_leak_gate.html
+```
+
+- URL 参数：`?play=1` 自动播放；`?t=12.3` 停在 12.3 s；`?static=1` 显示最后一帧。
+- 键盘：空格播放 / 暂停；← / → 跳 1 s（加 Shift 跳 1 帧）；**N / P 前后一个构建步骤**。N/P 步进模式就是 9.6 节回退方案（一次连续现场录制）时讲者手动翻步的方式。
+- 审阅时先看 `video/out/sNN_*_last.png`：最后一帧必须单独读得懂（第 6 节规则）。
+
+#### 渲染
+
+```bash
+node video/render/render.mjs video/scenes/s18_leak_gate.html     # → video/out/s18_leak_gate.mp4 + _last.png
+node video/render/render_all.mjs --jobs 3                        # 全部 28 个场景
+node video/render/render.mjs video/scenes/s08_struck_7_0.html --alpha   # 摄像头位透明 → _alpha.mov（F、S 版式用）
+node video/render/snap.mjs video/scenes/s16_label_trap.html 5 12 20     # 指定时刻的静帧
+```
+
+渲染结束会打印自动检查：文字小于 28 px、文字重叠、超出面板、压到摄像头位、标题撞到陷阱条。有任何一条都要先修。
+
+#### 数据更新
+
+若结果文件或 `numbers_on_slides.csv` 有变动：先运行 `.venv/Scripts/python video/data/build_data.py`（及 `build_geometry_s10_11_15.py`），它们会重新生成 JSON 并做一致性断言；再重新渲染受影响的场景。场景里不手敲任何数字，所以不需要改场景代码。
+
+#### 从录像到成片
+
+1. **录制**：每人一条连续 take（9.6 节），例如 `C_block_take2.mp4`。
+2. **对齐 cue**：场景里的 `cues` 目前按约 134 wpm 估算。听自己那条 take，记下每个构建步骤对应的秒数，改写对应场景的 `cues`，然后用 `snap.mjs` 或预览检查，最后重渲染。场景时长 `duration` 也按实际录音微调，四段总长仍须 ≤ 11:00。
+3. **合成**（命令见 `video/render/compose_example.md`）：
+   - R、X 版式：方法 A，直接把人像缩放后贴进摄像头位（R：x=1344, y=168, 480×270；X：x=1344, y=690）；
+   - F、S 版式，或场景中途换版式（01、08、15、21、28）：方法 B，用 `--alpha` 渲染的透明场景叠在人像上，lower-third 会压在人像上方；
+   - 每个合成片段用 `-ss <该场景在 take 中的起点>` 截取同一条录像的对应时间，所以每人的段落仍是一条连续录像，全片只有 A→B、B→C、C→D 三个切点。
+4. **拼接**：按场景顺序用 ffmpeg concat 合并（`compose_example.md` 末尾），再到 Resolve 检查响度、导出 SRT 字幕。
+
+#### 已知待办
+
+| 项 | 说明 |
+|---|---|
+| cue 重新对时 | 录像完成后逐场景改 `cues`（见上） |
+| 数字补登 | `video/data/SOURCES.md` 末尾列出的值登记进 `numbers_on_slides.csv`（第 12 节） |
+| S 版式底栏图例 | 场景 14、20、27 在场景内缩短了图例文字；可在 kit 里统一修正 |
+| 多数据文件 | 部分场景自行加载第二个 JSON；可在 kit 增加多文件选项 |
+| 换版式工具 | `_phases.js`（01、08）与 `_d_common.js` 的 `cameraPhase`（21、28）功能重叠，可合并 |
+| 计划内的调整 | 场景 22 用平均预测风险对比实际阳性率 17.0 %（分位校准数据未保存）；场景 19 只示意“86 % 空白填成 50”（实测年龄分布未保存）；场景 11 显示 Yeo-Johnson 变换（项目实际的 P08），与 notebook 中对数变换的图不同 |
 
 ---
 
