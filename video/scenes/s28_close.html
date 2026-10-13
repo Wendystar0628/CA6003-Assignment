@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 28 · Team recap, limits, GenAI and conclusion</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 28 · Team recap, limits, GenAI line and the end card (signature visual 12 "Role cards & chain", recap) · docs/video_plan.md §4 scene 28, §7 visual 12.
+   Speaker D. Layout R for 21 s (role cards with one achievement each, the contribution chain, limits, GenAI line), then layout F for 8 s
+   (D on camera; title band "The score is not the finding"), and the end card over the last 2 s, overlapping "Thank you".
+   No new numbers except 152 (video/data/recognition.json). The achievement lines quote values from blanket_recode.json (7.0) and arms.json (14). */
+
+const F_START = 21, END_CARD = 27;
+
+// Cues in scene seconds, estimated at ~141 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  cards: 0.3,                 // "Four roles, one audit:"                       four role cards come back, each with its achievement
+  chain: 1.0,                 //                                                the contribution chain and A's frame
+  A: 1.9, B: 3.2, C: 4.3, D: 5.4, Dend: 6.3,     // "A's governance, B's preparation, C's labels and bias, my models."   structure line on the member named
+  dissolve: 6.6,              // "Limits:"                                      cards and chain dissolve out (M12)
+  lim1: 7.4, lim2: 8.7, lim3: 9.6, limEnd: 11.2,  // "one survey cycle, low response, only 152 screening-group positives;"   M3 tags in order
+  title: 10.7,                // "this is a data audit, not a screening tool."  title settles on the screen text
+  genai: 14.8,                // "Generative AI drafted much of our code and text;"   the GenAI card
+  fband: 21.4,                // "The score is not the finding;"               F: title band
+};
+
+Kit.createScene({
+  number: 28,
+  name: 'close',
+  duration: 29,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Four roles, one audit' }, { at: CUES.title, text: 'Audit, not a screening tool' }],
+  source: '§0 · team_roles',
+  data: '../data/recognition.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    const arms = DC.loadSync('../data/arms.json'), blanket = DC.loadSync('../data/blanket_recode.json');
+    const seven = (K.item(blanket, 'a1c_lost_7_0').label.match(/\d+\.\d/) || [])[0];           // "7.0" from "HbA1c values of exactly 7.0 % erased"
+    if (!seven) throw new Error('blanket_recode.a1c_lost_7_0: no HbA1c value in the label');
+    S.cam = DC.cameraPhase(ctx);
+    const g = K.svg('g', {}, fig);
+
+    // ---------------- role cards (ink outline, white paper) with one achievement each
+    const roles = [
+      { k: 'A', role: ['Governance &', 'integration'], win: ['rules ·', 'replication'] },
+      { k: 'B', role: ['Data quality &', 'preparation'], win: ['the deleted ' + seven + ' ·', K.disp(arms, 'n_steps') + ' steps'] },
+      { k: 'C', role: ['Exploration,', 'labels & bias'], win: ['the label ·', 'fairness'] },
+      { k: 'D', role: ['Modelling &', 'conclusions'], win: ['the leak · the', 'traps answered'] },
+    ];
+    // sanity: roles match the kit's member table
+    roles.forEach((r) => { if (!K.SPEAKERS[r.k]) throw new Error('unknown member ' + r.k); });
+    const W = 262, GAP = 24, X0 = 52, Y0 = 96, H = 330;
+    S.cardsG = K.svg('g', {}, g);
+    S.cards = roles.map((r, i) => {
+      const x = X0 + i * (W + GAP);
+      r.g = K.svg('g', {}, S.cardsG);
+      K.svg('rect', { x, y: Y0, width: W, height: H, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, r.g);
+      K.svg('circle', { cx: x + 52, cy: Y0 + 56, r: 30, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, r.g);
+      K.text(r.g, { x: x + 52, y: Y0 + 67, text: r.k, anchor: 'middle', cls: 'kit-t-note', weight: 600 });
+      r.role.forEach((ln, j) => K.text(r.g, { x: x + 24, y: Y0 + 134 + j * 38, text: ln, cls: 'kit-t-min', weight: 600 }));
+      K.svg('line', { x1: x + 24, x2: x + W - 24, y1: Y0 + 196, y2: Y0 + 196, stroke: K.C.line, 'stroke-width': 2 }, r.g);
+      r.win.forEach((ln, j) => K.text(r.g, { x: x + 24, y: Y0 + 244 + j * 36, text: ln, cls: 'kit-t-min' }));
+      r.line = K.svg('rect', { x: x - 3, y: Y0, width: 6, height: H, fill: K.C.structure }, r.g);   // structure colour: the member being named
+      return r;
+    });
+
+    // ---------------- contribution chain C finds -> B implements -> D evaluates -> C interprets, inside A's frame
+    S.chain = K.svg('g', {}, g);
+    const FY = 470, FH = 190, cy = FY + 118;
+    K.svg('rect', { x: X0, y: FY, width: 4 * W + 3 * GAP, height: FH, rx: 8, fill: 'none', stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '10 7' }, S.chain);
+    K.text(S.chain, { x: X0 + 24, y: FY + 48, text: 'A · integrates & checks every number', cls: 'kit-t-min', weight: 600 });
+    const steps = [['C', 'finds'], ['B', 'implements'], ['D', 'evaluates'], ['C', 'interprets']];
+    let x = X0 + 40;
+    S.arrows = [];
+    steps.forEach(([m, verb], i) => {
+      K.svg('circle', { cx: x + 22, cy, r: 22, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, S.chain);
+      K.text(S.chain, { x: x + 22, y: cy + 10, text: m, anchor: 'middle', cls: 'kit-t-min', weight: 600 });
+      const tx = K.text(S.chain, { x: x + 56, y: cy + 10, text: verb, cls: 'kit-t-note' });
+      x += 56 + K.textWidth(tx);
+      if (i < steps.length - 1) {
+        const a = K.svg('g', {}, S.chain);
+        K.svg('line', { x1: x + 14, y1: cy, x2: x + 62, y2: cy, stroke: K.C.ink, 'stroke-width': 3 }, a);
+        K.svg('path', { d: `M${x + 66} ${cy} L${x + 52} ${cy - 8} L${x + 52} ${cy + 8} Z`, fill: K.C.ink }, a);
+        S.arrows.push(a);
+        x += 80;
+      }
+    });
+
+    // ---------------- limitations: three tags (blue hollow square on the Screening-group one)
+    const pos = K.item(data, 'pos_screen');
+    S.tags = [
+      { text: 'One survey cycle' }, { text: 'Low response' },
+      { text: pos.display + ' Screening-group positives', screen: true },
+    ].map((tg, i) => {
+      const y = 112 + i * 100;
+      tg.g = K.svg('g', {}, g);
+      tg.w = 560; tg.y = y; tg.h = 68;
+      K.svg('rect', { x: 52, y, width: tg.w, height: tg.h, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, tg.g);
+      let tx = 80;
+      if (tg.screen) { K.svg('rect', { x: 81.5, y: y + 22.5, width: 21, height: 21, fill: '#fff', stroke: K.C.screen, 'stroke-width': 3 }, tg.g); tx = 118; }
+      K.text(tg.g, { x: tx, y: y + 45, text: tg.text, cls: 'kit-t-min' });
+      tg.ring = K.focusRing(g, { x: 52, y, w: tg.w, h: tg.h });
+      return tg;
+    });
+
+    // ---------------- GenAI declaration card
+    S.genai = K.svg('g', {}, g);
+    K.svg('rect', { x: 660, y: 112, width: 512, height: 304, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, S.genai);
+    K.text(S.genai, { x: 688, y: 166, text: 'GenAI use', cls: 'kit-t-note', weight: 600 });
+    ['drafted code & text', 'reviewed by us', 'no LLM in the pipeline', 'every number recomputed'].forEach((ln, i) =>
+      K.text(S.genai, { x: 688, y: 226 + i * 50, text: '· ' + ln, cls: 'kit-t-min' }));
+
+    // ---------------- layout F band + end card (DOM overlays above everything except the chapter card)
+    const stage = ctx.ui.stage;
+    S.band = K.h('div', { text: 'The score is not the finding', style: {
+      position: 'absolute', left: '96px', top: '872px', padding: '14px 32px', background: '#fff', border: '1px solid var(--paper-edge)',
+      borderRadius: '8px', fontFamily: 'var(--font-serif)', fontWeight: '600', fontSize: '72px', lineHeight: '1', whiteSpace: 'nowrap', color: 'var(--ink)', zIndex: 12 } });
+    stage.append(S.band);
+    const bg = stage.querySelector('.kit-stagebg');
+    S.end = bg.cloneNode(true);             // stage colour + the same faint questionnaire grid as the opening card
+    S.end.style.clipPath = 'none'; S.end.style.zIndex = 40;
+    const endTitle = K.h('div', { text: 'Who gets labelled diabetic?', style: {
+      position: 'absolute', left: '0px', width: '1920px', top: '430px', textAlign: 'center', fontFamily: 'var(--font-serif)', fontWeight: '600',
+      fontSize: 'var(--fs-title-xl)', lineHeight: '1', color: 'var(--ink)' } });
+    const endLine = K.h('div', { text: 'Group [no.] · Thank you', style: {
+      position: 'absolute', left: '0px', width: '1920px', top: '610px', textAlign: 'center', fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--fs-min)', lineHeight: '1', color: 'var(--ink)' } });
+    S.end.append(endTitle, endLine);
+    stage.append(S.end);
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    const inF = S.cam.apply(t, F_START, END_CARD + 10);
+    // end card: dissolves in over the camera for the last 2 s
+    K.op(S.end, K.M12_dissolve(t, END_CARD));
+    S.end.style.display = t >= END_CARD ? '' : 'none';
+    // F band
+    S.band.style.display = inF ? '' : 'none';
+    K.op(S.band, inF ? K.M12_dissolve(t, c.fband) * (1 - K.M12_dissolve(t, END_CARD)) : 0);
+    if (inF) { K.op(ctx.ui.camera, 1); return; }
+
+    // ---- role cards, focus on the member named, then dissolve out
+    const win = [[c.A, c.B], [c.B, c.C], [c.C, c.D], [c.D, c.Dend]];
+    const ff = win.map(([a, b]) => K.M3_focus(t, a, b));
+    const out = 1 - K.M12_dissolve(t, c.dissolve);
+    K.op(S.cardsG, K.appear(t, c.cards) * out);
+    S.cards.forEach((r, i) => {
+      const dim = Math.min(...ff.filter((_, j) => j !== i).map((f) => f.others));
+      K.op(r.g, dim); K.op(r.line, ff[i].outline);
+    });
+    K.op(S.chain, K.appear(t, c.chain) * out);
+    // the chain is drawn left to right (arrows appear one by one)
+    S.arrows.forEach((a, i) => K.op(a, K.appear(t, c.chain + 0.3 + 0.35 * i)));
+
+    // ---- limitations, M3 in order: the new tag is outlined, the earlier ones dim to 25 %, all full at the end
+    const lw = [[c.lim1, c.lim2], [c.lim2, c.lim3], [c.lim3, c.limEnd]];
+    const lf = lw.map(([a, b]) => K.M3_focus(t, a, b));
+    S.tags.forEach((tg, i) => {
+      const dim = Math.min(...lf.filter((_, j) => j !== i).map((f) => f.others));
+      K.op(tg.g, K.appear(t, lw[i][0]) * dim);
+      tg.ring.update({ outline: lf[i].outline });
+    });
+    // ---- GenAI card
+    K.op(S.genai, K.appear(t, c.genai));
+  },
+});
+</script>
+</body>
+</html>

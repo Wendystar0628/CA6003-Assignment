@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 27 · Leakage versus preparation</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 27 · D's most unexpected finding (callback to visual 4 and visual 9) · docs/video_plan.md §4 scene 27.
+   Layout S: D's portrait fills the left half (camera slot); this file renders the card on the right.
+   One relation: on one AUC-change axis the leakage bar (0.131, red hatch) towers over the preparation bar (0.008, teal solid).
+   Numbers: video/data/leak_gate.json (0.131 = |paired difference|, with its interval) and prep_band.json (0.008, with its interval). */
+
+// Cues in scene seconds, estimated at ~120 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  axis: 0.3,     // "Most unexpected for me:"            M1 axis
+  leak: 1.9,     // "leakage moved the score"            M2 red hatched bar, number 0.131
+  prep: 4.0,     // "far more than careful preparation did."  M2 teal bar, number 0.008
+  title: 5.0,    // title settles on the screen text
+};
+
+Kit.createScene({
+  number: 27,
+  name: 'leak_vs_prep',
+  duration: 7,
+  layout: 'S',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Most unexpected for D' }, { at: CUES.title, text: 'Leakage ≫ preparation' }],
+  source: '§7 · S7_leak_gate',
+  data: '../data/leak_gate.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    DC.fitLegend(ctx, ['leak', 'systematic']);
+    const prep = DC.loadSync('../data/prep_band.json');
+    const g = K.svg('g', {}, fig);
+    const L = K.interval(data, 'diff_eall_ci'), Pv = K.interval(prep, 'd_auc_ci');
+    // sizes are magnitudes: the leak gate lowered the AUC by 0.131 (paired mean, so label stays 0.131), preparation raised it by 0.008
+    const leak = { est: Math.abs(L.est), lo: Math.abs(L.hi), hi: Math.abs(L.lo) }, prp = { est: Pv.est, lo: Math.max(Pv.lo, 0), hi: Pv.hi };
+    const y = K.scaleLinear([0, 0.16], [690, 230]);
+    S.y = y;
+    S.axis = K.axis(g, y, { orient: 'left', at: 130, ticks: [0, 0.05, 0.10, 0.15], format: (v) => K.fmt(v, 2),
+      grid: { from: 131, to: 760 }, title: { text: 'AUC change', x: 60, y: 60 } });
+    S.leak = K.bar(g, { scale: y, base: 0, x: 240, width: 190, styles: ['leak'] });
+    S.prep = K.bar(g, { scale: y, base: 0, x: 530, width: 190, styles: ['systematic'] });
+    S.vals = { leak, prp };
+    S.dwL = K.dotWhisker(g, y, { orient: 'v', at: 335, est: leak.est, lo: leak.lo, hi: leak.hi, role: 'leak', shape: 'circle', size: 16 });
+    S.dwP = K.dotWhisker(g, y, { orient: 'v', at: 625, est: prp.est, lo: prp.lo, hi: prp.hi, role: 'systematic', shape: 'circle', size: 16 });
+    S.nL = K.callout(g, { x: 335, y: 190, anchor: 'middle', size: 'second' });
+    S.nP = K.callout(g, { x: 625, y: 596, anchor: 'middle', size: 'second' });
+    // labels (red always with the triangle)
+    S.labL = K.svg('g', {}, g);
+    K.warnTriangle(S.labL, { x: 232, y: 702, size: 30 });
+    K.text(S.labL, { x: 274, y: 728, text: 'leakage', cls: 'kit-t-note' });
+    S.labP = K.text(g, { x: 625, y: 728, text: 'preparation', anchor: 'middle', cls: 'kit-t-note' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 4 }));
+    const gl = K.M2_barGrow(t, c.leak), gp = K.M2_barGrow(t, c.prep);
+    S.leak.update({ value: S.vals.leak.est, grow: gl });
+    S.prep.update({ value: S.vals.prp.est, grow: gp });
+    K.op(S.labL, K.appear(t, c.leak)); K.op(S.labP, K.appear(t, c.prep));
+    const aL = K.appear(t, c.leak + 0.9), aP = K.appear(t, c.prep + 0.9);
+    S.dwL.update({ dot: aL, whisker: aL, opacity: aL }); S.dwP.update({ dot: aP, whisker: aP, opacity: aP });
+    S.nL.update({ text: K.fmt(S.vals.leak.est, 3), number: aL }); S.nP.update({ text: K.fmt(S.vals.prp.est, 3), number: aP });
+  },
+});
+</script>
+</body>
+</html>
