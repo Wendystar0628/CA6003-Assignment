@@ -400,5 +400,12 @@
       "result": "build OK: no error outputs, validation OK, FINAL_REF asserts within FAST tolerance",
       "date": "2026-10-12"
     }
+  },
+  "fast_clean_room_check": {
+    "source_commit": "22e129c",
+    "procedure": "git archive into an empty folder; build_final.py --execute (FAST) in a fresh temp workspace",
+    "runtime_seconds": 591,
+    "result": "build OK: no error outputs, validation OK, FINAL_REF asserts within FAST tolerance",
+    "date": "2026-10-13"
   }
 }
