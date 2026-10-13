@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 16 · Trap 2, the label is a measurement</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_label_venn.js"></script>
+</head>
+<body>
+<script>
+/* Scene 16 · Trap 2: the label is a measurement (signature visual 6 "Label split", steps 1-2) · docs/video_plan.md §4 scene 16, §7 visual 6.
+   Speaker C. One relation: of the 819 people told by a doctor, 250 test below 6.5 %, and 165 of those are on insulin or pills.
+   Numbers: video/data/label_split.json (kappa, 819, 721, 250, 165). The Kappa band "substantial" is a convention (Landis and Koch),
+   not data: the band edges below are definitions, drawn as a neutral grey band. */
+
+// Cues in scene seconds after the 1.2 s chapter card, estimated at ~134 wpm; replace with the marks on C's take.
+const CUES = {
+  gauge: 4.6,        // "A doctor's diagnosis and a blood test agree only substantially"   M1 (gauge scale)
+  band: 6.9,         // "...only substantially"                                             band label
+  needle: 10.9,      // "Cohen's kappa, an agreement score, is 0.70"                       M10 (needle + number)
+  circles: 13.0,     // "Of the self-reported diabetics,"                                   gauge dims, circles appear (M6, area ~ n)
+  focus: 14.9,       // "250 test below the diabetes threshold"                            M3 on the told-only region + callout
+  solid: 17.7,       // "and 165 of those take insulin or pills"                          M10 count: dots turn solid
+  title: 22.6,       // "A blood-test-only label would call treated patients healthy"       title dissolve
+};
+// Landis and Koch (1977) agreement bands for kappa; "substantial" = 0.61-0.80. Definition, not data.
+const KAPPA_BAND = [0.6, 0.8];
+
+Kit.createScene({
+  number: 16,
+  name: 'label_trap',
+  duration: 30,
+  layout: 'R',
+  speaker: 'C',
+  title: [
+    { at: 0, text: 'Is the label the truth?' },
+    { at: CUES.title, text: 'Low HbA1c = controlled, not healthy' },
+  ],
+  trap: 'label',
+  source: '§5.3 · V6 · label_split',
+  chapterCard: { at: 0, title: 'Is the label the truth?', item: 'Trap 2 · §5' },
+  data: '../data/label_split.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    const halo = (el) => { Object.assign(el.style, { paintOrder: 'stroke', stroke: '#fff', strokeWidth: '9px', strokeLinejoin: 'round' }); return el; };
+    S.halo = halo;
+
+    // ---------- 1 kappa gauge (left): 0-1 half dial, neutral band "substantial", ink needle
+    const G = { cx: 232, cy: 262, r: 140 };
+    const pt = (v, r) => [G.cx + r * Math.cos(Math.PI * (1 - v)), G.cy - r * Math.sin(Math.PI * (1 - v))];
+    const arc = (v0, v1, r) => { const a = pt(v0, r), b = pt(v1, r); return `M${a[0].toFixed(1)} ${a[1].toFixed(1)} A${r} ${r} 0 0 1 ${b[0].toFixed(1)} ${b[1].toFixed(1)}`; };
+    S.gauge = K.svg('g', {}, fig);
+    S.gScale = K.svg('g', {}, S.gauge);
+    const base = K.svg('path', { d: arc(0, 1, G.r), fill: 'none', stroke: K.C.ink, 'stroke-width': 3 }, S.gScale);
+    S.baseLen = base.getTotalLength(); base.setAttribute('stroke-dasharray', `${S.baseLen} ${S.baseLen}`); S.base = base;
+    S.band = K.svg('path', { d: arc(KAPPA_BAND[0], KAPPA_BAND[1], G.r - 18), fill: 'none', stroke: '#D5DAE0', 'stroke-width': 24 }, S.gauge);
+    S.ticks = [0, 0.5, 1].map((v) => {
+      const a = pt(v, G.r), b = pt(v, G.r + 12), l = pt(v, G.r + 46);
+      K.svg('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: K.C.ink, 'stroke-width': 3 }, S.gScale);
+      return K.text(S.gScale, { x: l[0], y: l[1] + 26, text: K.fmt(v, v === 0.5 ? 1 : 0), anchor: 'middle', cls: 'kit-t-tick' });
+    });
+    S.bandLab = K.text(S.gauge, { x: G.cx + 120, y: G.cy - 156, text: 'substantial', cls: 'kit-t-min' });
+    S.needle = K.svg('line', { x1: G.cx, y1: G.cy, stroke: K.C.ink, 'stroke-width': 5, 'stroke-linecap': 'round' }, S.gauge);
+    K.svg('circle', { cx: G.cx, cy: G.cy, r: 11, fill: K.C.ink }, S.gauge);
+    S.G = G; S.pt = pt;
+    S.kappa = K.item(data, 'kappa_unw');
+    S.kNum = K.callout(S.gauge, { x: G.cx, y: 462, anchor: 'middle', size: 'main', label: "Cohen's kappa · agreement" });
+    S.kNum.label.setAttribute('y', 462 + 74);
+
+    // ---------- 2 two circles (area ~ n) with one dot per person
+    const V = S.V = LabelVenn.build(K, data, { cx: 810, cy: 418, R: 214 });
+    S.venn = K.svg('g', {}, fig);
+    S.gBoth = K.svg('g', {}, S.venn); S.gSelf = K.svg('g', {}, S.venn); S.gA1c = K.svg('g', {}, S.venn);
+    const dot = (parent, p) => K.svg('circle', { cx: p[0], cy: p[1], r: V.dotR, fill: '#fff', stroke: K.C.ink, 'stroke-width': 1.6 }, parent);
+    S.dBoth = V.dots.both.map((p) => dot(S.gBoth, p));
+    S.dA1c = V.dots.a1c.map((p) => dot(S.gA1c, p));
+    // told-only dots in fill order: bottom first, so the solid share rises like a level
+    S.selfPts = V.dots.self.slice().sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+    S.dSelf = S.selfPts.map((p) => dot(S.gSelf, p));
+    S.circL = K.svg('circle', { cx: V.xL, cy: V.y, r: V.rL, fill: 'none', stroke: K.C.ink, 'stroke-width': 3 }, S.venn);
+    S.circR = K.svg('circle', { cx: V.xR, cy: V.y, r: V.rR, fill: 'none', stroke: K.C.ink, 'stroke-width': 3 }, S.venn);
+    S.outline = K.svg('path', { d: V.pathSelf, fill: 'none', stroke: K.C.ink, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, S.venn);
+    // circle labels (data labels, 28 px) and the overlap label
+    S.labs = K.svg('g', {}, S.venn);
+    const nSelf = K.item(data, 'self'), nA1c = K.item(data, 'a1c');
+    S.labL = K.svg('g', {}, S.labs); S.labR = K.svg('g', {}, S.labs);
+    const stack = (g, x, anchor, l1, l2) => { K.text(g, { x, y: V.y - V.rL - 58, text: l1, cls: 'kit-t-min', anchor }); K.text(g, { x, y: V.y - V.rL - 20, text: l2, cls: 'kit-t-min', anchor, weight: 600 }); };
+    stack(S.labL, V.bbox.x0 - 10, 'start', 'Told by a doctor', nSelf.display);
+    stack(S.labR, V.bbox.x1 + 10, 'end', 'HbA1c ≥ 6.5 %', nA1c.display);
+    S.labBoth = halo(K.text(S.labs, { x: V.centres.both[0], y: V.centres.both[1] + 10, text: 'both', anchor: 'middle', cls: 'kit-t-min', weight: 600 }));
+    // ---------- 3 callout 250 of 819, ruler icon (the Label mark)
+    S.c250 = K.svg('g', {}, fig);
+    S.n250 = K.callout(S.c250, { x: 48, y: 700, size: 'main', label: 'of ' + nSelf.display + ' self-reported' });
+    S.n250.label.setAttribute('y', 700 + 74);
+    S.ruler = K.icon(S.c250, 'ruler', { x: 318, y: 606, size: 64 });
+    // ---------- 4 key: solid = on insulin or pills (165), hollow = untreated
+    S.key = K.svg('g', {}, fig);
+    S.keySolid = K.svg('circle', { cx: 628, cy: 742, r: 13, fill: K.C.ink, stroke: K.C.ink, 'stroke-width': 2 }, S.key);
+    S.n165 = K.text(S.key, { x: 656, y: 752, text: K.disp(data, 'masked_med') + ' on insulin or pills', cls: 'kit-t-note' });
+    S.keyHollow = K.svg('circle', { cx: 1010, cy: 742, r: 13, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2 }, S.key);
+    S.untreated = K.text(S.key, { x: 1038, y: 752, text: 'untreated', cls: 'kit-t-note' });
+    S.nMed = K.val(data, 'masked_med');
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, V = S.V;
+    // 1 gauge: scale draws (M1-like line), band label, then needle + number (M10)
+    const gs = K.progress(t, c.gauge, 0.6, K.ease.enter);
+    S.base.setAttribute('stroke-dashoffset', S.baseLen * (1 - gs));
+    K.op(S.band, K.appear(t, c.gauge + 0.6));
+    S.ticks.forEach((el) => K.op(el, K.appear(t, c.gauge + 0.6)));
+    K.op(S.bandLab, K.appear(t, c.band));
+    const kv = K.M10_count(t, c.needle, 0, S.kappa.value);
+    const np = S.pt(kv, S.G.r - 14);
+    S.needle.setAttribute('x2', np[0]); S.needle.setAttribute('y2', np[1]);
+    K.op(S.needle, K.appear(t, c.gauge + 0.6));
+    S.kNum.update({ text: t >= c.needle + 0.8 ? S.kappa.display : K.fmt(kv, 2), number: K.appear(t, c.needle), label: K.appear(t, c.needle + K.T.appear) });
+    const cm = K.M6_morph(t, c.circles);                         // circles grow together, so area stays ~ n
+    K.op(S.gauge, 1 - 0.75 * cm);                                // gauge dims to 25 %
+
+    // 2 circles: appear (both radii scaled by the same factor), then the dots
+    const sc = K.clamp(cm * 1.0);
+    [[S.circL, V.xL, V.rL], [S.circR, V.xR, V.rR]].forEach(([el, x, r]) => { el.setAttribute('r', r * sc); el.setAttribute('cx', 810 + (x - 810) * sc); });
+    K.op(S.circL, cm > 0 ? 1 : 0); K.op(S.circR, cm > 0 ? 1 : 0);
+    const dotsIn = K.appear(t, c.circles + 0.7, 0.4);
+    // 3 focus on the told-only region (M3): everything else to 25 %
+    const f = K.M3_focus(t, c.focus);
+    const rest = f.others;
+    K.op(S.gBoth, dotsIn * rest); K.op(S.gA1c, dotsIn * rest);
+    K.op(S.gSelf, dotsIn);
+    K.op(S.labL, dotsIn); K.op(S.labR, dotsIn * rest); K.op(S.labBoth, dotsIn * rest);
+    S.circL.style.opacity = cm > 0 ? (1 - 0.75 * f.outline) : 0; S.circR.style.opacity = cm > 0 ? (1 - 0.75 * f.outline) : 0;
+    K.op(S.outline, f.outline);
+    K.op(S.c250, K.appear(t, c.focus));
+    S.n250.update({ text: K.disp(ctx.data, 'masked'), number: 1, label: K.appear(t, c.focus + K.T.appear) });
+    // 4 dots turn solid, bottom first (M10), number and key appear when spoken
+    const k = Math.round(K.M10_count(t, c.solid, 0, S.nMed));
+    S.dSelf.forEach((el, i) => el.setAttribute('fill', i < k ? K.C.ink : '#fff'));
+    K.op(S.key, K.appear(t, c.solid));
+  },
+});
+</script>
+</body>
+</html>

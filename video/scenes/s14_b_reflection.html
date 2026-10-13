@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 14 · B's reflection card</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 14 · B's "most unexpected" card · docs/video_plan.md §4 scene 14, §7 visual 3 (callback to the struck 7.0 of scenes 8-9).
+   Layout S: B's portrait fills the left half (the camera slot, 960 x 1080); this file draws the card on the right.
+   Speaker B. One relation: one routine cleaning line erased 29 diabetic HbA1c results, and self-report hid it.
+   Numbers: video/data/blanket_recode.json (29; the erased value 7.0 is read from groups.per_variable[LBXGH].values_hit "7:28, 9:1").
+   Render with --alpha to leave the portrait half transparent for the camera clip. */
+const K = Kit;
+const br = await K.loadJSON('../data/blanket_recode.json');
+// the erased HbA1c value that makes up most of the 29 (28 are exactly 7.0 %): the most frequent code in values_hit
+const hits = br.groups.per_variable.find((v) => v.var === 'LBXGH').values_hit.split(',').map((s) => s.trim().split(':').map(Number));
+const modal = hits.sort((a, b) => b[1] - a[1])[0][0];
+const erased = K.fmt(modal, 1);
+
+// Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
+const CUES = {
+  card: 1.4,       // "one routine cleaning line"               result card "7.0 · diabetic"
+  strike: 3.7,     // "erased"                                   M7 (red: valid data wrongly deleted)
+  count: 4.3,      // "29 diabetic HbA1c results"                number counts up (M10)
+  hid: 7.2,        // "and self-report hid it"                   small note
+};
+
+K.createScene({
+  number: 14,
+  name: 'b_reflection',
+  duration: 13,
+  layout: 'S',
+  speaker: 'B',
+  title: 'Most unexpected for me',
+  source: '§3.4 · V2',
+  data: '../data/blanket_recode.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, S = ctx.S = {};
+    // the kit's legend row does not fit the 816 px bottom bar of layout S: shorten the three labels for this scene only
+    const short = { reference: 'baseline', leak: 'harmed data', systematic: 'Systematic (S)' };
+    Object.entries(ctx.ui.legendItems).forEach(([k, it]) => { if (short[k]) it.querySelector('span').textContent = short[k]; });
+    ctx.ui.legendRow.style.gap = '24px'; ctx.ui.legendRow.style.marginLeft = '24px';
+    S.card = K.svg('g', {}, fig);
+    K.svg('rect', { x: 64, y: 150, width: 688, height: 200, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, S.card);
+    K.text(S.card, { x: 96, y: 200, text: 'HbA1c result', cls: 'kit-t-min' });
+    S.val = K.text(S.card, { x: 96, y: 300, text: erased + ' · diabetic', cls: 'kit-t-second' });
+    S.strike = K.strike(S.card, S.val, { color: 'leak', width: 6, pad: 10 });
+    S.tri = K.svg('g', {}, fig);
+    K.warnTriangle(S.tri, { x: 64, y: 436, size: 64 });
+    S.num = K.callout(fig, { x: 152, y: 520, size: 'main', label: 'positives erased', fill: K.C.leak });
+    S.num.label.setAttribute('y', 520 + 74);
+    S.hid = K.text(fig, { x: 64, y: 700, text: 'self-report hid it', cls: 'kit-t-note' });
+    S.n = K.val(data, 'a1c_lost'); S.nd = K.disp(data, 'a1c_lost');
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues;
+    K.op(S.card, K.appear(t, c.card));
+    S.strike.update(K.M7_strike(t, c.strike));
+    const v = K.M10_count(t, c.count, 0, S.n);
+    S.num.update({ text: t >= c.count + K.T.M10.dur ? S.nd : String(Math.round(v)), number: K.appear(t, c.count), label: K.appear(t, c.count + K.T.appear), fill: K.C.leak });
+    K.op(S.tri, K.appear(t, c.count));
+    K.op(S.hid, K.appear(t, c.hid));
+  },
+});
+</script>
+</body>
+</html>

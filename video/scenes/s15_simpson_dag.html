@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 15 · Simpson scan and DAG</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 15 · Simpson and DAG · docs/video_plan.md §4 scene 15 (C's first appearance).
+   Speaker C. One relation: of 224 comparisons scanned for Simpson's paradox, 6 flip sign; a causal diagram suggests why (BMI is a mediator).
+   Numbers: video/data/simpson.json (224, 6). The matrix cells (224, six flagged) come from video/data/hist_geometry.json
+   (groups.simpson_cells, built from results/S4/simpson_scan.csv).
+   Layout: chapter card (1.2 s) -> F (full-screen portrait, until 13.2 s = 12 s after C starts speaking) -> R. One file in layout R:
+   while F is on, the kit chrome is hidden and only C's lower-third is drawn (render with --alpha to overlay it on the full-screen
+   camera clip); from 13.2 s the R layout and the graphic play. */
+const K = Kit;
+const geo = await K.loadJSON('../data/hist_geometry.json');
+
+// Cues in scene seconds at ~130 wpm from the §4 narration (card 1.2 s, then C speaks); replace with the marks on C's take.
+const CUES = {
+  lower: 1.2,       // lower-third "C · Exploration, labels & bias · §4 §5 §8", 4 s
+  fEnd: 13.2,       // F ends 12 s after C starts speaking; the R layout and the title take over
+  matrix: 13.3,     // "...where splitting by a third variable flips a sign."   224 squares appear together, + 224
+  flips: 17.5,      // "Six flipped."                                            M3: six cells become the swap symbol, others dim to 25 %
+  shrink: 20.2,     // "A causal diagram, or DAG, suggests why:"                 matrix shrinks (M6)
+  dag: 21.6,        // "BMI sits between race and diabetes,"                     Race -> BMI -> Diabetes
+  arrow: 23.2,      // "...BMI"                                                  M11 arrow "mediator"
+  expl: 27.6,       // "These stay exploratory."                                 tag + title
+};
+
+K.createScene({
+  number: 15,
+  name: 'simpson_dag',
+  duration: 29,
+  layout: 'R',
+  speaker: 'C',
+  title: [
+    { at: 0, text: 'Scanning for Simpson’s paradox' },
+    { at: CUES.expl, text: '224 scanned · 6 flips · exploratory' },
+  ],
+  source: '§4.6 · V5 · simpson',
+  chapterCard: { at: 0, title: 'Reading the data', item: '04 · §4 §5 §8' },
+  data: '../data/simpson.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui, stage } = ctx, S = ctx.S = {};
+    // ----- F window: hide the R chrome, draw C's lower-third at the F position
+    S.hide = [ui.titleBand, ui.panel, ui.camera, ui.legendRow && ui.legendRow.parentElement, ui.badges && ui.badges.parentElement, ui.chip].filter(Boolean);
+    S.bg = stage.querySelector('.kit-stagebg');
+    const info = K.SPEAKERS.C;
+    S.lt = K.h('div', { class: 'kit-lowerthird' }, [
+      K.h('div', { class: 'kit-badge is-current', text: 'C' }),
+      K.h('div', {}, [K.h('div', { class: 'kit-lt-name', text: 'Member C' }), K.h('div', { class: 'kit-lt-role', text: info.role }), K.h('div', { class: 'kit-lt-sec', text: info.sec })]),
+    ]);
+    Object.assign(S.lt.style, { left: '96px', top: '820px' });
+    stage.append(S.lt);
+
+    // ----- the 224-cell matrix: columns = the 36 exposure x outcome comparisons, rows = the 7 stratifiers (cells exist for 224 of 252)
+    const SC = geo.groups.simpson_cells, nCmp = K.val(data, 'n_comparisons'), nFlip = K.val(data, 'n_flips');
+    if (SC.cells.length !== nCmp || SC.cells.filter((c) => c.flip).length !== nFlip) throw new Error('Simpson cells differ from simpson.json');
+    const cw = 26, pitch = 32, mx = 36, my = 300, nRows = SC.cols.length;
+    S.mat = K.svg('g', {}, fig);
+    S.cells = SC.cells.map((c) => {
+      const x = mx + c.row * pitch, y = my + c.col * pitch;
+      const g = K.svg('g', {}, S.mat);
+      const r = K.svg('rect', { x, y, width: cw, height: cw, fill: '#C9D0D8' }, g);
+      return Object.assign({ g, r, x, y }, c);
+    });
+    S.flipG = K.svg('g', {}, S.mat);
+    S.cells.filter((c) => c.flip).forEach((c) => {
+      c.ring = K.svg('rect', { x: c.x - 4, y: c.y - 4, width: cw + 8, height: cw + 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2 }, S.flipG);
+      c.sym = K.text(S.flipG, { x: c.x + cw / 2, y: c.y + cw - 3, text: '↔', anchor: 'middle', cls: 'kit-t-min', size: 28 });
+    });
+    S.matBox = { w: SC.n_rows * pitch, h: nRows * pitch };
+    // ----- callouts
+    S.n224 = K.callout(fig, { x: 48, y: 160, size: 'main', label: 'comparisons scanned' });
+    S.n224.label.setAttribute('y', 160 + 74);
+    S.n6 = K.callout(fig, { x: 404, y: 160, size: 'second', label: 'sign flips' });
+    S.n6.label.setAttribute('y', 160 + 56);
+    S.d224 = K.disp(data, 'n_comparisons'); S.d6 = K.disp(data, 'n_flips');
+    // ----- DAG: Race -> BMI -> Diabetes, ink only
+    S.dag = K.svg('g', {}, fig);
+    const nodes = [['Race', 170], ['BMI', 580], ['Diabetes', 990]], ny = 560, nw = 230, nh = 84;
+    nodes.forEach(([n, cx]) => {
+      K.svg('rect', { x: cx - nw / 2, y: ny - nh / 2, width: nw, height: nh, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, S.dag);
+      K.text(S.dag, { x: cx, y: ny + 12, text: n, anchor: 'middle', cls: 'kit-t-note', weight: 600 });
+    });
+    const edge = (x1, x2) => { K.svg('line', { x1, x2: x2 - 14, y1: ny, y2: ny, stroke: K.C.ink, 'stroke-width': 3 }, S.dag); K.svg('path', { d: `M${x2} ${ny} l-16 -9 v18 z`, fill: K.C.ink }, S.dag); };
+    edge(170 + nw / 2 + 6, 580 - nw / 2 - 6); edge(580 + nw / 2 + 6, 990 - nw / 2 - 6);
+    S.arrow = K.arrow(fig, { x1: 580, y1: 712, x2: 580, y2: ny + nh / 2 + 8, label: { x: 580, y: 748, text: 'mediator', anchor: 'middle', cls: 'kit-t-note' } });
+    S.expl = K.svg('g', {}, fig);
+    K.svg('rect', { x: 48, y: 706, width: 196, height: 52, rx: 4, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2 }, S.expl);
+    K.text(S.expl, { x: 146, y: 742, text: 'exploratory', anchor: 'middle', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues, ui = ctx.ui;
+    // ---------- F window: chrome hidden; lower-third over the portrait
+    const inF = t >= 1.2 && t < c.fEnd;
+    S.hide.forEach((el) => { el.style.display = inF ? 'none' : ''; });
+    if (S.bg && document.documentElement.classList.contains('kit-alpha')) S.bg.style.display = inF ? 'none' : '';
+    const L = K.M12_dissolve(t, c.lower) * (1 - K.M12_dissolve(t, c.lower + K.T.lowerThird - K.T.M12.dissolve));
+    K.op(S.lt, inF ? L : 0);
+    if (ui.legendRow) ui.legendRow.style.visibility = '';
+
+    // ---------- R: matrix appears as one block with the 224 callout (no per-cell reveal)
+    const a = K.appear(t, c.matrix);
+    K.op(S.mat, a);
+    S.n224.update({ text: S.d224, number: a, label: K.appear(t, c.matrix + K.T.appear) });
+    // M3 on the six flips: others dim to 25 %, flips get the swap symbol in a 2 px ink outline; no red, no flicker
+    const f = K.M3_focus(t, c.flips);
+    S.cells.forEach((q) => { q.g.style.opacity = String(q.flip ? 1 : f.others); });
+    S.cells.filter((q) => q.flip).forEach((q) => { q.r.setAttribute('fill', K.mixColor('#C9D0D8', '#FFFFFF', f.outline)); });
+    K.op(S.flipG, f.outline);
+    S.n6.update({ text: S.d6, number: K.appear(t, c.flips), label: K.appear(t, c.flips + K.T.appear) });
+    // M6: matrix shrinks to the top right (scale 0.5), the callouts stay
+    const m = K.M6_morph(t, c.shrink);
+    // the top-left cell (36, 300) moves to (612, 170): translate = target - scale * origin
+    S.mat.setAttribute('transform', `translate(${(612 - 0.5 * 36) * m} ${(170 - 0.5 * 300) * m}) scale(${1 - 0.5 * m})`);
+    // DAG, then the M11 arrow on BMI
+    K.op(S.dag, K.appear(t, c.dag));
+    S.arrow.update(K.M11_arrow(t, c.arrow));
+    K.op(S.expl, K.appear(t, c.expl));
+  },
+});
+</script>
+</body>
+</html>

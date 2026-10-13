@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 17 · The undiagnosed and the Screening group</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_label_venn.js"></script>
+</head>
+<body>
+<script type="module">
+/* Scene 17 · The undiagnosed and the Screening group (signature visuals 6 steps 3-4 and 7) · docs/video_plan.md §4 scene 17, §7 visuals 6-7.
+   Speaker C. One relation: 152 high-HbA1c adults have no diagnosis; the uninsured are +23.2 pp more often undiagnosed (association);
+   so we score two groups, All adults and the Screening group.
+   Numbers: video/data/label_split.json (152, 819, 721), undiagnosed.json (+23.2, 6.2, 40.1, n = 49), funnel.json (5,730, 4,911, 152).
+   Layout note: the plan's R -> X -> R switch is not rendered here. The push-in (M9, 1.25, one of its two uses in the film) is done
+   inside the R figure panel; the X window is a compositing choice for the editor. */
+const K = Kit;
+// the kit loads one data file per scene; the two extra files are read here before the scene is created
+const undx = await K.loadJSON('../data/undiagnosed.json');
+const fun = await K.loadJSON('../data/funnel.json');
+
+// Cues in scene seconds, estimated at ~134 wpm from the §4 narration (no chapter card). Replace with the marks on C's take.
+const CUES = {
+  blue: 0.5,        // "In total,"                                                the 152 HbA1c-only region turns blue (hollow squares)
+  focus: 1.6,       // "152 adults have a high HbA1c and no diagnosis"             M3 focus + callout
+  push: 2.9,        // (pause after the callout)                                   M9 push-in, hold 2 s, pull back (ends 6.4)
+  legend: 6.6,      // narration pause                                             legend chip, 2 s, then folds into the legend row
+  vennOut: 9.0,     // "Among those with high HbA1c, the uninsured"                Venn dissolves out
+  axis: 9.4,        // "...are 23.2 percentage points"                             M1 axis + zero line
+  est: 10.7,        // "23.2"                                                      dot and number (static)
+  ci: 12.6,         // "interval 6.2 to 40.1"                                      whisker + interval, static
+  note: 15.0,       // "an association, not proof of cause"                        notes
+  bOut: 19.9,       // "Since most positives are already diagnosed,"               whisker view dissolves out
+  title: 20.2,      // title dissolves to the two groups
+  all: 22.0,        // "all adults"                                                top track
+  scr: 23.9,        // "a screening group"                                         bottom track
+  ring: 27.0,       // "of adults not yet diagnosed"                               2 px ink outline on the Screening group track
+};
+
+K.createScene({
+  number: 17,
+  name: 'undiagnosed_screening',
+  duration: 32,
+  layout: 'R',
+  speaker: 'C',
+  title: [
+    { at: 0, text: 'Who is undiagnosed?' },
+    { at: CUES.title, text: 'All adults · Screening group' },
+  ],
+  trap: 'label',
+  source: '§5.4 · V6 · undiagnosed',
+  legendMoment: { key: 'screen', at: CUES.legend, hold: 2.0 },
+  data: '../data/label_split.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, S = ctx.S = {};
+    const halo = (el) => { Object.assign(el.style, { paintOrder: 'stroke', stroke: '#fff', strokeWidth: '9px', strokeLinejoin: 'round' }); return el; };
+
+    // ================= A · the Venn from scene 16, now with the HbA1c-only region in blue
+    const V = S.V = LabelVenn.build(K, data, { cx: 560, cy: 420, R: 214 });
+    S.venn = K.svg('g', {}, fig);
+    S.gOther = K.svg('g', {}, S.venn);          // both + told-only dots, dimmed by the focus
+    S.gA1c = K.svg('g', {}, S.venn);
+    const hollow = (parent, p) => K.svg('circle', { cx: p[0], cy: p[1], r: V.dotR, fill: '#fff', stroke: K.C.ink, 'stroke-width': 1.6 }, parent);
+    V.dots.both.forEach((p) => hollow(S.gOther, p));
+    V.dots.self.forEach((p) => hollow(S.gOther, p));
+    S.dInk = V.dots.a1c.map((p) => hollow(S.gA1c, p));
+    const q = V.dotR * 1.05;
+    S.dBlue = V.dots.a1c.map((p) => K.svg('rect', { x: p[0] - q + 1, y: p[1] - q + 1, width: 2 * q - 2, height: 2 * q - 2, fill: '#fff', stroke: K.C.screen, 'stroke-width': 2.6 }, S.gA1c));
+    S.circL = K.svg('circle', { cx: V.xL, cy: V.y, r: V.rL, fill: 'none', stroke: K.C.ink, 'stroke-width': 3 }, S.venn);
+    S.circR = K.svg('circle', { cx: V.xR, cy: V.y, r: V.rR, fill: 'none', stroke: K.C.ink, 'stroke-width': 3 }, S.venn);
+    S.outline = K.svg('path', { d: V.pathA1c, fill: 'none', stroke: K.C.ink, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, S.venn);
+    S.labs = K.svg('g', {}, S.venn);
+    const nSelf = K.item(data, 'self'), nA1c = K.item(data, 'a1c');
+    const stack = (g, x, anchor, l1, l2) => { K.text(g, { x, y: V.y - V.rL - 58, text: l1, cls: 'kit-t-min', anchor }); K.text(g, { x, y: V.y - V.rL - 20, text: l2, cls: 'kit-t-min', anchor, weight: 600 }); };
+    S.labL = K.svg('g', {}, S.labs); S.labR = K.svg('g', {}, S.labs);
+    stack(S.labL, V.bbox.x0 - 10, 'start', 'Told by a doctor', nSelf.display);
+    stack(S.labR, V.bbox.x1 + 10, 'end', 'HbA1c ≥ 6.5 %', nA1c.display);
+    S.labBoth = halo(K.text(S.labs, { x: V.centres.both[0], y: V.centres.both[1] + 10, text: 'both', anchor: 'middle', cls: 'kit-t-min', weight: 600 }));
+    // callout: 152 not yet diagnosed
+    S.c152 = K.svg('g', {}, fig);
+    S.n152 = K.callout(S.c152, { x: 930, y: 380, size: 'main', label: 'not yet diagnosed' });
+    S.n152.label.setAttribute('y', 380 + 74);
+    S.pushAt = V.centres.a1c;
+
+    // ================= B · who is undiagnosed (visual 7): 0 line, +23.2, whisker 6.2-40.1, static
+    const rd = K.item(undx, 'rd_uninsured'), ci = K.interval(undx, 'rd_uninsured_ci');
+    S.B = K.svg('g', {}, fig);
+    const x = K.scaleLinear([-10, 50], [110, 1130]);
+    S.bx = x;
+    S.bAxis = K.axis(S.B, x, { orient: 'bottom', at: 510, ticks: [-10, 0, 10, 20, 30, 40, 50], format: (v) => K.fmt(v, 0) });
+    S.zero = K.svg('line', { x1: x(0), x2: x(0), y1: 400, y2: 510, stroke: K.C.ink, 'stroke-width': 2.5 }, S.B);
+    S.bDW = K.dotWhisker(S.B, x, { orient: 'h', at: 455, est: ci.est, lo: ci.lo, hi: ci.hi, role: 'ink', shape: 'circle', size: 26, cap: 26 });
+    S.bNum = K.callout(S.B, { x: 100, y: 270, size: 'main', interval: ci.bracket });
+    S.bNum.interval.setAttribute('y', 270 + 76);
+    S.rd = rd; S.ci = ci;
+    K.text(S.B, { x: 110, y: 620, text: 'pp, uninsured − insured', cls: 'kit-t-note' });
+    S.bNote = K.text(S.B, { x: 110, y: 668, text: 'association · n = ' + K.disp(undx, 'n_uninsured') + ' · exploratory', cls: 'kit-t-note' });
+    S.bAxisTitle = null;
+
+    // ================= C · two groups (grey circle = All adults; blue square = Screening group)
+    const nAll = K.item(fun, 'n_cohort'), nScr = K.item(fun, 'n_screen'), pScr = K.item(fun, 'pos_screen');
+    const unit = 760 / nAll.value;
+    S.C = K.svg('g', { transform: 'translate(0,-44)' }, fig);
+    S.row1 = K.svg('g', {}, S.C); S.row2 = K.svg('g', {}, S.C);
+    K.svg('circle', { cx: 100, cy: 300, r: 24, fill: K.C.reference }, S.row1);
+    K.text(S.row1, { x: 150, y: 262, text: 'All adults', cls: 'kit-t-note' });
+    K.text(S.row1, { x: 150 + 156, y: 262, text: 'E-ALL', cls: 'kit-t-min', fill: K.C.ink }).style.fontFamily = 'var(--font-mono)';
+    K.svg('rect', { x: 150, y: 278, width: nAll.value * unit, height: 56, fill: '#E9ECEF', stroke: K.C.reference, 'stroke-width': 3 }, S.row1);
+    K.text(S.row1, { x: 150 + nAll.value * unit + 26, y: 330, text: nAll.display, cls: 'kit-t-second' });
+    K.svg('rect', { x: 88.5, y: 508.5, width: 23, height: 23, fill: '#fff', stroke: K.C.screen, 'stroke-width': 3.5 }, S.row2);
+    K.text(S.row2, { x: 150, y: 482, text: nScr.label.replace(/ \(.*$/, '') + ' (not yet diagnosed)', cls: 'kit-t-note' });
+    K.svg('rect', { x: 150, y: 498, width: nScr.value * unit, height: 56, fill: K.C.screenTint, stroke: K.C.screen, 'stroke-width': 3 }, S.row2);
+    K.text(S.row2, { x: 150 + nScr.value * unit + 26, y: 550, text: nScr.display, cls: 'kit-t-second' });
+    K.text(S.row2, { x: 150, y: 612, text: pScr.display + ' positives', cls: 'kit-t-note' });
+    K.text(S.row2, { x: 150 + 220, y: 612, text: 'E-SCREEN', cls: 'kit-t-min' }).style.fontFamily = 'var(--font-mono)';
+    S.ring = K.svg('rect', { x: 72, y: 436, width: 1060, height: 200, rx: 4, fill: 'none', stroke: K.C.ink, 'stroke-width': 2 }, S.C);
+  },
+
+  render(t, ctx) {
+    const S = ctx.S, c = ctx.cues, V = S.V;
+    const vennA = 1 - K.M12_dissolve(t, c.vennOut);
+    // ---- A: the HbA1c-only region turns blue (circles -> hollow squares), M3 focus, callout, M9 push-in, legend chip (chrome)
+    const blue = K.appear(t, c.blue, 0.4);
+    S.dInk.forEach((el) => K.op(el, 1 - blue)); S.dBlue.forEach((el) => K.op(el, blue));
+    const f = K.M3_focus(t, c.focus);
+    K.op(S.gOther, f.others); K.op(S.labL, f.others); K.op(S.labBoth, f.others);
+    K.op(S.labR, 1);
+    S.circL.style.opacity = String(1 - 0.75 * f.outline); S.circR.style.opacity = String(1 - 0.75 * f.outline);
+    K.op(S.outline, f.outline);
+    const callOut = 1 - K.appear(t, c.legend - 0.5, 0.3);        // the number leaves before the legend chip arrives
+    K.op(S.c152, K.appear(t, c.focus) * callOut);
+    S.n152.update({ text: K.disp(ctx.data, 'a1c_only'), number: 1, label: K.appear(t, c.focus + K.T.appear) });
+    const pi = K.M9_pushIn(t, c.push, { scale: 1.25, hold: 2.0 });
+    S.venn.style.transformOrigin = '0 0';
+    S.venn.style.transform = pi.transform(S.pushAt[0], S.pushAt[1]);
+    K.op(S.venn, vennA);
+
+    // ---- B: 0 line, +23.2, whisker (static), notes
+    const bIn = K.appear(t, c.axis, 0.3), bOut = 1 - K.M12_dissolve(t, c.bOut);
+    S.bAxis.update(K.M1_axisDraw(t, c.axis, { nTicks: 7 }));
+    S.zero.setAttribute('y2', 400 + (510 - 400) * K.progress(t, c.axis, 0.6, K.ease.enter));
+    K.op(S.zero, bIn);
+    const est = K.appear(t, c.est);
+    const ciA = K.appear(t, c.ci);
+    S.bDW.update({ dot: est, whisker: ciA > 0 ? 1 : 0, opacity: Math.max(est, ciA) });
+    S.bNum.update({ text: K.fmt(S.rd.value, 1, { sign: true }), number: est, interval: ciA });
+    K.op(S.bNote, K.appear(t, c.note));
+    K.op(S.B, bIn * bOut);
+    // ---- C: two groups
+    const cIn = K.M12_dissolve(t, c.bOut + 0.2);
+    K.op(S.C, cIn > 0 ? 1 : 0);
+    K.op(S.row1, K.appear(t, c.all)); K.op(S.row2, K.appear(t, c.scr));
+    K.op(S.ring, K.M3_focus(t, c.ring).outline);
+  },
+});
+</script>
+</body>
+</html>
