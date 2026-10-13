@@ -38,7 +38,7 @@ const GROUPS = [
   { cards: [5, 6], label: ['top-code flags'] },
   { cards: [7, 8, 9], label: ['skew · scale'] },
   { cards: [10, 11], label: ['class & survey', 'weights'] },
-  { cards: [12, 13], label: ['splines', 'waist-to-height'], split: true },   // P13 'splines', P14 'waist-to-height'
+  { cards: [12], label: ['splines'] },
 ];
 
 K.createScene({
@@ -86,10 +86,17 @@ K.createScene({
       if (cs.length > 1) K.svg('path', { d: `M${cs[0].x + 4} ${by + 12} H${cs[cs.length - 1].x + cs[0].cw - 4}`, stroke: K.C.systematic, 'stroke-width': 3, fill: 'none' }, g);
       return { cards: cs, g };
     });
+    // P14 (WHtR) is a separate arm, not part of S: neutral card (ink outline, white fill, no teal marker) with its evidence and a muted label
+    const c14 = S.cards[13];
+    S.p14 = K.svg('g', {}, fig);
+    K.text(S.p14, { x: c14.x + c14.cw / 2, y: c14.y + c14.ch + 40, text: 'waist-to-height', anchor: 'middle', cls: 'kit-t-min' });
+    const sep = K.text(S.p14, { x: c14.x + c14.cw / 2, y: c14.y + c14.ch + 78, text: 'separate test', anchor: 'middle', cls: 'kit-t-min' });
+    sep.style.fill = '#5A6672';
+    K.op(c14.sq, 0);
     // Systematic (S) label and the lock label
     S.sLab = K.svg('g', {}, fig);
     K.svg('rect', { x: x0, y: 196, width: 22, height: 22, fill: K.C.systematic }, S.sLab);
-    K.text(S.sLab, { x: x0 + 36, y: 217, text: 'Preparation steps', cls: 'kit-t-note', weight: 600 });
+    K.text(S.sLab, { x: x0 + 36, y: 217, text: 'Systematic (S)', cls: 'kit-t-note', weight: 600 });
     S.lock = K.svg('g', {}, fig);
     const lx = x0, ly = 126;
     K.svg('rect', { x: lx, y: ly + 12, width: 30, height: 24, rx: 3, fill: K.C.ink }, S.lock);
@@ -110,6 +117,7 @@ K.createScene({
         K.op(cd.sq, a);
       });
     });
+    K.op(S.p14, K.appear(t, c.groups[7]));
     K.op(S.sLab, K.appear(t, c.all));
     K.op(S.lock, K.appear(t, c.lock));
   },
