@@ -10,44 +10,55 @@
 </head>
 <body>
 <script>
-/* Scene NN · <name> · docs/video_plan.md §4 scene NN (and §7 visual N if it is a signature visual).
-   One relation: "the viewer can point at ___".  Copy this file, rename it (no leading "_"),
-   then fill in cfg, setup() and render(). Files starting with "_" are never rendered. */
+/* Scene NN · <name> · docs/video_plan.md (scene table + narration).
+   One relation: "the viewer can point at ___".  Copy this file to the name in
+   video/timeline/timeline.json (scenes[].file), then fill in cfg, setup() and render().
+   Files starting with "_" are never rendered.
 
-// Build cues in scene seconds, one per narration phrase (§4). Replace the estimates with the
-// times marked on the recorded take (§8.3 step 5). Keep >= 1.5 s between two actions.
+   Grid (panel coordinates, ctx.fig is 1728 x 764):
+     main area   x 0-1272, y 0-648     (text pages start at x 48)
+     side area   x 1296-1728, y 0-408
+     NO content  x >= 1296 and y >= 408 (PiP + name tag keep-out)
+     NO content  y >= 648 for x <= 1272 (caption zone)
+   The audit reports anything that enters the keep-out or the caption zone. */
+
+// Cues in scene seconds. A string is a narration phrase: the kit looks it up in the word clock
+// (video/subtitles/words.json, same clock as the captions), so cues follow re-timing automatically.
+// Forms: 2.4 | 'the AUC falls' | ['the AUC falls', 0.2] | {phrase: 'the 0.961', nth: 2, end: true}
 const CUES = {
-  axis: 0.6,     // "..."   M1 axis draw
-  bars: 2.4,     // "..."   M2 bars grow
-  value: 4.0,    // "..."   the number appears when it is spoken
+  axis: 0.6,                 // M1 axis draw
+  bars: 'Our cohort',        // M2 bars grow when this phrase starts
+  value: ['5,730', 0.1],     // the number appears as it is spoken
 };
 
 Kit.createScene({
-  number: 99,                 // scene number from §3 (drives the trap bar and the legend row)
+  number: 3,                  // timeline scene n: duration, speaker, section and progress come from timeline.json
   name: 'template',
-  duration: 8,                // seconds, from §3
-  layout: 'R',                // F | R | X | S (§6.3)
-  speaker: 'A',               // current speaker badge (structure colour)
-  title: 'One short title',   // <= 6 words; or [{at: 0, text: '...'}, {at: 5, text: '...'}] (M12 dissolve)
-  // attribution: 'work: C · §4',                   // when presenting someone else's work
-  // trap: 'leak' | 'label' | 'gain',               // active trap cell (scenes 2-25 show the bar)
-  source: '§0 · source_key',                         // bottom-left source tag
-  // chapterCard: { at: 0, title: 'Is the label the truth?', item: 'Trap 2 · §5' },  // 1.2 s, static
-  // lowerThird: { at: 0 },                          // 4 s, segment openings only
-  // legendMoment: { key: 'reference', at: 3.0 },    // first use of a semantic colour (§6.2 table)
-  // grid: false,                                    // dense scenes 3, 11, 12, 13, 22 drop the motif
-  data: '../data/funnel.json',                       // numbers come from video/data/*.json, never typed in
+  title: 'Cohort and label definition',                             // topic, <= ~5 words, no conclusion
+  subtitle: 'NHANES 2021–23 (CDC): from participants to the analysis cohort',   // what the page shows
+  pointer: '1.1, 3.2',        // -> "Notebook sections 1.1, 3.2" (footer, right)
+  // credit: 'Analysis by <Name:2>',                 // subtitle row, right; <Name:i> = member i, never a letter
+  // phases: [{ at: 0, page: 'blockstart', title: 'Data quality', subtitle: '...' },
+  //          { at: 6.5, page: 'evidence', title: 'Missing-value codes', subtitle: '...', pointer: '3.4' }],
+  // cards: [{ type: 'chapter', at: 0 }],              // 1.2 s; section label + scope from timeline.json
+  // cards: [{ type: 'title', at: 0, until: 1.5, title, subtitle, line, small }],   // scene 01
+  // progress: false | { at: 26.0 },                   // scene 01: false; scene 02: appears at the route morph
+  // legendMoment: { key: 'reference', at: 3.0 },      // first use of a semantic colour
+  // grid: false,                                      // drop the margin motif on dense scenes
+  data: '../data/funnel.json',                         // numbers come from video/data/*.json, never typed in
   cues: CUES,
 
-  // setup(ctx): build every element once. ctx.fig is the panel SVG (ctx.W x ctx.H px).
+  // setup(ctx): build every element once. ctx.fig = panel SVG, ctx.figHTML = HTML layer over it.
+  // Page helpers: Kit.teamCards(ctx), Kit.blockStart(ctx, {sections}), Kit.reflection(ctx, {line, handoff}).
   setup(ctx) {
     const K = Kit, S = ctx.S = {};
     const g = K.svg('g', {}, ctx.fig);
-    const x = K.scaleLinear([0, 1], [120, ctx.W - 80]);
+    const x = K.scaleLinear([0, 1], [120, 1200]);
     S.axis = K.axis(g, x, { orient: 'bottom', at: 520, ticks: [0, 0.5, 1], format: (v) => K.fmt(v, 1) });
     S.bar = K.bar(g, { scale: x, base: 0, orient: 'h', y: 300, width: 120, styles: ['reference'] });
     S.num = K.callout(g, { x: 120, y: 240, size: 'second', label: 'example label' });
     // Real data: const it = K.item(ctx.data, '<item id>'); use it.value for geometry, it.display for text.
+    // Names: K.name(i) or K.names('Analysis by <Name:2>'); "[Name]" until team.json has real names.
   },
 
   // render(t, ctx): set every element from t alone. No timers, no transitions, no Math.random().

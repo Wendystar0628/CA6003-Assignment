@@ -1,0 +1,700 @@
+1
+00:00:01,800 --> 00:00:06,368
+A basic logistic regression separates
+adults with and without diabetes
+
+2
+00:00:06,368 --> 00:00:08,595
+at an AUC of 0.961.
+
+3
+00:00:09,845 --> 00:00:13,302
+From survey data alone,
+that is suspiciously high.
+
+4
+00:00:13,302 --> 00:00:16,702
+I'm [Name];
+I led governance and integration.
+
+5
+00:00:16,702 --> 00:00:19,551
+[Name] led data quality and preparation,
+
+6
+00:00:19,551 --> 00:00:24,405
+[Name] exploration, labels and bias,
+and [Name] modelling and conclusions.
+
+7
+00:00:24,405 --> 00:00:28,900
+We present in that order,
+and the 0.961 runs through the whole talk.
+
+8
+00:00:29,300 --> 00:00:34,883
+Our question: who gets labelled diabetic,
+and what do preparation decisions change?
+
+9
+00:00:34,883 --> 00:00:40,282
+The design: one L2 logistic regression
+on three preparations of the same data,
+
+10
+00:00:40,282 --> 00:00:42,518
+naive, minimal and systematic,
+
+11
+00:00:42,518 --> 00:00:45,895
+scored on all adults
+and on adults not yet diagnosed.
+
+12
+00:00:46,945 --> 00:00:50,227
+Our research questions:
+what does the label measure?
+
+13
+00:00:50,227 --> 00:00:52,348
+Is the high AUC leakage?
+
+14
+00:00:52,348 --> 00:00:54,900
+Does systematic preparation pay?
+
+15
+00:00:55,300 --> 00:00:59,847
+The data: NHANES 2021 to 2023,
+the CDC's national health survey.
+
+16
+00:00:59,847 --> 00:01:04,406
+Our cohort is 5,730 non-pregnant adults
+with an HbA1c result.
+
+17
+00:01:04,406 --> 00:01:07,021
+The label is positive
+for a self-reported diagnosis,
+
+18
+00:01:07,021 --> 00:01:09,731
+or HbA1c of 6.5 percent or more.
+
+19
+00:01:09,731 --> 00:01:12,900
+Survey-weighted,
+14.0 percent are positive.
+
+20
+00:01:14,300 --> 00:01:18,196
+Governance came first.
+The NCHS data use agreement forbids
+
+21
+00:01:18,196 --> 00:01:21,660
+re-identification and linkage,
+so we did neither.
+
+22
+00:01:21,660 --> 00:01:27,204
+We kept 78 of 175 columns,
+verified every raw file by hash,
+
+23
+00:01:27,204 --> 00:01:31,100
+and locked our hypotheses by hash
+before running any model.
+
+24
+00:01:32,300 --> 00:01:36,228
+To check our survey-weighting code,
+we re-ran NCHS Data Brief 516:
+
+25
+00:01:36,228 --> 00:01:40,135
+total prevalence 15.79 percent
+against the published 15.8,
+
+26
+00:01:40,135 --> 00:01:42,900
+and all 27 published
+estimates match closely.
+
+27
+00:01:44,300 --> 00:01:46,327
+Correct numbers can still mislead.
+
+28
+00:01:46,327 --> 00:01:47,901
+In [Name]'s analysis,
+
+29
+00:01:47,901 --> 00:01:52,572
+insured adults show 5.3 points
+more diabetes than the uninsured.
+
+30
+00:01:52,572 --> 00:01:56,322
+That is confounding by age:
+the insured are much older.
+
+31
+00:01:56,322 --> 00:01:57,489
+Age-standardised,
+
+32
+00:01:57,489 --> 00:02:01,700
+the gap falls to 0.7 points,
+and its interval includes zero.
+
+33
+00:02:03,300 --> 00:02:09,476
+Most unexpected for me: of six hypotheses
+locked before we saw any related data,
+
+34
+00:02:09,476 --> 00:02:11,167
+only three were supported.
+
+35
+00:02:12,417 --> 00:02:15,900
+Now [Name] asks whether
+the data deserve the same trust.
+
+36
+00:02:17,500 --> 00:02:20,898
+I'm [Name];
+I led data quality and preparation.
+
+37
+00:02:20,898 --> 00:02:22,736
+I profiled before cleaning.
+
+38
+00:02:22,736 --> 00:02:29,011
+NHANES stores 'refused' and 'don't know'
+as numeric codes such as 7, 9, 77 and 99.
+
+39
+00:02:29,011 --> 00:02:32,648
+The common shortcut sets those values
+to missing in every column.
+
+40
+00:02:32,648 --> 00:02:38,523
+That catches 57 genuine codes,
+and destroys 1,496 valid measurements,
+
+41
+00:02:38,523 --> 00:02:42,700
+including HbA1c
+values of exactly 7.0 percent.
+
+42
+00:02:44,300 --> 00:02:48,480
+Each 7.0 is above the 6.5 threshold:
+a diabetes case.
+
+43
+00:02:48,480 --> 00:02:53,435
+The shortcut erased 29 of 721
+HbA1c-based positives.
+
+44
+00:02:54,685 --> 00:02:56,145
+Only six changed label;
+
+45
+00:02:56,145 --> 00:03:00,009
+the rest had also self-reported,
+so the either-or label hid the damage.
+
+46
+00:03:00,009 --> 00:03:01,900
+No summary statistic shows this.
+
+47
+00:03:02,300 --> 00:03:03,531
+Second, outliers.
+
+48
+00:03:03,531 --> 00:03:08,278
+The 1.5 times IQR rule
+flags 542 HbA1c values.
+
+49
+00:03:09,328 --> 00:03:11,691
+Its upper fence lies above
+the diagnostic threshold,
+
+50
+00:03:11,691 --> 00:03:17,138
+so the 519 high values are diabetes
+by definition: the disease, not errors.
+
+51
+00:03:17,138 --> 00:03:18,900
+We reviewed and kept them all.
+
+52
+00:03:20,500 --> 00:03:23,202
+[Name]'s exploration
+found redundancy and skew.
+
+53
+00:03:23,202 --> 00:03:26,158
+Weight and BMI show
+severe multicollinearity:
+
+54
+00:03:26,158 --> 00:03:30,203
+variance inflation factors
+of 95.7 and 97.6.
+
+55
+00:03:31,253 --> 00:03:35,244
+Fasting triglycerides are strongly
+right-skewed: skewness 6.62.
+
+56
+00:03:36,294 --> 00:03:38,038
+Both matter for a linear model,
+
+57
+00:03:38,038 --> 00:03:41,906
+so the systematic preparation drops weight
+and applies a Yeo-Johnson transform,
+
+58
+00:03:41,906 --> 00:03:43,900
+which brings the skewness close to zero.
+
+59
+00:03:44,300 --> 00:03:47,099
+Each finding became a switchable step,
+
+60
+00:03:47,099 --> 00:03:52,052
+fourteen in all, each tied
+to its evidence, and none reads the label.
+
+61
+00:03:53,102 --> 00:03:56,416
+From them we built three
+versions of the data.
+
+62
+00:03:56,416 --> 00:03:58,671
+Naive keeps every column.
+
+63
+00:03:58,671 --> 00:04:04,684
+Minimal adds one rule: drop items
+that exist only after a diagnosis,
+
+64
+00:04:04,684 --> 00:04:06,143
+such as treatment.
+
+65
+00:04:06,143 --> 00:04:08,677
+Systematic adds my other steps,
+
+66
+00:04:08,677 --> 00:04:12,786
+from per-variable recoding
+to transforms and class weights.
+
+67
+00:04:12,786 --> 00:04:16,100
+All three feed the same model
+on the same folds.
+
+68
+00:04:17,300 --> 00:04:18,966
+Most unexpected for me:
+
+69
+00:04:18,966 --> 00:04:23,603
+one routine cleaning line erased
+29 diabetic HbA1c results,
+
+70
+00:04:23,603 --> 00:04:24,924
+and the label hid it.
+
+71
+00:04:26,174 --> 00:04:28,720
+But cleaning cannot fix the label itself.
+
+72
+00:04:28,720 --> 00:04:29,900
+[Name] shows why.
+
+73
+00:04:31,500 --> 00:04:34,877
+I'm [Name];
+I led exploration, labels and bias.
+
+74
+00:04:34,877 --> 00:04:39,603
+First, a fallacy check:
+we scanned 224 subgroup comparisons
+
+75
+00:04:39,603 --> 00:04:42,236
+for Simpson's paradox,
+and six reversed sign.
+
+76
+00:04:43,486 --> 00:04:47,629
+A causal diagram suggests why:
+BMI lies between race and diabetes,
+
+77
+00:04:47,629 --> 00:04:50,556
+so adjusting
+for it distorts the comparison.
+
+78
+00:04:50,556 --> 00:04:52,900
+We report this as exploratory.
+
+79
+00:04:53,300 --> 00:04:55,615
+Research question one: the label.
+
+80
+00:04:55,615 --> 00:04:58,994
+Our label combines two sources,
+and they agree substantially
+
+81
+00:04:58,994 --> 00:05:02,673
+but far from perfectly:
+Cohen's kappa is 0.70.
+
+82
+00:05:03,923 --> 00:05:10,077
+Of 819 self-reported diabetics,
+250 test below 6.5 percent,
+
+83
+00:05:10,077 --> 00:05:12,447
+and two thirds of those
+take insulin or pills.
+
+84
+00:05:13,497 --> 00:05:16,271
+Treatment lowers
+the very marker we label by,
+
+85
+00:05:16,271 --> 00:05:19,900
+so a blood-test-only label
+would call treated patients healthy.
+
+86
+00:05:20,300 --> 00:05:21,750
+The other direction:
+
+87
+00:05:21,750 --> 00:05:27,073
+152 adults have HbA1c of 6.5 or more
+but no diagnosis.
+
+88
+00:05:28,323 --> 00:05:30,580
+Among adults with high HbA1c,
+
+89
+00:05:30,580 --> 00:05:35,137
+the uninsured are 23.2 percentage points
+more often undiagnosed,
+
+90
+00:05:35,137 --> 00:05:39,652
+interval 6.2 to 40.1,
+an association from a small subgroup.
+
+91
+00:05:40,902 --> 00:05:43,602
+So the label also records access to care.
+
+92
+00:05:43,602 --> 00:05:47,159
+That is why we also evaluate
+on adults not yet diagnosed:
+
+93
+00:05:47,159 --> 00:05:48,900
+the people screening is for.
+
+94
+00:05:50,500 --> 00:05:53,279
+The leakage question,
+from [Name]'s experiments.
+
+95
+00:05:53,279 --> 00:05:56,652
+Naive preparation scores an AUC of 0.961.
+
+96
+00:05:56,652 --> 00:06:00,482
+Minimal preparation removes
+only the post-diagnosis items:
+
+97
+00:06:00,482 --> 00:06:03,633
+treatment, diagnosis history
+and prior glucose testing.
+
+98
+00:06:03,633 --> 00:06:08,841
+Same model, same folds: the AUC falls
+to 0.828, a paired drop of 0.131.
+
+99
+00:06:10,591 --> 00:06:12,563
+A deterioration we wanted:
+
+100
+00:06:12,563 --> 00:06:15,900
+the 0.961 was the label leaking back in,
+not skill.
+
+101
+00:06:16,300 --> 00:06:19,873
+[Name]'s shallow decision tree
+shows the mechanism.
+
+102
+00:06:19,873 --> 00:06:24,966
+Its root is a treatment item; one branch
+then splits on age at diagnosis.
+
+103
+00:06:24,966 --> 00:06:27,895
+But 86 percent were never asked
+
+104
+00:06:27,895 --> 00:06:32,833
+that question, and median imputation
+filled every blank with 50.
+
+105
+00:06:34,083 --> 00:06:37,900
+So 'age 50' became a code
+for 'never diagnosed'.
+
+106
+00:06:38,300 --> 00:06:39,853
+Most unexpected for me:
+
+107
+00:06:39,853 --> 00:06:44,626
+at one shared threshold, the model flags
+70 of every 100 diagnosed diabetics,
+
+108
+00:06:44,626 --> 00:06:47,818
+but only 52 of 100 undiagnosed ones.
+
+109
+00:06:49,068 --> 00:06:50,900
+[Name] takes the last question.
+
+110
+00:06:52,500 --> 00:06:55,293
+I'm [Name];
+I led modelling and conclusions.
+
+111
+00:06:55,293 --> 00:06:58,260
+Last question:
+does systematic preparation pay?
+
+112
+00:06:58,260 --> 00:07:00,802
+Same model, minimal against systematic:
+
+113
+00:07:00,802 --> 00:07:05,985
+AUC rises by 0.008,
+interval 0.000 to 0.016.
+
+114
+00:07:07,435 --> 00:07:11,448
+Our smallest effect of interest,
+fixed in advance, was 0.01.
+
+115
+00:07:11,448 --> 00:07:14,214
+The interval covers both no gain
+and a worthwhile one,
+
+116
+00:07:14,214 --> 00:07:18,900
+so the result is inconclusive:
+underpowered, not evidence of no effect.
+
+117
+00:07:19,300 --> 00:07:20,506
+One step did harm.
+
+118
+00:07:20,506 --> 00:07:25,039
+From minimal to systematic,
+the Brier score worsens by 0.074.
+
+119
+00:07:26,289 --> 00:07:27,999
+The cause is [Name]'s class weights:
+
+120
+00:07:27,999 --> 00:07:32,232
+the systematic model predicts
+an average risk of 41 percent
+
+121
+00:07:32,232 --> 00:07:34,849
+where the observed rate is 17.
+
+122
+00:07:34,849 --> 00:07:37,872
+Removing only the class weights
+restores calibration
+
+123
+00:07:37,872 --> 00:07:41,900
+and leaves AUC 0.007 above minimal.
+
+124
+00:07:43,500 --> 00:07:47,951
+Who does the score serve? On all adults,
+the systematic model scores 0.836;
+
+125
+00:07:47,951 --> 00:07:50,379
+on adults not yet diagnosed, 0.781.
+
+126
+00:07:51,829 --> 00:07:54,926
+84 percent of positives
+were already diagnosed,
+
+127
+00:07:54,926 --> 00:07:58,900
+so the all-adults AUC mostly
+measures recognition: spectrum bias.
+
+128
+00:07:59,300 --> 00:08:03,034
+Next, drop two items
+that mark earlier contact with a doctor.
+
+129
+00:08:03,034 --> 00:08:06,555
+On all adults, AUC falls by 0.016.
+
+130
+00:08:06,555 --> 00:08:08,403
+On adults not yet diagnosed,
+
+131
+00:08:08,403 --> 00:08:13,946
+it rises by 0.019,
+interval 0.004 to 0.034:
+
+132
+00:08:13,946 --> 00:08:17,280
+consistent with recognition
+and screening pulling apart.
+
+133
+00:08:18,530 --> 00:08:22,900
+But the lower end lies inside our margin,
+so it is inconclusive.
+
+134
+00:08:23,300 --> 00:08:27,198
+An internal hold-out of 1,146 adults,
+
+135
+00:08:27,198 --> 00:08:31,683
+scored once, repeats the leakage drop
+and the inconclusive preparation result.
+
+136
+00:08:31,683 --> 00:08:32,982
+So, three answers.
+
+137
+00:08:32,982 --> 00:08:35,193
+The label records care as well as disease.
+
+138
+00:08:36,243 --> 00:08:38,417
+The 0.961 was leakage, not skill.
+
+139
+00:08:39,467 --> 00:08:44,264
+Systematic preparation barely moved AUC;
+its value was valid data kept
+
+140
+00:08:44,264 --> 00:08:47,100
+and an honest test
+on adults not yet diagnosed.
+
+141
+00:08:48,300 --> 00:08:50,029
+Most unexpected for me:
+
+142
+00:08:50,029 --> 00:08:53,900
+leakage moved the score far more
+than careful preparation did.
+
+143
+00:08:55,300 --> 00:08:56,989
+Four roles, one audit:
+
+144
+00:08:56,989 --> 00:09:01,971
+[Name]'s governance, [Name]'s preparation,
+[Name]'s labels and bias, my models.
+
+145
+00:09:01,971 --> 00:09:04,637
+Limits: one survey cycle, low response,
+
+146
+00:09:04,637 --> 00:09:08,655
+and only 152 undiagnosed positives;
+
+147
+00:09:08,655 --> 00:09:11,684
+this is a data audit,
+not a screening tool.
+
+148
+00:09:11,684 --> 00:09:14,876
+Generative AI drafted
+much of our code and text;
+
+149
+00:09:14,876 --> 00:09:18,125
+we reviewed it
+and recomputed every number.
+
+150
+00:09:19,375 --> 00:09:23,587
+The score is not the finding;
+what it reveals about the data is.
+
+151
+00:09:23,587 --> 00:09:24,587
+Thank you.

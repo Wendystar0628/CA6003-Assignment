@@ -5,3 +5,6 @@ render/node_modules/
 # previews (<scene>_last.png) are tracked, for review and thumbnails.
 out/*
 !out/*_last.png
+
+# Camera takes (personal video; large)
+takes/

@@ -1,0 +1,172 @@
+1
+00:00:01,500 --> 00:00:04,877
+I'm [Name];
+I led exploration, labels and bias.
+
+2
+00:00:04,877 --> 00:00:09,603
+First, a fallacy check:
+we scanned 224 subgroup comparisons
+
+3
+00:00:09,603 --> 00:00:12,236
+for Simpson's paradox,
+and six reversed sign.
+
+4
+00:00:13,486 --> 00:00:17,629
+A causal diagram suggests why:
+BMI lies between race and diabetes,
+
+5
+00:00:17,629 --> 00:00:20,556
+so adjusting
+for it distorts the comparison.
+
+6
+00:00:20,556 --> 00:00:22,900
+We report this as exploratory.
+
+7
+00:00:23,300 --> 00:00:25,615
+Research question one: the label.
+
+8
+00:00:25,615 --> 00:00:28,994
+Our label combines two sources,
+and they agree substantially
+
+9
+00:00:28,994 --> 00:00:32,673
+but far from perfectly:
+Cohen's kappa is 0.70.
+
+10
+00:00:33,923 --> 00:00:40,077
+Of 819 self-reported diabetics,
+250 test below 6.5 percent,
+
+11
+00:00:40,077 --> 00:00:42,447
+and two thirds of those
+take insulin or pills.
+
+12
+00:00:43,497 --> 00:00:46,271
+Treatment lowers
+the very marker we label by,
+
+13
+00:00:46,271 --> 00:00:49,900
+so a blood-test-only label
+would call treated patients healthy.
+
+14
+00:00:50,300 --> 00:00:51,750
+The other direction:
+
+15
+00:00:51,750 --> 00:00:57,073
+152 adults have HbA1c of 6.5 or more
+but no diagnosis.
+
+16
+00:00:58,323 --> 00:01:00,580
+Among adults with high HbA1c,
+
+17
+00:01:00,580 --> 00:01:05,137
+the uninsured are 23.2 percentage points
+more often undiagnosed,
+
+18
+00:01:05,137 --> 00:01:09,652
+interval 6.2 to 40.1,
+an association from a small subgroup.
+
+19
+00:01:10,902 --> 00:01:13,602
+So the label also records access to care.
+
+20
+00:01:13,602 --> 00:01:17,159
+That is why we also evaluate
+on adults not yet diagnosed:
+
+21
+00:01:17,159 --> 00:01:18,900
+the people screening is for.
+
+22
+00:01:20,500 --> 00:01:23,279
+The leakage question,
+from [Name]'s experiments.
+
+23
+00:01:23,279 --> 00:01:26,652
+Naive preparation scores an AUC of 0.961.
+
+24
+00:01:26,652 --> 00:01:30,482
+Minimal preparation removes
+only the post-diagnosis items:
+
+25
+00:01:30,482 --> 00:01:33,633
+treatment, diagnosis history
+and prior glucose testing.
+
+26
+00:01:33,633 --> 00:01:38,841
+Same model, same folds: the AUC falls
+to 0.828, a paired drop of 0.131.
+
+27
+00:01:40,591 --> 00:01:42,563
+A deterioration we wanted:
+
+28
+00:01:42,563 --> 00:01:45,900
+the 0.961 was the label leaking back in,
+not skill.
+
+29
+00:01:46,300 --> 00:01:49,873
+[Name]'s shallow decision tree
+shows the mechanism.
+
+30
+00:01:49,873 --> 00:01:54,966
+Its root is a treatment item; one branch
+then splits on age at diagnosis.
+
+31
+00:01:54,966 --> 00:01:57,895
+But 86 percent were never asked
+
+32
+00:01:57,895 --> 00:02:02,833
+that question, and median imputation
+filled every blank with 50.
+
+33
+00:02:04,083 --> 00:02:07,900
+So 'age 50' became a code
+for 'never diagnosed'.
+
+34
+00:02:08,300 --> 00:02:09,853
+Most unexpected for me:
+
+35
+00:02:09,853 --> 00:02:14,626
+at one shared threshold, the model flags
+70 of every 100 diagnosed diabetics,
+
+36
+00:02:14,626 --> 00:02:17,818
+but only 52 of 100 undiagnosed ones.
+
+37
+00:02:19,068 --> 00:02:20,900
+[Name] takes the last question.

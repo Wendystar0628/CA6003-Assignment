@@ -10,6 +10,7 @@
     "serve": "node serve.mjs"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-sans": "5.2.5",
     "playwright-core": "1.64.0"
   }
 }

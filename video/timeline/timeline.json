@@ -1,0 +1,164 @@
+{
+  "_meta": {
+    "purpose": "Single source for scene order, files, durations, speakers, sections and narration. Read by video/kit/kit.js (progress bar, name tag, cues), video/subtitles/build_subs.mjs (captions) and video/render/compose_block.mjs (block concat).",
+    "source": "docs/video_plan.md §7.1, §7.3, §7.5 (scene table and narration, v2-doc 2026-10-14). After recording, replace durations with measured ones.",
+    "speaker": "member index 0-3 into notebooks/final/team.json members[] (never a letter)",
+    "narration_tokens": "<Name> = this scene's speaker; <Name:i> = member i (0-based); {pause 1.2} = reading pause of 1.2 s (not shown in captions)",
+    "silentLead": "seconds before the narration starts (title card 1.5 s on scene 1; block-start page or chapter card 1.2 s)",
+    "speechEnd": "optional: the narration ends by this scene time (scene 26: 1.5 s silent end card)",
+    "start": "scene start times are derived: the sum of the durations before it"
+  },
+  "version": 2,
+  "fps": 30,
+  "subtitles": {
+    "leadIn": 0.3,
+    "leadOut": 0.5
+  },
+  "sections": [
+    {
+      "n": 1,
+      "label": "Problem & data",
+      "scope": "Question, design, cohort, governance and confounding"
+    },
+    {
+      "n": 2,
+      "label": "Data quality",
+      "scope": "Profiling, missing-value codes and outliers"
+    },
+    {
+      "n": 3,
+      "label": "EDA & preparation",
+      "scope": "Redundancy, skewness, and the preparation design they inform"
+    },
+    {
+      "n": 4,
+      "label": "Labels & bias",
+      "scope": "Analytical fallacies, label agreement and undiagnosed diabetes"
+    },
+    {
+      "n": 5,
+      "label": "Experiments",
+      "scope": "Naive, minimal and systematic preparation: one model, same folds"
+    },
+    {
+      "n": 6,
+      "label": "Results & robustness",
+      "scope": "Performance by population, ablation, hold-out, and answers to the research questions"
+    },
+    {
+      "n": 7,
+      "label": "Reflection",
+      "scope": "Unexpected findings, contributions, limits and conclusion"
+    }
+  ],
+  "members": [
+    {
+      "index": 0,
+      "roleKey": "governance",
+      "role": "Governance & integration",
+      "owns": "governance, data access, reproducibility",
+      "presents": "Problem & data"
+    },
+    {
+      "index": 1,
+      "roleKey": "quality",
+      "role": "Data quality & preparation",
+      "owns": "quality audit, preparation design, robustness checks",
+      "presents": "Data quality · EDA & preparation"
+    },
+    {
+      "index": 2,
+      "roleKey": "labels",
+      "role": "Exploration, labels & bias",
+      "owns": "exploratory analysis, label analysis, fairness audit",
+      "presents": "Labels & bias · Experiments (leakage check)"
+    },
+    {
+      "index": 3,
+      "roleKey": "modelling",
+      "role": "Modelling & conclusions",
+      "owns": "experiments, synthesis of conclusions",
+      "presents": "Experiments · Results & robustness · Reflection"
+    }
+  ],
+  "blocks": [
+    {
+      "n": 1,
+      "speaker": 0,
+      "scenes": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "n": 2,
+      "speaker": 1,
+      "scenes": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "n": 3,
+      "speaker": 2,
+      "scenes": [
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "n": 4,
+      "speaker": 3,
+      "scenes": [
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ]
+    }
+  ],
+  "scenes": [
+    {"n": 1, "file": "s01_hook_team", "block": 1, "speaker": 0, "section": 1, "duration": 29, "silentLead": 1.5, "narration": "A basic logistic regression separates adults with and without diabetes at an AUC of 0.961. {pause 1.0} From survey data alone, that is suspiciously high. I'm <Name>; I led governance and integration. <Name:1> led data quality and preparation, <Name:2> exploration, labels and bias, and <Name:3> modelling and conclusions. We present in that order, and the 0.961 runs through the whole talk."},
+    {"n": 2, "file": "s02_agenda", "block": 1, "speaker": 0, "section": 1, "duration": 26, "narration": "Our question: who gets labelled diabetic, and what do preparation decisions change? The design: one L2 logistic regression on three preparations of the same data, naive, minimal and systematic, scored on all adults and on adults not yet diagnosed. {pause 0.8} Our research questions: what does the label measure? Is the high AUC leakage? Does systematic preparation pay?"},
+    {"n": 3, "file": "s03_cohort_funnel", "block": 1, "speaker": 0, "section": 1, "duration": 19, "narration": "The data: NHANES 2021 to 2023, the CDC's national health survey. Our cohort is 5,730 non-pregnant adults with an HbA1c result. The label is positive for a self-reported diagnosis, or HbA1c of 6.5 percent or more. Survey-weighted, 14.0 percent are positive. {pause 1.0}"},
+    {"n": 4, "file": "s04_dua_minimisation", "block": 1, "speaker": 0, "section": 1, "duration": 18, "narration": "Governance came first. The NCHS data use agreement forbids re-identification and linkage, so we did neither. We kept 78 of 175 columns, verified every raw file by hash, and locked our hypotheses by hash before running any model. {pause 0.8}"},
+    {"n": 5, "file": "s05_nchs_replication", "block": 1, "speaker": 0, "section": 1, "duration": 12, "narration": "To check our survey-weighting code, we re-ran NCHS Data Brief 516: total prevalence 15.79 percent against the published 15.8, and all 27 published estimates match closely. {pause 1.0}"},
+    {"n": 6, "file": "s06_age_confounding", "block": 1, "speaker": 0, "section": 1, "duration": 19, "narration": "Correct numbers can still mislead. In <Name:2>'s analysis, insured adults show 5.3 points more diabetes than the uninsured. That is confounding by age: the insured are much older. Age-standardised, the gap falls to 0.7 points, and its interval includes zero. {pause 1.2}"},
+    {"n": 7, "file": "s07_reflection_hypotheses", "block": 1, "speaker": 0, "section": 1, "duration": 13, "narration": "Most unexpected for me: of six hypotheses locked before we saw any related data, only three were supported. {pause 1.0} Now <Name:1> asks whether the data deserve the same trust."},
+    {"n": 8, "file": "s08_missing_codes", "block": 2, "speaker": 1, "section": 2, "duration": 28, "silentLead": 1.2, "narration": "I'm <Name>; I led data quality and preparation. I profiled before cleaning. NHANES stores 'refused' and 'don't know' as numeric codes such as 7, 9, 77 and 99. The common shortcut sets those values to missing in every column. That catches 57 genuine codes, and destroys 1,496 valid measurements, including HbA1c values of exactly 7.0 percent. {pause 1.2}"},
+    {"n": 9, "file": "s09_erased_positives", "block": 2, "speaker": 1, "section": 2, "duration": 18, "narration": "Each 7.0 is above the 6.5 threshold: a diabetes case. The shortcut erased 29 of 721 HbA1c-based positives. {pause 1.0} Only six changed label; the rest had also self-reported, so the either-or label hid the damage. No summary statistic shows this."},
+    {"n": 10, "file": "s10_outliers_kept", "block": 2, "speaker": 1, "section": 2, "duration": 17, "narration": "Second, outliers. The 1.5 times IQR rule flags 542 HbA1c values. {pause 0.8} Its upper fence lies above the diagnostic threshold, so the 519 high values are diabetes by definition: the disease, not errors. We reviewed and kept them all."},
+    {"n": 11, "file": "s11_redundancy_skew", "block": 2, "speaker": 1, "section": 3, "duration": 25, "silentLead": 1.2, "narration": "<Name:2>'s exploration found redundancy and skew. Weight and BMI show severe multicollinearity: variance inflation factors of 95.7 and 97.6. {pause 0.8} Fasting triglycerides are strongly right-skewed: skewness 6.62. {pause 0.8} Both matter for a linear model, so the systematic preparation drops weight and applies a Yeo-Johnson transform, which brings the skewness close to zero."},
+    {"n": 12, "file": "s12_preparation_design", "block": 2, "speaker": 1, "section": 3, "duration": 33, "narration": "Each finding became a switchable step, fourteen in all, each tied to its evidence, and none reads the label. {pause 0.8} From them we built three versions of the data. Naive keeps every column. Minimal adds one rule: drop items that exist only after a diagnosis, such as treatment. Systematic adds my other steps, from per-variable recoding to transforms and class weights. All three feed the same model on the same folds. {pause 0.8}"},
+    {"n": 13, "file": "s13_reflection_recode", "block": 2, "speaker": 1, "section": 3, "duration": 13, "narration": "Most unexpected for me: one routine cleaning line erased 29 diabetic HbA1c results, and the label hid it. {pause 1.0} But cleaning cannot fix the label itself. <Name:2> shows why."},
+    {"n": 14, "file": "s14_simpson_dag", "block": 3, "speaker": 2, "section": 4, "duration": 23, "silentLead": 1.2, "narration": "I'm <Name>; I led exploration, labels and bias. First, a fallacy check: we scanned 224 subgroup comparisons for Simpson's paradox, and six reversed sign. {pause 1.0} A causal diagram suggests why: BMI lies between race and diabetes, so adjusting for it distorts the comparison. We report this as exploratory."},
+    {"n": 15, "file": "s15_label_agreement", "block": 3, "speaker": 2, "section": 4, "duration": 27, "narration": "Research question one: the label. Our label combines two sources, and they agree substantially but far from perfectly: Cohen's kappa is 0.70. {pause 1.0} Of 819 self-reported diabetics, 250 test below 6.5 percent, and two thirds of those take insulin or pills. {pause 0.8} Treatment lowers the very marker we label by, so a blood-test-only label would call treated patients healthy."},
+    {"n": 16, "file": "s16_undiagnosed", "block": 3, "speaker": 2, "section": 4, "duration": 29, "narration": "The other direction: 152 adults have HbA1c of 6.5 or more but no diagnosis. {pause 1.0} Among adults with high HbA1c, the uninsured are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1, an association from a small subgroup. {pause 1.0} So the label also records access to care. That is why we also evaluate on adults not yet diagnosed: the people screening is for."},
+    {"n": 17, "file": "s17_leak_gate", "block": 3, "speaker": 2, "section": 5, "duration": 27, "silentLead": 1.2, "narration": "The leakage question, from <Name:3>'s experiments. Naive preparation scores an AUC of 0.961. Minimal preparation removes only the post-diagnosis items: treatment, diagnosis history and prior glucose testing. Same model, same folds: the AUC falls to 0.828, a paired drop of 0.131. {pause 1.5} A deterioration we wanted: the 0.961 was the label leaking back in, not skill."},
+    {"n": 18, "file": "s18_tree_and_50", "block": 3, "speaker": 2, "section": 5, "duration": 22, "narration": "<Name:3>'s shallow decision tree shows the mechanism. Its root is a treatment item; one branch then splits on age at diagnosis. But 86 percent were never asked that question, and median imputation filled every blank with 50. {pause 1.0} So 'age 50' became a code for 'never diagnosed'."},
+    {"n": 19, "file": "s19_reflection_detection", "block": 3, "speaker": 2, "section": 5, "duration": 13, "narration": "Most unexpected for me: at one shared threshold, the model flags 70 of every 100 diagnosed diabetics, but only 52 of 100 undiagnosed ones. {pause 1.0} <Name:3> takes the last question."},
+    {"n": 20, "file": "s20_prep_band", "block": 4, "speaker": 3, "section": 5, "duration": 28, "silentLead": 1.2, "narration": "I'm <Name>; I led modelling and conclusions. Last question: does systematic preparation pay? Same model, minimal against systematic: AUC rises by 0.008, interval 0.000 to 0.016. {pause 1.2} Our smallest effect of interest, fixed in advance, was 0.01. The interval covers both no gain and a worthwhile one, so the result is inconclusive: underpowered, not evidence of no effect."},
+    {"n": 21, "file": "s21_brier", "block": 4, "speaker": 3, "section": 5, "duration": 23, "narration": "One step did harm. From minimal to systematic, the Brier score worsens by 0.074. {pause 1.0} The cause is <Name:1>'s class weights: the systematic model predicts an average risk of 41 percent where the observed rate is 17. Removing only the class weights restores calibration and leaves AUC 0.007 above minimal."},
+    {"n": 22, "file": "s22_recognition", "block": 4, "speaker": 3, "section": 6, "duration": 17, "silentLead": 1.2, "narration": "Who does the score serve? On all adults, the systematic model scores 0.836; on adults not yet diagnosed, 0.781. {pause 1.2} 84 percent of positives were already diagnosed, so the all-adults AUC mostly measures recognition: spectrum bias."},
+    {"n": 23, "file": "s23_care_flip", "block": 4, "speaker": 3, "section": 6, "duration": 24, "narration": "Next, drop two items that mark earlier contact with a doctor. On all adults, AUC falls by 0.016. On adults not yet diagnosed, it rises by 0.019, interval 0.004 to 0.034: consistent with recognition and screening pulling apart. {pause 1.0} But the lower end lies inside our margin, so it is inconclusive."},
+    {"n": 24, "file": "s24_robustness_answers", "block": 4, "speaker": 3, "section": 6, "duration": 25, "narration": "An internal hold-out of 1,146 adults, scored once, repeats the leakage drop and the inconclusive preparation result. So, three answers. The label records care as well as disease. {pause 0.8} The 0.961 was leakage, not skill. {pause 0.8} Systematic preparation barely moved AUC; its value was valid data kept and an honest test on adults not yet diagnosed. {pause 0.8}"},
+    {"n": 25, "file": "s25_reflection_leak_vs_prep", "block": 4, "speaker": 3, "section": 7, "duration": 7, "narration": "Most unexpected for me: leakage moved the score far more than careful preparation did. {pause 1.0}"},
+    {"n": 26, "file": "s26_close", "block": 4, "speaker": 3, "section": 7, "duration": 31, "speechEnd": 29.5, "narration": "Four roles, one audit: <Name:0>'s governance, <Name:1>'s preparation, <Name:2>'s labels and bias, my models. Limits: one survey cycle, low response, and only 152 undiagnosed positives; this is a data audit, not a screening tool. Generative AI drafted much of our code and text; we reviewed it and recomputed every number. {pause 1.0} The score is not the finding; what it reveals about the data is. Thank you."}
+  ]
+}

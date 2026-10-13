@@ -1,80 +1,75 @@
-# Compositing: camera clips into the camera slot, then concatenation
+# Compositing: one block = scenes + one camera take + burned captions
 
-The scenes reserve a camera slot at fixed coordinates (docs/video_plan.md §6.2, §6.3; `Kit.GRID.camera` in `video/kit/kit.js`):
+`node video/render/compose_block.mjs <n>` does all of this. The commands below are what it runs, for doing it by hand or debugging. Run them from `video/`; `compose_block` uses that folder as its working directory, so filter paths need no Windows escaping.
 
-| Layout | Slot (x, y, w × h) | Camera clip treatment |
-|---|---|---|
-| R (default) | 1344, 168, 480 × 270 | scale to 480 × 270 |
-| X | 1344, 690, 480 × 270 | scale to 480 × 270 |
-| S | 0, 0, 960 × 1080 | scale to height 1080, crop the centre 960 × 1080 (8:9) |
-| F | 0, 0, 1920 × 1080 | scale to 1920 × 1080 |
+The film has one layout, and the speaker sits in one fixed picture-in-picture (PiP) slot for the whole film (`Kit.GRID.camera`):
 
-Two ways to composite. Use **A** for R and X scenes, where nothing in the scene overlaps the slot. Use **B** for F and S scenes, because the lower-third sits on top of the portrait there. B also works for R and X.
+| Element | x, y | Size | Drawn by |
+|---|---|---|---|
+| PiP | 1416, 748 | 384 × 216 | camera take, overlaid by ffmpeg |
+| PiP hairline | 1415, 747 | 386 × 218 (1 px outside) | the scene render (kit) |
+| Name tag | 1416, 656 | 384 × 84 | the scene render (kit) |
+| Caption zone | 96, 872 | 1272 × 116 | libass (`subtitles/block_<n>.ass`) |
 
-Notation: `CAM=C_block_take2.mp4` is the member's continuous take (§9.6), and `OFF=312.4` is the second in that take where this scene starts (from the EDL or cue sheet, §8.3 step 5). Scene durations come from `SCENE.duration`; the leak gate is 34 s.
+Each member records one continuous take, so a block gets exactly **one overlay at fixed coordinates**. There is no per-scene offset, no alpha render, and no drawbox.
 
-## A · Overlay the camera on the opaque scene render (R, X)
+Notation:
+- `n=2` is the block (1 = scenes 01–07, 2 = 08–13, 3 = 14–19, 4 = 20–26);
+- `DUR=134` is the block length (the sum of its scene durations in `timeline/timeline.json`);
+- `OFF=2.4` is the second in the take where the block starts.
 
-The scene mp4 has a flat white slot with a 1 px `#E3E7EC` hairline. Scale the camera, place it on the slot, then redraw the hairline over the clip.
-
-```bash
-ffmpeg -i video/out/s18_leak_gate.mp4 -ss $OFF -t 34 -i $CAM -filter_complex "\
-  [1:v]fps=30,scale=480:270:force_original_aspect_ratio=increase,crop=480:270,setsar=1[cam];\
-  [0:v][cam]overlay=x=1344:y=168:eof_action=pass,\
-  drawbox=x=1344:y=168:w=480:h=270:color=0xE3E7EC:t=1,format=yuv420p[v]" \
-  -map "[v]" -map 1:a -c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p \
-  -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
-  -c:a aac -b:a 192k -ar 48000 -shortest video/out/comp_s18_leak_gate.mp4
-```
-
-For layout X, use `overlay=x=1344:y=690` and `drawbox=x=1344:y=690:...`.
-
-## B · Camera underneath, scene with alpha on top (F, S, or any layout)
-
-First render the scene with a transparent slot. This writes `video/out/<name>_alpha.mov` (PNG codec, RGBA):
+## 1 · Concatenate the block's scene renders
 
 ```bash
-node video/render/render.mjs video/scenes/<scene>.html --alpha
-```
-
-Then build a stage-coloured base, put the camera into the slot, and lay the scene over it. The slot hairline and the lower-third are part of the alpha render, so they end up on top of the portrait.
-
-```bash
-# S layout: portrait half, 8:9 centre crop
-ffmpeg -ss $OFF -t $DUR -i $CAM -i video/out/<scene>_alpha.mov -filter_complex "\
-  color=c=0xF6F7F9:s=1920x1080:r=30:d=$DUR[base];\
-  [0:v]fps=30,scale=-2:1080,crop=960:1080,setsar=1[cam];\
-  [base][cam]overlay=x=0:y=0[b];\
-  [b][1:v]overlay=x=0:y=0:format=auto,format=yuv420p[v]" \
-  -map "[v]" -map 0:a -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -ar 48000 \
-  video/out/comp_<scene>.mp4
-```
-
-For F, use `scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080` and `overlay=0:0`. For R, use `scale=480:270` and `overlay=1344:168`.
-
-## Concatenate the composited scenes
-
-The composited clips share codec, size, frame rate and audio settings, so the concat demuxer can join them without re-encoding:
-
-```bash
-# list.txt, in film order
-file 'comp_15_simpson.mp4'
-file 'comp_16_label.mp4'
-file 'comp_17_screening.mp4'
-file 'comp_s18_leak_gate.mp4'
+# out/list_block_2.txt, in timeline order
+file 's08_missing_codes.mp4'
+file 's09_erased_positives.mp4'
 ...
-ffmpeg -f concat -safe 0 -i video/out/list.txt -c copy video/out/block_C.mp4
+ffmpeg -f concat -safe 0 -i out/list_block_2.txt -c copy out/scenes_block_2.mp4
 ```
 
-If any clip differs in encoding settings, re-encode during the concat instead:
+All scene renders share the same codec settings (H.264, yuv420p, 30 fps, BT.709), so the concat is a stream copy.
+
+## 2 · Overlay the take, burn the captions, encode
 
 ```bash
-ffmpeg -f concat -safe 0 -i video/out/list.txt -c:v libx264 -crf 18 -pix_fmt yuv420p \
-  -c:a aac -b:a 192k -ar 48000 video/out/block_C.mp4
+ffmpeg -i out/scenes_block_2.mp4 -ss $OFF -t $DUR -i takes/block_2.mp4 -filter_complex "\
+  [1:v]fps=30,scale=384:216:force_original_aspect_ratio=increase,crop=384:216,setsar=1,setpts=PTS-STARTPTS[cam];\
+  [0:v][cam]overlay=x=1416:y=748:eof_action=pass,\
+  ass=subtitles/block_2.ass:fontsdir=out/fonts,format=yuv420p[v]" \
+  -map "[v]" -map 1:a:0 -t $DUR -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p \
+  -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
+  -c:a aac -b:a 192k -ar 48000 -movflags +faststart out/block_2.mp4
 ```
 
-The four blocks (A, B, C, D) are joined the same way. The film has only three cuts between members (§6.3). Final loudness (−16 LUFS, true peak ≤ −1 dBTP, §8.2) is set at the end, either in Resolve or with ffmpeg:
+- The take is scaled to cover 384 × 216 and centre-cropped, so frame it as a chest-up shot.
+- `eof_action=pass` shows the grey slot if the take is shorter than the block.
+- The take's audio is the narration. Captions are burned last, so they sit above everything.
+
+**No take yet (placeholder).** Use a neutral grey 384 × 216 with a small "camera" label and silent audio. The name tag is already in the scene render.
 
 ```bash
-ffmpeg -i video/out/film.mp4 -c:v copy -af loudnorm=I=-16:TP=-1:LRA=11 -c:a aac -b:a 192k video/out/film_final.mp4
+ffmpeg -i out/scenes_block_2.mp4 -f lavfi -t $DUR -i color=c=0xC9CFD5:s=384x216:r=30 \
+  -f lavfi -t $DUR -i anullsrc=r=48000:cl=stereo -filter_complex "\
+  [1:v]drawtext=fontfile=out/fonts/IBMPlexSans-400.ttf:text=camera:fontsize=24:fontcolor=0x15202B@0.6:x=(w-tw)/2:y=(h-th)/2,setsar=1[cam];\
+  [0:v][cam]overlay=x=1416:y=748:eof_action=pass,ass=subtitles/block_2.ass:fontsdir=out/fonts,format=yuv420p[v]" \
+  -map "[v]" -map 2:a:0 -t $DUR -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -b:a 192k -ar 48000 out/block_2.mp4
 ```
+
+`out/fonts/` holds IBM Plex Sans TTFs made by `render/fonts.mjs` from the `@fontsource/ibm-plex-sans` npm package. libass needs local font files; the scenes themselves load the fonts from Google Fonts in Chrome.
+
+## 3 · The film
+
+```bash
+# out/list_film.txt: block_1.mp4 … block_4.mp4
+ffmpeg -f concat -safe 0 -i out/list_film.txt -c:v copy -af loudnorm=I=-16:TP=-1:LRA=11 \
+  -c:a aac -b:a 192k -ar 48000 -movflags +faststart out/film.mp4
+```
+
+This is `node video/render/compose_film.mjs`. It also copies `subtitles/full.srt` to `out/film.srt` for YouTube. The film has three cuts between members, at the block boundaries.
+
+## After recording
+
+1. Put each take at `video/takes/block_<n>.mp4`, and its start offset in `video/subtitles/overrides.json` → `takes`.
+2. Put the measured scene durations into `video/timeline/timeline.json`, and set the speaking windows or caption times per scene in `overrides.json` → `scenes`.
+3. Re-render the scenes. Their cues come from the same word clock, so they move with the captions. Then run `compose_block.mjs` for each block and `compose_film.mjs`.

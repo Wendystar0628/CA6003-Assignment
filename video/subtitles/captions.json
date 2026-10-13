@@ -1,0 +1,1237 @@
+{
+ "_meta": {
+  "written_by": "video/subtitles/build_subs.mjs",
+  "zone": {
+   "x": 96,
+   "y": 872,
+   "w": 1272,
+   "h": 116
+  },
+  "style": {
+   "font": "IBM Plex Sans Medium",
+   "size": 44,
+   "cssPx": 34,
+   "lineHeight": 42,
+   "lineChars": 42,
+   "maxLines": 2,
+   "fadeMs": 100,
+   "minDur": 1,
+   "maxDur": 6,
+   "maxCps": 17,
+   "ink": "#15202B",
+   "outline": "#FFFFFF",
+   "outlineW": 2,
+   "marginL": 96,
+   "marginR": 552,
+   "marginV": 106
+  }
+ },
+ "scenes": {
+  "1": [
+   {
+    "lines": [
+     "A basic logistic regression separates",
+     "adults with and without diabetes"
+    ],
+    "start": 1.8,
+    "end": 6.368
+   },
+   {
+    "lines": [
+     "at an AUC of 0.961."
+    ],
+    "start": 6.368,
+    "end": 8.595
+   },
+   {
+    "lines": [
+     "From survey data alone,",
+     "that is suspiciously high."
+    ],
+    "start": 9.845,
+    "end": 13.302
+   },
+   {
+    "lines": [
+     "I'm [Name];",
+     "I led governance and integration."
+    ],
+    "start": 13.302,
+    "end": 16.702
+   },
+   {
+    "lines": [
+     "[Name] led data quality and preparation,"
+    ],
+    "start": 16.702,
+    "end": 19.551
+   },
+   {
+    "lines": [
+     "[Name] exploration, labels and bias,",
+     "and [Name] modelling and conclusions."
+    ],
+    "start": 19.551,
+    "end": 24.405
+   },
+   {
+    "lines": [
+     "We present in that order,",
+     "and the 0.961 runs through the whole talk."
+    ],
+    "start": 24.405,
+    "end": 28.9
+   }
+  ],
+  "2": [
+   {
+    "lines": [
+     "Our question: who gets labelled diabetic,",
+     "and what do preparation decisions change?"
+    ],
+    "start": 0.3,
+    "end": 5.883
+   },
+   {
+    "lines": [
+     "The design: one L2 logistic regression",
+     "on three preparations of the same data,"
+    ],
+    "start": 5.883,
+    "end": 11.282
+   },
+   {
+    "lines": [
+     "naive, minimal and systematic,"
+    ],
+    "start": 11.282,
+    "end": 13.518
+   },
+   {
+    "lines": [
+     "scored on all adults",
+     "and on adults not yet diagnosed."
+    ],
+    "start": 13.518,
+    "end": 16.895
+   },
+   {
+    "lines": [
+     "Our research questions:",
+     "what does the label measure?"
+    ],
+    "start": 17.945,
+    "end": 21.227
+   },
+   {
+    "lines": [
+     "Is the high AUC leakage?"
+    ],
+    "start": 21.227,
+    "end": 23.348
+   },
+   {
+    "lines": [
+     "Does systematic preparation pay?"
+    ],
+    "start": 23.348,
+    "end": 25.9
+   }
+  ],
+  "3": [
+   {
+    "lines": [
+     "The data: NHANES 2021 to 2023,",
+     "the CDC's national health survey."
+    ],
+    "start": 0.3,
+    "end": 4.847
+   },
+   {
+    "lines": [
+     "Our cohort is 5,730 non-pregnant adults",
+     "with an HbA1c result."
+    ],
+    "start": 4.847,
+    "end": 9.406
+   },
+   {
+    "lines": [
+     "The label is positive",
+     "for a self-reported diagnosis,"
+    ],
+    "start": 9.406,
+    "end": 12.021
+   },
+   {
+    "lines": [
+     "or HbA1c of 6.5 percent or more."
+    ],
+    "start": 12.021,
+    "end": 14.731
+   },
+   {
+    "lines": [
+     "Survey-weighted,",
+     "14.0 percent are positive."
+    ],
+    "start": 14.731,
+    "end": 17.9
+   }
+  ],
+  "4": [
+   {
+    "lines": [
+     "Governance came first.",
+     "The NCHS data use agreement forbids"
+    ],
+    "start": 0.3,
+    "end": 4.196
+   },
+   {
+    "lines": [
+     "re-identification and linkage,",
+     "so we did neither."
+    ],
+    "start": 4.196,
+    "end": 7.66
+   },
+   {
+    "lines": [
+     "We kept 78 of 175 columns,",
+     "verified every raw file by hash,"
+    ],
+    "start": 7.66,
+    "end": 13.204
+   },
+   {
+    "lines": [
+     "and locked our hypotheses by hash",
+     "before running any model."
+    ],
+    "start": 13.204,
+    "end": 17.1
+   }
+  ],
+  "5": [
+   {
+    "lines": [
+     "To check our survey-weighting code,",
+     "we re-ran NCHS Data Brief 516:"
+    ],
+    "start": 0.3,
+    "end": 4.228
+   },
+   {
+    "lines": [
+     "total prevalence 15.79 percent",
+     "against the published 15.8,"
+    ],
+    "start": 4.228,
+    "end": 8.135
+   },
+   {
+    "lines": [
+     "and all 27 published",
+     "estimates match closely."
+    ],
+    "start": 8.135,
+    "end": 10.9
+   }
+  ],
+  "6": [
+   {
+    "lines": [
+     "Correct numbers can still mislead."
+    ],
+    "start": 0.3,
+    "end": 2.327
+   },
+   {
+    "lines": [
+     "In [Name]'s analysis,"
+    ],
+    "start": 2.327,
+    "end": 3.901
+   },
+   {
+    "lines": [
+     "insured adults show 5.3 points",
+     "more diabetes than the uninsured."
+    ],
+    "start": 3.901,
+    "end": 8.572
+   },
+   {
+    "lines": [
+     "That is confounding by age:",
+     "the insured are much older."
+    ],
+    "start": 8.572,
+    "end": 12.322
+   },
+   {
+    "lines": [
+     "Age-standardised,"
+    ],
+    "start": 12.322,
+    "end": 13.489
+   },
+   {
+    "lines": [
+     "the gap falls to 0.7 points,",
+     "and its interval includes zero."
+    ],
+    "start": 13.489,
+    "end": 17.7
+   }
+  ],
+  "7": [
+   {
+    "lines": [
+     "Most unexpected for me: of six hypotheses",
+     "locked before we saw any related data,"
+    ],
+    "start": 0.3,
+    "end": 6.476
+   },
+   {
+    "lines": [
+     "only three were supported."
+    ],
+    "start": 6.476,
+    "end": 8.167
+   },
+   {
+    "lines": [
+     "Now [Name] asks whether",
+     "the data deserve the same trust."
+    ],
+    "start": 9.417,
+    "end": 12.9
+   }
+  ],
+  "8": [
+   {
+    "lines": [
+     "I'm [Name];",
+     "I led data quality and preparation."
+    ],
+    "start": 1.5,
+    "end": 4.898
+   },
+   {
+    "lines": [
+     "I profiled before cleaning."
+    ],
+    "start": 4.898,
+    "end": 6.736
+   },
+   {
+    "lines": [
+     "NHANES stores 'refused' and 'don't know'",
+     "as numeric codes such as 7, 9, 77 and 99."
+    ],
+    "start": 6.736,
+    "end": 13.011
+   },
+   {
+    "lines": [
+     "The common shortcut sets those values",
+     "to missing in every column."
+    ],
+    "start": 13.011,
+    "end": 16.648
+   },
+   {
+    "lines": [
+     "That catches 57 genuine codes,",
+     "and destroys 1,496 valid measurements,"
+    ],
+    "start": 16.648,
+    "end": 22.523
+   },
+   {
+    "lines": [
+     "including HbA1c",
+     "values of exactly 7.0 percent."
+    ],
+    "start": 22.523,
+    "end": 26.7
+   }
+  ],
+  "9": [
+   {
+    "lines": [
+     "Each 7.0 is above the 6.5 threshold:",
+     "a diabetes case."
+    ],
+    "start": 0.3,
+    "end": 4.48
+   },
+   {
+    "lines": [
+     "The shortcut erased 29 of 721",
+     "HbA1c-based positives."
+    ],
+    "start": 4.48,
+    "end": 9.435
+   },
+   {
+    "lines": [
+     "Only six changed label;"
+    ],
+    "start": 10.685,
+    "end": 12.145
+   },
+   {
+    "lines": [
+     "the rest had also self-reported,",
+     "so the either-or label hid the damage."
+    ],
+    "start": 12.145,
+    "end": 16.009
+   },
+   {
+    "lines": [
+     "No summary statistic shows this."
+    ],
+    "start": 16.009,
+    "end": 17.9
+   }
+  ],
+  "10": [
+   {
+    "lines": [
+     "Second, outliers."
+    ],
+    "start": 0.3,
+    "end": 1.531
+   },
+   {
+    "lines": [
+     "The 1.5 times IQR rule",
+     "flags 542 HbA1c values."
+    ],
+    "start": 1.531,
+    "end": 6.278
+   },
+   {
+    "lines": [
+     "Its upper fence lies above",
+     "the diagnostic threshold,"
+    ],
+    "start": 7.328,
+    "end": 9.691
+   },
+   {
+    "lines": [
+     "so the 519 high values are diabetes",
+     "by definition: the disease, not errors."
+    ],
+    "start": 9.691,
+    "end": 15.138
+   },
+   {
+    "lines": [
+     "We reviewed and kept them all."
+    ],
+    "start": 15.138,
+    "end": 16.9
+   }
+  ],
+  "11": [
+   {
+    "lines": [
+     "[Name]'s exploration",
+     "found redundancy and skew."
+    ],
+    "start": 1.5,
+    "end": 4.202
+   },
+   {
+    "lines": [
+     "Weight and BMI show",
+     "severe multicollinearity:"
+    ],
+    "start": 4.202,
+    "end": 7.158
+   },
+   {
+    "lines": [
+     "variance inflation factors",
+     "of 95.7 and 97.6."
+    ],
+    "start": 7.158,
+    "end": 11.203
+   },
+   {
+    "lines": [
+     "Fasting triglycerides are strongly",
+     "right-skewed: skewness 6.62."
+    ],
+    "start": 12.253,
+    "end": 16.244
+   },
+   {
+    "lines": [
+     "Both matter for a linear model,"
+    ],
+    "start": 17.294,
+    "end": 19.038
+   },
+   {
+    "lines": [
+     "so the systematic preparation drops weight",
+     "and applies a Yeo-Johnson transform,"
+    ],
+    "start": 19.038,
+    "end": 22.906
+   },
+   {
+    "lines": [
+     "which brings the skewness close to zero."
+    ],
+    "start": 22.906,
+    "end": 24.9
+   }
+  ],
+  "12": [
+   {
+    "lines": [
+     "Each finding became a switchable step,"
+    ],
+    "start": 0.3,
+    "end": 3.099
+   },
+   {
+    "lines": [
+     "fourteen in all, each tied",
+     "to its evidence, and none reads the label."
+    ],
+    "start": 3.099,
+    "end": 8.052
+   },
+   {
+    "lines": [
+     "From them we built three",
+     "versions of the data."
+    ],
+    "start": 9.102,
+    "end": 12.416
+   },
+   {
+    "lines": [
+     "Naive keeps every column."
+    ],
+    "start": 12.416,
+    "end": 14.671
+   },
+   {
+    "lines": [
+     "Minimal adds one rule: drop items",
+     "that exist only after a diagnosis,"
+    ],
+    "start": 14.671,
+    "end": 20.684
+   },
+   {
+    "lines": [
+     "such as treatment."
+    ],
+    "start": 20.684,
+    "end": 22.143
+   },
+   {
+    "lines": [
+     "Systematic adds my other steps,"
+    ],
+    "start": 22.143,
+    "end": 24.677
+   },
+   {
+    "lines": [
+     "from per-variable recoding",
+     "to transforms and class weights."
+    ],
+    "start": 24.677,
+    "end": 28.786
+   },
+   {
+    "lines": [
+     "All three feed the same model",
+     "on the same folds."
+    ],
+    "start": 28.786,
+    "end": 32.1
+   }
+  ],
+  "13": [
+   {
+    "lines": [
+     "Most unexpected for me:"
+    ],
+    "start": 0.3,
+    "end": 1.966
+   },
+   {
+    "lines": [
+     "one routine cleaning line erased",
+     "29 diabetic HbA1c results,"
+    ],
+    "start": 1.966,
+    "end": 6.603
+   },
+   {
+    "lines": [
+     "and the label hid it."
+    ],
+    "start": 6.603,
+    "end": 7.924
+   },
+   {
+    "lines": [
+     "But cleaning cannot fix the label itself."
+    ],
+    "start": 9.174,
+    "end": 11.72
+   },
+   {
+    "lines": [
+     "[Name] shows why."
+    ],
+    "start": 11.72,
+    "end": 12.9
+   }
+  ],
+  "14": [
+   {
+    "lines": [
+     "I'm [Name];",
+     "I led exploration, labels and bias."
+    ],
+    "start": 1.5,
+    "end": 4.877
+   },
+   {
+    "lines": [
+     "First, a fallacy check:",
+     "we scanned 224 subgroup comparisons"
+    ],
+    "start": 4.877,
+    "end": 9.603
+   },
+   {
+    "lines": [
+     "for Simpson's paradox,",
+     "and six reversed sign."
+    ],
+    "start": 9.603,
+    "end": 12.236
+   },
+   {
+    "lines": [
+     "A causal diagram suggests why:",
+     "BMI lies between race and diabetes,"
+    ],
+    "start": 13.486,
+    "end": 17.629
+   },
+   {
+    "lines": [
+     "so adjusting",
+     "for it distorts the comparison."
+    ],
+    "start": 17.629,
+    "end": 20.556
+   },
+   {
+    "lines": [
+     "We report this as exploratory."
+    ],
+    "start": 20.556,
+    "end": 22.9
+   }
+  ],
+  "15": [
+   {
+    "lines": [
+     "Research question one: the label."
+    ],
+    "start": 0.3,
+    "end": 2.615
+   },
+   {
+    "lines": [
+     "Our label combines two sources,",
+     "and they agree substantially"
+    ],
+    "start": 2.615,
+    "end": 5.994
+   },
+   {
+    "lines": [
+     "but far from perfectly:",
+     "Cohen's kappa is 0.70."
+    ],
+    "start": 5.994,
+    "end": 9.673
+   },
+   {
+    "lines": [
+     "Of 819 self-reported diabetics,",
+     "250 test below 6.5 percent,"
+    ],
+    "start": 10.923,
+    "end": 17.077
+   },
+   {
+    "lines": [
+     "and two thirds of those",
+     "take insulin or pills."
+    ],
+    "start": 17.077,
+    "end": 19.447
+   },
+   {
+    "lines": [
+     "Treatment lowers",
+     "the very marker we label by,"
+    ],
+    "start": 20.497,
+    "end": 23.271
+   },
+   {
+    "lines": [
+     "so a blood-test-only label",
+     "would call treated patients healthy."
+    ],
+    "start": 23.271,
+    "end": 26.9
+   }
+  ],
+  "16": [
+   {
+    "lines": [
+     "The other direction:"
+    ],
+    "start": 0.3,
+    "end": 1.75
+   },
+   {
+    "lines": [
+     "152 adults have HbA1c of 6.5 or more",
+     "but no diagnosis."
+    ],
+    "start": 1.75,
+    "end": 7.073
+   },
+   {
+    "lines": [
+     "Among adults with high HbA1c,"
+    ],
+    "start": 8.323,
+    "end": 10.58
+   },
+   {
+    "lines": [
+     "the uninsured are 23.2 percentage points",
+     "more often undiagnosed,"
+    ],
+    "start": 10.58,
+    "end": 15.137
+   },
+   {
+    "lines": [
+     "interval 6.2 to 40.1,",
+     "an association from a small subgroup."
+    ],
+    "start": 15.137,
+    "end": 19.652
+   },
+   {
+    "lines": [
+     "So the label also records access to care."
+    ],
+    "start": 20.902,
+    "end": 23.602
+   },
+   {
+    "lines": [
+     "That is why we also evaluate",
+     "on adults not yet diagnosed:"
+    ],
+    "start": 23.602,
+    "end": 27.159
+   },
+   {
+    "lines": [
+     "the people screening is for."
+    ],
+    "start": 27.159,
+    "end": 28.9
+   }
+  ],
+  "17": [
+   {
+    "lines": [
+     "The leakage question,",
+     "from [Name]'s experiments."
+    ],
+    "start": 1.5,
+    "end": 4.279
+   },
+   {
+    "lines": [
+     "Naive preparation scores an AUC of 0.961."
+    ],
+    "start": 4.279,
+    "end": 7.652
+   },
+   {
+    "lines": [
+     "Minimal preparation removes",
+     "only the post-diagnosis items:"
+    ],
+    "start": 7.652,
+    "end": 11.482
+   },
+   {
+    "lines": [
+     "treatment, diagnosis history",
+     "and prior glucose testing."
+    ],
+    "start": 11.482,
+    "end": 14.633
+   },
+   {
+    "lines": [
+     "Same model, same folds: the AUC falls",
+     "to 0.828, a paired drop of 0.131."
+    ],
+    "start": 14.633,
+    "end": 19.841
+   },
+   {
+    "lines": [
+     "A deterioration we wanted:"
+    ],
+    "start": 21.591,
+    "end": 23.563
+   },
+   {
+    "lines": [
+     "the 0.961 was the label leaking back in,",
+     "not skill."
+    ],
+    "start": 23.563,
+    "end": 26.9
+   }
+  ],
+  "18": [
+   {
+    "lines": [
+     "[Name]'s shallow decision tree",
+     "shows the mechanism."
+    ],
+    "start": 0.3,
+    "end": 3.873
+   },
+   {
+    "lines": [
+     "Its root is a treatment item; one branch",
+     "then splits on age at diagnosis."
+    ],
+    "start": 3.873,
+    "end": 8.966
+   },
+   {
+    "lines": [
+     "But 86 percent were never asked"
+    ],
+    "start": 8.966,
+    "end": 11.895
+   },
+   {
+    "lines": [
+     "that question, and median imputation",
+     "filled every blank with 50."
+    ],
+    "start": 11.895,
+    "end": 16.833
+   },
+   {
+    "lines": [
+     "So 'age 50' became a code",
+     "for 'never diagnosed'."
+    ],
+    "start": 18.083,
+    "end": 21.9
+   }
+  ],
+  "19": [
+   {
+    "lines": [
+     "Most unexpected for me:"
+    ],
+    "start": 0.3,
+    "end": 1.853
+   },
+   {
+    "lines": [
+     "at one shared threshold, the model flags",
+     "70 of every 100 diagnosed diabetics,"
+    ],
+    "start": 1.853,
+    "end": 6.626
+   },
+   {
+    "lines": [
+     "but only 52 of 100 undiagnosed ones."
+    ],
+    "start": 6.626,
+    "end": 9.818
+   },
+   {
+    "lines": [
+     "[Name] takes the last question."
+    ],
+    "start": 11.068,
+    "end": 12.9
+   }
+  ],
+  "20": [
+   {
+    "lines": [
+     "I'm [Name];",
+     "I led modelling and conclusions."
+    ],
+    "start": 1.5,
+    "end": 4.293
+   },
+   {
+    "lines": [
+     "Last question:",
+     "does systematic preparation pay?"
+    ],
+    "start": 4.293,
+    "end": 7.26
+   },
+   {
+    "lines": [
+     "Same model, minimal against systematic:"
+    ],
+    "start": 7.26,
+    "end": 9.802
+   },
+   {
+    "lines": [
+     "AUC rises by 0.008,",
+     "interval 0.000 to 0.016."
+    ],
+    "start": 9.802,
+    "end": 14.985
+   },
+   {
+    "lines": [
+     "Our smallest effect of interest,",
+     "fixed in advance, was 0.01."
+    ],
+    "start": 16.435,
+    "end": 20.448
+   },
+   {
+    "lines": [
+     "The interval covers both no gain",
+     "and a worthwhile one,"
+    ],
+    "start": 20.448,
+    "end": 23.214
+   },
+   {
+    "lines": [
+     "so the result is inconclusive:",
+     "underpowered, not evidence of no effect."
+    ],
+    "start": 23.214,
+    "end": 27.9
+   }
+  ],
+  "21": [
+   {
+    "lines": [
+     "One step did harm."
+    ],
+    "start": 0.3,
+    "end": 1.506
+   },
+   {
+    "lines": [
+     "From minimal to systematic,",
+     "the Brier score worsens by 0.074."
+    ],
+    "start": 1.506,
+    "end": 6.039
+   },
+   {
+    "lines": [
+     "The cause is [Name]'s class weights:"
+    ],
+    "start": 7.289,
+    "end": 8.999
+   },
+   {
+    "lines": [
+     "the systematic model predicts",
+     "an average risk of 41 percent"
+    ],
+    "start": 8.999,
+    "end": 13.232
+   },
+   {
+    "lines": [
+     "where the observed rate is 17."
+    ],
+    "start": 13.232,
+    "end": 15.849
+   },
+   {
+    "lines": [
+     "Removing only the class weights",
+     "restores calibration"
+    ],
+    "start": 15.849,
+    "end": 18.872
+   },
+   {
+    "lines": [
+     "and leaves AUC 0.007 above minimal."
+    ],
+    "start": 18.872,
+    "end": 22.9
+   }
+  ],
+  "22": [
+   {
+    "lines": [
+     "Who does the score serve? On all adults,",
+     "the systematic model scores 0.836;"
+    ],
+    "start": 1.5,
+    "end": 5.951
+   },
+   {
+    "lines": [
+     "on adults not yet diagnosed, 0.781."
+    ],
+    "start": 5.951,
+    "end": 8.379
+   },
+   {
+    "lines": [
+     "84 percent of positives",
+     "were already diagnosed,"
+    ],
+    "start": 9.829,
+    "end": 12.926
+   },
+   {
+    "lines": [
+     "so the all-adults AUC mostly",
+     "measures recognition: spectrum bias."
+    ],
+    "start": 12.926,
+    "end": 16.9
+   }
+  ],
+  "23": [
+   {
+    "lines": [
+     "Next, drop two items",
+     "that mark earlier contact with a doctor."
+    ],
+    "start": 0.3,
+    "end": 4.034
+   },
+   {
+    "lines": [
+     "On all adults, AUC falls by 0.016."
+    ],
+    "start": 4.034,
+    "end": 7.555
+   },
+   {
+    "lines": [
+     "On adults not yet diagnosed,"
+    ],
+    "start": 7.555,
+    "end": 9.403
+   },
+   {
+    "lines": [
+     "it rises by 0.019,",
+     "interval 0.004 to 0.034:"
+    ],
+    "start": 9.403,
+    "end": 14.946
+   },
+   {
+    "lines": [
+     "consistent with recognition",
+     "and screening pulling apart."
+    ],
+    "start": 14.946,
+    "end": 18.28
+   },
+   {
+    "lines": [
+     "But the lower end lies inside our margin,",
+     "so it is inconclusive."
+    ],
+    "start": 19.53,
+    "end": 23.9
+   }
+  ],
+  "24": [
+   {
+    "lines": [
+     "An internal hold-out of 1,146 adults,"
+    ],
+    "start": 0.3,
+    "end": 4.198
+   },
+   {
+    "lines": [
+     "scored once, repeats the leakage drop",
+     "and the inconclusive preparation result."
+    ],
+    "start": 4.198,
+    "end": 8.683
+   },
+   {
+    "lines": [
+     "So, three answers."
+    ],
+    "start": 8.683,
+    "end": 9.982
+   },
+   {
+    "lines": [
+     "The label records care as well as disease."
+    ],
+    "start": 9.982,
+    "end": 12.193
+   },
+   {
+    "lines": [
+     "The 0.961 was leakage, not skill."
+    ],
+    "start": 13.243,
+    "end": 15.417
+   },
+   {
+    "lines": [
+     "Systematic preparation barely moved AUC;",
+     "its value was valid data kept"
+    ],
+    "start": 16.467,
+    "end": 21.264
+   },
+   {
+    "lines": [
+     "and an honest test",
+     "on adults not yet diagnosed."
+    ],
+    "start": 21.264,
+    "end": 24.1
+   }
+  ],
+  "25": [
+   {
+    "lines": [
+     "Most unexpected for me:"
+    ],
+    "start": 0.3,
+    "end": 2.029
+   },
+   {
+    "lines": [
+     "leakage moved the score far more",
+     "than careful preparation did."
+    ],
+    "start": 2.029,
+    "end": 5.9
+   }
+  ],
+  "26": [
+   {
+    "lines": [
+     "Four roles, one audit:"
+    ],
+    "start": 0.3,
+    "end": 1.989
+   },
+   {
+    "lines": [
+     "[Name]'s governance, [Name]'s preparation,",
+     "[Name]'s labels and bias, my models."
+    ],
+    "start": 1.989,
+    "end": 6.971
+   },
+   {
+    "lines": [
+     "Limits: one survey cycle, low response,"
+    ],
+    "start": 6.971,
+    "end": 9.637
+   },
+   {
+    "lines": [
+     "and only 152 undiagnosed positives;"
+    ],
+    "start": 9.637,
+    "end": 13.655
+   },
+   {
+    "lines": [
+     "this is a data audit,",
+     "not a screening tool."
+    ],
+    "start": 13.655,
+    "end": 16.684
+   },
+   {
+    "lines": [
+     "Generative AI drafted",
+     "much of our code and text;"
+    ],
+    "start": 16.684,
+    "end": 19.876
+   },
+   {
+    "lines": [
+     "we reviewed it",
+     "and recomputed every number."
+    ],
+    "start": 19.876,
+    "end": 23.125
+   },
+   {
+    "lines": [
+     "The score is not the finding;",
+     "what it reveals about the data is."
+    ],
+    "start": 24.375,
+    "end": 28.587
+   },
+   {
+    "lines": [
+     "Thank you."
+    ],
+    "start": 28.587,
+    "end": 29.587
+   }
+  ]
+ }
+}

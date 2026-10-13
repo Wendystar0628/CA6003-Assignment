@@ -1,58 +1,75 @@
 /* =====================================================================
-   CA6003 explainer video · visual tokens and fixed stage regions
-   Source of truth: docs/video_plan.md §6 (6.2 colour roles, typography,
-   grid; 6.3 layouts F/R/X/S; 6.5 depth layers; 6.7 accessibility).
-   Geometry numbers are mirrored in kit.js (Kit.GRID); change both together.
+   CA6003 explainer video · visual tokens and fixed stage regions (kit v2)
+   Source of truth: docs/video_redesign.md §2 (single layout, grid, PiP, footer),
+   §3 (progress bar, titles, page types); colour roles unchanged from video_plan.md §6.2.
+   Geometry numbers are mirrored in kit.js (Kit.GRID) and the caption zone in
+   video/subtitles/build_subs.mjs (ZONE); change them together.
+
+   Stage grid (1920 x 1080, px)
+     progress bar      x 96-1824   y 40-74
+     main title        x 96-1824   y 96-160    64 px serif
+     subtitle + credit x 96-1824   y 172-206   34 px sans; credit 28 px right-aligned
+     figure panel      x 96-1824   y 224-988   1728 x 764 (panel origin 96,224)
+       main area       panel x 0-1272, y 0-648
+       upper side area panel x 1296-1728, y 0-408
+     name tag          x 1416-1800 y 656-740
+     PiP (camera)      x 1416-1800 y 748-964   384 x 216, 1 px hairline outside
+     keep-out          x 1392-1824 y 632-988   (PiP + name tag + 24 px)
+     caption zone      x 96-1368   y 872-988   (panel x 0-1272, y 648-764)
+     footer            x 96-1824   y 1000-1028 legend row (left), "Notebook section N.M" (right)
    ===================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=block');
 
 :root {
-  /* ---- colour roles (6.2): each colour has exactly one meaning ---- */
-  --structure: #3B2F8F;        /* current position only; never inside a chart */
+  /* ---- colour roles: each colour has exactly one meaning ---- */
+  --structure: #3B2F8F;        /* current section on the progress bar ONLY; nowhere else in a frame */
   --leak: #B42318;             /* harmed or leaked data; always with 45° hatch + triangle */
   --leak-tint: #FBE7E5;
-  --systematic: #0D7A63;       /* Systematic (S) only; solid fill */
+  --systematic: #0D7A63;       /* systematic preparation only; solid fill */
   --systematic-tint: #E2F2EE;
-  --screen: #1D64B0;           /* Screening group (not yet diagnosed); hollow square */
+  --screen: #1D64B0;           /* not-yet-diagnosed adults; hollow square */
   --screen-tint: #E3EEF8;
-  --reference: #5A6672;        /* reference baseline: Minimal (M1), All adults; solid circle */
+  --reference: #5A6672;        /* reference baseline: minimal preparation, all adults; solid circle */
   --ink: #15202B;              /* text, axes, feedback shapes, focus outline, intentional strikes */
-  --line: #DCE1E6;             /* gridlines, SESOI dashed edge */
+  --ink-60: rgba(21, 32, 43, 0.6);
+  --line: #DCE1E6;             /* gridlines, SESOI dashed edge, progress rule not yet reached */
   --band: #F1F3F5;             /* SESOI band fill (neutral grey) */
 
-  /* ---- depth layers (6.5) ---- */
-  --page: #FFFFFF;             /* outside the stage */
-  --stage: #F6F7F9;            /* layer 1 */
-  --paper: #FFFFFF;            /* layer 2 */
+  /* ---- depth layers ---- */
+  --page: #FFFFFF;
+  --stage: #F6F7F9;
+  --paper: #FFFFFF;
   --paper-edge: #E3E7EC;
   --paper-radius: 8px;
   --paper-shadow: 0 2px 16px rgba(21, 32, 43, 0.06);
-  --focus-width: 2px;          /* layer 4 */
+  --pip-empty: #D5DADF;        /* PiP slot before the camera take is composited */
+  --focus-width: 2px;
   --focus-offset: 4px;
   --dim: 0.25;
-  --motif-opacity: 0.04;       /* questionnaire grid, <= 4 % */
 
-  /* ---- typography (6.2, 6.7) ---- */
+  /* ---- typography ---- */
   --font-serif: "Source Serif 4", "Source Serif Pro", Georgia, Cambria, "Times New Roman", serif;
   --font-sans: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, "Cascadia Mono", "Courier New", monospace;
-  --fs-title: 72px;            /* 72-88 */
-  --fs-title-xl: 120px;        /* opening and closing cards */
-  --fs-chapter: 80px;
+  --fs-title: 64px;            /* main title */
+  --fs-subtitle: 34px;         /* subtitle row */
+  --fs-credit: 28px;           /* "Analysis by <Name>" */
+  --fs-card-title: 88px;       /* opening title card */
+  --fs-close-title: 120px;     /* closing card */
+  --fs-chapter: 80px;          /* chapter card section name */
+  --fs-blockstart: 56px;       /* "Presented by <Name> · <role>" */
+  --fs-reflection: 40px;       /* reflection sentence */
   --fs-note: 34px;             /* annotations */
   --fs-min: 28px;              /* floor for any content text */
-  --fs-num-main: 136px;        /* 120-168 */
-  --fs-num-second: 56px;       /* 48-64 */
+  --fs-tag: 24px;              /* only: progress labels, legend row, notebook pointer, .kit-t-foot footnotes */
+  --fs-num-main: 136px;
+  --fs-num-second: 56px;
   --fs-num-interval: 36px;
-  --fs-tag: 24px;              /* only the source tag and the legend row */
+  --fs-caption: 36px;          /* burned-in captions (preview ?captions=1 mirrors the ASS style) */
 
-  /* ---- grid (6.2) ---- */
   --stage-w: 1920px;
   --stage-h: 1080px;
-  --margin-x: 96px;
-  --margin-y: 60px;
-  --gutter: 24px;
 }
 
 /* No CSS-driven motion anywhere: every state is a pure function of t (kit.js). */
@@ -61,72 +78,93 @@
 html, body { margin: 0; padding: 0; background: var(--page); overflow: hidden; }
 body { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
 
-/* Preview scaling wrapper. In render mode the viewport is 1920x1080, so scale = 1. */
 .kit-viewport { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--page); }
 .kit-scaler { width: var(--stage-w); height: var(--stage-h); transform-origin: 50% 50%; flex: none; }
 
-/* ---- stage (layer 1) ---- */
+/* ---- stage ---- */
 .kit-stage { position: relative; width: var(--stage-w); height: var(--stage-h); background: var(--stage); overflow: hidden; }
 .kit-abs { position: absolute; }
 .kit-stagebg { position: absolute; inset: 0; background: var(--stage); }
 .kit-motif { position: absolute; inset: 0; pointer-events: none; }
 
-/* ?alpha=1 (render.mjs --alpha): the camera slot is a transparent hole so the camera clip can sit
-   underneath and the lower-third, badges and borders stay on top (layouts F and S need this). */
-.kit-alpha, .kit-alpha body, .kit-alpha .kit-viewport, .kit-alpha .kit-stage { background: transparent !important; }
-.kit-alpha .kit-camera { background: transparent; }
+/* ---- progress bar: seven sections, plain words; indigo only on the current section's rule ---- */
+.kit-progress { position: absolute; left: 96px; top: 40px; width: 1728px; height: 34px; z-index: 32; }
+.kit-progress-seg { position: absolute; top: 0; height: 34px; }
+.kit-progress-label { position: absolute; left: 16px; top: 1px; font-family: var(--font-sans); font-size: var(--fs-tag); line-height: 24px;
+  white-space: nowrap; color: var(--ink-60); font-weight: 400; }
+.kit-progress-rule { position: absolute; left: 0; right: 0; top: 30px; height: 4px; background: var(--line); }
+.kit-progress-fill { position: absolute; left: 0; top: 0; height: 4px; width: 0; background: var(--structure); }
+.kit-progress-seg.is-done .kit-progress-rule { background: var(--ink); }
+.kit-progress-seg.is-current .kit-progress-label { color: var(--ink); font-weight: 600; }
 
-/* ---- fixed regions ---- */
-.kit-title-band { position: absolute; left: 96px; top: 60px; width: 1728px; height: 90px; }
-.kit-title { position: absolute; left: 0; bottom: 6px; font-family: var(--font-serif); font-weight: 600;
-  font-size: var(--fs-title); line-height: 1; letter-spacing: -0.01em; white-space: nowrap; color: var(--ink); }
-.kit-attrib { position: absolute; font-family: var(--font-mono); font-size: var(--fs-min); line-height: 1;
-  color: var(--ink); padding: 8px 12px; border: 1px solid var(--ink); border-radius: 4px; white-space: nowrap; background: var(--paper); }
+/* ---- title and subtitle rows ---- */
+.kit-title-band { position: absolute; left: 96px; top: 96px; width: 1728px; height: 64px; }
+.kit-title { position: absolute; left: 0; top: 0; font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-title);
+  line-height: 64px; letter-spacing: -0.01em; white-space: nowrap; color: var(--ink); }
+.kit-subrow { position: absolute; left: 96px; top: 172px; width: 1728px; height: 34px; }
+.kit-subtitle { position: absolute; left: 0; top: 0; font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: 34px;
+  white-space: nowrap; color: var(--ink); }
+.kit-credit { position: absolute; right: 0; top: 3px; font-family: var(--font-sans); font-size: var(--fs-credit); line-height: 28px;
+  white-space: nowrap; color: var(--ink); padding-left: 14px; border-left: 2px solid var(--ink); }
 
-.kit-trapbar { position: absolute; right: 0; top: 10px; height: 76px; display: flex; gap: 8px; align-items: stretch; }
-.kit-trapcell { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 12px;
-  font-size: var(--fs-min); line-height: 1; color: var(--ink); white-space: nowrap; }
-.kit-trapcell svg { width: 40px; height: 40px; flex: none; }
-.kit-trapcell .kit-trap-rule { position: absolute; left: 8px; right: 8px; bottom: 0; height: 4px; background: var(--structure); }
-
-.kit-panel { position: absolute; background: var(--paper); border: 1px solid var(--paper-edge);
-  border-radius: var(--paper-radius); box-shadow: var(--paper-shadow); }
+/* ---- figure panel ---- */
+.kit-panel { position: absolute; left: 96px; top: 224px; width: 1728px; height: 764px; background: var(--paper);
+  border: 1px solid var(--paper-edge); border-radius: var(--paper-radius); box-shadow: var(--paper-shadow); }
 .kit-panel > svg { position: absolute; inset: 0; overflow: visible; }
+.kit-figure-html { position: absolute; inset: 0; pointer-events: none; }
 
-.kit-camera { position: absolute; background: #FFFFFF; border: 1px solid var(--paper-edge); }
+/* ---- PiP slot and name tag (always on top) ---- */
+.kit-camera { position: absolute; left: 1416px; top: 748px; width: 384px; height: 216px; background: var(--pip-empty);
+  outline: 1px solid var(--paper-edge); z-index: 40; }
+.kit-nametag { position: absolute; left: 1416px; top: 656px; width: 384px; height: 84px; padding: 7px 14px; background: var(--paper);
+  border: 1px solid var(--paper-edge); display: flex; flex-direction: column; justify-content: center; z-index: 40; overflow: hidden; }
+.kit-nametag-name { font-family: var(--font-sans); font-weight: 600; font-size: var(--fs-min); line-height: 34px; white-space: nowrap; }
+.kit-nametag-role { font-family: var(--font-sans); font-weight: 400; font-size: var(--fs-min); line-height: 34px; white-space: nowrap; }
 
-.kit-rightcol { position: absolute; left: 1344px; top: 168px; width: 480px; height: 792px; }
-.kit-badges { position: absolute; left: 0; bottom: 0; width: 480px; height: 124px; display: flex; }
-.kit-badge-cell { width: 120px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.kit-badge { width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid var(--ink); display: flex;
-  align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 600; font-size: 32px; color: var(--ink); background: var(--paper); }
-.kit-badge.is-current { background: var(--structure); border-color: var(--structure); color: #FFFFFF; }
-.kit-badge-sec { font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1; color: var(--ink); white-space: nowrap; }
-
-.kit-lowerthird { position: absolute; display: flex; gap: 20px; align-items: flex-start; padding: 20px 24px;
-  background: var(--paper); border: 1px solid var(--paper-edge); border-radius: var(--paper-radius); box-shadow: var(--paper-shadow); }
-.kit-lowerthird .kit-badge { flex: none; }
-.kit-lt-name { font-weight: 600; font-size: var(--fs-note); line-height: 1.15; }
-.kit-lt-role { font-size: var(--fs-min); line-height: 1.25; margin-top: 4px; }
-.kit-lt-sec { font-family: var(--font-mono); font-size: var(--fs-min); line-height: 1.25; margin-top: 2px; }
-
-.kit-bottombar { position: absolute; left: 96px; top: 984px; width: 1728px; height: 36px; display: flex; align-items: center; }
-.kit-source { font-family: var(--font-mono); font-size: var(--fs-tag); line-height: 1; color: var(--ink); white-space: nowrap; flex: none; }
-.kit-legendrow { flex: 1; display: flex; justify-content: center; align-items: center; gap: 36px; margin-left: 48px; }
+/* ---- footer: legend row (left) + notebook pointer (right) ---- */
+.kit-bottombar { position: absolute; left: 96px; top: 1000px; width: 1728px; height: 28px; display: flex; align-items: center; gap: 48px; }
+.kit-legendrow { display: flex; align-items: center; gap: 36px; min-width: 0; }
 .kit-legend-item { display: flex; align-items: center; gap: 10px; font-size: var(--fs-tag); line-height: 1; white-space: nowrap; color: var(--ink); }
 .kit-legend-item svg { width: 24px; height: 24px; flex: none; }
+.kit-pointer { margin-left: auto; font-family: var(--font-sans); font-size: var(--fs-tag); line-height: 28px; color: var(--ink-60); white-space: nowrap; }
 .kit-legendchip { position: absolute; display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: var(--paper);
   border: 1px solid var(--paper-edge); border-radius: 6px; font-size: var(--fs-min); line-height: 1; white-space: nowrap; color: var(--ink);
   transform-origin: 0 0; z-index: 20; }
 .kit-legendchip svg { width: 32px; height: 32px; flex: none; }
 
-/* ---- chapter card (6.5): stage colour, 4x120 structure rule, 80 px title, 28 px mono item line ---- */
-.kit-chapter { position: absolute; inset: 0; background: var(--stage); z-index: 30; }
-.kit-chapter-rule { position: absolute; left: 192px; top: 470px; width: 4px; height: 120px; background: var(--structure); }
-.kit-chapter-title { position: absolute; left: 228px; top: 466px; font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-chapter); line-height: 1; white-space: nowrap; }
-.kit-chapter-item { position: absolute; left: 228px; top: 562px; display: flex; align-items: center; gap: 20px;
-  font-family: var(--font-mono); font-size: var(--fs-min); line-height: 1; white-space: nowrap; }
-.kit-chapter-item .kit-badge { width: 44px; height: 44px; font-size: 24px; }
+/* ---- full-frame cards (stage colour; PiP, name tag and, on chapter cards, the progress bar stay visible) ---- */
+.kit-card { position: absolute; inset: 0; background: var(--stage); z-index: 30; }
+.kit-card > div { position: absolute; white-space: nowrap; }
+.kit-card-title { font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-card-title); line-height: 1; letter-spacing: -0.01em; }
+.kit-card-chapter { font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-chapter); line-height: 1; letter-spacing: -0.01em; }
+.kit-card-close { font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-close-title); line-height: 1; letter-spacing: -0.01em; }
+.kit-card-sub { font-family: var(--font-sans); font-size: var(--fs-subtitle); line-height: 1.2; }
+.kit-card-line { font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1.2; }
+.kit-card-small { font-family: var(--font-mono); font-size: var(--fs-min); line-height: 1.2; color: var(--ink-60); }
+.kit-card-source { font-family: var(--font-sans); font-size: var(--fs-tag); line-height: 1.2; color: var(--ink-60); }
+.kit-card-route { display: flex; gap: 16px; }
+.kit-card-route > div { position: relative; padding: 0 16px 14px; font-size: var(--fs-tag); line-height: 24px; color: var(--ink-60); white-space: nowrap; }
+.kit-card-route > div::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--ink); }
+
+/* ---- panel pages: team, block start, reflection (HTML inside the panel, main area only) ---- */
+.kit-team { position: absolute; display: flex; gap: 24px; align-items: stretch; }
+.kit-rolecard { flex: 1 1 0; min-width: 0; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 6px; padding: 24px 22px;
+  display: flex; flex-direction: column; gap: 12px; outline: 0 solid var(--ink); outline-offset: 4px; }
+.kit-rolecard-name { font-family: var(--font-sans); font-weight: 600; font-size: var(--fs-note); line-height: 1.15; overflow-wrap: anywhere; }
+.kit-rolecard-role { font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1.25; }
+.kit-rolecard-line { font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1.25; color: var(--ink-60); }
+.kit-bs-head { position: absolute; font-family: var(--font-serif); font-weight: 600; font-size: var(--fs-blockstart); line-height: 1; white-space: nowrap; }
+.kit-bs-owns { position: absolute; font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1; color: var(--ink-60); white-space: nowrap; }
+.kit-bs-row { position: absolute; font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1; white-space: nowrap; }
+.kit-bs-row b { font-weight: 600; }
+.kit-refl-line { position: absolute; font-family: var(--font-serif); font-weight: 400; font-size: var(--fs-reflection); line-height: 1.3; }
+.kit-refl-handoff { position: absolute; font-family: var(--font-sans); font-size: var(--fs-min); line-height: 1; color: var(--ink-60); white-space: nowrap; }
+
+/* ---- caption preview (?captions=1); the real captions are burned in by ffmpeg/libass in the same zone ---- */
+.kit-captions { position: absolute; left: 96px; top: 872px; width: 1272px; height: 116px; z-index: 45; display: flex; flex-direction: column;
+  justify-content: flex-end; align-items: center; padding-bottom: 12px; font-family: var(--font-sans); font-weight: 500;
+  font-size: var(--fs-caption); line-height: 46px; color: var(--ink); text-align: center; white-space: nowrap; }
+.kit-captions.is-outline { outline: 1px dashed var(--leak); }
 
 /* ---- SVG text classes (content layer) ---- */
 .kit-serif { font-family: var(--font-serif); }
@@ -134,6 +172,7 @@ body { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing:
 .kit-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .kit-t-note { font-family: var(--font-sans); font-size: var(--fs-note); fill: var(--ink); }
 .kit-t-min { font-family: var(--font-sans); font-size: var(--fs-min); fill: var(--ink); }
+.kit-t-foot { font-family: var(--font-sans); font-size: var(--fs-tag); fill: var(--ink-60); color: var(--ink-60); }   /* 24 px footnote */
 .kit-t-tick { font-family: var(--font-mono); font-size: var(--fs-min); fill: var(--ink); font-variant-numeric: tabular-nums; }
 .kit-t-main { font-family: var(--font-mono); font-size: var(--fs-num-main); font-weight: 500; fill: var(--ink); font-variant-numeric: tabular-nums; }
 .kit-t-second { font-family: var(--font-mono); font-size: var(--fs-num-second); font-weight: 500; fill: var(--ink); font-variant-numeric: tabular-nums; }
@@ -142,4 +181,4 @@ body { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing:
 /* ---- preview HUD (never rendered into frames) ---- */
 .kit-hud { position: fixed; right: 12px; bottom: 10px; font: 12px/1.3 var(--font-mono); color: #5A6672;
   background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 4px; padding: 4px 8px; z-index: 10; }
-.kit-error { position: absolute; left: 40px; top: 40px; right: 40px; font: 28px/1.4 var(--font-mono); color: var(--leak); background: #fff; padding: 24px; border: 2px solid var(--leak); }
+.kit-error { position: absolute; left: 40px; top: 40px; right: 40px; font: 28px/1.4 var(--font-mono); color: var(--leak); background: #fff; padding: 24px; border: 2px solid var(--leak); z-index: 99; white-space: pre-wrap; }

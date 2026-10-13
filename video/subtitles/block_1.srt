@@ -1,0 +1,164 @@
+1
+00:00:01,800 --> 00:00:06,368
+A basic logistic regression separates
+adults with and without diabetes
+
+2
+00:00:06,368 --> 00:00:08,595
+at an AUC of 0.961.
+
+3
+00:00:09,845 --> 00:00:13,302
+From survey data alone,
+that is suspiciously high.
+
+4
+00:00:13,302 --> 00:00:16,702
+I'm [Name];
+I led governance and integration.
+
+5
+00:00:16,702 --> 00:00:19,551
+[Name] led data quality and preparation,
+
+6
+00:00:19,551 --> 00:00:24,405
+[Name] exploration, labels and bias,
+and [Name] modelling and conclusions.
+
+7
+00:00:24,405 --> 00:00:28,900
+We present in that order,
+and the 0.961 runs through the whole talk.
+
+8
+00:00:29,300 --> 00:00:34,883
+Our question: who gets labelled diabetic,
+and what do preparation decisions change?
+
+9
+00:00:34,883 --> 00:00:40,282
+The design: one L2 logistic regression
+on three preparations of the same data,
+
+10
+00:00:40,282 --> 00:00:42,518
+naive, minimal and systematic,
+
+11
+00:00:42,518 --> 00:00:45,895
+scored on all adults
+and on adults not yet diagnosed.
+
+12
+00:00:46,945 --> 00:00:50,227
+Our research questions:
+what does the label measure?
+
+13
+00:00:50,227 --> 00:00:52,348
+Is the high AUC leakage?
+
+14
+00:00:52,348 --> 00:00:54,900
+Does systematic preparation pay?
+
+15
+00:00:55,300 --> 00:00:59,847
+The data: NHANES 2021 to 2023,
+the CDC's national health survey.
+
+16
+00:00:59,847 --> 00:01:04,406
+Our cohort is 5,730 non-pregnant adults
+with an HbA1c result.
+
+17
+00:01:04,406 --> 00:01:07,021
+The label is positive
+for a self-reported diagnosis,
+
+18
+00:01:07,021 --> 00:01:09,731
+or HbA1c of 6.5 percent or more.
+
+19
+00:01:09,731 --> 00:01:12,900
+Survey-weighted,
+14.0 percent are positive.
+
+20
+00:01:14,300 --> 00:01:18,196
+Governance came first.
+The NCHS data use agreement forbids
+
+21
+00:01:18,196 --> 00:01:21,660
+re-identification and linkage,
+so we did neither.
+
+22
+00:01:21,660 --> 00:01:27,204
+We kept 78 of 175 columns,
+verified every raw file by hash,
+
+23
+00:01:27,204 --> 00:01:31,100
+and locked our hypotheses by hash
+before running any model.
+
+24
+00:01:32,300 --> 00:01:36,228
+To check our survey-weighting code,
+we re-ran NCHS Data Brief 516:
+
+25
+00:01:36,228 --> 00:01:40,135
+total prevalence 15.79 percent
+against the published 15.8,
+
+26
+00:01:40,135 --> 00:01:42,900
+and all 27 published
+estimates match closely.
+
+27
+00:01:44,300 --> 00:01:46,327
+Correct numbers can still mislead.
+
+28
+00:01:46,327 --> 00:01:47,901
+In [Name]'s analysis,
+
+29
+00:01:47,901 --> 00:01:52,572
+insured adults show 5.3 points
+more diabetes than the uninsured.
+
+30
+00:01:52,572 --> 00:01:56,322
+That is confounding by age:
+the insured are much older.
+
+31
+00:01:56,322 --> 00:01:57,489
+Age-standardised,
+
+32
+00:01:57,489 --> 00:02:01,700
+the gap falls to 0.7 points,
+and its interval includes zero.
+
+33
+00:02:03,300 --> 00:02:09,476
+Most unexpected for me: of six hypotheses
+locked before we saw any related data,
+
+34
+00:02:09,476 --> 00:02:11,167
+only three were supported.
+
+35
+00:02:12,417 --> 00:02:15,900
+Now [Name] asks whether
+the data deserve the same trust.

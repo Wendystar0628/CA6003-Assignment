@@ -1,22 +1,28 @@
 /* =====================================================================
-   CA6003 explainer video · scene kit (dependency-free)
-   Spec: docs/video_plan.md §6 (visual system), §7 (signature visuals), §8 (pipeline).
+   CA6003 explainer video · scene kit v2 (dependency-free)
+   Spec: docs/video_redesign.md §2 (single layout, PiP, keep-out, footer), §3 (progress bar,
+   titles, page types), §6.1 (kit); DECISIONS_v2 (captions, names, no letter codes).
 
    Contract
    --------
    A scene calls Kit.createScene({...}). The kit registers
-       window.SCENE = { duration, layout, number, cues, seek(t), audit(), ready }
-       window.SCENE_READY  (Promise -> {duration, layout, fontsOK})
+       window.SCENE = { duration, number, cues, seek(t), audit(), ready }
+       window.SCENE_READY  (Promise -> {duration, number, fontsOK})
    seek(t) renders the exact state at time t as a pure function of t: no CSS
    transitions, no timers, no randomness. Live preview drives seek() from
    requestAnimationFrame; the renderer calls seek(i / fps) for every frame.
+
+   Shared sources (loaded before setup):
+       ../timeline/timeline.json   scene order, durations, speaker, section (progress bar, name tag)
+       ../data/team_names.json     member names from notebooks/final/team.json ("[Name]" placeholders)
+       ../subtitles/words.json     word clock of the narration (Kit.cueAt), from build_subs.mjs
 
    URL parameters:  ?t=12.3   seek to a time and hold
                     ?play=1   autoplay (from ?t or 0)
                     ?static=1 render the final frame (reduced motion)
                     ?render=1 renderer mode (no HUD, no keyboard, no autoplay)
                     ?hud=0    hide the preview HUD
-                    ?alpha=1  transparent camera slot (render.mjs --alpha, for compositing)
+                    ?captions=1  preview the captions in the caption zone (never in renders)
    Preview keys:    Space play/pause · ←/→ ±1 s (Shift: ±1 frame)
                     N / PageDown next cue step · P / PageUp previous · Home / End
    ===================================================================== */
@@ -27,65 +33,49 @@
   const FPS = 30;
 
   /* ------------------------------------------------------------------ *
-   * 1. Geometry (mirrors tokens.css) and §6 constants
+   * 1. Geometry (mirrors tokens.css) and constants
    * ------------------------------------------------------------------ */
+  /** One layout for the whole film. Stage px unless noted; `fig.*` are panel coordinates. */
   const GRID = {
-    W: 1920, H: 1080, marginX: 96, marginY: 60, gutter: 24,
-    title: { x: 96, y: 60, w: 1728, h: 90 },
-    figure: { y: 168, h: 792 },                 // figure area y 168-960
-    bottom: { x: 96, y: 984, w: 1728, h: 36 },  // bottom bar y 984-1020
-    rightCol: { x: 1344, y: 168, w: 480, h: 792 },
-    camera: {                                   // camera slot, per layout
-      R: { x: 1344, y: 168, w: 480, h: 270 },
-      X: { x: 1344, y: 690, w: 480, h: 270 },   // bottom-right safe area of the figure
-      S: { x: 0, y: 0, w: 960, h: 1080 },       // portrait half, 8:9 crop
-      F: { x: 0, y: 0, w: 1920, h: 1080 },
-    },
-    panel: {                                    // paper panel (layer 2) per layout
-      R: { x: 96, y: 168, w: 1224, h: 792 },    // 1248 px figure column = 1224 panel + 24 gutter
-      X: { x: 96, y: 168, w: 1728, h: 792 },    // leave the camera corner empty in the figure
-      S: { x: 1008, y: 168, w: 816, h: 792 },
-      F: null,
-    },
-    titleBand: {
-      R: { x: 96, w: 1728 }, X: { x: 96, w: 1728 }, S: { x: 1008, w: 816 }, F: null,
+    W: 1920, H: 1080, marginX: 96, gutter: 24,
+    progress: { x: 96, y: 40, w: 1728, h: 34, pad: 32, gap: 16, ruleY: 30, ruleH: 4 },
+    title: { x: 96, y: 96, w: 1728, h: 64 },
+    subtitle: { x: 96, y: 172, w: 1728, h: 34 },
+    panel: { x: 96, y: 224, w: 1728, h: 764 },
+    nametag: { x: 1416, y: 656, w: 384, h: 84 },
+    camera: { x: 1416, y: 748, w: 384, h: 216 },        // PiP; 1 px hairline drawn outside
+    keepOut: { x: 1392, y: 632, w: 432, h: 356 },       // PiP + name tag + 24 px: no content
+    captions: { x: 96, y: 872, w: 1272, h: 116 },       // burned-in captions: no content
+    bottom: { x: 96, y: 1000, w: 1728, h: 28 },
+    fig: {                                              // panel coordinates (origin 96, 224)
+      W: 1728, H: 764,
+      main: { x: 0, y: 0, w: 1272, h: 648 },            // full-height main area, above the caption zone
+      side: { x: 1296, y: 0, w: 432, h: 408 },          // upper side area beside the keep-out
+      keepOut: { x: 1296, y: 408, w: 432, h: 356 },
+      captions: { x: 0, y: 648, w: 1272, h: 116 },
+      left: 48,                                         // text pages start at panel x 48
     },
   };
 
-  /** Colour roles (§6.2). Read from CSS so tokens.css stays the single source. */
+  /** Colour roles. Read from CSS so tokens.css stays the single source. */
   const C = {};
   ['structure', 'leak', 'leak-tint', 'systematic', 'systematic-tint', 'screen', 'screen-tint',
-    'reference', 'ink', 'line', 'band', 'stage', 'paper', 'paper-edge'].forEach((k) => {
+    'reference', 'ink', 'line', 'band', 'stage', 'paper', 'paper-edge', 'pip-empty'].forEach((k) => {
     Object.defineProperty(C, k.replace(/-(\w)/g, (_, c) => c.toUpperCase()), {
       enumerable: true,
       get: () => getComputedStyle(document.documentElement).getPropertyValue('--' + k).trim(),
     });
   });
 
-  /** Members (§6.2 badges, lower-third). */
-  const SPEAKERS = {
-    A: { role: 'Governance & integration', sec: '§0–§2', short: '§0–2' },
-    B: { role: 'Data quality & preparation', sec: '§3 §6 §9', short: '§3·6·9' },
-    C: { role: 'Exploration, labels & bias', sec: '§4 §5 §8', short: '§4·5·8' },
-    D: { role: 'Modelling & conclusions', sec: '§7 §10', short: '§7·10' },
-  };
-
-  /** Trap bar cells (§2.2): icon + label; the active one gets the structure underline. */
-  const TRAPS = [
-    { key: 'leak', label: 'Leak', icon: 'bucket' },
-    { key: 'label', label: 'Label', icon: 'ruler' },
-    { key: 'gain', label: 'Little gain', icon: 'balance' },
-  ];
-
-  /** Legend (§6.2 "legend moment"): first scene of each semantic colour, chip text, row text. */
+  /** Legend: first scene of each semantic colour, chip text (2-3 s), footer row text. */
   const LEGEND = [
-    { key: 'reference', first: 3, chip: 'grey = reference: all adults, Minimal (M1)', row: 'reference baseline' },
+    { key: 'reference', first: 3, chip: 'grey = reference: all adults', row: 'reference baseline' },
     { key: 'leak', first: 8, chip: 'red = harmed or leaked data', row: 'harmed or leaked data' },
-    { key: 'systematic', first: 12, chip: 'teal = Systematic preparation (S)', row: 'Systematic (S)' },
-    { key: 'screen', first: 17, chip: 'blue = Screening group (not yet diagnosed)', row: 'Screening group' },
+    { key: 'systematic', first: 12, chip: 'teal = systematic preparation', row: 'Systematic preparation' },
+    { key: 'screen', first: 16, chip: 'blue = not-yet-diagnosed adults', row: 'Not-yet-diagnosed adults' },
   ];
 
-  /** Motion timings (§6.4). Every M-helper uses these as defaults. */
+  /** Motion timings. Every M-helper uses these as defaults. */
   const T = {
     M1: { dur: 0.6, tickStagger: 0.03, tickDur: 0.2, labelDur: 0.3 },
     M2: { dur: 0.7, stagger: 0.12 },
@@ -99,12 +89,16 @@
     M10: { dur: 0.8 },
     M11: { arrow: 0.4, label: 0.3 },
     M12: { dissolve: 0.4, card: 1.2 },
-    appear: 0.3,          // label / interval fade (callout interval: 0.3 s after its number)
+    appear: 0.3,          // label / interval fade
     gap: 1.5,             // minimum still time between two actions
     legendHold: 2.5,      // legend chip visible 2-3 s
-    legendCollapse: 0.4,  // then folds into the bottom legend row
-    lowerThird: 4.0,
+    legendCollapse: 0.4,  // then folds into the footer legend row
+    subtitleDelay: 0.3,   // a new subtitle fades in 0.3 s after its title
+    titleCard: 2.0,
   };
+
+  /** Shared sources, filled by createScene before setup(). */
+  const STATE = { timeline: null, team: null, words: null, captions: null, scene: null, speaker: 0 };
 
   /* ------------------------------------------------------------------ *
    * 2. Easing, tween, small maths
@@ -676,12 +670,100 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * 7. Stage chrome: motif, title band, trap bar, panel, camera slot,
-   *    right column (attribution, lower-third, badges), bottom bar,
-   *    legend chip, chapter card.
+   * 7. Timeline, names and the word clock
    * ------------------------------------------------------------------ */
-  /** Questionnaire / codebook grid (§6.5): 1 px ink lines, rows 24 px, unequal columns,
-   *  <= 4 % opacity, only in the outer margins, fading linearly toward the content. Static. */
+  const PLACEHOLDER = '[Name]';
+
+  /** Timeline with derived start/end per scene and section. Set by createScene. */
+  function indexTimeline(tl) {
+    let t = 0;
+    tl.byNumber = {};
+    tl.scenes.forEach((s) => { s.start = t; t += s.duration; s.end = t; tl.byNumber[s.n] = s; });
+    tl.total = t;
+    tl.sections.forEach((sec) => {
+      const sc = tl.scenes.filter((s) => s.section === sec.n);
+      sec.start = sc.length ? Math.min(...sc.map((s) => s.start)) : null;
+      sec.end = sc.length ? Math.max(...sc.map((s) => s.end)) : null;
+    });
+    return tl;
+  }
+
+  /** Member index from a number or a legacy letter key (the letter itself is never shown). */
+  function memberIndex(v) {
+    if (v == null) return null;
+    if (typeof v === 'number') return v;
+    const i = 'ABCD'.indexOf(String(v).toUpperCase());
+    return i >= 0 ? i : null;
+  }
+
+  /** Display name of member i: the team.json name, or "[Name]" while it is a placeholder. */
+  function name(i) {
+    const m = STATE.team && STATE.team.members && STATE.team.members[i];
+    return m && m.name ? m.name : PLACEHOLDER;
+  }
+  /** Member record: { index, name, role, roleKey, owns, presents }. */
+  function member(i) {
+    const meta = (STATE.timeline && STATE.timeline.members || []).find((m) => m.index === i) || {};
+    return Object.assign({ index: i }, meta, { name: name(i) });
+  }
+  /** Replace <Name> (this scene's speaker), <Name:i> (member i, 0-based), {role}, {group}. */
+  function names(str, speaker = STATE.speaker) {
+    if (str == null) return str;
+    return String(str)
+      .replace(/<Name(?::(\d))?>/g, (_, i) => name(i != null ? Number(i) : speaker))
+      .replace(/\{role(?::(\d))?\}/g, (_, i) => member(i != null ? Number(i) : speaker).role || '')
+      .replace(/\{group\}/g, (STATE.team && STATE.team.group) || '[no.]');
+  }
+
+  function sceneInfo(n) { return STATE.timeline && STATE.timeline.byNumber[n == null ? STATE.scene : n]; }
+
+  /** One token -> comparable key: lower case, no punctuation ("5,730" -> "5730", "don't" -> "dont", "0.961." -> "0.961"). */
+  const normWord = (s) => String(s).toLowerCase().replace(/[^a-z0-9<>:.%]+/g, '').replace(/\.(?!\d)|(?<!\d)\./g, '');
+  /** Word clock of a scene: [{w (narration token), t (as captioned), s, e}] in scene seconds. */
+  function words(n) {
+    const sc = STATE.words && STATE.words.scenes && STATE.words.scenes[n == null ? STATE.scene : n];
+    if (!sc) throw new Error(`No word clock for scene ${n == null ? STATE.scene : n}: run "node video/subtitles/build_subs.mjs"`);
+    return sc.words;
+  }
+  /** cueAt([scene,] phrase, {nth = 1, end = false, offset = 0}) -> scene time (s) at which the
+   *  narration phrase starts (or ends, with end: true). Matches the narration tokens (with <Name>
+   *  tokens) or the captioned text, ignoring case and punctuation. Throws if the phrase is missing. */
+  function cueAt(a, b, c) {
+    let n = STATE.scene, phrase = a, o = b || {};
+    if (typeof a === 'number') { n = a; phrase = b; o = c || {}; }
+    const W = words(n);
+    const P = String(phrase).split(/\s+/).map(normWord).filter(Boolean);
+    const nth = o.nth || 1;
+    for (const key of ['w', 't']) {
+      const toks = W.map((x) => normWord(x[key]));
+      let seen = 0;
+      for (let i = 0; i + P.length <= toks.length; i++) {
+        if (P.every((p, k) => toks[i + k] === p)) {
+          if (++seen === nth) return +((o.end ? W[i + P.length - 1].e : W[i].s) + (o.offset || 0)).toFixed(3);
+        }
+      }
+    }
+    throw new Error(`cueAt: phrase not found in scene ${n}: "${phrase}"`);
+  }
+  /** Resolve a cues table: numbers stay; 'phrase' | ['phrase', offset] | {phrase, offset, end, nth} -> seconds. */
+  function resolveCues(cues) {
+    const out = {};
+    for (const [k, v] of Object.entries(cues || {})) {
+      if (typeof v === 'number' || v == null) out[k] = v;
+      else if (typeof v === 'string') out[k] = cueAt(v);
+      else if (Array.isArray(v)) out[k] = typeof v[0] === 'string' ? cueAt(v[0], { offset: v[1] || 0 }) : v;
+      else if (typeof v === 'object' && v.phrase) out[k] = cueAt(v.phrase, v);
+      else out[k] = v;
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 8. Stage chrome: motif, progress bar, title + subtitle (+ credit), panel,
+   *    name tag + PiP, footer (legend row, notebook pointer), legend chip,
+   *    full-frame cards (title, chapter, closing)
+   * ------------------------------------------------------------------ */
+  /** Questionnaire / codebook grid: 1 px ink lines, <= 4 % opacity, only in the outer margins. Static. */
   function motif() {
     const W = GRID.W, H = GRID.H, id = nextId('kit-motif');
     const cols = [72, 144, 48, 96, 192, 60, 120, 84, 168, 36, 108];
@@ -690,7 +772,7 @@
     let lines = '';
     for (let y = 0; y <= H; y += 24) lines += `<line x1="0" x2="${W}" y1="${y + 0.5}" y2="${y + 0.5}"/>`;
     xs.forEach((x) => { lines += `<line y1="0" y2="${H}" x1="${x + 0.5}" x2="${x + 0.5}"/>`; });
-    const m = GRID.marginX, my = GRID.marginY;
+    const m = GRID.marginX, my = 40;
     const html = `<svg class="kit-motif" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">
       <defs>
         <linearGradient id="${id}-t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
@@ -710,110 +792,128 @@
     return wrap.firstElementChild;
   }
 
-  function badgeEl(letter, current, size) {
-    const b = h('div', { class: 'kit-badge' + (current ? ' is-current' : ''), text: letter });
-    if (size) Object.assign(b.style, { width: size + 'px', height: size + 'px', fontSize: Math.max(28, Math.round(size * 0.52)) + 'px' });
-    return b;
+  const NO_POINTER_PAGES = new Set(['blockstart', 'title', 'chapter', 'closing', 'card']);
+
+  /** "7.5" -> "Notebook section 7.5"; "4.7–4.8" or "1.1, 3.2" -> "Notebook sections ..."; full strings pass. */
+  function pointerText(p) {
+    if (p == null || p === false || p === '') return null;
+    const s = String(p).trim();
+    if (/^notebook/i.test(s)) return s;
+    return (/[–,-]| and /.test(s) ? 'Notebook sections ' : 'Notebook section ') + s;
+  }
+
+  /** Phases: [{at, title, subtitle, page, pointer, credit}], each field inherited from cfg when omitted. */
+  function normPhases(cfg) {
+    let list;
+    if (Array.isArray(cfg.phases)) list = cfg.phases;
+    else if (Array.isArray(cfg.title)) list = cfg.title.map((x) => ({ at: x.at, title: x.text != null ? x.text : x.title, subtitle: x.subtitle }));
+    else list = [{ at: 0 }];
+    const base = {
+      title: typeof cfg.title === 'string' ? cfg.title : null,
+      subtitle: cfg.subtitle != null ? cfg.subtitle : null,
+      page: cfg.page || 'evidence',
+      pointer: cfg.pointer !== undefined ? cfg.pointer : null,
+      credit: cfg.credit != null ? cfg.credit : null,
+    };
+    return list.map((p) => {
+      const o = { at: p.at || 0 };
+      for (const k of Object.keys(base)) o[k] = p[k] !== undefined ? p[k] : base[k];
+      return o;
+    }).sort((a, b) => a.at - b.at);
+  }
+
+  /** Runs of equal text for one field: [{from, to, text, el}] — a change dissolves (M12), equal text holds. */
+  function runsOf(phases, get) {
+    const runs = [];
+    phases.forEach((p) => {
+      const text = get(p);
+      const last = runs[runs.length - 1];
+      if (last && last.text === text) return;
+      runs.push({ from: p.at, text });
+    });
+    return runs;
+  }
+  function runOpacity(t, runs, k, delay = 0, fadeFirst = null) {
+    const r = runs[k], next = runs[k + 1];
+    if (!r.el) return 0;
+    const pin = k === 0 ? (fadeFirst != null ? appear(t, fadeFirst, T.M12.dissolve) : 1) : M12_dissolve(t, r.from + delay);
+    const pout = next ? M12_dissolve(t, next.from + (next.text ? delay : 0)) : 0;
+    return pin * (1 - pout);
   }
 
   function buildChrome(cfg, stage) {
-    const L = cfg.layout;
     const ui = { stage };
-    // layer 1: stage colour + motif. In alpha mode the camera rectangle is cut out of it.
+    const spk = STATE.speaker;
     const bg = h('div', { class: 'kit-stagebg' });
     if (cfg.grid !== false) bg.append(motif());
     stage.append(bg);
-    if (document.documentElement.classList.contains('kit-alpha')) {
-      const c = GRID.camera[L], W = GRID.W, H = GRID.H;
-      bg.style.clipPath = `polygon(evenodd, 0 0, ${W}px 0, ${W}px ${H}px, 0 ${H}px, 0 0, ${c.x}px ${c.y}px, ${c.x + c.w}px ${c.y}px, ${c.x + c.w}px ${c.y + c.h}px, ${c.x}px ${c.y + c.h}px, ${c.x}px ${c.y}px)`;
-    }
 
-    // --- title band
-    const tb = GRID.titleBand[L];
-    if (tb && cfg.title !== false) {
-      const band = h('div', { class: 'kit-title-band', style: { left: tb.x + 'px', width: tb.w + 'px' } });
-      const titles = typeof cfg.title === 'string' ? [{ at: 0, text: cfg.title }] : (cfg.title || []);
-      ui.titles = titles.map((tt) => { const e = h('div', { class: 'kit-title', text: tt.text }); band.append(e); return Object.assign({ el: e }, tt); });
-      // trap bar (§2.2): from scene 2 to 25, or when cfg.trap names a cell
-      const showTrap = cfg.trap === false ? false : (cfg.trap != null || (cfg.number >= 2 && cfg.number <= 25));
-      if (showTrap && L !== 'S') {
-        const bar = h('div', { class: 'kit-trapbar' });
-        TRAPS.forEach((tr) => {
-          const cell = h('div', { class: 'kit-trapcell', html: iconSVG(tr.icon, 40, C.ink) });
-          cell.append(h('span', { text: tr.label }));
-          if (cfg.trap === tr.key) cell.append(h('div', { class: 'kit-trap-rule' }));
-          bar.append(cell);
-        });
-        band.append(bar);
-        ui.trapbar = bar;
-      }
-      if (cfg.attribution) { ui.attrib = h('div', { class: 'kit-attrib', text: cfg.attribution }); band.append(ui.attrib); }
-      stage.append(band);
-      ui.titleBand = band;
-    }
-
-    // --- paper panel + figure SVG
-    const P = GRID.panel[L];
-    if (P) {
-      const panel = h('div', { class: 'kit-panel', style: { left: P.x + 'px', top: P.y + 'px', width: P.w + 'px', height: P.h + 'px' } });
-      const fig = svg('svg', { width: P.w, height: P.h, viewBox: `0 0 ${P.w} ${P.h}`, class: 'kit-figure' });
-      const defs = svg('defs', {}, fig);
-      hatchPattern(defs);
-      panel.append(fig);
-      stage.append(panel);
-      Object.assign(ui, { panel, fig, defs, P });
-    }
-
-    // --- camera slot (flat white + hairline border; the camera clip is composited here later)
-    const cam = GRID.camera[L];
-    ui.camera = h('div', { class: 'kit-camera', style: { left: cam.x + 'px', top: cam.y + 'px', width: cam.w + 'px', height: cam.h + 'px' } });
-    stage.append(ui.camera);
-
-    // --- right column: badges (R only unless asked)
-    const spk = cfg.speaker;
-    if ((cfg.badges != null ? cfg.badges : L === 'R') && spk) {
-      const col = h('div', { class: 'kit-rightcol' });
-      const row = h('div', { class: 'kit-badges' });
-      Object.keys(SPEAKERS).forEach((k) => row.append(h('div', { class: 'kit-badge-cell' }, [badgeEl(k, k === spk), h('div', { class: 'kit-badge-sec', text: SPEAKERS[k].short })])));
-      col.append(row);
-      stage.append(col);
-      ui.badges = row;
-    }
-
-    // --- lower-third (only when the scene asks for it)
-    if (cfg.lowerThird && spk) {
-      const lt = cfg.lowerThird, info = SPEAKERS[spk];
-      const el = h('div', { class: 'kit-lowerthird' }, [badgeEl(spk, true), h('div', {}, [
-        h('div', { class: 'kit-lt-name', text: lt.name || 'Member ' + spk }),
-        h('div', { class: 'kit-lt-role', text: lt.role || info.role }),
-        h('div', { class: 'kit-lt-sec', text: lt.sec || info.sec }),
-      ])]);
-      const pos = { R: { left: 1344, top: 462, width: 480 }, X: { left: 96, top: 820 }, S: { left: 48, top: 860 }, F: { left: 96, top: 820 } }[L];
-      Object.assign(el.style, { left: pos.left + 'px', top: pos.top + 'px', width: pos.width ? pos.width + 'px' : 'auto' });
-      stage.append(el);
-      ui.lowerThird = el;
-    }
-
-    // --- bottom bar: source tag (left) + persistent legend row (centre). No animation.
-    const BB = L === 'S' ? { x: 1008, w: 816 } : { x: GRID.bottom.x, w: GRID.bottom.w };
-    if (L !== 'F') {
-      const bar = h('div', { class: 'kit-bottombar', style: { left: BB.x + 'px', width: BB.w + 'px' } });
-      ui.source = h('div', { class: 'kit-source', text: cfg.source || '' });
-      const row = h('div', { class: 'kit-legendrow' });
-      ui.legendItems = {};
-      const moment = cfg.legendMoment && cfg.legendMoment.key;
-      LEGEND.filter((l) => cfg.number >= l.first || l.key === moment || (cfg.legend || []).includes(l.key)).forEach((l) => {
-        const it = h('div', { class: 'kit-legend-item', html: swatchSVG(l.key) });
-        it.append(h('span', { text: l.row }));
-        row.append(it);
-        ui.legendItems[l.key] = it;
+    // --- progress bar (seven sections, plain words)
+    const tl = STATE.timeline;
+    if (tl && cfg.progress !== false) {
+      const bar = h('div', { class: 'kit-progress' });
+      const segs = tl.sections.map((sec) => {
+        const fill = h('div', { class: 'kit-progress-fill' });
+        const rule = h('div', { class: 'kit-progress-rule' }, [fill]);
+        const label = h('div', { class: 'kit-progress-label', text: sec.label });
+        const el = h('div', { class: 'kit-progress-seg' }, [label, rule]);
+        bar.append(el);
+        return { n: sec.n, label: sec.label, el, labelEl: label, rule, fill, sec };
       });
-      bar.append(ui.source, row);
       stage.append(bar);
-      ui.legendRow = row;
+      ui.progress = { el: bar, segs };
     }
 
-    // --- legend chip (first use of a semantic colour): corner of the figure, 2-3 s, folds into the row
+    // --- title and subtitle rows (phases dissolve with M12)
+    const phases = ui.phases = normPhases(cfg);
+    const band = h('div', { class: 'kit-title-band' });
+    const sub = h('div', { class: 'kit-subrow' });
+    const mk = (runs, parent, cls) => runs.forEach((r) => { if (r.text) { r.el = h('div', { class: cls, text: r.text }); parent.append(r.el); } });
+    ui.runs = {
+      title: runsOf(phases, (p) => (p.title ? names(p.title) : null)),
+      subtitle: runsOf(phases, (p) => (p.subtitle ? names(p.subtitle) : null)),
+      credit: runsOf(phases, (p) => (p.credit ? names(p.credit) : null)),
+      pointer: runsOf(phases, (p) => (NO_POINTER_PAGES.has(p.page) ? null : pointerText(p.pointer))),
+    };
+    mk(ui.runs.title, band, 'kit-title');
+    mk(ui.runs.subtitle, sub, 'kit-subtitle');
+    mk(ui.runs.credit, sub, 'kit-credit');
+    stage.append(band, sub);
+    ui.titleBand = band; ui.subRow = sub;
+    ui.titles = ui.runs.title.filter((r) => r.el).map((r) => ({ el: r.el, at: r.from, text: r.text }));   // legacy shape
+
+    // --- paper panel: SVG figure + an HTML layer for text pages
+    const P = GRID.panel;
+    const panel = h('div', { class: 'kit-panel' });
+    const fig = svg('svg', { width: P.w, height: P.h, viewBox: `0 0 ${P.w} ${P.h}`, class: 'kit-figure' });
+    const defs = svg('defs', {}, fig);
+    hatchPattern(defs);
+    const figHTML = h('div', { class: 'kit-figure-html' });
+    panel.append(fig, figHTML);
+    if (cfg.panel === false) panel.style.display = 'none';
+    stage.append(panel);
+    Object.assign(ui, { panel, fig, defs, figHTML, P });
+
+    // --- footer: legend row (left) + notebook pointer (right)
+    const bar = h('div', { class: 'kit-bottombar' });
+    const row = h('div', { class: 'kit-legendrow' });
+    ui.legendItems = {};
+    const moment = cfg.legendMoment && cfg.legendMoment.key;
+    const showLegend = cfg.legend === false ? [] : LEGEND.filter((l) => (cfg.number >= l.first && cfg.number < 900) || l.key === moment || (cfg.legend || []).includes(l.key));
+    showLegend.forEach((l) => {
+      const it = h('div', { class: 'kit-legend-item', html: swatchSVG(l.key) });
+      it.append(h('span', { text: l.row }));
+      row.append(it);
+      ui.legendItems[l.key] = it;
+    });
+    const pointer = h('div', { class: 'kit-pointer' });
+    ui.runs.pointer.forEach((r) => { if (r.text) { r.el = h('span', { text: r.text, style: { position: 'absolute', right: '0' } }); pointer.append(r.el); } });
+    Object.assign(pointer.style, { position: 'relative', height: '28px', minWidth: '1px' });
+    bar.append(row, pointer);
+    stage.append(bar);
+    ui.legendRow = row; ui.pointer = pointer; ui.bottom = bar;
+
+    // --- legend chip (first use of a semantic colour): panel top-right, 2-3 s, folds into the row
     if (cfg.legendMoment) {
       const lm = cfg.legendMoment, def = LEGEND.find((l) => l.key === lm.key);
       const chip = h('div', { class: 'kit-legendchip', html: swatchSVG(lm.key, 32) });
@@ -822,18 +922,66 @@
       ui.chip = chip;
     }
 
-    // --- chapter card (on top of everything)
-    if (cfg.chapterCard) {
-      const cc = cfg.chapterCard;
-      const card = h('div', { class: 'kit-chapter' }, [
-        h('div', { class: 'kit-chapter-rule' }),
-        h('div', { class: 'kit-chapter-title', text: cc.title }),
-        h('div', { class: 'kit-chapter-item' }, [h('span', { text: cc.item || '' }), spk ? badgeEl(spk, true, 52) : null]),
-      ]);
-      stage.append(card);
-      ui.card = card;
+    // --- full-frame cards (under the PiP, the name tag and, on chapter cards, the progress bar)
+    const cards = (cfg.cards || []).slice();
+    if (cfg.chapterCard) cards.push(Object.assign({ type: 'chapter' }, cfg.chapterCard, { title: cfg.chapterCard.title }));
+    ui.cards = cards.map((c) => buildCard(c, cfg));
+    ui.cards.forEach((c) => stage.append(c.el));
+
+    // --- name tag + PiP slot (always on top, whole film)
+    const m = member(spk);
+    ui.nametagName = h('div', { class: 'kit-nametag-name', text: names(cfg.nametag && cfg.nametag.line1 || 'Presented by <Name>') });
+    ui.nametagRole = h('div', { class: 'kit-nametag-role', text: names(cfg.nametag && cfg.nametag.line2 || m.role || '') });
+    ui.nametag = h('div', { class: 'kit-nametag' }, [ui.nametagName, ui.nametagRole]);
+    ui.camera = h('div', { class: 'kit-camera' });
+    stage.append(ui.nametag, ui.camera);
+
+    // --- caption preview (?captions=1)
+    if (STATE.captions) {
+      ui.captions = h('div', { class: 'kit-captions' + (STATE.captionsOutline ? ' is-outline' : '') });
+      stage.append(ui.captions);
     }
     return ui;
+  }
+
+  /** Full-frame cards. type 'title' | 'chapter' | 'closing'. Text passes through names(). */
+  function buildCard(c, cfg) {
+    const el = h('div', { class: 'kit-card' });
+    const add = (cls, text, style) => { if (text == null || text === '') return null; const d = h('div', { class: cls, text: names(text), style }); el.append(d); return d; };
+    const px = (v) => v + 'px';
+    const sec = sceneInfo() && STATE.timeline.sections.find((s) => s.n === sceneInfo().section);
+    const card = Object.assign({ at: 0 }, c);
+    if (c.type === 'title') {
+      card.until = c.until != null ? c.until : card.at + (c.dur || T.titleCard);
+      card.progress = c.progress === true;
+      add('kit-card-title', c.title, { left: px(192), top: px(330) });
+      add('kit-card-sub', c.subtitle, { left: px(192), top: px(448) });
+      add('kit-card-line', c.line, { left: px(192), top: px(516) });
+      add('kit-card-small', c.small, { left: px(192), top: px(568) });
+    } else if (c.type === 'chapter') {
+      card.until = c.until != null ? c.until : card.at + (c.dur || T.M12.card);
+      card.progress = c.progress !== false;
+      add('kit-card-chapter', c.title != null ? c.title : sec && sec.label, { left: px(192), top: px(392) });
+      add('kit-card-sub', c.scope != null ? c.scope : sec && sec.scope, { left: px(192), top: px(500) });
+      add('kit-card-line', c.line != null ? c.line : (c.item != null ? c.item : 'Presented by <Name>'), { left: px(192), top: px(562) });
+    } else if (c.type === 'closing') {
+      card.until = c.until != null ? c.until : Infinity;
+      card.progress = false;
+      // everything above y 632 (clear of the PiP keep-out and the caption zone), centred on the stage
+      const centre = { left: px(GRID.W / 2), transform: 'translateX(-50%)' };
+      add('kit-card-close', c.title, Object.assign({ top: px(292) }, centre));
+      add('kit-card-sub', c.subtitle, Object.assign({ top: px(436) }, centre));
+      if (c.route !== false && STATE.timeline) {
+        const route = h('div', { class: 'kit-card-route', style: Object.assign({ top: px(506) }, centre) });
+        STATE.timeline.sections.forEach((s) => route.append(h('div', { text: s.label })));
+        el.append(route);
+        card.route = route;
+      }
+      add('kit-card-line', c.line, Object.assign({ top: px(584) }, centre));
+      add('kit-card-source', c.source, { left: px(96), top: px(1002) });
+    } else throw new Error('card type must be title | chapter | closing');
+    card.el = el;
+    return card;
   }
 
   /** Stage-coordinate rect of an element (independent of the preview scale). */
@@ -841,30 +989,32 @@
     const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), k = s.width / GRID.W;
     return { x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k };
   }
+  const scaleK = (ui) => ui.stage.getBoundingClientRect().width / GRID.W;
 
   /** Layout passes that need real font metrics (after fonts load). */
   function measureChrome(cfg, ui) {
-    // Attribution tag: in the title band right after the widest title (§6.2); if that would
-    // run into the trap bar, it moves under the camera in the right column (R layout).
-    if (ui.attrib) {
-      const tw = Math.max(0, ...ui.titles.map((tt) => tt.el.getBoundingClientRect().width)) / (ui.stage.getBoundingClientRect().width / GRID.W);
-      const aw = ui.attrib.getBoundingClientRect().width / (ui.stage.getBoundingClientRect().width / GRID.W);
-      const limit = ui.trapbar ? GRID.titleBand[cfg.layout].w - ui.trapbar.getBoundingClientRect().width / (ui.stage.getBoundingClientRect().width / GRID.W) - 32 : GRID.titleBand[cfg.layout].w;
-      if (tw + 32 + aw <= limit) {
-        Object.assign(ui.attrib.style, { left: tw + 32 + 'px', bottom: '14px' });
-      } else if (cfg.layout === 'R') {
-        ui.stage.append(ui.attrib);
-        const top = GRID.camera.R.y + GRID.camera.R.h + 24 + (ui.lowerThird ? 160 : 0);
-        Object.assign(ui.attrib.style, { left: GRID.rightCol.x + 'px', top: top + 'px' });
-        ui.attribMoved = true;
-      } else {
-        Object.assign(ui.attrib.style, { left: tw + 32 + 'px', bottom: '14px' });
-        console.warn('attribution tag overlaps the trap bar in layout ' + cfg.layout);
-      }
+    const k = scaleK(ui);
+    // progress segments: width = label + 32, gap 16, left-aligned from x 96
+    if (ui.progress) {
+      let x = 0;
+      ui.progress.segs.forEach((s) => {
+        s.labelEl.style.fontWeight = '600';   // measure the semibold (current) width so the label never outgrows its segment
+        const w = s.labelEl.getBoundingClientRect().width / k + GRID.progress.pad;
+        s.labelEl.style.fontWeight = '';
+        Object.assign(s.el.style, { left: x + 'px', width: w + 'px' });
+        s.x = GRID.progress.x + x; s.w = w; s.y = GRID.progress.y;
+        x += w + GRID.progress.gap;
+      });
+      ui.progress.width = x - GRID.progress.gap;
     }
-    // Legend chip geometry: start = figure top-right corner, end = its legend-row item.
+    // name tag: shrink a long name to fit 356 px (audit flags anything under 28 px)
+    [ui.nametagName, ui.nametagRole].forEach((el) => {
+      const avail = GRID.nametag.w - 30, w = el.getBoundingClientRect().width / k;
+      if (w > avail) el.style.fontSize = Math.max(22, Math.floor(28 * avail / w * 10) / 10) + 'px';
+    });
+    // legend chip geometry: start = panel top-right corner, end = its legend-row item
     if (ui.chip) {
-      const P = ui.P || GRID.panel.R, chipW = ui.chip.getBoundingClientRect().width / (ui.stage.getBoundingClientRect().width / GRID.W);
+      const P = GRID.panel, chipW = ui.chip.getBoundingClientRect().width / k;
       ui.chipFrom = { x: P.x + P.w - 24 - chipW, y: P.y + 24 };
       const item = ui.legendItems && ui.legendItems[cfg.legendMoment.key];
       ui.chipTo = item ? stageRect(item, ui.stage) : null;
@@ -873,22 +1023,39 @@
   }
 
   function updateChrome(t, cfg, ui) {
-    // chapter card: static 1.2 s, then a cut
-    if (ui.card) ui.card.style.visibility = M12_chapterCard(t, cfg.chapterCard.at || 0) ? 'visible' : 'hidden';
-    // titles: M12 dissolve between consecutive titles
-    if (ui.titles && ui.titles.length) {
-      ui.titles.forEach((tt, i) => {
-        const pin = i === 0 ? 1 : M12_dissolve(t, tt.at);
-        const next = ui.titles[i + 1];
-        const pout = next ? M12_dissolve(t, next.at) : 0;
-        op(tt.el, pin * (1 - pout));
+    // cards
+    let cardHidesProgress = false, cardOn = false;
+    ui.cards.forEach((c) => {
+      let v;
+      if (c.type === 'chapter') v = t >= c.at && t < c.until ? 1 : 0;                                  // static, then a cut
+      else if (c.type === 'title') v = t >= c.at && t < c.until ? 1 - M12_dissolve(t, c.until - T.M12.dissolve) : 0;
+      else v = t >= c.at ? M12_dissolve(t, c.at) : 0;                                                  // closing: dissolves in
+      op(c.el, v);
+      if (v > 0.001) { cardOn = true; if (!c.progress) cardHidesProgress = true; }
+    });
+    ui.cardOn = cardOn;
+    // progress bar: pure function of global time
+    if (ui.progress) {
+      const info = sceneInfo(), tl = STATE.timeline;
+      const g = (info ? info.start : 0) + t, cur = cfg.section || (info && info.section) || 0;
+      ui.progress.segs.forEach((s) => {
+        const state = s.n < cur ? 'is-done' : s.n === cur ? 'is-current' : 'is-todo';
+        if (s.state !== state) { s.el.className = 'kit-progress-seg ' + state; s.state = state; }
+        const sec = s.sec, f = state === 'is-current' && sec.end > sec.start ? clamp((g - sec.start) / (sec.end - sec.start)) : 0;
+        s.fill.style.width = (f * 100).toFixed(3) + '%';
+        op(s.fill, state === 'is-current' ? 1 : 0);
       });
+      let v = 1;
+      if (cfg.progress && typeof cfg.progress === 'object') v = appear(t, cfg.progress.at || 0, cfg.progress.dur != null ? cfg.progress.dur : T.appear);
+      if (cardHidesProgress) v = 0;
+      if (tl) op(ui.progress.el, v);
     }
-    // lower-third: 4 s from its start, 0.4 s dissolve in and out
-    if (ui.lowerThird) {
-      const lt = cfg.lowerThird, at = lt.at || 0, dur = lt.dur || T.lowerThird;
-      op(ui.lowerThird, M12_dissolve(t, at) * (1 - M12_dissolve(t, at + dur - T.M12.dissolve)));
-    }
+    // title, subtitle, credit, pointer phases
+    const fadeFirst = cfg.titleFadeIn != null ? cfg.titleFadeIn : null;
+    ui.runs.title.forEach((r, i) => op(r.el, runOpacity(t, ui.runs.title, i, 0, fadeFirst)));
+    ui.runs.subtitle.forEach((r, i) => op(r.el, runOpacity(t, ui.runs.subtitle, i, T.subtitleDelay, fadeFirst != null ? fadeFirst + T.subtitleDelay : null)));
+    ui.runs.credit.forEach((r, i) => op(r.el, runOpacity(t, ui.runs.credit, i, T.subtitleDelay)));
+    ui.runs.pointer.forEach((r, i) => op(r.el, runOpacity(t, ui.runs.pointer, i)));
     // legend moment
     if (ui.chip) {
       const lm = cfg.legendMoment, hold = lm.hold || T.legendHold;
@@ -902,16 +1069,115 @@
       op(ui.chip, a * (1 - clamp((c - 0.5) * 2)));
       if (item) op(item, clamp((c - 0.5) * 2));
     }
+    // caption preview
+    if (ui.captions) {
+      const caps = STATE.captions.scenes[STATE.scene] || [];
+      const cur = caps.find((c) => t >= c.start && t < c.end);
+      const key = cur ? cur.lines.join('\n') : '';
+      if (ui.captions.dataset.key !== key) {
+        ui.captions.dataset.key = key;
+        ui.captions.replaceChildren(...(cur ? cur.lines.map((l) => h('div', { text: l })) : []));
+      }
+    }
+  }
+
+  /* ---- panel pages (HTML in the panel's main area; content stays at panel x <= 1272, y < 648) ---- */
+
+  /** Team page: one role card per member (name / role / sections presented).
+   *  teamCards(ctx, {x 48, y 96, w 1176, members [0..3], lines [third line per member]})
+   *  -> { el, cards, update({opacity, focus: index|null, outline 0..1, others 0..1}) } (use M3_focus for outline/others) */
+  function teamCards(ctx, o = {}) {
+    const x = o.x != null ? o.x : GRID.fig.left, y = o.y != null ? o.y : 96, w = o.w != null ? o.w : GRID.fig.main.w - 2 * GRID.fig.left;
+    const list = o.members || [0, 1, 2, 3];
+    const el = h('div', { class: 'kit-team', style: { left: x + 'px', top: y + 'px', width: w + 'px' } });
+    const cards = list.map((i, k) => {
+      const m = member(i);
+      const third = o.lines && o.lines[k] != null ? o.lines[k] : m.presents;
+      const card = h('div', { class: 'kit-rolecard' }, [
+        h('div', { class: 'kit-rolecard-name', text: m.name }),
+        h('div', { class: 'kit-rolecard-role', text: m.role || '' }),
+        third ? h('div', { class: 'kit-rolecard-line', text: names(third, i) }) : null,
+      ]);
+      el.append(card);
+      return { el: card, index: i };
+    });
+    ctx.ui.figHTML.append(el);
+    return {
+      el, cards,
+      update(u = {}) {
+        op(el, u.opacity == null ? 1 : u.opacity);
+        cards.forEach((c) => {
+          const focused = u.focus != null && c.index === u.focus;
+          c.el.style.outlineWidth = focused ? (2 * (u.outline == null ? 1 : u.outline)).toFixed(2) + 'px' : '0px';
+          c.el.style.opacity = String(u.focus == null || focused ? 1 : (u.others == null ? T.M3.dim : u.others));
+        });
+      },
+    };
+  }
+
+  /** Block-start page: "Presented by <Name> · <role>" (56 px serif), "Owns: ..." (28 px, 60 % ink),
+   *  then one row per section this member presents: {name, topics}.
+   *  blockStart(ctx, {member (default speaker), owns, sections: [{name, topics}]})
+   *  -> { update({head, owns, rows}) } opacities 0..1 (M12 fades: head at the name, rows at the role). */
+  function blockStart(ctx, o = {}) {
+    const i = o.member != null ? o.member : STATE.speaker, m = member(i), x = GRID.fig.left, maxW = GRID.fig.main.w - x;
+    const head = h('div', { class: 'kit-bs-head', text: names(o.head || 'Presented by <Name> · {role}', i), style: { left: x + 'px', top: '64px' } });
+    const owns = h('div', { class: 'kit-bs-owns', text: 'Owns: ' + names(o.owns || m.owns || '', i), style: { left: x + 'px', top: '146px' } });
+    const rows = (o.sections || []).map((s, k) => {
+      const r = h('div', { class: 'kit-bs-row', style: { left: x + 'px', top: (226 + k * 56) + 'px' } });
+      r.append(h('b', { text: names(s.name, i) }));
+      if (s.topics) r.append(document.createTextNode(':  ' + names(s.topics, i)));
+      return r;
+    });
+    ctx.ui.figHTML.append(head, owns, ...rows);
+    const fit = () => {   // shrink the head line to the main area (long names)
+      const k = scaleK(ctx.ui), w = head.getBoundingClientRect().width / k;
+      if (w > maxW) head.style.fontSize = Math.max(40, Math.floor(56 * maxW / w)) + 'px';
+    };
+    ctx.ui.afterMeasure.push(fit);
+    return {
+      head, owns, rows,
+      update(u = {}) {
+        op(head, u.head == null ? 1 : u.head);
+        op(owns, u.owns == null ? (u.head == null ? 1 : u.head) : u.owns);
+        rows.forEach((r, k) => op(r, Array.isArray(u.rows) ? u.rows[k] : (u.rows == null ? 1 : u.rows)));
+      },
+    };
+  }
+
+  /** Reflection page ("Most unexpected finding"): one 40 px serif sentence (wraps, <= 2 lines),
+   *  a small figure below (svg group in box {x 48, y 200, w 1176, h <= 380}), a 60 % ink hand-off line.
+   *  reflection(ctx, {line, handoff, figureHeight})
+   *  -> { g (svg group, translated to the box), box, update({line, figure, handoff}) } */
+  function reflection(ctx, o = {}) {
+    const x = GRID.fig.left, w = GRID.fig.main.w - 2 * x;
+    const line = h('div', { class: 'kit-refl-line', text: names(o.line || ''), style: { left: x + 'px', top: '40px', width: w + 'px' } });
+    const hand = o.handoff ? h('div', { class: 'kit-refl-handoff', text: names(o.handoff), style: { left: x + 'px', top: '596px' } }) : null;
+    ctx.ui.figHTML.append(line);
+    if (hand) ctx.ui.figHTML.append(hand);
+    const box = { x, y: 200, w, h: Math.min(o.figureHeight || 380, 380) };
+    const g = svg('g', { transform: `translate(${box.x},${box.y})` }, ctx.fig);
+    return {
+      line, handoff: hand, g, box,
+      update(u = {}) { op(line, u.line == null ? 1 : u.line); op(g, u.figure == null ? 1 : u.figure); if (hand) op(hand, u.handoff == null ? 1 : u.handoff); },
+    };
+  }
+
+  /** Progress-bar geometry for scenes that animate into it (agenda route -> bar):
+   *  [{n, label, x, y, w}] in stage px (valid after setup; measured from the real labels). */
+  function progressSegments(ctx) {
+    const segs = ctx.ui.progress ? ctx.ui.progress.segs : [];
+    return segs.map((s) => ({ n: s.n, label: s.label, x: s.x, y: s.y, w: s.w }));
   }
 
   /* ------------------------------------------------------------------ *
-   * 8. Fonts, data, scene runner, preview controller, audit
+   * 9. Fonts, data, scene runner, preview controller, audit
    * ------------------------------------------------------------------ */
   const FONT_FAMILIES = ['Source Serif 4', 'IBM Plex Sans', 'IBM Plex Mono'];
   async function loadFonts(timeoutMs = 10000) {
     if (document.readyState !== 'complete') await new Promise((r) => addEventListener('load', r, { once: true }));
-    const specs = ['600 72px "Source Serif 4"', '400 34px "IBM Plex Sans"', '600 34px "IBM Plex Sans"',
-      '400 28px "IBM Plex Mono"', '500 28px "IBM Plex Mono"'];
+    const specs = ['600 64px "Source Serif 4"', '400 40px "Source Serif 4"', '400 34px "IBM Plex Sans"', '500 34px "IBM Plex Sans"',
+      '600 34px "IBM Plex Sans"', '400 28px "IBM Plex Mono"', '500 28px "IBM Plex Mono"'];
     try {
       await Promise.race([Promise.all(specs.map((s) => document.fonts.load(s, '0123456789 Aa−'))), new Promise((r) => setTimeout(r, timeoutMs))]);
       await document.fonts.ready;
@@ -922,17 +1188,17 @@
     return { ok: missing.length === 0, missing };
   }
 
-  async function loadJSON(url) {
+  async function loadJSON(url, optional = false) {
     let res;
     try { res = await fetch(url, { cache: 'no-store' }); } catch (e) {
-      throw new Error(`Cannot load ${url}. Browsers block fetch() on file:// pages: run "node video/render/serve.mjs" (or "npx http-server video") and open the scene over http.`);
+      if (optional) return null;
+      throw new Error(`Cannot load ${url}. Browsers block fetch() on file:// pages: run "node video/render/serve.mjs" and open the scene over http.`);
     }
-    if (!res.ok) throw new Error(`Cannot load ${url}: HTTP ${res.status}`);
+    if (!res.ok) { if (optional) return null; throw new Error(`Cannot load ${url}: HTTP ${res.status}`); }
     return res.json();
   }
 
-  /** Read a value by trying several dotted paths (first hit wins). Throws if none exists,
-   *  so a renamed key in the data file fails loudly instead of drawing a wrong number. */
+  /** Read a value by trying several dotted paths (first hit wins). Throws if none exists. */
   function pick(data, ...paths) {
     for (const p of paths) {
       if (data && Object.prototype.hasOwnProperty.call(data, p)) return data[p];
@@ -965,27 +1231,29 @@
   }
 
   /** createScene(cfg) — the one entry point.
-   *  cfg: { number, name, duration, layout 'R'|'X'|'S'|'F', speaker 'A'..'D',
-   *         title string | [{at, text}], attribution, trap 'leak'|'label'|'gain'|false,
-   *         source, grid (motif, default true), chapterCard {at, title, item},
-   *         lowerThird {at, dur, name, role, sec}, legendMoment {key, at, hold},
-   *         data 'path.json', cues {name: seconds},
+   *  cfg: { number (timeline scene n), name, duration (default: timeline), speaker (member index; default: timeline),
+   *         section (default: timeline),
+   *         title, subtitle, credit, pointer, page   — or phases: [{at, title, subtitle, credit, pointer, page}]
+   *         page 'evidence' | 'blockstart' | 'reflection' | 'agenda' | 'closing' | 'team'  (blockstart hides the pointer)
+   *         progress true | false | {at, dur}  (scene 01: false; scene 02: {at: <end of the route morph>})
+   *         cards [{type: 'title'|'chapter'|'closing', at, until|dur, ...}], legendMoment {key, at, hold},
+   *         legend [keys] | false, grid (motif, default true), titleFadeIn (s), nametag {line1, line2},
+   *         auditAllow [regex | string] (texts exempt from the code / letter checks),
+   *         data 'path.json', cues {name: seconds | 'phrase' | ['phrase', offset] | {phrase, offset, end, nth}} | (Kit) => {...},
    *         setup(ctx), render(t, ctx) }
-   *  ctx: { fig, defs, W, H, data, cues, ui, Kit } */
+   *  ctx: { fig, defs, figHTML, W, H, data, cues, ui, Kit, stage, info (timeline scene), speaker } */
   function createScene(cfg) {
-    cfg.layout = cfg.layout || 'R';
     const params = new URLSearchParams(location.search);
-    if (params.get('alpha') === '1') document.documentElement.classList.add('kit-alpha');
     const scene = {
-      number: cfg.number, name: cfg.name, duration: cfg.duration, layout: cfg.layout, fps: FPS,
-      cues: Object.assign({}, cfg.cues || {}), ready: false, t: 0,
+      number: cfg.number, name: cfg.name, duration: cfg.duration, fps: FPS,
+      cues: {}, ready: false, t: 0,
       seek() { /* replaced once ready */ }, audit: () => [],
     };
     global.SCENE = scene;
 
     const viewport = h('div', { class: 'kit-viewport' });
     const scaler = h('div', { class: 'kit-scaler' });
-    const stage = h('div', { class: 'kit-stage', 'data-layout': cfg.layout });
+    const stage = h('div', { class: 'kit-stage' });
     scaler.append(stage); viewport.append(scaler);
     const fit = () => { const k = Math.min(innerWidth / GRID.W, innerHeight / GRID.H); scaler.style.transform = k === 1 ? 'none' : `scale(${k})`; };
 
@@ -993,12 +1261,38 @@
       if (document.readyState === 'loading') await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
       document.body.append(viewport);
       fit(); addEventListener('resize', fit);
-      const fonts = await loadFonts();
+      const base = cfg.paths || {};
+      const [fonts, tl, team, wordsJSON, caps] = await Promise.all([
+        loadFonts(),
+        loadJSON(base.timeline || '../timeline/timeline.json'),
+        loadJSON(base.team || '../data/team_names.json', true),
+        loadJSON(base.words || '../subtitles/words.json', true),
+        params.get('captions') === '1' || params.get('captions') === 'outline' ? loadJSON(base.captions || '../subtitles/captions.json', true) : null,
+      ]);
+      STATE.timeline = indexTimeline(tl);
+      STATE.team = team || { group: '[no.]', members: [] };
+      STATE.words = wordsJSON;
+      STATE.captions = caps;
+      STATE.captionsOutline = params.get('captions') === 'outline';
+      STATE.scene = cfg.number;
+      const info = sceneInfo(cfg.number);
+      if (!info) console.warn(`scene ${cfg.number} is not in timeline.json: no progress fill, speaker from cfg`);
+      const spk = memberIndex(cfg.speaker);
+      STATE.speaker = spk != null ? spk : (info ? info.speaker : 0);
+      if (cfg.duration == null) cfg.duration = info ? info.duration : 10;
+      scene.duration = cfg.duration;
+      if (info && Math.abs(info.duration - cfg.duration) > 1e-6) scene.durationMismatch = `duration ${cfg.duration} s differs from timeline.json (${info.duration} s)`;
+      const cueSrc = typeof cfg.cues === 'function' ? cfg.cues(Kit) : cfg.cues;
+      Object.assign(scene.cues, resolveCues(cueSrc));
+
       const ui = buildChrome(cfg, stage);
+      ui.afterMeasure = [];
       const data = cfg.data ? await loadJSON(cfg.data) : null;
-      const ctx = { fig: ui.fig, defs: ui.defs, W: ui.P ? ui.P.w : 0, H: ui.P ? ui.P.h : 0, data, cues: scene.cues, ui, Kit, stage };
+      const ctx = { fig: ui.fig, defs: ui.defs, figHTML: ui.figHTML, W: GRID.panel.w, H: GRID.panel.h, data, cues: scene.cues,
+        ui, Kit, stage, info, speaker: STATE.speaker };
       if (cfg.setup) cfg.setup(ctx);
       measureChrome(cfg, ui);
+      ui.afterMeasure.forEach((f) => f());
       scene.seek = function (t) {
         t = clamp(+t || 0, 0, cfg.duration);
         scene.t = t;
@@ -1006,11 +1300,11 @@
         if (cfg.render) cfg.render(t, ctx);
         return t;
       };
-      scene.audit = () => audit(stage, cfg, ui);
+      scene.audit = () => audit(stage, cfg, ui, scene);
       scene.fonts = fonts;
       scene.ready = true;
       startPreview(scene, params);
-      return { duration: cfg.duration, layout: cfg.layout, number: cfg.number, fontsOK: fonts.ok, fontsMissing: fonts.missing };
+      return { duration: cfg.duration, number: cfg.number, fontsOK: fonts.ok, fontsMissing: fonts.missing };
     })().catch((err) => {
       console.error(err);
       if (!viewport.isConnected) document.body.append(viewport);
@@ -1030,9 +1324,11 @@
     const hud = params.get('hud') === '0' ? null : h('div', { class: 'kit-hud' });
     if (hud) document.body.append(hud);
     const cueTimes = () => [...new Set(Object.values(scene.cues).flat().filter((v) => typeof v === 'number'))].sort((a, b) => a - b);
+    const info = sceneInfo(scene.number);
+    const mmss = (s) => Math.floor(s / 60) + ':' + (s % 60).toFixed(1).padStart(4, '0');
     const draw = () => {
       scene.seek(t);
-      if (hud) hud.textContent = `scene ${scene.number ?? ''} · ${t.toFixed(2)} / ${D.toFixed(2)} s · frame ${Math.round(t * FPS)} · ${playing ? 'playing' : 'paused'} · Space N/P ←/→`;
+      if (hud) hud.textContent = `scene ${scene.number ?? ''} · ${t.toFixed(2)} / ${D.toFixed(2)} s${info ? ' · film ' + mmss(info.start + t) : ''} · frame ${Math.round(t * FPS)} · ${playing ? 'playing' : 'paused'} · Space N/P ←/→`;
     };
     const loop = (now) => {
       if (!playing) { last = null; return; }
@@ -1051,7 +1347,6 @@
       else if (k === 'Home') { playing = false; t = 0; }
       else if (k === 'End') { playing = false; t = D; }
       else if (k === 'n' || k === 'N' || k === 'PageDown') {
-        // step mode (fallback presentation, §8.3): play through the next build step and hold
         const c = cueTimes(), cur = c.filter((v) => v <= t + 1e-3).pop();
         const next = c.find((v) => v > t + 1e-3);
         if (cur == null && next != null) { t = next; }
@@ -1066,11 +1361,41 @@
     if (playing) play();
   }
 
-  /** audit() — checks the current frame against §6.7 / the grid. Returns a list of strings.
-   *  · visible text smaller than 28 px (except the source tag and the legend row)
-   *  · visible text boxes that overlap each other
-   *  · figure text outside the paper panel; anything over the camera slot */
-  function audit(stage, cfg, ui) {
+  /* ---- audit ---- */
+  const CODE_RE = /(^|[^\w-])(M0|M1|E-ALL|E-SCREEN|P\d{2}|B[1-6]|S-B6a|Trap|trap|S7_\w*|S10_\w*)(?![\w])/;
+  const CODE_ALLOW = ['notebook: M0 · M1 · S'];
+  /** Letter codes for people (A-D must never be rendered). Returns a reason or null. */
+  function letterCode(text) {
+    const s = text.trim();
+    if (/^[A-D]$/.test(s)) return 'bare letter';
+    if (/<\s*[A-D]\s*>/.test(s)) return '<letter>';
+    if (/(^|[^\w])[A-D]['’]s(?!\w)/.test(s)) return "letter's";
+    const bcd = /(^|[^\w'’-])([BCD])(?=$|[^\w'’-])/g;
+    let m;
+    while ((m = bcd.exec(s))) {
+      const before = s.slice(0, m.index + m[1].length);
+      if (!/(vitamin|hepatitis)\s*$/i.test(before)) return 'standalone ' + m[2];
+    }
+    const re = /(^|[^\w])(member|by|presented by|led by|speaker|from|for|with|and|to|next:?)\s+(A)(?=$|[^\w-])/gi;
+    while ((m = re.exec(s))) {
+      if (m[3] !== 'A') continue;
+      const after = s.slice(m.index + m[0].length);
+      if (!/^\s+[a-z]/.test(after)) return 'person letter A';
+    }
+    if (/(^|\s)A(?=\s*[·→|,;:)]|\s*$)/.test(s) && s.length > 1) return 'letter A as a label';
+    return null;
+  }
+  const rectsHit = (r, z) => Math.min(r.x + r.w, z.x + z.w) - Math.max(r.x, z.x) > 0.5 && Math.min(r.y + r.h, z.y + z.h) - Math.max(r.y, z.y) > 0.5;
+
+  /** audit() — checks the current frame. Returns a list of strings.
+   *  · text < 28 px (24 px allowed only in the progress bar, legend row, pointer, .kit-t-foot, card source)
+   *  · overlapping text; figure text outside the panel; anything off stage
+   *  · any figure or card content in the PiP keep-out (incl. name tag) or in the caption zone
+   *  · title wider than 1728 px; subtitle running into the credit
+   *  · "§" anywhere; internal codes (M0, E-SCREEN, P03, Trap, ...); person letter codes A-D
+   *  · the structure indigo anywhere outside the progress bar
+   *  · duration different from timeline.json */
+  function audit(stage, cfg, ui, scene) {
     const issues = [];
     const isVisible = (el) => {
       for (let e = el; e && e !== stage.parentElement; e = e.parentElement || e.parentNode) {
@@ -1080,57 +1405,118 @@
       }
       return true;
     };
-    if (ui.card && ui.card.style.visibility === 'visible') return issues;  // chapter card frame
-    const sel = 'text, .kit-title, .kit-attrib, .kit-trapcell span, .kit-badge, .kit-badge-sec, .kit-lt-name, .kit-lt-role, .kit-lt-sec, .kit-source, .kit-legend-item span, .kit-legendchip span';
-    const els = [...stage.querySelectorAll(sel)].filter((e) => e.textContent.trim() && isVisible(e));
-    const boxes = els.map((e) => ({ e, r: stageRect(e, stage), label: e.textContent.trim().slice(0, 32) }));
+    if (scene.durationMismatch) issues.push(scene.durationMismatch);
+    const allow = (cfg.auditAllow || []).map((a) => (a instanceof RegExp ? a : new RegExp('^' + String(a).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$')));
+    const allowed = (txt) => CODE_ALLOW.includes(txt) || allow.some((re) => re.test(txt));
+    const all = [...stage.querySelectorAll('*')].filter((e) => !e.closest('.kit-hud, .kit-captions, defs, pattern, mask, .kit-motif'));
+    const textEls = all.filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && isVisible(e));
+    const boxes = textEls.map((e) => ({ e, r: stageRect(e, stage), label: e.textContent.trim().slice(0, 40) }));
+    const cardOnTop = ui.cardOn;
+
+    // text size
     boxes.forEach(({ e, label }) => {
       const fs = parseFloat(getComputedStyle(e).fontSize);
-      const small = e.closest('.kit-source, .kit-legendrow');
-      if (fs < 28 - 0.01 && !small) issues.push(`font ${fs}px < 28px: "${label}"`);
+      const small = e.closest('.kit-progress, .kit-legendrow, .kit-pointer, .kit-card-source, .kit-card-route') || e.matches('.kit-t-foot') || e.closest('.kit-t-foot');
+      const floor = small ? 24 : 28;
+      if (fs < floor - 0.01) issues.push(`font ${fs}px < ${floor}px: "${label}"`);
     });
-    for (let i = 0; i < boxes.length; i++) {
-      for (let j = i + 1; j < boxes.length; j++) {
-        const a = boxes[i], b = boxes[j];
+    // overlapping text (skip pairs where a full-frame card covers one of them)
+    const covered = (e) => cardOnTop && !e.closest('.kit-card, .kit-nametag, .kit-progress');
+    const vis = boxes.filter((b) => !covered(b.e));
+    for (let i = 0; i < vis.length; i++) {
+      for (let j = i + 1; j < vis.length; j++) {
+        const a = vis[i], b = vis[j];
         if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
         const ox = Math.min(a.r.x + a.r.w, b.r.x + b.r.w) - Math.max(a.r.x, b.r.x);
         const oy = Math.min(a.r.y + a.r.h, b.r.y + b.r.h) - Math.max(a.r.y, b.r.y);
         if (ox > 1 && oy > 1 && ox * oy > 6) issues.push(`overlap: "${a.label}" x "${b.label}" (${Math.round(ox)}x${Math.round(oy)} px)`);
       }
     }
-    if (ui.P) {
-      const P = ui.P;
-      boxes.filter((b) => b.e.closest('.kit-figure')).forEach(({ r, label }) => {
-        if (r.x < P.x - 0.5 || r.y < P.y - 0.5 || r.x + r.w > P.x + P.w + 0.5 || r.y + r.h > P.y + P.h + 0.5) issues.push(`outside panel: "${label}"`);
+    // figure text outside the panel; off stage
+    const P = GRID.panel;
+    boxes.filter((b) => b.e.closest('.kit-figure, .kit-figure-html')).forEach(({ r, label }) => {
+      if (r.x < P.x - 0.5 || r.y < P.y - 0.5 || r.x + r.w > P.x + P.w + 0.5 || r.y + r.h > P.y + P.h + 0.5) issues.push(`outside panel: "${label}"`);
+    });
+    boxes.forEach(({ r, label }) => { if (r.x < -0.5 || r.y < -0.5 || r.x + r.w > GRID.W + 0.5 || r.y + r.h > GRID.H + 0.5) issues.push(`off stage: "${label}"`); });
+    // keep-out (PiP + name tag) and caption zone: no figure content, no card text
+    if (!cardOnTop || true) {
+      const zones = [['PiP keep-out', GRID.keepOut], ['caption zone', GRID.captions]];
+      const LEAF = 'text, rect, line, path, circle, ellipse, polygon, polyline, image, use';
+      const content = [];
+      if (!cardOnTop) {
+        ui.fig.querySelectorAll(LEAF).forEach((e) => { if (!e.closest('defs, pattern, mask, clipPath, text text') && isVisible(e)) content.push(e); });
+        ui.figHTML.querySelectorAll('*').forEach((e) => { if (isVisible(e)) content.push(e); });
+      }
+      ui.cards.forEach((c) => { if (parseFloat(c.el.style.opacity || '0') > 0.02 && c.el.style.visibility !== 'hidden') c.el.querySelectorAll('*').forEach((e) => content.push(e)); });
+      if (ui.chip && isVisible(ui.chip)) content.push(ui.chip);
+      zones.forEach(([nm, z]) => {
+        const hits = [];
+        content.forEach((e) => {
+          const r = stageRect(e, stage);
+          if (r.w < 0.5 && r.h < 0.5) return;
+          if (rectsHit(r, z)) hits.push((e.textContent || '').trim().slice(0, 24) || '<' + e.tagName.toLowerCase() + '>');
+        });
+        if (hits.length) issues.push(`${hits.length} element(s) in the ${nm}: ${[...new Set(hits)].slice(0, 4).join(', ')}`);
       });
     }
-    const cam = GRID.camera[cfg.layout];
-    if (cfg.layout === 'R' || cfg.layout === 'X') {
-      boxes.forEach(({ r, label }) => {
-        const ox = Math.min(r.x + r.w, cam.x + cam.w) - Math.max(r.x, cam.x), oy = Math.min(r.y + r.h, cam.y + cam.h) - Math.max(r.y, cam.y);
-        if (ox > 0 && oy > 0) issues.push(`over camera slot: "${label}"`);
+    // title width; subtitle vs credit
+    ui.runs.title.forEach((r) => { if (r.el && isVisible(r.el) && r.el.getBoundingClientRect().width / scaleK(ui) > GRID.title.w + 0.5) issues.push(`title wider than 1728 px: "${r.text}"`); });
+    ui.runs.subtitle.forEach((r) => {
+      if (!r.el || !isVisible(r.el)) return;
+      const sw = stageRect(r.el, stage);
+      ui.runs.credit.forEach((c) => {
+        if (c.el && isVisible(c.el) && sw.x + sw.w > stageRect(c.el, stage).x - 48 + 0.5) issues.push(`subtitle runs into the credit (needs 48 px): "${r.text}"`);
       });
-    }
-    boxes.forEach(({ r, label }) => {
-      if (r.x < 0 || r.y < 0 || r.x + r.w > GRID.W || r.y + r.h > GRID.H) issues.push(`off stage: "${label}"`);
+      if (sw.w > GRID.subtitle.w + 0.5) issues.push(`subtitle wider than 1728 px: "${r.text}"`);
     });
-    if (ui.legendRow && ui.legendRow.scrollWidth > ui.legendRow.clientWidth + 1) issues.push('legend row overflows the bottom bar');
-    if (ui.titles) ui.titles.forEach((tt) => {
-      const r = stageRect(tt.el, stage);
-      if (ui.trapbar && r.x + r.w > stageRect(ui.trapbar, stage).x - 16) issues.push(`title runs into the trap bar: "${tt.text}"`);
+    // words: §, internal codes, person letter codes
+    boxes.forEach(({ e, label }) => {
+      if (covered(e)) return;
+      const txt = [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+      if (!txt || allowed(txt)) return;
+      if (txt.includes('§')) issues.push(`"§" on screen: "${label}"`);
+      const cm = CODE_RE.exec(txt);
+      if (cm) issues.push(`internal code "${cm[2]}" on screen: "${label}"`);
+      const lc = letterCode(txt);
+      if (lc) issues.push(`member letter code (${lc}) on screen: "${label}" — use <Name:i> / Kit.name(i)`);
     });
-    return issues;
+    // structure indigo outside the progress bar
+    const probe = h('div', { style: { color: 'var(--structure)', display: 'none' } });
+    stage.append(probe);
+    const indigo = getComputedStyle(probe).color;
+    probe.remove();
+    const indigoHits = [];
+    all.forEach((e) => {
+      if (e.closest('.kit-progress') || !isVisible(e) || covered(e)) return;
+      const cs = getComputedStyle(e);
+      const props = [cs.backgroundColor];
+      if (e instanceof SVGElement) props.push(cs.fill, cs.stroke);
+      if ([...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) props.push(cs.color);
+      if (parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0) props.push(cs.borderTopColor, cs.borderLeftColor);
+      if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) props.push(cs.outlineColor);
+      if (props.includes(indigo)) indigoHits.push(e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.split(' ')[0] : ''));
+    });
+    if (indigoHits.length) issues.push(`structure indigo outside the progress bar (${indigoHits.length}): ${[...new Set(indigoHits)].slice(0, 4).join(', ')}`);
+    // name tag shrunk below 28 px
+    [ui.nametagName, ui.nametagRole].forEach((el) => { const fs = parseFloat(el.style.fontSize || '28'); if (fs < 28) issues.push(`name tag text shrunk to ${fs}px to fit: "${el.textContent}" (use a shorter video_name in team.json)`); });
+    if (ui.legendRow && ui.bottom && ui.legendRow.getBoundingClientRect().right > ui.pointer.getBoundingClientRect().left - 24 && ui.pointer.textContent) issues.push('legend row runs into the notebook pointer');
+    return [...new Set(issues)];
   }
 
   /* ------------------------------------------------------------------ */
   const Kit = {
-    GRID, C, T, SPEAKERS, TRAPS, LEGEND, FPS,
+    GRID, C, T, LEGEND, FPS, PLACEHOLDER,
+    get TIMELINE() { return STATE.timeline; },
+    get TEAM() { return STATE.team; },
+    get SPEAKER() { return STATE.speaker; },
     ease, cubicBezier, progress, tween, appear, clamp, lerp, mixColor, fmt, fmtInterval,
     M1_axisDraw, M2_barGrow, M3_focus, M4_whiskerBand, M4_static, M5_funnel, M6_morph, M7_strike,
     M8_valueChange, M9_pushIn, M10_count, M11_arrow, M12_dissolve, M12_chapterCard,
     h, svg, text, op, textWidth, icon, iconSVG, warnTriangle, swatchSVG, hatchPattern, feedback,
     scaleLinear, axis, bar, dotWhisker, sesoiBand, callout, strike, focusRing, arrow, radiusForArea,
     pick, item, val, disp, interval, loadJSON, createScene,
+    name, names, member, sceneInfo, words, cueAt, resolveCues, letterCode,
+    teamCards, blockStart, reflection, progressSegments, stageRect,
   };
   global.Kit = Kit;
 })(window);

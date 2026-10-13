@@ -1,0 +1,192 @@
+1
+00:00:01,500 --> 00:00:04,293
+I'm [Name];
+I led modelling and conclusions.
+
+2
+00:00:04,293 --> 00:00:07,260
+Last question:
+does systematic preparation pay?
+
+3
+00:00:07,260 --> 00:00:09,802
+Same model, minimal against systematic:
+
+4
+00:00:09,802 --> 00:00:14,985
+AUC rises by 0.008,
+interval 0.000 to 0.016.
+
+5
+00:00:16,435 --> 00:00:20,448
+Our smallest effect of interest,
+fixed in advance, was 0.01.
+
+6
+00:00:20,448 --> 00:00:23,214
+The interval covers both no gain
+and a worthwhile one,
+
+7
+00:00:23,214 --> 00:00:27,900
+so the result is inconclusive:
+underpowered, not evidence of no effect.
+
+8
+00:00:28,300 --> 00:00:29,506
+One step did harm.
+
+9
+00:00:29,506 --> 00:00:34,039
+From minimal to systematic,
+the Brier score worsens by 0.074.
+
+10
+00:00:35,289 --> 00:00:36,999
+The cause is [Name]'s class weights:
+
+11
+00:00:36,999 --> 00:00:41,232
+the systematic model predicts
+an average risk of 41 percent
+
+12
+00:00:41,232 --> 00:00:43,849
+where the observed rate is 17.
+
+13
+00:00:43,849 --> 00:00:46,872
+Removing only the class weights
+restores calibration
+
+14
+00:00:46,872 --> 00:00:50,900
+and leaves AUC 0.007 above minimal.
+
+15
+00:00:52,500 --> 00:00:56,951
+Who does the score serve? On all adults,
+the systematic model scores 0.836;
+
+16
+00:00:56,951 --> 00:00:59,379
+on adults not yet diagnosed, 0.781.
+
+17
+00:01:00,829 --> 00:01:03,926
+84 percent of positives
+were already diagnosed,
+
+18
+00:01:03,926 --> 00:01:07,900
+so the all-adults AUC mostly
+measures recognition: spectrum bias.
+
+19
+00:01:08,300 --> 00:01:12,034
+Next, drop two items
+that mark earlier contact with a doctor.
+
+20
+00:01:12,034 --> 00:01:15,555
+On all adults, AUC falls by 0.016.
+
+21
+00:01:15,555 --> 00:01:17,403
+On adults not yet diagnosed,
+
+22
+00:01:17,403 --> 00:01:22,946
+it rises by 0.019,
+interval 0.004 to 0.034:
+
+23
+00:01:22,946 --> 00:01:26,280
+consistent with recognition
+and screening pulling apart.
+
+24
+00:01:27,530 --> 00:01:31,900
+But the lower end lies inside our margin,
+so it is inconclusive.
+
+25
+00:01:32,300 --> 00:01:36,198
+An internal hold-out of 1,146 adults,
+
+26
+00:01:36,198 --> 00:01:40,683
+scored once, repeats the leakage drop
+and the inconclusive preparation result.
+
+27
+00:01:40,683 --> 00:01:41,982
+So, three answers.
+
+28
+00:01:41,982 --> 00:01:44,193
+The label records care as well as disease.
+
+29
+00:01:45,243 --> 00:01:47,417
+The 0.961 was leakage, not skill.
+
+30
+00:01:48,467 --> 00:01:53,264
+Systematic preparation barely moved AUC;
+its value was valid data kept
+
+31
+00:01:53,264 --> 00:01:56,100
+and an honest test
+on adults not yet diagnosed.
+
+32
+00:01:57,300 --> 00:01:59,029
+Most unexpected for me:
+
+33
+00:01:59,029 --> 00:02:02,900
+leakage moved the score far more
+than careful preparation did.
+
+34
+00:02:04,300 --> 00:02:05,989
+Four roles, one audit:
+
+35
+00:02:05,989 --> 00:02:10,971
+[Name]'s governance, [Name]'s preparation,
+[Name]'s labels and bias, my models.
+
+36
+00:02:10,971 --> 00:02:13,637
+Limits: one survey cycle, low response,
+
+37
+00:02:13,637 --> 00:02:17,655
+and only 152 undiagnosed positives;
+
+38
+00:02:17,655 --> 00:02:20,684
+this is a data audit,
+not a screening tool.
+
+39
+00:02:20,684 --> 00:02:23,876
+Generative AI drafted
+much of our code and text;
+
+40
+00:02:23,876 --> 00:02:27,125
+we reviewed it
+and recomputed every number.
+
+41
+00:02:28,375 --> 00:02:32,587
+The score is not the finding;
+what it reveals about the data is.
+
+42
+00:02:32,587 --> 00:02:33,587
+Thank you.

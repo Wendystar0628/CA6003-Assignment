@@ -1,0 +1,9 @@
+{
+  "_help": {
+    "scenes": "Per-scene re-timing, keyed by scene number (scene seconds). Fields: speechStart, speechEnd (the speaking window), pauses [{after: 'phrase', dur: s}], shift (s, moves all captions), chunks [{start, end, lines?}] (one entry per caption chunk, in order; replaces the estimated times).",
+    "takes": "Per-block camera take offset: {\"1\": {\"offset\": 2.4}} = block 1 starts 2.4 s into video/takes/block_1.mp4.",
+    "after_recording": "Set speechStart/speechEnd from the take (or chunk times from a transcript), and put the measured scene durations into video/timeline/timeline.json."
+  },
+  "scenes": {},
+  "takes": {}
+}

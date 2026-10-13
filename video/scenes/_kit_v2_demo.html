@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit v2 demo</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Throwaway test scene for kit v2 (leading "_": never rendered by render_all).
+   Uses scene 9's timeline slot (speaker, section, duration, narration clock) so the progress bar,
+   name tag, cues and captions are real. ?variant= switches the panel page:
+     (default) chapter card -> block-start page -> evidence page with credit, pointer, legend chip
+     team      title card -> team page with M3 focus
+     reflection  reflection page with a small figure and hand-off line
+     closing   closing card */
+const VARIANT = new URLSearchParams(location.search).get('variant') || 'evidence';
+
+const common = {
+  number: 9, name: 'kit_v2_demo',
+  data: '../data/blanket_recode.json',
+  cues: {
+    head: 1.4,
+    evidence: 4.2,                            // seconds, or a narration phrase (scene time from video/subtitles/words.json)
+    bars: 'The shortcut erased',
+    value: ['29 of 721', 0.1],
+    flips: 'Only six changed label',
+  },
+};
+
+const VARIANTS = {
+  evidence: {
+    cards: [{ type: 'chapter', at: 0 }],      // section label + scope from timeline.json; "Presented by <Name>"
+    phases: [
+      { at: 0, page: 'blockstart', title: 'Data quality', subtitle: 'Profiling, missing-value codes and outliers' },
+      { at: 4.2, page: 'evidence', title: 'Effect on diabetes labels', subtitle: 'HbA1c-positive cases hit by the global recode, and label flips',
+        credit: 'Analysis by <Name:2>', pointer: '3.4' },
+    ],
+    legendMoment: { key: 'leak', at: 7.0 },
+    setup(ctx) {
+      const K = Kit, S = ctx.S = {}, d = ctx.data;
+      S.bs = K.blockStart(ctx, { sections: [
+        { name: 'Data quality', topics: 'missing-value codes · effect on labels · outliers' },
+        { name: 'EDA & preparation', topics: 'redundancy and skewness · preparation design' }] });
+      const g = S.g = K.svg('g', {}, ctx.fig);
+      const x = K.scaleLinear([0, 1600], [420, 1224]);
+      S.axis = K.axis(g, x, { orient: 'bottom', at: 420, ticks: [0, 400, 800, 1200, 1600], format: (v) => K.fmt(v, 0, { thousands: true }) });
+      K.text(g, { x: 48, y: 202, text: 'Genuine codes caught', cls: 'kit-t-min' });
+      K.text(g, { x: 48, y: 330, text: 'Valid values destroyed', cls: 'kit-t-min' });
+      S.b1 = K.bar(g, { scale: x, base: 0, orient: 'h', y: 160, width: 64, styles: ['ink'] });
+      S.b2 = K.bar(g, { scale: x, base: 0, orient: 'h', y: 290, width: 64, styles: ['leak'] });
+      S.n1 = K.callout(g, { x: x(K.val(d, 'genuine')) + 16, y: 212, size: 'second' });
+      S.n2 = K.callout(g, { x: x(K.val(d, 'destroyed')) + 16, y: 342, size: 'second' });
+      S.big = K.callout(g, { x: 1320, y: 160, size: 'second', label: 'HbA1c positives erased' });   // upper side area
+      S.foot = K.text(g, { x: 48, y: 600, text: 'Kit v2 demo scene: chrome, grid and caption zone check', cls: 'kit-t-foot' });
+      S.ring = K.focusRing(g, { x: 420, y: 290, w: x(K.val(d, 'destroyed')) - 420, h: 64 });
+      S.d = d; S.x = x;
+    },
+    render(t, ctx) {
+      const K = Kit, S = ctx.S, c = ctx.cues, d = S.d;
+      const ev = K.M12_dissolve(t, c.evidence);
+      S.bs.update({ head: (1 - ev) * K.M12_dissolve(t, c.head), rows: (1 - ev) * K.M12_dissolve(t, c.head + 0.6) });
+      K.op(S.g, ev);
+      S.axis.update(K.M1_axisDraw(t, c.evidence + 0.2));
+      S.b1.update({ value: K.val(d, 'genuine'), grow: K.M2_barGrow(t, c.bars) });
+      S.b2.update({ value: K.val(d, 'destroyed'), grow: K.M2_barGrow(t, c.bars, { index: 1 }) });
+      S.n1.update({ text: K.disp(d, 'genuine'), number: K.appear(t, c.bars + 0.8) });
+      S.n2.update({ text: K.disp(d, 'destroyed'), number: K.appear(t, c.bars + 0.9) });
+      S.big.update({ text: K.disp(d, 'a1c_lost') + ' of ' + K.disp(d, 'a1c_pos'), number: K.appear(t, c.value), label: K.appear(t, c.value + 0.3) });
+      S.ring.update(K.M3_focus(t, c.flips, c.flips + 3));
+      K.op(S.foot, ev);
+    },
+  },
+  team: {
+    progress: false,
+    cards: [{ type: 'title', at: 0, until: 1.5, title: 'Who gets labelled diabetic?', subtitle: 'Basic models as instruments on NHANES 2021–2023',
+      line: 'Presented by <Name> · {role} · Data quality', small: 'CA6003 · Group {group}' }],
+    title: 'Team and roles', subtitle: 'Four members, their roles, and the sections each presents', page: 'team',
+    setup(ctx) { ctx.S = { team: Kit.teamCards(ctx, { y: 96 }) }; },
+    render(t, ctx) {
+      const K = Kit, f = K.M3_focus(t, 6, 10);
+      ctx.S.team.update({ opacity: K.appear(t, 1.6), focus: t >= 6 && t < 10.4 ? 1 : null, outline: f.outline, others: f.others });
+    },
+  },
+  reflection: {
+    page: 'reflection', title: 'Most unexpected finding', subtitle: '<Name> on one routine recode line', pointer: '3.4',
+    setup(ctx) {
+      const K = Kit, d = ctx.data;
+      const r = ctx.S = K.reflection(ctx, { line: 'One routine recode line erased ' + K.disp(d, 'a1c_lost') + ' HbA1c-positive results; the either-or label hid it.',
+        handoff: 'Next: Labels & bias · presented by <Name:2>', figureHeight: 300 });
+      const x = K.scaleLinear([0, 721], [0, 900]);
+      K.bar(r.g, { scale: x, base: 0, orient: 'h', y: 120, width: 56, styles: ['ink'] }).update({ value: 721 });
+      K.bar(r.g, { scale: x, base: 0, orient: 'h', y: 120, width: 56, styles: ['leak'] }).update({ value: K.val(d, 'a1c_lost') });
+      K.text(r.g, { x: 0, y: 220, text: K.disp(d, 'a1c_lost') + ' of ' + K.disp(d, 'a1c_pos') + ' HbA1c positives', cls: 'kit-t-min' });
+    },
+    render(t, ctx) { ctx.S.update({ line: Kit.appear(t, 0.5), figure: Kit.appear(t, 1.2), handoff: Kit.appear(t, 10) }); },
+  },
+  closing: {
+    title: 'Conclusion', subtitle: 'The one message we take from this audit', page: 'closing',
+    cards: [{ type: 'closing', at: 0.5, title: 'Who gets labelled diabetic?', subtitle: 'Basic models as instruments on NHANES 2021–2023',
+      line: 'Group {group} · Thank you', source: 'Data: NHANES 2021–2023, CDC/NCHS public files' }],
+  },
+};
+
+Kit.createScene(Object.assign({}, common, VARIANTS[VARIANT]));
+</script>
+</body>
+</html>

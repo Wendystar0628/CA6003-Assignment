@@ -1,0 +1,169 @@
+1
+00:00:01,500 --> 00:00:04,898
+I'm [Name];
+I led data quality and preparation.
+
+2
+00:00:04,898 --> 00:00:06,736
+I profiled before cleaning.
+
+3
+00:00:06,736 --> 00:00:13,011
+NHANES stores 'refused' and 'don't know'
+as numeric codes such as 7, 9, 77 and 99.
+
+4
+00:00:13,011 --> 00:00:16,648
+The common shortcut sets those values
+to missing in every column.
+
+5
+00:00:16,648 --> 00:00:22,523
+That catches 57 genuine codes,
+and destroys 1,496 valid measurements,
+
+6
+00:00:22,523 --> 00:00:26,700
+including HbA1c
+values of exactly 7.0 percent.
+
+7
+00:00:28,300 --> 00:00:32,480
+Each 7.0 is above the 6.5 threshold:
+a diabetes case.
+
+8
+00:00:32,480 --> 00:00:37,435
+The shortcut erased 29 of 721
+HbA1c-based positives.
+
+9
+00:00:38,685 --> 00:00:40,145
+Only six changed label;
+
+10
+00:00:40,145 --> 00:00:44,009
+the rest had also self-reported,
+so the either-or label hid the damage.
+
+11
+00:00:44,009 --> 00:00:45,900
+No summary statistic shows this.
+
+12
+00:00:46,300 --> 00:00:47,531
+Second, outliers.
+
+13
+00:00:47,531 --> 00:00:52,278
+The 1.5 times IQR rule
+flags 542 HbA1c values.
+
+14
+00:00:53,328 --> 00:00:55,691
+Its upper fence lies above
+the diagnostic threshold,
+
+15
+00:00:55,691 --> 00:01:01,138
+so the 519 high values are diabetes
+by definition: the disease, not errors.
+
+16
+00:01:01,138 --> 00:01:02,900
+We reviewed and kept them all.
+
+17
+00:01:04,500 --> 00:01:07,202
+[Name]'s exploration
+found redundancy and skew.
+
+18
+00:01:07,202 --> 00:01:10,158
+Weight and BMI show
+severe multicollinearity:
+
+19
+00:01:10,158 --> 00:01:14,203
+variance inflation factors
+of 95.7 and 97.6.
+
+20
+00:01:15,253 --> 00:01:19,244
+Fasting triglycerides are strongly
+right-skewed: skewness 6.62.
+
+21
+00:01:20,294 --> 00:01:22,038
+Both matter for a linear model,
+
+22
+00:01:22,038 --> 00:01:25,906
+so the systematic preparation drops weight
+and applies a Yeo-Johnson transform,
+
+23
+00:01:25,906 --> 00:01:27,900
+which brings the skewness close to zero.
+
+24
+00:01:28,300 --> 00:01:31,099
+Each finding became a switchable step,
+
+25
+00:01:31,099 --> 00:01:36,052
+fourteen in all, each tied
+to its evidence, and none reads the label.
+
+26
+00:01:37,102 --> 00:01:40,416
+From them we built three
+versions of the data.
+
+27
+00:01:40,416 --> 00:01:42,671
+Naive keeps every column.
+
+28
+00:01:42,671 --> 00:01:48,684
+Minimal adds one rule: drop items
+that exist only after a diagnosis,
+
+29
+00:01:48,684 --> 00:01:50,143
+such as treatment.
+
+30
+00:01:50,143 --> 00:01:52,677
+Systematic adds my other steps,
+
+31
+00:01:52,677 --> 00:01:56,786
+from per-variable recoding
+to transforms and class weights.
+
+32
+00:01:56,786 --> 00:02:00,100
+All three feed the same model
+on the same folds.
+
+33
+00:02:01,300 --> 00:02:02,966
+Most unexpected for me:
+
+34
+00:02:02,966 --> 00:02:07,603
+one routine cleaning line erased
+29 diabetic HbA1c results,
+
+35
+00:02:07,603 --> 00:02:08,924
+and the label hid it.
+
+36
+00:02:10,174 --> 00:02:12,720
+But cleaning cannot fix the label itself.
+
+37
+00:02:12,720 --> 00:02:13,900
+[Name] shows why.

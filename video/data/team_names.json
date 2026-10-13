@@ -1,0 +1,30 @@
+{
+ "_meta": {
+  "source": "notebooks/final/team.json (members[].name)",
+  "written_by": "video/render/team.mjs",
+  "rule": "placeholder names (single letter, empty, \"TEAM TO FILL\", bracketed) render as [Name]; letters A-D are never rendered"
+ },
+ "group": "[no.]",
+ "members": [
+  {
+   "index": 0,
+   "name": "[Name]",
+   "placeholder": true
+  },
+  {
+   "index": 1,
+   "name": "[Name]",
+   "placeholder": true
+  },
+  {
+   "index": 2,
+   "name": "[Name]",
+   "placeholder": true
+  },
+  {
+   "index": 3,
+   "name": "[Name]",
+   "placeholder": true
+  }
+ ]
+}
