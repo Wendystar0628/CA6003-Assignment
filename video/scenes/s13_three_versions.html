@@ -14,7 +14,7 @@
    Speaker B. One relation: Naive (M0) uses every column, Minimal (M1) adds only the availability rule P03, Systematic (S) switches
    on all steps; the same simple model is fitted on all three.
    Numbers: video/data/arms.json (88 / 46 / 42 columns; groups.toggles = which steps each version switches on).
-   Arm S switches on P01-P13; P14 is a separate arm in S6 (arms.json notes), while the storyboard lights all fourteen cells. */
+   Arm S switches on P01-P13 only; P14 (WHtR) is a separate arm (S + WHtR), so its cell stays empty with the label "tested separately". */
 const K = Kit;
 
 // Cues in scene seconds at ~134 wpm from the §4 narration; replace with the marks on B's take.
@@ -25,10 +25,11 @@ const CUES = {
   m1: 5.4,         // "Minimal, M1: naive plus only"          grey lane
   m1p: 7.6,        // "the rule that bars post-diagnosis"     P03 lit
   m1n: 9.4,        // 46 columns
-  s: 10.4,         // "Systematic, S: all fourteen steps"     all cells teal
-  sn: 11.9,        // 42 columns
-  merge: 12.7,     // "One simple logistic regression for all three,"  connectors + box
-  lock: 15.0,      // "hypotheses locked first"               padlock
+  s: 10.0,         // "Systematic, S: all steps"              13 cells teal (P01-P13)
+  sn: 11.4,        // 42 columns
+  sep: 12.4,       // "but one, which we test separately."    P14 stays empty, muted label
+  merge: 14.2,     // "One simple logistic regression for all three,"  connectors + box
+  lock: 16.2,      // "hypotheses locked first"               padlock
 };
 
 K.createScene({
@@ -70,12 +71,17 @@ K.createScene({
       parts.cells = [];
       for (let i = 0; i < nCells; i++) {
         const id = 'P' + String(i + 1).padStart(2, '0');
-        const lit = ln.on.includes(id) || (ln.key === 'S' && id === 'P14');       // S: the storyboard lights all fourteen
+        const lit = ln.on.includes(id);                 // toggles from arms.json: S = P01-P13
         const r = K.svg('rect', { x: cx0 + i * step, y: y + 35, width: cell, height: cell, fill: '#fff', stroke: ln.style === 'leak' ? 'none' : col, 'stroke-width': 2.5 }, parts.body);
         parts.cells.push({ r, lit, id, x: cx0 + i * step, y: y + 34 });
       }
       if (ln.style === 'leak') parts.every = K.text(parts.body, { x: cx0 + 4, y: y + 56, text: 'every column', cls: 'kit-t-note' });
       if (ln.key === 'M1') { const c = parts.cells.find((q) => q.lit); parts.p03 = K.text(parts.body, { x: c.x + cell / 2, y: y + 28, text: c.id, anchor: 'middle', cls: 'kit-t-min' }); parts.p03.style.fontFamily = 'var(--font-mono)'; }
+      if (ln.key === 'S') {   // P14 stays unlit: muted label under the last cell
+        const c14 = parts.cells[nCells - 1];
+        parts.sep = K.text(parts.body, { x: c14.x + cell, y: c14.y + cell + 38, text: 'tested separately', anchor: 'end', cls: 'kit-t-min' });
+        parts.sep.style.fill = '#5A6672';
+      }
       parts.count = K.text(g, { x: cx0 + 14 * step + 20, y: y + 56, text: K.disp(data, ln.n) + ' columns', cls: 'kit-t-note', weight: 600 });
       // connector to the shared box
       parts.conn = K.svg('line', { x1: 914, x2: 936, y1: y + 46, y2: y + 46, stroke: K.C.ink, 'stroke-width': 3 }, g);
@@ -109,6 +115,7 @@ K.createScene({
       if (P.every) K.op(P.every, K.appear(t, d.show));
       if (P.p03) K.op(P.p03, K.appear(t, d.lit));
       K.op(P.count, K.appear(t, d.num));
+      if (P.sep) K.op(P.sep, K.appear(t, c.sep));
       K.op(P.conn, K.appear(t, c.merge));
     });
     K.op(S.bar, K.appear(t, c.merge)); K.op(S.box, K.appear(t, c.merge));

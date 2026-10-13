@@ -59,11 +59,11 @@ K.createScene({
     K.svg('rect', { x: 131, y: 262, width: 440, height: y(thr) - 262, fill: K.C.band }, S.band);
     K.svg('line', { x1: 131, x2: 571, y1: y(thr), y2: y(thr), stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '9 6' }, S.band);
     K.text(S.band, { x: 131, y: 250, text: 'VIF > ' + K.disp(data, 'vif_threshold') + ': severe', cls: 'kit-t-note' });
-    S.vif = [['vif_weight', 190, 'Weight'], ['vif_bmi', 390, 'BMI']].map(([id, bx, name]) => {
+    S.vif = [['vif_weight', 170, 'Weight'], ['vif_bmi', 380, 'BMI']].map(([id, bx, name]) => {
       const it = K.item(data, id);
-      const bar = K.bar(fig, { scale: y, base: 0, x: bx, width: 140, styles: ['ink'] });
-      const lab = K.text(fig, { x: bx + 70, y: 636, text: name, anchor: 'middle', cls: 'kit-t-note' });
-      const num = K.text(fig, { x: bx + 70, y: 372, text: it.display, anchor: 'middle', cls: 'kit-t-second' });
+      const bar = K.bar(fig, { scale: y, base: 0, x: bx, width: 160, styles: ['ink'] });
+      const lab = K.text(fig, { x: bx + 80, y: 636, text: name, anchor: 'middle', cls: 'kit-t-note' });
+      const num = K.text(fig, { x: bx + 80, y: 372, text: it.display, anchor: 'middle', cls: 'kit-t-second' });
       return { it, bar, num, lab };
     });
 
@@ -81,7 +81,7 @@ K.createScene({
     S.N = N; S.rawH = rawH; S.yjH = yjH; S.box = { x0: bx0, w: bw, y: by, h: bh };
     S.hist = K.svg('g', {}, fig);
     K.svg('line', { x1: bx0, x2: bx0 + bw, y1: by, y2: by, stroke: K.C.ink, 'stroke-width': 2 }, S.hist);
-    S.hrects = rawH.map(() => K.svg('rect', { fill: FILL, stroke: '#fff', 'stroke-width': 0.6 }, S.hist));
+    S.hrects = rawH.map(() => K.svg('rect', { fill: K.C.ink, 'fill-opacity': 0.6, stroke: '#fff', 'stroke-width': 0.6 }, S.hist));
     // dashed ghost of the raw shape (stays in the last frame so the contrast survives)
     const gp = rawH.map((h, i) => `${i ? 'L' : 'M'}${(bx0 + (i / N) * bw).toFixed(1)} ${(by - h * bh).toFixed(1)} L${(bx0 + ((i + 1) / N) * bw).toFixed(1)} ${(by - h * bh).toFixed(1)}`).join(' ');
     S.ghost = K.svg('path', { d: gp, fill: 'none', stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '7 6' }, fig);

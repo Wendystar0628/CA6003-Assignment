@@ -89,7 +89,7 @@ K.createScene({
     // Systematic (S) label and the lock label
     S.sLab = K.svg('g', {}, fig);
     K.svg('rect', { x: x0, y: 196, width: 22, height: 22, fill: K.C.systematic }, S.sLab);
-    K.text(S.sLab, { x: x0 + 36, y: 217, text: 'Systematic (S) = all ' + nSteps + ' steps', cls: 'kit-t-note', weight: 600 });
+    K.text(S.sLab, { x: x0 + 36, y: 217, text: 'Preparation steps', cls: 'kit-t-note', weight: 600 });
     S.lock = K.svg('g', {}, fig);
     const lx = x0, ly = 126;
     K.svg('rect', { x: lx, y: ly + 12, width: 30, height: 24, rx: 3, fill: K.C.ink }, S.lock);

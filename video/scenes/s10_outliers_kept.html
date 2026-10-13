@@ -25,6 +25,7 @@ const CUES = {
   flag: 8.0,         // "that flags 542 adults"                                      M3 on the flagged values, 542, one dot per value
   diabetic: 9.9,     // "and 519 of them have diabetes"                              M10: 519 dots turn solid
   del: 11.6,         // "Those are not errors. They are the disease."                "delete?" label
+  release: 13.4,     // body bars return to 100 %; the flagged bars keep their outline
   steps: 15.0,       // "We flagged them, checked them,"                              M12 dissolve into Flag -> Review -> Keep
   keep: 17.6,        // "and kept every one"                                          ink check on Keep
   title: 8.0,
@@ -57,7 +58,7 @@ K.createScene({
     S.bars = K.svg('g', {}, fig);
     S.rects = H.counts.map((cn, i) => {
       const mid = (H.edges[i] + H.edges[i + 1]) / 2, flag = mid > fence.value || mid < lowF;
-      const r = K.svg('rect', { fill: '#9AA4B0', stroke: '#fff', 'stroke-width': 1 }, S.bars);
+      const r = K.svg('rect', { fill: K.C.ink, 'fill-opacity': 0.55, stroke: '#fff', 'stroke-width': 1 }, S.bars);
       return { r, i, cn, flag, x0: x(H.edges[i]), w: x(H.edges[i + 1]) - x(H.edges[i]) };
     });
     // 2 px ink outline on the flagged bars (drawn as their own layer so the focus can fade it in)
@@ -108,7 +109,7 @@ K.createScene({
     const S = ctx.S, c = ctx.cues, y = S.y;
     S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 7 }));
     const grow = K.M2_barGrow(t, c.bars);
-    const f = K.M3_focus(t, c.flag);
+    const f = K.M3_focus(t, c.flag, c.release), fo = K.M3_focus(t, c.flag);   // fo: the outline never releases
     S.rects.forEach((b) => {
       const h = (y(0) - y(b.cn)) * grow;
       b.r.setAttribute('x', b.x0 + 0.5); b.r.setAttribute('width', Math.max(0, b.w - 1)); b.r.setAttribute('y', y(0) - h); b.r.setAttribute('height', h);
@@ -116,7 +117,7 @@ K.createScene({
       if (b.o) { b.o.setAttribute('x', b.x0 + 0.5); b.o.setAttribute('width', Math.max(0, b.w - 1)); b.o.setAttribute('y', y(0) - h - 1); b.o.setAttribute('height', h + 1); }
     });
     K.op(S.bars, grow > 0 ? 1 : 0);
-    K.op(S.flagOutline, f.outline);
+    K.op(S.flagOutline, fo.outline);
     // fence + arrow (M11), lower fence appears with it
     K.op(S.fences, K.appear(t, c.fence));
     S.arrow.update(K.M11_arrow(t, c.fence + 0.2));

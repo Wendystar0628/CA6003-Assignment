@@ -92,7 +92,8 @@ Kit.createScene({
     const stack = (g, x, anchor, l1, l2) => { K.text(g, { x, y: V.y - V.rL - 58, text: l1, cls: 'kit-t-min', anchor }); K.text(g, { x, y: V.y - V.rL - 20, text: l2, cls: 'kit-t-min', anchor, weight: 600 }); };
     stack(S.labL, V.bbox.x0 - 10, 'start', 'Told by a doctor', nSelf.display);
     stack(S.labR, V.bbox.x1 + 10, 'end', 'HbA1c ≥ 6.5 %', nA1c.display);
-    S.labBoth = halo(K.text(S.labs, { x: V.centres.both[0], y: V.centres.both[1] + 10, text: 'both', anchor: 'middle', cls: 'kit-t-min', weight: 600 }));
+    S.labBoth = halo(K.text(S.labs, { x: V.centres.both[0], y: V.centres.both[1] + 10, text: 'both', anchor: 'middle', cls: 'kit-t-note', weight: 600 }));
+    S.labBoth.style.strokeWidth = '12px';
     // ---------- 3 callout 250 of 819, ruler icon (the Label mark)
     S.c250 = K.svg('g', {}, fig);
     S.n250 = K.callout(S.c250, { x: 48, y: 700, size: 'main', label: 'of ' + nSelf.display + ' self-reported' });
@@ -133,7 +134,7 @@ Kit.createScene({
     const rest = f.others;
     K.op(S.gBoth, dotsIn * rest); K.op(S.gA1c, dotsIn * rest);
     K.op(S.gSelf, dotsIn);
-    K.op(S.labL, dotsIn); K.op(S.labR, dotsIn * rest); K.op(S.labBoth, dotsIn * rest);
+    K.op(S.labL, dotsIn); K.op(S.labR, dotsIn * rest); K.op(S.labBoth, dotsIn);
     S.circL.style.opacity = cm > 0 ? (1 - 0.75 * f.outline) : 0; S.circR.style.opacity = cm > 0 ? (1 - 0.75 * f.outline) : 0;
     K.op(S.outline, f.outline);
     K.op(S.c250, K.appear(t, c.focus));
