@@ -93,7 +93,9 @@ Kit.createScene({
     // ---- bars drawn to scale: ink outline 57, red hatch 1,496
     const full = K.val(data, 'destroyed'), small = K.val(data, 'genuine');
     S.xs = K.scaleLinear([0, full], [BAR.x0, BAR.x0 + BAR.w]);
-    S.b57 = K.bar(g, { scale: S.xs, base: 0, y: 150, width: 54, orient: 'h', styles: ['ink'] });
+    // solid ink bar, same scale and left edge as the 1,496 bar (the kit has no solid-ink bar style)
+    S.b57 = { rect: K.svg('rect', { x: BAR.x0, y: 150, height: 54, fill: K.C.ink }, g),
+      update(u) { this.rect.setAttribute('width', Math.max(0, S.xs(u.value) - S.xs(0)) * u.grow); K.op(this.rect, u.grow > 0 ? 1 : 0); } };
     S.v57 = small;
     S.n57 = K.callout(g, { x: BAR.x0 + (small / full) * BAR.w + 22, y: 202, size: 'second' });
     S.l57 = K.text(g, { x: BAR.x0 + (small / full) * BAR.w + 110, y: 202, text: 'genuine codes caught', cls: 'kit-t-note' });
