@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 06 · Age confounding</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 06 · A correct number can still mislead: age confounds insurance and diabetes · docs/video_plan.md §4 scene 06.
+   Speaker A presents C's analysis (attribution tag "work: C · §4"). One relation: the crude gap between
+   insured and uninsured adults (+5.3 pp) shrinks to +0.7 pp after standardising for age. M8 changes the
+   value in place; the crude value stays as a faint dashed ghost so the still frame keeps the contrast.
+   Intervals are drawn (whisker row) and printed after the number. Ink only: the insured group is not a
+   baseline and not the Screening group, so no semantic colour is borrowed. Numbers: video/data/age_std.json. */
+
+// Cue times in scene seconds, estimated from the §4 narration (replace with the take, §8.3 step 5).
+const CUES = {
+  axis: 1.5,       // "Correct numbers can still mislead."        M1
+  crude: 3.8,      // "5.3 points more diabetes"                   bar grows (M2), number appears
+  does: 7.6,       // "Does insurance cause diabetes?"             Insurance, Diabetes and a dashed "?" edge
+  corr: 9.8,       // "correlation with causation"                 bottom label
+  age: 12.9,       // "age confounds it"                           Age node
+  arrow1: 13.6,    // "the insured are older"                      M11 Age -> Insurance
+  arrow2: 15.0,    //                                              M11 Age -> Diabetes
+  std: 16.9,       // "Standardised for age"                       M8: bar shrinks, number counts down, interval changes
+  title2: 17.9,    // title settles on the screen text (M12 dissolve)
+};
+
+const X = { d0: -4, d1: 10, r0: 100, r1: 640 };
+const ROW = { bar: 330, barH: 66, whisk: 450, axis: 512 };
+
+Kit.createScene({
+  number: 6,
+  name: 'age_confounding',
+  duration: 22,
+  layout: 'R',
+  speaker: 'A',
+  title: [
+    { at: 0, text: 'Correct numbers can mislead' },
+    { at: CUES.title2, text: '…' },       // filled from the data in setup()
+  ],
+  attribution: 'work: C · §4',
+  source: '§4 · S4_standardisation',
+  data: '../data/age_std.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const crude = K.interval(data, 'crude_ci'), std = K.interval(data, 'std_ci');
+    S.crude = crude; S.std = std;
+    const strip = (s) => s.replace(' pp', '');
+    ui.titles[1].el.textContent = 'Age confounds: ' + strip(K.disp(data, 'crude')) + ' → ' + K.disp(data, 'std');
+
+    const x = K.scaleLinear([X.d0, X.d1], [X.r0, X.r1]);
+    S.x = x;
+    // axis + zero line (bars start at 0)
+    S.axis = K.axis(g, x, { orient: 'bottom', at: ROW.axis, ticks: [-4, -2, 0, 2, 4, 6, 8, 10], format: (v) => K.fmt(v, 0),
+      title: { text: 'gap in percentage points', x: X.r0, y: ROW.axis + 92, cls: 'kit-t-min' } });
+    S.zero = K.svg('line', { x1: x(0), x2: x(0), y1: ROW.bar - 22, y2: ROW.axis, stroke: K.C.ink, 'stroke-width': 2 }, g);
+
+    // ghost of the crude value (dashed, 30 %): bar and whisker, drawn first so the live bar covers it
+    S.ghost = K.svg('g', {}, g);
+    K.svg('rect', { x: x(0), y: ROW.bar, width: x(crude.est) - x(0), height: ROW.barH, fill: 'none', stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '8 6' }, S.ghost);
+    K.svg('line', { x1: x(crude.lo), x2: x(crude.hi), y1: ROW.whisk, y2: ROW.whisk, stroke: K.C.ink, 'stroke-width': 3, 'stroke-dasharray': '8 6' }, S.ghost);
+    K.svg('circle', { cx: x(crude.est), cy: ROW.whisk, r: 9, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, S.ghost);
+    S.ghostLab = K.text(g, { x: x(crude.est) + 16, y: ROW.bar + ROW.barH / 2 + 10, text: 'crude', cls: 'kit-t-min' });
+
+    // live bar (ink outline), whisker (re-drawn each frame from the tweened estimate)
+    S.bar = K.bar(g, { scale: x, base: 0, y: ROW.bar, width: ROW.barH, orient: 'h', styles: ['ink'] });
+    S.wl = K.svg('line', { y1: ROW.whisk, y2: ROW.whisk, stroke: K.C.ink, 'stroke-width': 3 }, g);
+    S.capL = K.svg('line', { y1: ROW.whisk - 9, y2: ROW.whisk + 9, stroke: K.C.ink, 'stroke-width': 3 }, g);
+    S.capH = K.svg('line', { y1: ROW.whisk - 9, y2: ROW.whisk + 9, stroke: K.C.ink, 'stroke-width': 3 }, g);
+    S.dot = K.svg('circle', { cy: ROW.whisk, r: 10, fill: K.C.ink }, g);
+
+    // number, label and the two interval strings (old fades out, new fades in)
+    S.num = K.callout(g, { x: 60, y: 168, size: 'main' });
+    S.num.num.style.fontSize = '104px';
+    S.lab0 = K.text(g, { x: 60, y: 52, text: 'insured − uninsured · crude', cls: 'kit-t-min' });
+    S.lab1 = K.text(g, { x: 60, y: 52, text: 'insured − uninsured · age-standardised', cls: 'kit-t-min' });
+    S.iv0 = K.text(g, { x: 60, y: 244, text: crude.bracket, cls: 'kit-t-interval' });
+    S.iv1 = K.text(g, { x: 60, y: 244, text: std.bracket, cls: 'kit-t-interval' });
+
+    // DAG: Age -> Insurance, Age -> Diabetes (solid); Insurance -> Diabetes (dashed, "?")
+    const node = (cx, cy, w, label) => {
+      const n = K.svg('g', {}, g);
+      K.svg('rect', { x: cx - w / 2, y: cy - 30, width: w, height: 60, rx: 10, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, n);
+      K.text(n, { x: cx, y: cy + 12, text: label, cls: 'kit-t-note', anchor: 'middle' });
+      return n;
+    };
+    S.nAge = node(960, 170, 120, 'Age');
+    S.nIns = node(830, 340, 190, 'Insurance');
+    S.nDia = node(1100, 340, 170, 'Diabetes');
+    S.a1 = K.arrow(g, { x1: 930, y1: 202, x2: 858, y2: 306 });
+    S.a2 = K.arrow(g, { x1: 990, y1: 202, x2: 1070, y2: 306 });
+    S.dash = K.svg('g', {}, g);
+    K.svg('line', { x1: 929, x2: 1002, y1: 340, y2: 340, stroke: K.C.ink, 'stroke-width': 3, 'stroke-dasharray': '9 7' }, S.dash);
+    K.svg('path', { d: 'M1013 340 L997 331 L997 349 Z', fill: K.C.ink }, S.dash);
+    K.text(S.dash, { x: 971, y: 316, text: '?', cls: 'kit-sans', size: 40, weight: 600, anchor: 'middle' });
+    S.corr = K.text(g, { x: 60, y: 704, text: 'Correlation ≠ causation · confounding', cls: 'kit-t-note' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, d = ctx.data, x = S.x;
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 8 }));
+    K.op(S.zero, K.appear(t, c.axis + 0.6));
+
+    // crude bar grows (M2); M8 then changes it in place to the age-standardised value
+    const grow = K.M2_barGrow(t, c.crude), m8 = K.M8_valueChange(t, c.std, S.crude.est, S.std.est);
+    S.bar.update({ value: m8.length, grow });
+    // whisker: crude interval fades in 0.3 s after the number, then follows M8 (interval 'changes', static content)
+    const est = K.lerp(S.crude.est, S.std.est, m8.p), lo = K.lerp(S.crude.lo, S.std.lo, m8.p), hi = K.lerp(S.crude.hi, S.std.hi, m8.p);
+    const wA = K.appear(t, c.crude + 0.7 + K.T.appear);
+    S.wl.setAttribute('x1', x(lo)); S.wl.setAttribute('x2', x(hi));
+    S.capL.setAttribute('x1', x(lo)); S.capL.setAttribute('x2', x(lo)); S.capH.setAttribute('x1', x(hi)); S.capH.setAttribute('x2', x(hi));
+    S.dot.setAttribute('cx', x(est));
+    [S.wl, S.capL, S.capH, S.dot].forEach((e) => K.op(e, wA));
+    // ghost of the crude value stays once the bar has moved
+    K.op(S.ghost, wA * K.clamp(m8.p * 4) * 0.35);
+    K.op(S.ghostLab, K.clamp(m8.p * 4) * 0.6);
+
+    // number counts down during M8; labels and brackets swap in place
+    const txt = m8.p <= 0 ? K.disp(d, 'crude') : (m8.p >= 1 ? K.disp(d, 'std') : K.fmt(m8.value, 1, { sign: true }) + ' pp');
+    S.num.update({ text: txt, number: K.appear(t, c.crude) });
+    K.op(S.lab0, K.appear(t, c.crude) * (1 - K.clamp(m8.fill * 2)));
+    K.op(S.lab1, K.clamp(m8.fill * 2 - 1));
+    K.op(S.iv0, K.appear(t, c.crude + K.T.appear) * (1 - K.clamp(m8.fill * 2)));
+    K.op(S.iv1, K.clamp(m8.fill * 2 - 1));
+
+    // DAG
+    const a = K.appear(t, c.does);
+    K.op(S.nIns, a); K.op(S.nDia, a); K.op(S.dash, a);
+    K.op(S.nAge, K.appear(t, c.age));
+    S.a1.update(K.M11_arrow(t, c.arrow1)); S.a2.update(K.M11_arrow(t, c.arrow2));
+    K.op(S.corr, K.appear(t, c.corr));
+  },
+});
+</script>
+</body>
+</html>

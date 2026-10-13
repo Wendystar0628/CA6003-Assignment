@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 09 · Erased positives</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+</head>
+<body>
+<script>
+/* Scene 09 · The non-obvious finding: erased HbA1c positives (signature visual 3, step 5) · docs/video_plan.md §4 scene 09.
+   Speaker B. One relation: the blanket recode erased 29 of the 721 HbA1c-based positives; 6 of them flipped
+   to negative, the rest also self-reported a diagnosis. Red hatch = harmed data (always with a triangle).
+   Geometry and every number come from video/data/blanket_recode.json (the 28 + 1 erased values, per_variable
+   LBXGH values_hit "7:28, 9:1"). The 29-square row is the 721-bar's dropped slice. "Recovered by self-report"
+   is shown by shape only (29 - 6 = 23 squares), never as a number (§12.3). */
+
+// Cue times in scene seconds, estimated from the §4 narration (replace with the take, §8.3 step 5).
+const CUES = {
+  axis: 0.4,      // "Those values are ..."                        M1
+  dots: 1.4,      // the HbA1c values the shortcut touched         dots at 7.0 and 9.0 (ink)
+  thr: 2.8,       // "diabetes by definition"                      6.5 % threshold line
+  red: 4.5,       // "The shortcut erased"                         dots become red hatch
+  num: 4.9,       // "29"                                          number appears
+  ledger: 6.4,    // "of 721 HbA1c-based positives"                721-bar (M2), its last slice hatched
+  drop: 8.0,      // after "positives"                             M5: slice drops out into a row of 29
+  six: 9.6,       // "Six people flipped to negative"              M3 on the six
+  rest: 11.8,     // "the rest also reported a diagnosis"          the other 23 return to ink
+  nosum: 16.3,    // "You find it only by looking"                 tag "Non-obvious finding"
+};
+
+const X = { d0: 6, d1: 10, r0: 100, r1: 760 };
+const LED = { x0: 100, w: 1000, y: 430, h: 56 };
+const SQ = { size: 28, gap: 6, x0: 100, y: 590 };
+
+// the 6.5 % threshold is the label definition, stored in funnel.json (a1c_cut); read it before the scene starts
+fetch('../data/funnel.json').then((r) => r.json()).then((fun) => { const CUT = fun.items.a1c_cut;
+Kit.createScene({
+  number: 9,
+  name: 'erased_positives',
+  duration: 21,
+  layout: 'R',
+  speaker: 'B',
+  title: [
+    { at: 0, text: 'Which values were erased?' },
+    { at: CUES.red + 0.6, text: '…' },       // filled from the data in setup()
+  ],
+  source: '§3.4 · S3_blanket_recode',
+  data: '../data/blanket_recode.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui, defs } = ctx, K = Kit;
+    const S = ctx.S = {};
+    const g = K.svg('g', {}, fig);
+    const nLost = K.val(data, 'a1c_lost'), nPos = K.val(data, 'a1c_pos'), nFlip = K.val(data, 'flips');
+    S.nLost = nLost; S.nPos = nPos; S.nFlip = nFlip;
+    ui.titles[1].el.textContent = K.disp(data, 'a1c_lost') + ' of ' + K.disp(data, 'a1c_pos') + ' positives erased';
+
+    // ---- strip of the erased HbA1c values (axis, threshold, dots)
+    const x = K.scaleLinear([X.d0, X.d1], [X.r0, X.r1]);
+    S.x = x;
+    S.axis = K.axis(g, x, { orient: 'bottom', at: 270, ticks: [6, 7, 8, 9, 10], format: (v) => K.fmt(v, 0),
+      title: { text: 'HbA1c, %', x: X.r0, y: 352, cls: 'kit-t-min' } });
+    S.thr = K.svg('g', {}, g);
+    const cut = CUT.value;
+    K.svg('line', { x1: x(cut), x2: x(cut), y1: 52, y2: 270, stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '8 6' }, S.thr);
+    K.text(S.thr, { x: x(cut) + 14, y: 76, text: '≥ ' + CUT.display + ' = diabetes', cls: 'kit-t-tick' });
+
+    const lbx = data.groups.per_variable.find((v) => v.var === 'LBXGH');
+    const hits = lbx.values_hit.split(',').map((s) => s.trim().split(':').map(Number));   // [[7, 28], [9, 1]]
+    if (hits.reduce((a, h) => a + h[1], 0) !== nLost) throw new Error('erased HbA1c values do not add up to a1c_lost');
+    S.dots = [];
+    hits.forEach(([v, n]) => {
+      for (let i = 0; i < n; i++) {
+        const cols = n > 1 ? 4 : 1, c = i % cols, r = Math.floor(i / cols);
+        const cx = x(v) + (c - (cols - 1) / 2) * 24, cy = 246 - r * 24;
+        const ink = K.svg('circle', { cx, cy, r: 10, fill: K.C.ink }, g);
+        const red = K.svg('circle', { cx, cy, r: 10, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 2 }, g);
+        S.dots.push({ ink, red });
+      }
+    });
+
+    // ---- number block: 29 (red, with the triangle), two label lines
+    S.tri = K.svg('g', {}, g);
+    K.warnTriangle(S.tri, { x: 866, y: 140, size: 40 });
+    S.num = K.callout(g, { x: 920, y: 215, size: 'main', fill: K.C.leak });
+    S.lab = K.svg('g', {}, g);
+    K.text(S.lab, { x: 870, y: 296, text: 'of ' + K.disp(data, 'a1c_pos') + ' HbA1c-based', cls: 'kit-t-min' });
+    K.text(S.lab, { x: 870, y: 332, text: 'positives erased', cls: 'kit-t-min' });
+    S.tag = K.svg('g', {}, g);
+    K.svg('rect', { x: 872, y: 30, width: 322, height: 46, rx: 6, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, S.tag);
+    K.text(S.tag, { x: 888, y: 63, text: 'Non-obvious finding', cls: 'kit-t-min' });
+
+    // ---- ledger: the 721 positives as one bar; the last 29 form the dropped slice
+    const u = LED.w / nPos, wKeep = (nPos - nLost) * u, wCut = nLost * u;
+    S.led = { u, wKeep, wCut };
+    S.ledBar = K.svg('rect', { x: LED.x0, y: LED.y, height: LED.h, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, g);
+    S.slice = K.svg('rect', { y: LED.y, height: LED.h, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 2 }, g);
+    S.sliceGhost = K.svg('rect', { y: LED.y, height: LED.h, fill: 'none', stroke: K.C.leak, 'stroke-width': 2, 'stroke-dasharray': '6 5' }, g);
+    S.links = K.svg('g', { stroke: K.C.ink, 'stroke-width': 2, 'stroke-dasharray': '6 5' }, g);
+    K.svg('line', { x1: LED.x0 + wKeep, y1: LED.y + LED.h, x2: SQ.x0, y2: SQ.y }, S.links);
+    K.svg('line', { x1: LED.x0 + LED.w, y1: LED.y + LED.h, x2: SQ.x0 + nLost * (SQ.size + SQ.gap) - SQ.gap, y2: SQ.y }, S.links);
+
+    // ---- the 29 people: nLost squares; the last nFlip stay red hatch, the others return to ink
+    S.sq = [];
+    for (let i = 0; i < nLost; i++) {
+      const sx = SQ.x0 + i * (SQ.size + SQ.gap), flipped = i >= nLost - nFlip;
+      const ink = K.svg('rect', { x: sx, y: SQ.y, width: SQ.size, height: SQ.size, fill: K.C.ink }, g);
+      const red = K.svg('rect', { x: sx + 1, y: SQ.y + 1, width: SQ.size - 2, height: SQ.size - 2, fill: 'url(#kit-hatch-leak)', stroke: K.C.leak, 'stroke-width': 2 }, g);
+      S.sq.push({ ink, red, flipped });
+    }
+    const wRest = (nLost - nFlip) * (SQ.size + SQ.gap) - SQ.gap, xFlip = SQ.x0 + (nLost - nFlip) * (SQ.size + SQ.gap);
+    S.ring = K.focusRing(g, { x: xFlip, y: SQ.y, w: nFlip * (SQ.size + SQ.gap) - SQ.gap, h: SQ.size });
+    S.lRest = K.text(g, { x: SQ.x0 + wRest / 2, y: SQ.y + 86, text: 'also self-reported', cls: 'kit-t-min', anchor: 'middle' });
+    S.lFlip = K.svg('g', {}, g);
+    K.warnTriangle(S.lFlip, { x: xFlip - 8, y: SQ.y + 56, size: 34 });
+    K.text(S.lFlip, { x: xFlip + 34, y: SQ.y + 86, text: 'flipped to negative', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, d = ctx.data;
+    S.axis.update(K.M1_axisDraw(t, c.axis, { nTicks: 5 }));
+    // dots (ink) -> red hatch at "erased"
+    const da = K.appear(t, c.dots), red = K.progress(t, c.red, 0.4, K.ease.morph);
+    S.dots.forEach((p) => { K.op(p.ink, da * (1 - red)); K.op(p.red, da * red); });
+    K.op(S.thr, K.appear(t, c.thr));
+
+    // number 29, label lines, triangle
+    S.num.update({ text: K.disp(d, 'a1c_lost'), number: K.appear(t, c.num) });
+    K.op(S.lab, K.appear(t, c.ledger)); K.op(S.tri, K.appear(t, c.num));
+
+    // ledger bar (M2), then M5: the slice is dropped from the bar and stays behind as a dashed ghost
+    const grow = K.M2_barGrow(t, c.ledger), m5 = K.M5_funnel(t, c.drop, 1)[0];
+    const L = S.led, full = LED.w * grow, keep = Math.min(full, L.wKeep + L.wCut * (1 - m5.narrow));
+    S.ledBar.setAttribute('width', Math.max(0, keep)); K.op(S.ledBar, grow > 0 ? 1 : 0);
+    const sliceW = Math.max(0, full - Math.min(full, keep));
+    // before the drop the slice is the bar's last part (hatched); afterwards it keeps its place as a ghost
+    const sx = LED.x0 + L.wKeep, sw = grow >= 1 ? L.wCut : 0;
+    S.slice.setAttribute('x', sx); S.slice.setAttribute('width', sw); K.op(S.slice, grow >= 1 ? 1 - m5.narrow * 0.65 : 0);
+    S.ledBar.setAttribute('width', Math.max(0, grow < 1 ? full : (L.wKeep + L.wCut * (1 - m5.narrow))));
+    S.sliceGhost.setAttribute('x', sx); S.sliceGhost.setAttribute('width', L.wCut); K.op(S.sliceGhost, m5.narrow * 0.9);
+    K.op(S.links, m5.narrow * 0.5);
+
+    // the 29 people: appear with the drop; "six" focuses the flipped ones (M3), "rest" returns the others to ink
+    const sqA = K.appear(t, c.drop + 0.5), foc = K.M3_focus(t, c.six, c.rest), back = K.progress(t, c.rest, 0.4, K.ease.morph);
+    S.sq.forEach((q) => {
+      const dim = q.flipped ? 1 : foc.others, toInk = q.flipped ? 0 : back;
+      K.op(q.ink, sqA * dim * toInk); K.op(q.red, sqA * dim * (1 - toInk));
+    });
+    S.ring.update({ outline: foc.outline });
+    K.op(S.lFlip, K.appear(t, c.six)); K.op(S.lRest, K.appear(t, c.rest));
+    K.op(S.tag, K.appear(t, c.nosum));
+  },
+});
+});
+</script>
+</body>
+</html>

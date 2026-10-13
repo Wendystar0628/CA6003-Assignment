@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 08 · The struck 7.0</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_phases.js"></script>
+</head>
+<body>
+<script>
+/* Scene 08 · Look before cleaning: the blanket recode (signature visual 3 "The struck 7.0", steps 1-4)
+   docs/video_plan.md §4 scene 08, §7 visual 3. Speaker B.
+   One relation: the shortcut "7, 9, 77, 99 -> missing in every column" catches 57 genuine codes but destroys
+   1,496 valid cells, among them HbA1c values of exactly 7.0 %. Two bars drawn to scale (ink outline 57 vs red
+   hatch 1,496); three valid readings in an illustrative one-row table are struck in red (harmed data); M9
+   pushes in on the struck 7.0 (1 of the film's 2 push-ins, scale 1.25).
+   Layout phases (kit has one layout per scene, so _phases.js re-positions the chrome): chapter card 0-1.2 s,
+   F 1.2-13.2 s (portrait only, lower-third), R 13.2-16.6 s (table + rule), X 16.6-28 s (bars; camera in the
+   bottom-right safe area). cfg.layout is the last phase, X. Numbers: video/data/blanket_recode.json. */
+
+// Cue times in scene seconds, estimated from the §4 narration after the 1.2 s chapter card
+// (replace with the times marked on B's take, §8.3 step 5).
+const CUES = {
+  lt: 1.2,                          // lower-third "B · Data quality & preparation" (4 s)
+  toR: 13.2,                        // F ends after ~12 s of portrait
+  table: 13.3,                      // "The common shortcut ..."          illustrative table appears
+  rule: 14.6,                       // "... into missing in every column"  rule text
+  toX: 16.6,                        // "It catches 57 genuine codes"      X layout
+  bar57: 16.9,                      // M2, ink outline; number 57
+  strike: [19.3, 19.7, 20.1],       // "It also deletes"                  M7 red on the three valid readings
+  bar1496: 20.7,                    // "1,496 valid measurements"         M2, red hatch; number 1,496
+  legend: 21.7,                     // red legend moment (2 s), then folds into the bottom row
+  push: 24.45,                      // "HbA1c values of exactly 7.0 percent"   M9 on the struck 7.0 (hold 2 s)
+};
+
+const TAB = { x: 160, colW: 200, head: 140, row: 262, rule: 440 };
+const BAR = { x0: 830, w: 800 };            // 1,496 is drawn 800 px wide; 57 follows to scale
+
+/** First (or n-th) hit "value:count" of an erased-values string such as "77:214, 99:23". */
+const hit = (data, v, i) => Number(data.groups.per_variable.find((r) => r.var === v).values_hit.split(',')[i].trim().split(':')[0]);
+
+Kit.createScene({
+  number: 8,
+  name: 'struck_7_0',
+  duration: 28,
+  layout: 'X',
+  speaker: 'B',
+  title: [
+    { at: 0, text: 'Look before cleaning' },
+    { at: CUES.bar1496, text: '…' },       // filled from the data in setup()
+  ],
+  source: '§3.4 · S3_blanket_recode',
+  chapterCard: { at: 0, title: 'Data clues', item: '03 · Data clues · §3' },
+  lowerThird: { at: CUES.lt },
+  legendMoment: { key: 'leak', at: CUES.legend, hold: 2.0 },
+  data: '../data/blanket_recode.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, ui } = ctx, K = Kit;
+    const S = ctx.S = {};
+    ctx.PH = Phases.create(ctx, [{ at: 0, layout: 'F' }, { at: CUES.toR, layout: 'R' }, { at: CUES.toX, layout: 'X' }]);
+    ui.titles[1].el.textContent = K.disp(data, 'destroyed') + ' valid cells lost';
+    const g = K.svg('g', {}, fig);
+
+    // ---- one-row illustrative table: three valid readings (values taken from the erased-value lists)
+    S.table = K.svg('g', {}, g);
+    const cols = [
+      { head: 'Diastolic BP', text: String(hit(data, 'BPXODI1', 0)) },          // 77 (a valid reading in mmHg)
+      { head: 'Pulse', text: String(hit(data, 'BPXOPLS1', 1)) },                // 99
+      { head: 'HbA1c, %', text: K.fmt(hit(data, 'LBXGH', 0), 1) },              // 7.0
+    ];
+    S.cells = cols.map((c, i) => {
+      const cx = TAB.x + i * TAB.colW + TAB.colW / 2;
+      K.text(S.table, { x: cx, y: TAB.head, text: c.head, cls: 'kit-sans', size: 34, weight: 600, anchor: 'middle' });
+      const val = K.text(S.table, { x: cx, y: TAB.row, text: c.text, cls: 'kit-t-second', anchor: 'middle' });
+      return { val, cx };
+    });
+    K.svg('line', { x1: TAB.x, x2: TAB.x + 3 * TAB.colW, y1: TAB.head + 26, y2: TAB.head + 26, stroke: K.C.ink, 'stroke-width': 2 }, S.table);
+    K.svg('line', { x1: TAB.x, x2: TAB.x + 3 * TAB.colW, y1: TAB.row + 30, y2: TAB.row + 30, stroke: K.C.line, 'stroke-width': 2 }, S.table);
+    K.text(S.table, { x: TAB.x, y: TAB.row + 76, text: 'illustrative', cls: 'kit-t-min' });
+    S.strikes = S.cells.map((c) => K.strike(S.table, c.val, { color: 'leak', pad: 10, width: 5 }));
+
+    // ---- the rule, from the data file (two lines, no code)
+    const rule = data.groups.rule.split(' (')[0], cut = rule.indexOf('→');
+    S.rule = K.svg('g', {}, g);
+    K.text(S.rule, { x: 60, y: TAB.rule, text: rule.slice(0, cut).trim(), cls: 'kit-t-note' });
+    K.text(S.rule, { x: 60, y: TAB.rule + 44, text: rule.slice(cut).trim(), cls: 'kit-t-note' });
+
+    // ---- bars drawn to scale: ink outline 57, red hatch 1,496
+    const full = K.val(data, 'destroyed'), small = K.val(data, 'genuine');
+    S.xs = K.scaleLinear([0, full], [BAR.x0, BAR.x0 + BAR.w]);
+    S.b57 = K.bar(g, { scale: S.xs, base: 0, y: 150, width: 54, orient: 'h', styles: ['ink'] });
+    S.v57 = small;
+    S.n57 = K.callout(g, { x: BAR.x0 + (small / full) * BAR.w + 22, y: 202, size: 'second' });
+    S.l57 = K.text(g, { x: BAR.x0 + (small / full) * BAR.w + 110, y: 202, text: 'genuine codes caught', cls: 'kit-t-note' });
+    S.b1496 = K.bar(g, { scale: S.xs, base: 0, y: 262, width: 70, orient: 'h', styles: ['leak'] });
+    S.vFull = full;
+    S.n1496 = K.callout(g, { x: BAR.x0, y: 500, size: 'main', fill: K.C.leak });
+    S.l1496 = K.svg('g', {}, g);
+    K.warnTriangle(S.l1496, { x: BAR.x0, y: 548, size: 36 });
+    K.text(S.l1496, { x: BAR.x0 + 48, y: 578, text: 'valid cells destroyed', cls: 'kit-t-min' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, d = ctx.data;
+    ctx.PH.apply(t);
+
+    // table, rule, strikes; M9 push-in on the struck HbA1c cell (table group only)
+    K.op(S.table, K.appear(t, c.table));
+    K.op(S.rule, K.appear(t, c.rule));
+    S.strikes.forEach((s, i) => s.update(K.M7_strike(t, c.strike[i])));
+    const cell = S.cells[2], push = K.M9_pushIn(t, c.push, { scale: 1.25 });
+    S.table.style.transform = push.transform(cell.cx, TAB.row - 22);
+
+    // bars
+    S.b57.update({ value: S.v57, grow: K.M2_barGrow(t, c.bar57) });
+    S.n57.update({ text: K.disp(d, 'genuine'), number: K.appear(t, c.bar57) });
+    K.op(S.l57, K.appear(t, c.bar57));
+    S.b1496.update({ value: S.vFull, grow: K.M2_barGrow(t, c.bar1496) });
+    S.n1496.update({ text: K.disp(d, 'destroyed'), number: K.appear(t, c.bar1496) });
+    K.op(S.l1496, K.appear(t, c.bar1496 + K.T.appear));
+  },
+});
+</script>
+</body>
+</html>
