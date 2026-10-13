@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 21 · Preparation against the band</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 21 · Trap 3: does careful preparation pay? (signature visual 9 "Preparation against the band") · docs/video_plan.md §4 scene 21, §7 visual 9.
+   Speaker D. Chapter card 1.2 s, then layout F for 12 s (D introduces himself; lower-third), then layout R with the chart.
+   One relation: the interval [0.000, 0.016] of S - M1 is neither inside nor beyond the +/-0.01 margin: inconclusive.
+   This is the ONLY scene where the whisker pulses (M4). Numbers: video/data/prep_band.json. Scene 24 reuses this axis and band (DC.diffAxis). */
+
+const F_END = 13.2;   // 1.2 s chapter card + 12 s full-screen camera
+
+// Cues in scene seconds, estimated at ~136 wpm after the 1.2 s card; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  axis: 13.3,      // "AUC rises by ..."                               M1: the difference axis
+  dot: 14.6,       // "plus 0.008,"                                    teal dot lands
+  whisker: 16.2,   // "interval 0.000 to 0.016."                       M4 whisker (+ interval text)
+  band: 18.6,      // "Our margin, fixed in advance, was 0.01."        M4 band + label
+  pulse: 21.9,     // "The interval is neither inside it nor beyond it" the right end crosses the band edge: one pulse
+  verdict: 25.6,   // "inconclusive, underpowered, not proof of no effect." dashed box + ?
+  mdd: 28.6,       // screen only, in the pause after the verdict      smallest detectable difference
+};
+
+Kit.createScene({
+  number: 21,
+  name: 'prep_band',
+  duration: 33,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Does preparation pay?' }, { at: CUES.verdict, text: '(set from data)' }],
+  trap: 'gain',
+  source: '§10 · S10_scoreboard_forest',
+  chapterCard: { at: 0, title: 'Does preparation pay?', item: 'Trap 3 · §10' },
+  lowerThird: { at: 1.2, dur: 4 },
+  data: '../data/prep_band.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    S.cam = DC.cameraPhase(ctx);
+    const d = K.interval(data, 'd_auc_ci');
+    DC.setTitle(ctx, 1, d.estDisplay + ' ' + d.bracket + ' · ' + K.disp(data, 'verdict'));
+    const g = K.svg('g', {}, fig);
+    const A = S.A = DC.diffAxis(g, data, { title: K.item(data, 'd_auc').label });
+
+    // number + interval (teal = Systematic only)
+    S.num = K.callout(g, { x: 110, y: 200, size: 'main', interval: d.bracket });
+    S.num.interval.setAttribute('y', 200 + 76);   // main number is 136 px tall: keep the interval clear of it
+    S.d = d;
+    // margin band label
+    S.bandLab = K.text(g, { x: A.x(0), y: A.G.band[0] - 12, text: '±' + K.disp(data, 'sesoi') + ' margin, fixed in advance', anchor: 'middle', cls: 'kit-t-min' });
+    // dot + whisker (teal solid circle); the right end crosses the band edge and pulses once
+    S.dw = K.dotWhisker(g, A.x, { orient: 'h', at: 425, est: d.est, lo: d.lo, hi: d.hi, role: 'systematic', shape: 'circle', pulseEnd: 'hi' });
+    // verdict (ink dashed box + "?")
+    S.verdict = K.feedback(g, { kind: 'inconclusive', x: 110, y: 668, size: 64, label: 'inconclusive — underpowered, not zero' });
+    // minimum detectable difference (screen only)
+    S.mdd = K.callout(g, { x: 925, y: 200, size: 'second', label: 'smallest detectable' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, data = ctx.data, A = S.A, M4 = K.T.M4;
+    if (S.cam.apply(t, 1.2, F_END)) return;     // layout F: nothing of the chart is on screen
+    A.ax.update(K.M1_axisDraw(t, c.axis, { nTicks: 5 }));
+    K.op(A.title, K.M1_axisDraw(t, c.axis).labels);
+    // M4 pieces, each started by its own narration phrase (the helper's internal order is dot -> whisker -> band -> pulse)
+    const dot = K.M4_whiskerBand(t, c.dot).dot;
+    const whisker = K.M4_whiskerBand(t, c.whisker - M4.dot).whisker;
+    const band = K.M4_whiskerBand(t, c.band - M4.dot - M4.whisker).band;
+    const pulse = K.M4_whiskerBand(t, c.pulse - M4.dot - M4.whisker - M4.band).pulse;
+    K.op(A.zero, K.appear(t, c.axis + 0.9)); A.band.update(band); K.op(S.bandLab, K.appear(t, c.band + M4.band));
+    S.dw.update({ dot, whisker, pulse });
+    S.num.update({ text: S.d.estDisplay, number: dot, interval: K.appear(t, c.whisker + M4.whisker), fill: K.C.systematic });
+    S.verdict.update(K.appear(t, c.verdict)); K.op(S.verdict.label, K.appear(t, c.verdict));
+    S.mdd.update({ text: K.disp(data, 'mdd'), number: K.appear(t, c.mdd), label: K.appear(t, c.mdd + K.T.appear) });
+  },
+});
+</script>
+</body>
+</html>

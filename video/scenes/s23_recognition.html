@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 23 · Recognition and screening</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 23 · Recognition vs screening (signature visual 8 "All adults vs Screening group") · docs/video_plan.md §4 scene 23, §7 visual 8.
+   Speaker D presents C's Screening group. One relation: the same Systematic model scores 0.836 on all adults and 0.781 on the Screening group;
+   84 % of positives were already diagnosed, so the all-adults AUC mostly measures recognition (spectrum bias).
+   Numbers: video/data/recognition.json. */
+
+// Cues in scene seconds, estimated at ~136 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  axis: 1.8,      // "Now C's screening group."                                  M1 AUC axis, "axis starts at 0.5"
+  all: 3.6,       // "On all adults, the systematic model scores"                grey dot (All adults)
+  allNum: 4.6,    // "0.836."                                                    number
+  scr: 8.2,       // "On the screening group, the people screening must find,"   blue hollow square
+  scrNum: 9.9,    // "it scores 0.781."                                          number
+  gap: 10.7,      // (screen only, after 0.781)                                  connecting line + gap with interval
+  bar: 12.0,      // "84 percent of positives were already diagnosed,"           stacked bar + number
+  bias: 16.9,     // "That is spectrum bias."                                    label
+};
+
+Kit.createScene({
+  number: 23,
+  name: 'recognition',
+  duration: 23,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Whom does the score serve?' }, { at: CUES.bias, text: '(set from data)' }],
+  attribution: 'Screening group: C · §5',
+  trap: 'label',
+  source: '§10 · S10_recognition_vs_screening',
+  data: '../data/recognition.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data, defs } = ctx, K = Kit, S = ctx.S = {};
+    const all = K.item(data, 'auc_eall'), scr = K.item(data, 'auc_escreen');
+    DC.setTitle(ctx, 1, all.label + ' ' + all.display + ' · ' + scr.label + ' ' + scr.display);
+    const g = K.svg('g', {}, fig);
+    const gap = K.interval(data, 'gap_ci');
+    S.gap = gap;
+
+    // ---- AUC axis, from 0.5 (labelled)
+    const base = K.val(data, 'axis_start');
+    const x = K.scaleLinear([base, 1.0], [150, 1110]);
+    S.x = x;
+    S.axis = K.axis(g, x, { orient: 'bottom', at: 310, ticks: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0], format: (v) => K.fmt(v, 1),
+      truncated: { text: 'axis starts at ' + K.disp(data, 'axis_start'), x: 150, y: 410 }, title: { text: 'AUC · Systematic (S)', x: 60, y: 50 } });
+
+    // ---- dots: All adults = grey solid circle, Screening group = blue hollow square
+    const yDot = 246;
+    S.line = K.svg('line', { x1: x(scr.value), x2: x(all.value), y1: yDot, y2: yDot, stroke: K.C.ink, 'stroke-width': 3 }, g);
+    S.dAll = K.dotWhisker(g, x, { orient: 'h', at: yDot, est: all.value, lo: all.value, hi: all.value, role: 'reference', shape: 'circle', size: 28 });
+    S.dScr = K.dotWhisker(g, x, { orient: 'h', at: yDot, est: scr.value, lo: scr.value, hi: scr.value, role: 'screen', shape: 'hollowSquare', size: 28 });
+    // labels + numbers above the dots (Screening group to the left of its dot, All adults to the right of its dot)
+    S.nAll = K.callout(g, { x: x(all.value) - 14, y: 160, size: 'second', label: all.label });
+    S.nScr = K.callout(g, { x: x(scr.value) + 14, y: 160, anchor: 'end', size: 'second', label: scr.label });
+    // gap with its interval, right of the dumbbell
+    S.nGap = K.callout(g, { x: x(all.value) + 110, y: 240, size: 'second', interval: gap.bracket });
+    S.nGap.interval.setAttribute('y', 240 + 52);
+
+    // ---- stacked bar of the positives: already diagnosed (ink outline) | Screening group (blue hollow-square pattern)
+    const known = K.item(data, 'known_share'), rest = K.item(data, 'screen_share');
+    const bx0 = 150, bw = 960, by = 612, bh = 66;
+    const pid = 'pat-scr-squares';
+    const pat = K.svg('pattern', { id: pid, patternUnits: 'userSpaceOnUse', width: 18, height: 18 }, defs);
+    K.svg('rect', { width: 18, height: 18, fill: '#fff' }, pat);
+    K.svg('rect', { x: 3, y: 3, width: 11, height: 11, fill: 'none', stroke: K.C.screen, 'stroke-width': 2.5 }, pat);
+    S.bar = K.svg('g', {}, g);
+    const wk = bw * known.value;
+    K.svg('rect', { x: bx0, y: by, width: wk, height: bh, fill: '#fff', stroke: K.C.ink, 'stroke-width': 3 }, S.bar);
+    K.svg('rect', { x: bx0 + wk, y: by, width: bw - wk, height: bh, fill: 'url(#' + pid + ')', stroke: K.C.screen, 'stroke-width': 3 }, S.bar);
+    K.text(S.bar, { x: bx0 + 20, y: by + bh / 2 + 10, text: 'already diagnosed', cls: 'kit-t-min' });
+    K.text(S.bar, { x: bx0 + bw, y: by + bh + 40, text: scr.label, anchor: 'end', cls: 'kit-t-min' });
+    S.nKnown = K.callout(g, { x: bx0, y: 568, size: 'second', label: 'of positives' });
+    S.nKnown.label.setAttribute('x', bx0 + 150); S.nKnown.label.setAttribute('y', 568);
+    S.bias = K.text(g, { x: bx0, y: by + bh + 40, text: 'spectrum bias', cls: 'kit-t-note', weight: 600 });
+    S.known = known;
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, data = ctx.data;
+    const ax = K.M1_axisDraw(t, c.axis, { nTicks: 6 });
+    S.axis.update(ax);
+    const a = K.appear(t, c.all), s = K.appear(t, c.scr);
+    S.dAll.update({ dot: a, whisker: 0, opacity: a }); S.dScr.update({ dot: s, whisker: 0, opacity: s });
+    S.nAll.update({ text: K.disp(data, 'auc_eall'), number: K.appear(t, c.allNum), label: K.appear(t, c.allNum) });
+    S.nScr.update({ text: K.disp(data, 'auc_escreen'), number: K.appear(t, c.scrNum), label: K.appear(t, c.scrNum) });
+    // connecting line 0.5 s, then the gap number and its interval (0.3 s later)
+    const ln = K.progress(t, c.gap, 0.5, K.ease.enter);
+    S.line.setAttribute('x2', K.lerp(S.x(K.val(data, 'auc_escreen')), S.x(K.val(data, 'auc_eall')), ln));
+    K.op(S.line, ln > 0 ? 1 : 0);
+    S.nGap.update({ text: K.disp(data, 'gap'), number: K.appear(t, c.gap + 0.5), interval: K.appear(t, c.gap + 0.8) });
+    // stacked bar of positives, number 84 % when spoken
+    K.op(S.bar, K.appear(t, c.bar));
+    S.nKnown.update({ text: S.known.display, number: K.appear(t, c.bar + 0.1), label: K.appear(t, c.bar + 0.1) });
+    K.op(S.bias, K.appear(t, c.bias));
+  },
+});
+</script>
+</body>
+</html>

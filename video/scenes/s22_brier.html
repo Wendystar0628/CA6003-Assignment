@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 22 · One deterioration</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 22 · One step did hurt: class weights and the Brier score · docs/video_plan.md §4 scene 22 (secondary diagram "calibration and Brier", §7 last paragraph).
+   Speaker D. One relation: Systematic worsens the Brier score by 0.074 because of class weights alone (0.076); without them, Brier is back to Minimal and AUC still gains 0.007.
+   Numbers: video/data/brier.json. The decile calibration curves of figures/S7_pr_calibration.png are not stored under video/data, so the calibration panel shows
+   calibration-in-the-large from stored values instead: mean predicted risk against the observed prevalence (the "predicted = observed" line). */
+
+// Cues in scene seconds, estimated at ~139 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  axis: 4.4,     // "From minimal to systematic, the Brier score,"           M1 axis of the calibration panel
+  observed: 6.2, // "which checks whether predicted risks match reality,"     observed line (predicted = observed) + Minimal (M1)
+  s: 7.6,        // (pause)                                                    Systematic (S) lands far above the line
+  row1: 9.0,     // "worsens by 0.074."                                        row 1: bar, main number, cross
+  noCw: 12.4,    // "removing only them"                                       S without class weights lands on the line
+  row2: 14.2,    // "improves Brier by 0.076."                                 row 2: bar + number
+  row3: 16.4,    // "AUC still gains 0.007."                                   row 3: bar (Brier ~ M1) + AUC number
+  title: 18.6,   // title settles on the screen text
+};
+
+Kit.createScene({
+  number: 22,
+  name: 'brier',
+  duration: 22,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'One step did hurt' }, { at: CUES.title, text: '(set from data)' }],
+  attribution: "class weights: B's step P11",
+  trap: 'gain',
+  source: '§7 · S7_pr_calibration',
+  grid: false,
+  data: '../data/brier.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    DC.setTitle(ctx, 1, 'Brier ' + K.disp(data, 'd_brier') + ' (worse)');
+    const g = K.svg('g', {}, fig);
+    const sty = { fill: K.C.systematicTint, stroke: K.C.systematic };
+
+    // ---------------- top: calibration-in-the-large (mean predicted risk vs the observed prevalence)
+    K.text(g, { x: 60, y: 50, text: 'Mean predicted risk', cls: 'kit-t-min' });
+    const px = K.scaleLinear([0, 0.5], [470, 1160]);
+    S.pAxis = K.axis(g, px, { orient: 'bottom', at: 296, ticks: [0, 0.1, 0.2, 0.3, 0.4, 0.5], format: (v) => Math.round(v * 100) + ' %' });
+    const prev = K.item(data, 'prevalence');
+    S.obs = K.svg('g', {}, g);
+    K.svg('line', { x1: px(prev.value), x2: px(prev.value), y1: 84, y2: 296, stroke: K.C.ink, 'stroke-width': 2.5, 'stroke-dasharray': '9 6' }, S.obs);
+    DC.halo(K.text(S.obs, { x: px(prev.value) + 14, y: 84, text: 'predicted = observed', cls: 'kit-t-min' }));
+    const rows = [
+      { id: 'm1', y: 130, label: K.item(data, 'brier_m1').label, v: K.val(data, 'meanp_m1'), shape: 'ref' },
+      { id: 's', y: 196, label: K.item(data, 'brier_s').label, v: K.val(data, 'meanp_s'), shape: 'sys' },
+      { id: 'nocw', y: 262, label: K.item(data, 'brier_s_nocw').label, v: K.val(data, 'meanp_s_nocw'), shape: 'sysdash' },
+    ];
+    S.pRows = rows.map((r) => {
+      r.g = K.svg('g', {}, g);
+      K.text(r.g, { x: 60, y: r.y + 10, text: r.label, cls: 'kit-t-min' });
+      const cx = px(r.v);
+      if (r.shape === 'ref') K.svg('circle', { cx, cy: r.y, r: 12, fill: K.C.reference }, r.g);
+      else if (r.shape === 'sys') K.svg('circle', { cx, cy: r.y, r: 12, fill: K.C.systematic }, r.g);
+      else K.svg('circle', { cx, cy: r.y, r: 11, fill: '#fff', stroke: K.C.systematic, 'stroke-width': 3, 'stroke-dasharray': '5 4' }, r.g);
+      return r;
+    });
+
+    // ---------------- bottom: three Brier-difference rows on one shared axis (teal outline = Systematic's change)
+    const bx = K.scaleLinear([-0.01, 0.09], [520, 1160]);
+    const BASE = bx(0);
+    S.bx = bx;
+    DC.halo(K.text(g, { x: 520, y: 414, text: 'Brier change · higher = worse', cls: 'kit-t-min' }));
+    S.bAxis = K.axis(g, bx, { orient: 'bottom', at: 722, ticks: [0, 0.03, 0.06, 0.09], format: (v) => K.fmt(v, 2) });
+    S.zero = K.svg('line', { x1: BASE, x2: BASE, y1: 428, y2: 722, stroke: K.C.ink, 'stroke-width': 2 }, g);
+    const mk = (id, iv, label, y, dashed) => {
+      const e = K.interval(data, iv), r = { id, y, e, dashed };
+      r.g = K.svg('g', {}, g);
+      r.lab = DC.halo(K.text(r.g, { x: BASE + 14, y: y - 28, text: label, cls: 'kit-t-min' }));
+      r.rect = K.svg('rect', { x: BASE, y: y - 20, height: 40, fill: sty.fill, stroke: sty.stroke, 'stroke-width': 3, 'stroke-dasharray': dashed ? '9 6' : null }, r.g);
+      r.dw = K.dotWhisker(r.g, bx, { orient: 'h', at: y, est: e.est, lo: e.lo, hi: e.hi, role: 'systematic', shape: 'circle', size: 14 });
+      return r;
+    };
+    S.b = [
+      mk('b1', 'd_brier_ci', 'from Minimal to Systematic', 482, false),
+      mk('b2', 'd_brier_cw_ci', 'class weights alone', 582, false),
+      mk('b3', 'nocw_brier_ci', 'no class weights: Brier ≈ M1', 682, true),
+    ];
+    S.n1 = K.callout(g, { x: 60, y: 512, size: 'main' });
+    S.n1.num.style.fontSize = '96px';
+    S.n2 = K.callout(g, { x: 60, y: 600, size: 'second' });
+    S.n3 = K.callout(g, { x: 60, y: 700, size: 'second' });
+    S.n3Lab = K.text(g, { x: 270, y: 700, text: 'AUC', cls: 'kit-t-min' });
+    S.cross = K.feedback(g, { kind: 'refuted', x: 1128, y: 458, size: 48 });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, data = ctx.data;
+    // calibration-in-the-large panel
+    const ax = K.M1_axisDraw(t, c.axis, { nTicks: 6 });
+    S.pAxis.update(ax);
+    K.op(S.obs, K.appear(t, c.observed));
+    const at = { m1: c.observed + 0.4, s: c.s, nocw: c.noCw };
+    S.pRows.forEach((r) => K.op(r.g, K.appear(t, at[r.id])));
+    // Brier rows
+    const start = [c.row1, c.row2, c.row3];
+    const bAx = K.M1_axisDraw(t, c.row1 - 0.9, { nTicks: 4 });
+    S.bAxis.update(bAx); K.op(S.zero, bAx.line);
+    S.b.forEach((r, i) => {
+      const grow = K.M2_barGrow(t, start[i]);
+      const w = (S.bx(r.e.est) - S.bx(0)) * grow;
+      const x = Math.min(S.bx(0), S.bx(0) + w), ww = Math.max(Math.abs(w), 0.01);
+      r.rect.setAttribute('x', x); r.rect.setAttribute('width', ww);
+      K.op(r.g, grow > 0 ? 1 : 0); K.op(r.rect, grow > 0 ? 1 : 0);
+      K.op(r.lab, K.appear(t, start[i] - 0.4));
+      r.dw.update({ dot: K.appear(t, start[i] + 0.7), whisker: K.appear(t, start[i] + 0.7), opacity: K.appear(t, start[i] + 0.7) });
+    });
+    S.n1.update({ text: K.disp(data, 'd_brier'), number: K.appear(t, c.row1 + 0.4) });
+    S.cross.update(K.appear(t, c.row1 + 1.4));
+    S.n2.update({ text: K.disp(data, 'd_brier_cw'), number: K.appear(t, c.row2 + 0.4) });
+    S.n3.update({ text: K.disp(data, 'nocw_auc'), number: K.appear(t, c.row3 + 0.9) });
+    K.op(S.n3Lab, K.appear(t, c.row3 + 0.9));
+  },
+});
+</script>
+</body>
+</html>
