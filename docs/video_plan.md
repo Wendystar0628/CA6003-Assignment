@@ -1,687 +1,459 @@
 # CA6003 讲解视频方案
 
-合并自四份研究稿：叙事结构（01）、视觉系统（02）、分镜与旁白（03）、质量与录制（04），并按两条硬约束改写：全片无合影；每位成员只出现在一个连续段落里。旁白与屏幕文字为英文，其余为中文。所有数字已对照 `results/S10/numbers_on_slides.csv`（下称 CSV）、`results/final_metrics.json`、`results/metrics_S*.json` 与 `governance/claims.csv` 核对，见第 12 节。
+本文是视频唯一有效的方案（2026-10-14 版）。它合并了改版方案（单一版式、固定小窗、七部分进度条、主副标题、26 个场景）与用户 2026-10-14 的九条裁定，并保留旧方案中仍然有效的部分。早先的分镜、版式和合并记录已删除，git 历史中可查。
+
+**语言。** 旁白、屏幕文字、主副标题和字幕用英文，其余用中文。
+
+**人名。** 旁白与屏幕文字一律用人名记号，不用字母代号：
+
+| 记号 | 含义 | `team.json` |
+|---|---|---|
+| `<Name>` | 本场景的讲者 | 本段讲者的 `members[i].name` |
+| `<Name:0>` | 治理与集成成员 | `members[0].name` |
+| `<Name:1>` | 数据质量与准备成员 | `members[1].name` |
+| `<Name:2>` | 探索、标签与偏差成员 | `members[2].name` |
+| `<Name:3>` | 建模与结论成员 | `members[3].name` |
+
+规则见第 3 节。
 
 ---
 
-## 0 一页摘要
+## 0 摘要
 
-**核心信息。** “The score is not the finding. What the score reveals about the data is.” 分数本身不是发现，分数暴露出的数据问题才是。
+**核心信息。** “The score is not the finding; what it reveals about the data is.” 分数本身不是发现，分数暴露出的数据问题才是。
 
-**结构。** 四个连续段落，按 A → B → C → D 的顺序，每人只出现一次。
+**形式与观众。** 观众是课程讲师：本领域专家，但没看过本项目。形式是项目汇报：问题与数据 → 方法与设计 → 证据 → minimal vs systematic → 改进与恶化 → 贡献与反思。
+
+**结构。** 四位成员各讲一段连续录像，顺序为治理 → 数据质量与准备 → 标签与偏差 → 建模与结论。讲者全片只出现在右下角一个固定小窗里。画面上方的七部分进度条承担导航。
 
 ```text
-A 0:00–2:30  钩子 0.961? + 角色卡片 · 问题与三个陷阱 · 队列 · DUA · NCHS 复现
-             · 年龄混杂（C 的分析）· A 的意外 → 交接
-B 2:30–5:03  先看后洗：57 vs 1,496 · 29 of 721（非显然发现）· 离群值
-             · VIF 与偏度（C 的发现）· 14 步 · M0/M1/S · B 的意外 → 交接
-C 5:03–7:47  Simpson/DAG · 陷阱二 Label：κ 0.70 · 250 of 819 · 152 · 筛查组
-             · 陷阱一 Leak（D 的实验）：0.961 → 0.828 · 插补 50 · C 的意外（70 vs 52）→ 交接
-D 7:47–10:41 陷阱三 Little gain：+0.008 不确定 · Brier 恶化 · 全体成人 0.836 vs 筛查组 0.781 · 就诊痕迹反转
-             · B 的稳健性核查 · 三个回答 · D 的意外 · 团队回顾、局限、GenAI、结论
+第 1 段 <Name:0>  0:00–2:16  01–07  可疑的 0.961 · 团队 · 议程与研究问题 · 队列 · 治理 · NCHS 复现 · 年龄混杂 · 意外发现
+第 2 段 <Name:1>  2:16–4:30  08–13  缺失值代码（非显然发现）· 离群值 · 冗余与偏度 · 准备设计 · 意外发现
+第 3 段 <Name:2>  4:30–6:51  14–19  Simpson 与 DAG · RQ1 标签 · 未确诊者 · RQ2a 泄漏检查 · 泄漏机制 · 意外发现
+第 4 段 <Name:3>  6:51–9:26  20–26  RQ2b minimal vs systematic · 校准 · 分人群 AUC · 消融 · 留出集与回答 · 意外发现 · 收尾
 ```
 
-**总时长 10:41**（641 s），上限 12:00，余量 1:19；28 个场景；旁白 1,437 词，平均 134 wpm。
+**时长。** 全片 **9:26**（566 s），上限 12:00；26 个场景；旁白 1,189 词；扣除静默卡后平均 128 wpm，单场 125–134 wpm（场景 25 为 120，见 7.3 节）。
 
-| 成员 | 段落 | 时长 | 占比 | 旁白词数 | 场景 |
+| 讲者 | 段落 | 时长 | 场景 | 旁白词数 | 平均语速 |
 |---|---|---|---|---|---|
-| A | 0:00–2:30 | 2:30（150 s） | 23 % | 331 | 1–7 |
-| B | 2:30–5:03 | 2:33（153 s） | 24 % | 342 | 8–14 |
-| C | 5:03–7:47 | 2:44（164 s） | 26 % | 367 | 15–20 |
-| D | 7:47–10:41 | 2:54（174 s） | 27 % | 397 | 21–28 |
-| 合计 | — | 10:41（641 s） | 100 % | 1,437 | 28 |
+| `<Name:0>` 治理与集成 | 0:00–2:16 | 2:16（136 s） | 01–07 | 288 | 128 wpm |
+| `<Name:1>` 数据质量与准备 | 2:16–4:30 | 2:14（134 s） | 08–13 | 281 | 128 wpm |
+| `<Name:2>` 探索、标签与偏差 | 4:30–6:51 | 2:21（141 s） | 14–19 | 296 | 128 wpm |
+| `<Name:3>` 建模与结论 | 6:51–9:26 | 2:35（155 s，≤ 3:00） | 20–26 | 324 | 129 wpm |
+| 合计 | 0:00–9:26 | **9:26（566 s）** | 26 | 1,189 | 128 wpm |
 
-**最重要的决定。**
-1. **一人一段。** 每位成员只在一个连续段落里出镜，没有合影、没有回场、没有末尾的单人短片。每段以自我介绍和 lower-third 开头，以一句 “most unexpected” 和交接句结尾。
-2. **内容按故事分配，口头署名。** B 讲 C 发现的冗余与偏度；C 讲 D 的泄漏门与决策树；D 讲 B 的稳健性核查；A 讲 C 的年龄混杂。每次都说出原作者（“C's exploration found…”，“D's experiments”）。
-3. **D ≤ 3:00。** D 段 2:54，留 6 s 余量；超时时先砍 D 段（10.4 节）。结尾在 D 段内：三个回答、团队回顾、局限、GenAI 与结论。
-4. **数字口径不变。** 每个上屏数字都有 source key；Brier 一律写明：S − M1 = +0.074，类别权重单独贡献 +0.076；CSV 缺的 24 个值在制作前补登（第 12 节）。
-5. **视觉系统。** 颜色按角色分开：一个结构色（靛蓝，只标“当前位置”）；四个语义色（红 = 受损或泄漏的数据，青 = 系统准备 S，蓝空心方块 = 筛查组，灰实心圆 = 对照基线）；反馈不用色相，只用墨色形状（✓ / 虚线框 + “?” / ✗）。暖黄色取消；数字特效取消，改为原位换值；推近全片只用 2 次；装饰只用问卷编码表的淡网格。
-6. **录制方式。** 每人一次连续录完自己的段落，成片只有 3 个切点（A→B、B→C、C→D）。这样即使讲师对 “single continuous video” 要求严格，也容易满足。今天发邮件确认；回退方案是一次连续的 OBS 录制，四人依次单独出镜。
+### 0.1 关键决定
+
+| # | 决定 | 要点 |
+|---|---|---|
+| 1 | 唯一版式 | 顶部进度条，64 px 主标题加 34 px 副标题，图区 1728×764，右下固定小窗 384×216（x 1416，y 748）加名签；没有右栏、徽章、全屏或分屏 |
+| 2 | 七部分进度条 | Problem & data · Data quality · EDA & preparation · Labels & bias · Experiments · Results & robustness · Reflection；不写 “Part n of 7” |
+| 3 | 标题写主题 | 主标题写本页主题，副标题写本页展示什么；结论放进旁白和图内 ≤ 5 词的标注 |
+| 4 | 先讲设计 | 场景 02 是议程页：研究问题、同一模型 × 三种数据准备 × 两个评估人群、三个研究问题 |
+| 5 | 研究问题编号 | RQ1 Labels → RQ2a Leakage → RQ2b Preparation，在 02 提出，在 24 回答，与揭示顺序一致 |
+| 6 | 一人一段 | 每人一段连续录像；切换只在 2:16、4:30、6:51；没有合影，没有回场 |
+| 7 | 不出现字母代号 | 屏幕和语音只用真名；名字唯一来源是 `notebooks/final/team.json`；未填时显示 “[Name]”（裁定 8） |
+| 8 | 稳健性署名 | 留出集与稳健性核查署 “Robustness checks led by `<Name:1>`”（裁定 1） |
+| 9 | 底栏指引 | 保留一行 “Notebook section N.M”（裁定 2） |
+| 10 | 代号对照 | 全片只在场景 12 显示一次 “notebook: M0 · M1 · S”（裁定 3） |
+| 11 | 第 1 段无段首页 | 由片头卡、团队页和名签介绍（裁定 4） |
+| 12 | 节奏 | 每场 125–140 wpm；只在关键数字或揭示后停 0.8–1.5 s；不留超过约 1.5 s 的空白（裁定 5） |
+| 13 | 字幕 | 烧录开放字幕，单独的字幕区，最多 2 行 × 42 字符；另出 `.srt` 供 YouTube（裁定 7） |
+| 14 | 合成 | 每段场景拼接后整段叠一次讲者录像并烧录字幕，再拼成全片 |
+| 15 | 首个交付 | 第 1 段完整成片（占位小窗 + 烧录字幕）先交用户审阅，其余三段按反馈再做（裁定 9） |
 
 ---
 
 ## 1 目标与约束
 
-**目标。** 这是一段设计过的讲解视频，不是随意的谈话。讲师应能轻松看懂项目及其核心价值：主线连贯，内容逐层展开，视觉和动效专业，强调什么、省略什么都经过取舍，旁白与画面同步。
+**目标。** 一段设计过的项目汇报视频，不是随意谈话。讲师应能看懂项目及其价值：主线连贯，逐层展开，视觉和动效克制专业，旁白与画面同步。
 
 **作业硬性规则（摘自课程 brief）。**
 
 | 规则 | 落实 |
 |---|---|
-| “12-minute (maximum)”，超出部分不计 | 10:41；排练上限 11:15 |
-| “all group members must appear and present” | 每人一个连续段落，出镜 2:30–2:54 |
-| “single continuous video” | 每段一次连续录制；问讲师；回退方案见 9.6 节 |
-| 内容要求（治理、剖析、EDA、准备、对 ML 的影响、非显然发现、最简 vs 系统、贡献与反思） | 逐项对应见 13.2 节 |
+| “12-minute (maximum)”，超出部分不计 | 9:26；排练上限 10:30 |
+| “all group members must appear and present” | 四人各一段连续录像，各 2:14–2:35；小窗与名签全程可见 |
+| “single continuous video” | 提交一个视频文件；每段一次连续录制；含义待讲师确认（10.6 节、第 15 节） |
+| 内容要求：治理、剖析、EDA、准备、对 ML 的影响、非显然发现、minimal vs systematic、贡献与反思 | 逐项对应见 14.1 节 |
 | “reasoning, evidence, and interpretation rather than code or model accuracy” | 无代码画面；每个 AUC 后接“这说明什么” |
-| 文字简洁、不要大段文字 | 每屏 1 个标题 + ≤ 3 个标注 |
-| YouTube 公开链接 + 组号 | 第 11 节 |
+| 文字简洁 | 每页 1 个主标题 + 1 个副标题 + ≤ 3 个图内标注 |
+| YouTube 公开链接 + 组号 | 第 12 节 |
 
 **评分（各 25 %）。**
 
-| 准则 | 核心要求 | 本方案的主要抓手 |
+| 准则 | 核心要求 | 主要抓手 |
 |---|---|---|
-| Appropriateness | 探索、剖析、清洗、偏差分析、EDA、模型评估各阶段使用恰当的技术与可视化 | 每个阶段一个签名视觉（第 7 节） |
-| Correctness & Clarity | 各阶段技术正确，解释清楚；**各成员的贡献区分清楚并有记录** | 一人一段；自我介绍与 lower-third；口头署名与屏幕署名标签；角色卡片与结尾回顾 |
-| Data Interpretation | 统计量、分布、关系；冗余、多重共线、偏度、分析谬误；有证据的结论 | 场景 6、11、15–17、21–24 |
-| Novelty & depth | 问题、数据、准备策略、偏差分析的原创性；用 basic ML 为数据准备决定提供证据 | 三个陷阱；被删的 7.0；插补出的 50；识别与筛查之分 |
+| Appropriateness | 探索、剖析、清洗、偏差、EDA、评估各阶段的技术与可视化恰当 | 每个场景一张证据图（第 7 节） |
+| Correctness & Clarity | 技术正确、解释清楚；**各成员的贡献清楚可分** | 一人一段；名签全程；团队页；段首页；署名行；收尾回顾 |
+| Data Interpretation | 统计量、分布、关系；冗余、多重共线、偏度、谬误；有证据的结论 | 06、11、14–16、20–23 |
+| Novelty & depth | 问题、准备策略、偏差分析的原创性；用 basic ML 为数据准备决定提供证据 | 被删的 7.0；插补出的 50；识别与筛查之分；模型作为泄漏探测器 |
 
-**结构约束（新增）。**
-- 每位成员只出现在一个连续段落中，顺序 A → B → C → D；任何一帧只出现一位成员。
-- 内容不必与作者一致，用来平衡段落并保持故事顺序；介绍他人工作时必须口头署名，屏幕上同时出现署名标签（例如 “work: C · §4”）。
-- D 段 ≤ 3:00，且包含结尾。
-- 不用幻灯片：画面是之后由 Claude 制作的定制动画场景，加上成员出镜。只用 basic models，不用 LLM。截止日期 10/18，今天 10/13。
+**其他约束。**
+- 每位成员只出现在自己的一段里；任何一帧只出现一位成员。
+- 内容可以不与作者一致，用来平衡段长并保持故事顺序；讲他人的工作时，旁白点名，副标题行右端同时显示署名。
+- 第 4 段 ≤ 3:00，且包含结尾。
+- 不用幻灯片：画面是 HTML/SVG 动画场景加讲者小窗。只用 basic models，不用 LLM。截止 10/18。
 
 ---
 
-## 2 核心信息与叙事结构
+## 2 内容主线
 
-### 2.1 核心信息与三条支撑
+### 2.1 四条核心信息
 
-| # | 支撑信息 | 关键证据 | 场景 |
+| # | 核心信息 | 主证据 | 场景 |
 |---|---|---|---|
-| S1 | 高 AUC 可能是泄漏 | 0.961 → 0.828（−0.131 [−0.148, −0.114]）；树在被插补成 50 的“确诊年龄”上分裂（86 % 缺失） | 18–19 |
-| S2 | 标签是一次测量 | κ 0.70；819 名自报者中 250 人 HbA1c 低于 6.5 %，其中 165 人在用药；152 人未确诊；无保险者 +23.2 pp [6.2, 40.1] | 16–17、23 |
-| S3 | 认真准备几乎不动 AUC，价值在别处 | +0.008 [0.000, 0.016]，不确定；保住 1,496 个有效值；全体成人 0.836 vs 筛查组 0.781；去掉就诊痕迹后 −0.016 vs +0.019 | 8–9、21–24 |
+| 1 | The headline AUC was leakage. Excluding post-diagnosis items is a correct deterioration; median imputation of a skipped question created a label proxy. | 0.961 → 0.828，配对下降 0.131 [−0.148, −0.114]；86 % 未被问及，插补为 50 | 17、18 |
+| 2 | The label is a measurement shaped by care. Treatment masks HbA1c, and access to care decides who is diagnosed, so the all-adults AUC mostly measures recognition. | κ 0.70；250 of 819；152 未确诊，+23.2 pp [6.2, 40.1]；0.836 vs 0.781 | 15、16、22 |
+| 3 | With the same model, systematic preparation barely moves AUC. Its value is data integrity, and one step had a measurable cost. | +0.008 [0.000, 0.016] vs margin 0.01，inconclusive；1,496 个有效值被保住；Brier +0.074 | 08–12、20–21 |
+| 4 | Governance made these claims checkable. | 数据使用协议与最小化；NCHS 复现；事先锁定的假设；内部留出集 | 04、05、07、24 |
 
-### 2.2 三个陷阱
+### 2.2 汇报结构
 
-- **名称与编号**与 notebook §1、§10 一致：Trap 1 **Leak**，Trap 2 **Label**，Trap 3 **Little gain**。
-- **揭示顺序**是 Label（场景 16）→ Leak（场景 18），两者都在 C 段；Little gain（场景 21）在 D 段。要先讲清标签，才能定义筛查组；Leak 紧接其后，C 段因此有一条完整的“标签 → 泄漏”线。
-- **陷阱条**从场景 2 起常驻在标题区右侧，三格各带图标（漏水的桶 / 尺子 / 天平），当前所在的格用结构色（靛蓝）标出；陷阱章的章卡写编号和问句，例如 “Trap 2 · Is the label the truth?”。场景 26 按 1、2、3 的顺序回答。
+| 阶段 | 场景 | 内容 |
+|---|---|---|
+| 开场 | 01–02 | 可疑的 0.961；团队与分工；问题、设计、三个研究问题 |
+| 数据与治理 | 03–07 | 队列与标签；治理；外部复现；混杂；第 1 段的意外 |
+| 数据质量与准备 | 08–13 | 先剖析后清洗（非显然发现）；离群值；冗余与偏度；准备设计与三条流水线；第 2 段的意外 |
+| 标签与偏差 | 14–16 | Simpson 与 DAG；RQ1 标签一致性；未确诊者与第二个评估人群 |
+| 实验 | 17–21 | RQ2a 泄漏检查与机制；第 3 段的意外；RQ2b minimal vs systematic；一个恶化（校准） |
+| 结果与稳健性 | 22–24 | 分人群 AUC；prior-care 消融；内部留出集；三个回答 |
+| 反思 | 25–26 | 第 4 段的意外；贡献；局限；GenAI；结论 |
 
-### 2.3 叙事弧
+每个证据场景按“问题 → 方法 → 证据 → 含义”组织；口述数字 ≤ 3 个，关键效应带区间。标准概念不配比喻。
 
-开场提出三个问题；四个连续段落依次“埋线索、收证据”：A 讲问题、数据与规则，B 讲数据线索与准备，C 讲标签与泄漏，D 讲准备的价值、筛查与结论。“问题 → 证据 → 回答”对应 brief 的 “reasoning, evidence, interpretation”。每段末尾一句 “most unexpected” 让反思分布在各段，而不是堆在片尾。
+### 2.3 研究问题
 
-**与协调者建议的差别（一处）。** 年龄混杂（保险差距 +5.3 → +0.7）放在 A 段末尾，而不是 C 段开头。理由：
-- 故事上，它紧接 NCHS 复现：“数字算对了，仍然可能读错”；
-- 时长上，C 段若含此场景会到 3:03，比 D 段还长；移走后 C 为 2:44，A 为 2:30。
+沿用 notebook 1.5 节的编号。notebook 的 RQ2 同时包括泄漏规则和系统准备（假设 H2a 与 H2b），视频拆成 RQ2a 与 RQ2b。RQ3、RQ4 不讲。
 
-### 2.4 渐进分层
+| 屏幕文字（02 与 24b 字号、顺序相同） | 揭示 | 旁白中的叫法 |
+|---|---|---|
+| **RQ1 · Labels:** What do self-report and HbA1c each measure? | 15 | “Research question one: the label.” |
+| **RQ2a · Leakage:** Does AUC 0.961 survive excluding post-diagnosis items? | 17 | “The leakage question” |
+| **RQ2b · Preparation:** Does systematic beat minimal preparation, same model? | 20 | “Last question: does systematic preparation pay?” |
 
-| 层 | 场景 | 观众此时新知道的 | 只依赖 |
-|---|---|---|---|
-| L1 Hook | 1–2 | 0.961 值得怀疑；三个陷阱；模型只是仪器 | 无 |
-| L2 Context | 3–7 | 5,730 人；标签 = 自报或 HbA1c ≥ 6.5 %；治理规则；官方数字已复现；数字对也会读错 | L1 |
-| L3a 数据线索 | 8–14 | 清洗本身会毁掉信息（7.0）；离群值大多是病人；冗余与偏度；14 个步骤；M0/M1/S | L1–L2 |
-| L3b 标签与泄漏 | 15–20 | 谬误；标签里有就医接触；152 人与筛查组；0.961 是泄漏 | L1–L3a |
-| L3c 准备的价值 | 21–25 | 准备的增益很小；一个恶化；全体成人与筛查组的差；结论稳健 | L1–L3b |
-| L4 Synthesis | 26 | 三个陷阱各一句回答 | L1–L3 |
-| L5 Reflection | 7、14、20、27、28 | 各人的意外发现；团队分工；局限；GenAI | L1–L4 |
+- 议程页研究问题下方加一行 28 px、墨色 60 % 的小字：“RQ3 (label matrix) and RQ4 (BMI bias): in the notebook”。
+- 不用图标；研究问题不常驻画面，导航由进度条承担。
+- 24b 的答案行（结论只写在这里，不进标题）：
+  - **RQ1 · Labels：** “Self-report records contact with care as well as disease (κ = 0.70)”。不加 ✓：这一问是描述性的，加 ✓ 会被读成“标签可靠”。
+  - **RQ2a · Leakage：** “No: AUC 0.961 → 0.828 once post-diagnosis items are excluded”，墨色实心 ✓。
+  - **RQ2b · Preparation：** “AUC +0.008 [0.000, 0.016]: inconclusive”，墨色虚线框加 “?”。下面两行账本：“better: 1,496 valid values kept · an honest test on not-yet-diagnosed adults” / “worse: calibration (Brier +0.074)”。
 
-### 2.5 贯穿对象
-
-**决定：不用 01 的合成人物 “Adult X”。** 理由：已有真实的贯穿对象，而在一部讲数据治理的视频里，合成人物容易被当成伪造记录，每次出现都要加 “synthetic” 声明，占用时间。
+### 2.4 贯穿对象
 
 | 对象 | 出现 | 回收 | 收尾 |
 |---|---|---|---|
-| 0.961 | 1（钩子） | 18（原位降为 0.828） | 26（Leak 的回答）、27（D 的意外） |
-| 被删的 HbA1c 7.0 单元格 | 8（被划掉） | 9（29 of 721） | 14（B 的意外）、26（“values kept”） |
-| 152 名未确诊者 | 17（蓝色空心方块） | 20（52 of 100）、23–24（筛查组） | 28（局限） |
+| 0.961 | 01（钩子） | 17（原位降为 0.828） | 24b（RQ2a 的回答）、25（意外发现） |
+| 被删的 HbA1c 7.0 | 08（被划掉） | 09（29 of 721） | 13（意外发现）、24b（“valid values kept”） |
+| 152 名未确诊者 | 16（蓝色空心方块） | 19（52 of 100）、22–23（第二个评估人群） | 26b（局限） |
 
-### 2.6 衔接
+### 2.5 取舍
 
-| 边界 | 衔接句（旁白原文）或章卡 | 画面 |
-|---|---|---|
-| 1 → 2 | “Each of us presents one part, in that order.” → 章卡 “02 · The question” | 角色卡片收进右栏徽章 |
-| 5 → 6 | “27 published estimates match closely.” → “Correct numbers can still mislead.” | 对照表缩到角落，保险柱图出现 |
-| A → B（7） | “Now B asks whether the data deserve the same trust.” | 章卡 “03 · Data clues”（B 徽章） |
-| 10 → 11 | “kept every one.” → “C's exploration found two structural problems.” | 保留的点缩成卡片，VIF 柱出现 |
-| B → C（14） | “But no cleaning fixes a bad label. C shows why.” | 章卡 “04 · Reading the data”（C 徽章） |
-| 15 → 16 | “These stay exploratory.” | 章卡 “Trap 2 · Is the label the truth?” |
-| 17 → 18 | “…where screening has something to find.” | 章卡 “Trap 1 · Is 0.961 skill?” |
-| C → D（20） | “D takes the last trap.” | 章卡 “Trap 3 · Does preparation pay?”（D 徽章） |
-| 22 → 23 | “AUC still gains 0.007.” → “Now C's screening group.” | 标题区换成 “Whom does the score serve?”（不出章卡） |
-| 25 → 26 | “…changed no locked verdict.” → “So, three answers.” | 陷阱条回到中央 |
-| 27 → 28 | “…than careful preparation did.” → “Four roles, one audit.” | 角色卡片回到画面 |
-
----
-
-## 3 时间轴总表
-
-评分列缩写：**Ap** = Appropriateness，**CC** = Correctness & Clarity，**DI** = Data Interpretation，**NV** = Novelty。有章卡的场景（2、8、15、16、18、21），旁白在章卡之后开口，扣除 1.2 s 后的语速也都不超过 145 wpm。
-
-| 场景 | 段 / 章 | 讲者 | 起止 | 时长 | 词 | wpm | 要点 | 评分 |
-|---|---|---|---|---|---|---|---|---|
-| 1 | A · Ch1 Hook | A | 0:00–0:35 | 35 | 76 | 130 | 0.961 好吗？四人四角色 | NV、CC |
-| 2 | A · Ch2 Rules | A | 0:35–0:55 | 20 | 43 | 129 | 问题不是“多准”；三个陷阱 | NV |
-| 3 | A · Ch2 | A | 0:55–1:17 | 22 | 50 | 136 | 5,730 人，标签规则，14.0 % | Ap |
-| 4 | A · Ch2 | A | 1:17–1:35 | 18 | 41 | 137 | DUA；保留 78 / 175 列；哈希锁定 | Ap、CC |
-| 5 | A · Ch2 | A | 1:35–1:56 | 21 | 46 | 131 | 复现 NCHS：15.79 vs 15.8 | CC |
-| 6 | A · Ch2 | A | 1:56–2:18 | 22 | 50 | 136 | 数字对也会读错：+5.3 → +0.7 pp（C 的分析） | DI |
-| 7 | A · Ch2 | A | 2:18–2:30 | 12 | 25 | 125 | A 的意外：6 个假设只有 3 个被支持 → 交接 | CC |
-| 8 | B · Ch3 Data clues | B | 2:30–2:58 | 28 | 60 | 129 | 统一重编码：捕获 57，毁掉 1,496 | Ap、NV |
-| 9 | B · Ch3 | B | 2:58–3:19 | 21 | 47 | 134 | 非显然发现：29 / 721 阳性被删 | NV、DI |
-| 10 | B · Ch3 | B | 3:19–3:41 | 22 | 49 | 134 | 离群值 542 个中 519 个是糖尿病：保留 | DI |
-| 11 | B · Ch3 | B | 3:41–4:08 | 27 | 61 | 136 | VIF 95.7 / 97.6；偏度 6.62 → 决定（C 的发现） | DI |
-| 12 | B · Ch3 | B | 4:08–4:32 | 24 | 53 | 133 | 14 个可开关的步骤，各有证据 | Ap |
-| 13 | B · Ch3 | B | 4:32–4:50 | 18 | 43 | 143 | M0 / M1 / S，同一模型 | Ap |
-| 14 | B · Ch3 | B | 4:50–5:03 | 13 | 29 | 134 | B 的意外：一行清洗代码删掉 29 个阳性 → 交接 | CC、NV |
-| 15 | C · Ch4 Paradox | C | 5:03–5:32 | 29 | 63 | 130 | Simpson：224 次比较中 6 次翻转；中介 | DI |
-| 16 | C · Ch5 Label | C | 5:32–6:02 | 30 | 67 | 134 | 陷阱二：κ 0.70；250 / 819；165 | DI、NV |
-| 17 | C · Ch5 | C | 6:02–6:34 | 32 | 72 | 135 | 152 未确诊；+23.2 pp；筛查组 | Ap、NV |
-| 18 | C · Ch6 Leak | C | 6:34–7:08 | 34 | 74 | 131 | 陷阱一：0.961 → 0.828（D 的实验） | NV、Ap |
-| 19 | C · Ch6 | C | 7:08–7:33 | 25 | 58 | 139 | 跳问题项被插补成 50（D 的树） | NV、DI |
-| 20 | C · Ch6 | C | 7:33–7:47 | 14 | 33 | 141 | C 的意外：70 vs 52 / 100 被检出 → 交接 | CC、Ap |
-| 21 | D · Ch7 Little gain | D | 7:47–8:20 | 33 | 72 | 131 | 陷阱三：+0.008 [0.000, 0.016]，不确定 | DI、CC |
-| 22 | D · Ch7 | D | 8:20–8:42 | 22 | 51 | 139 | 恶化：Brier +0.074，原因是类别权重 | DI |
-| 23 | D · Ch8 Screening | D | 8:42–9:05 | 23 | 52 | 136 | 全体成人 0.836 vs 筛查组 0.781 | NV、Ap |
-| 24 | D · Ch8 | D | 9:05–9:31 | 26 | 60 | 138 | 去掉就诊痕迹：−0.016 vs +0.019 | NV、DI |
-| 25 | D · Ch8 | D | 9:31–9:44 | 13 | 31 | 143 | 留出集只评一次；六项事后核查（B 的核查） | CC |
-| 26 | D · Ch9 Close | D | 9:44–10:05 | 21 | 49 | 140 | 三个陷阱，三个回答 | DI、NV |
-| 27 | D · Ch9 | D | 10:05–10:12 | 7 | 14 | 120 | D 的意外：泄漏 ≫ 准备 | CC |
-| 28 | D · Ch9 | D | 10:12–10:41 | 29 | 68 | 141 | 团队回顾、局限、GenAI、结论 | CC |
-| 合计 | — | — | 0:00–10:41 | 641 | 1,437 | 135 | — | — |
-
-**章级汇总。**
-
-| 章 | 场景 | 起止 | 时长 | 讲者 | 核心要点 |
-|---|---|---|---|---|---|
-| Ch1 Hook | 1 | 0:00–0:35 | 0:35 | A | 0.961 值得怀疑；团队分工 |
-| Ch2 Question, data & rules | 2–7 | 0:35–2:30 | 1:55 | A | 判断的对象、规则和可信度；数字对也会读错 |
-| Ch3 Data clues & preparation | 8–14 | 2:30–5:03 | 2:33 | B | 清洗会毁掉病人；发现变成步骤 |
-| Ch4 Paradox | 15 | 5:03–5:32 | 0:29 | C | Simpson 与中介 |
-| Ch5 Label (Trap 2) | 16–17 | 5:32–6:34 | 1:02 | C | 标签是测量；152 人与筛查组 |
-| Ch6 Leak (Trap 1) | 18–20 | 6:34–7:47 | 1:13 | C | 0.961 是泄漏；插补出的 50 |
-| Ch7 Little gain (Trap 3) | 21–22 | 7:47–8:42 | 0:55 | D | 准备的增益很小；一个恶化 |
-| Ch8 Screening & robustness | 23–25 | 8:42–9:44 | 1:02 | D | 全体成人的 AUC 主要度量“认出已确诊”；结论稳健 |
-| Ch9 Answers & close | 26–28 | 9:44–10:41 | 0:57 | D | 三个回答；团队回顾；结论 |
-
-D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结尾；C 段 2:44，B 段 2:33，A 段 2:30。
-
----
-
-## 4 逐场景分镜与台词
-
-**字段约定。**
-- **版式**代码见 6.3 节（F / R / X / S），**动效**代码 M1–M12 见 6.4 节；每个构建步骤由一个旁白词触发。
-- **数字**：每场景口述 ≤ 3 个（区间算 1 个）；同屏 1 个主数字 + ≤ 2 个次级数字；小号墨色数据标签不计。
-- **来源**：`V3 · key` = CSV 已有行；**待补登** = 已在 metrics 核实、尚未进 CSV（12.4 节）；**定义** = 常量。
-- **署名**：讲他人的工作时，旁白点名原作者，标题区同时出现署名标签 “work: C · §4” 之类（ink，28 px）。
-- **命名**：屏幕标签、字幕与旁白一律按 6.6 节命名表。
-- **图例时刻**：每种语义色第一次出现时，图区一角出现 2–3 s 的图例条，随后收进底栏的常驻图例行（6.2 节）。
-- **术语**：首次出现时在旁白或画面标注里用一句话解释。A–D 录制时换成真名。
-
-### A 段 · 0:00–2:30
-
-#### 场景 01 · 钩子与角色卡片 · 0:00–0:35 · 35 s · A
-
-- **版式：** 0:00–0:15 用 S（A 在左半，右半是 AUC 刻度尺），lower-third “A · Governance & integration · §0–§2” 从 0:00 显示 4 s；0:15–0:35 用 R（图区是角色卡片）。
-- **构建：**
-  0. 片头标题卡（右半，0:00–0:02）：大号标题 “Who gets labelled diabetic?”，下方一行 mono “CA6003 · Group [no.]”，四周是淡问卷网格母题，留白充足；A 开口后标题缩进标题区。
-  1. M1 画出竖向 AUC 轴 0.5–1.0，0.5 处标 “coin flip”，1.0 处标 “perfect”。
-  2. 念到 “0.961” 时，墨色指针随 M10 升到 0.961。此时不用红色，红色留到场景 18 揭示泄漏时才用。
-  3. 念到 “coin flip” 时，0.5 处用 M3 高亮一次。
-  4. 念到 “is that good?” 时，其余元素暗到 25 %，只留标题 “AUC 0.961 — good?”。
-  5. 四张角色卡片依次原位出现（M3，每张 0.4 s），只有墨色字母徽章、角色、节次和段落时段，没有照片：A “Governance & integration · §0–§2”，B “Data quality & preparation · §3 §6 §9”，C “Exploration, labels & bias · §4 §5 §8”，D “Modelling & conclusions · §7 §10”。
-  6. 念到哪位成员，哪张卡保持 100 %，其余暗到 25 %。
-  7. 四张卡用 0.9 s 形变缩成右栏底部的 A B C D 徽章，之后常驻；当前讲者徽章用结构色（靛蓝）实心，其余为墨色空心。
-- **旁白：**
-  > **A**（0:00–0:15）：A basic model scores 0.961 at spotting diabetes. AUC is the chance it ranks someone with diabetes above someone without. 0.5 is a coin flip. So, is that good?
-  > **A**（0:15–0:35）：Four of us, four roles. I'm A: I led governance and put the project together. B owns data quality and preparation. C owns exploration, labels and bias. D owns modelling and conclusions. Each of us presents one part, in that order.
-- **词数：** 76（35 / 15 s = 140 wpm；41 / 20 s = 123 wpm）
-- **屏幕文字：** “AUC 0.961 — good?”
-- **数字：** 口述 `0.961` ← V3 · S7:headline.auc_M0_eall_T1；`0.5` ← 定义（AUC 的随机基线）
-- **衔接：** 徽章落定后，M12 章卡 “02 · The question”（1.2 s）。
-- **说明：** A 段以 3 句钩子开场，自我介绍在 0:15；lower-third 从 0:00 起就标明讲者（见 15 节第 27 条）。
-
-#### 场景 02 · 问题与三个陷阱 · 0:35–0:55 · 20 s · A
-
-- **版式：** 章卡 1.2 s → R。
-- **构建：**
-  1. 标题 “How accurate can we get?” 出现；念到 “not” 时暗到 25 %（M3），不用划线。
-  2. M12 溶解出新标题 “Who gets labelled diabetic?”，下方标注 “What do data decisions change?”。
-  3. 念到 “One / Two / Three” 时，三张陷阱卡依次原位出现（M3），墨色线描图标，不填色，当前念到的卡用结构色细框标出：“Leak · High AUC = skill?”（漏水的桶）、“Label · Label = truth?”（尺子）、“Little gain · Does prep pay?”（天平）。
-  4. 三卡用 0.9 s 形变缩成标题区右侧的陷阱条，之后常驻。
-- **旁白：**
-  > **A**：Our question is not 'how accurate?' It is: who gets labelled diabetic, and what do our data decisions change? Three traps wait. One: a high AUC may be leakage. Two: the label is a measurement. Three: careful preparation may barely move the AUC.
-- **词数：** 43 / 20 s = 129 wpm（扣除章卡后 137 wpm）
-- **屏幕文字：** “3 traps: Leak · Label · Little gain”
-- **术语：** leakage（画面标注 “the model peeks at the answer”）
-- **数字：** 无
-- **衔接：** 陷阱条落定，漏斗从图区左侧画入。
-
-#### 场景 03 · 数据与队列 · 0:55–1:17 · 22 s · A
-
-- **版式：** R
-- **构建（视觉 2 Cohort funnel）：**
-  1. M2 画出顶条 `11,933`（墨色描边，无填充）。
-  2. M5 逐级收窄：`7,809` age ≥ 20 → `6,064` examined → `5,767` HbA1c measured → `5,730` not pregnant；掉出部分变成墨色幽灵条，淡出到 20 %。
-  3. 念到 “5,730” 时，末条填成灰色实心并加实心圆标记，标签 “All adults”（下标 E-ALL），数字放大；图区左下角出现 2–3 s 图例条 “● grey = reference: all adults, Minimal (M1)”（灰色首次出现），随后收进底栏图例行。
-  4. 念到 “Positive means” 时，两个小圆 “self-report” ∪ “HbA1c ≥ 6.5 %” 合成 “positive”（M3）。
-  5. 念到 “Weighted” 时，出现 `14.0 %` callout，标签 “weighted to US adults”。标题区角标 “NHANES 2021–23 · CDC/NCHS public files”。
-- **旁白：**
-  > **A**：The data: NHANES, a US health survey from the CDC. We study 5,730 adults with an HbA1c result, a blood test for average sugar. Positive means a self-reported diagnosis, or HbA1c of 6.5 percent or more. Weighted, 14.0 percent are positive.
-- **词数：** 50 / 22 s = 136 wpm
-- **屏幕文字：** “All adults: 5,730 · 14.0 % positive”
-- **数字：**
-  - 口述：`5,730` ← V1 · S1:n_cohort；`6.5 %` ← 定义（标签阈值，§5.1）；`14.0 %` ← V1 · S1:prevalence_comb.weighted
-  - 仅画面：`11,933` ← V1 · S1:funnel.DEMO_L participants；`7,809` / `6,064` / `5,767` ← 待补登 · S1:funnel.*（12.4 节第 1–3 行）
-- **衔接：** 14.0 % 缩成角标，DUA 清单出现。
-
-#### 场景 04 · 数据使用协议与最小化 · 1:17–1:35 · 18 s · A
-
-- **版式：** R
-- **构建：**
-  1. 清单第一项 “DUA: no re-identification · no linkage”，打上墨色实心对勾（反馈：成立）。
-  2. 175 个小方块组成的网格中，97 个暗到 25 %（M3），计数 175 → 78（M10）。
-  3. 两枚指纹图标：“files: SHA-256 verified”、“hypotheses: SHA-256 locked”；底部一行 “simple models only: L2 logistic · shallow tree”。
-- **旁白：**
-  > **A**：Governance came first. The data user agreement forbids re-identification and linkage, so we did neither. We kept only 78 of 175 columns. Files are verified by fingerprint, and hypotheses were locked by fingerprint before any experiment.
-- **词数：** 41 / 18 s = 137 wpm
-- **屏幕文字：** “Keep 78 of 175 columns”
-- **数字：** 口述 `78` ← 待补登 · S1:minimisation.kept；`175` ← 待补登 · S1:minimisation.raw_columns
-- **衔接：** 网格缩成 “verified” 徽章；标题换成 “Can we trust the numbers?”。
-
-#### 场景 05 · NCHS 复现 · 1:35–1:56 · 21 s · A
-
-- **版式：** R
-- **构建：**
-  1. 两栏表 “Ours / NCHS Data Brief 516” 逐行出现，每行打勾：Total 15.79 / 15.8；Diagnosed 11.30 / 11.3；Undiagnosed 4.49 / 4.5（单位 %）。
-  2. 徽章 “27 estimates · max gap 0.044 pp”。
-- **旁白：**
-  > **A**：Can you trust our survey code? We re-ran a published NCHS report, Data Brief 516. Overall prevalence: 15.79 percent for us, 15.8 for NCHS. Diagnosed and undiagnosed shares match too. In all, 27 published estimates match closely.
-- **词数：** 46 / 21 s = 131 wpm
-- **屏幕文字：** “Ours 15.79 % = NCHS 15.8 %”
-- **数字：**
-  - 口述：`15.79` ← V7 · S4:db516.total；`15.8` ← 待补登（外部发布值）· results/S4/db516_replication.csv（total / All / crude，列 nchs）；`27` ← 待补登 · S4:db516.n_estimates
-  - 仅画面：`11.30`、`4.49` ← V7 · S4:db516.diagnosed / undiagnosed；`11.3`、`4.5` ← 同一 CSV 的 nchs 列；`0.044` ← 待补登 · S4:db516.max_abs_diff_pp
-- **衔接：** 对照表缩到角落，保险柱图出现。
-
-#### 场景 06 · 数字对也会读错：年龄混杂 · 1:56–2:18 · 22 s · A（C 的分析）
-
-- **版式：** R；标题区署名标签 “work: C · §4”。
-- **构建：**
-  1. M1 画轴；墨色描边柱 `+5.3 pp`，区间 [1.8, 8.8] 静态画出（晶须不脉冲）。
-  2. 念到 “Standardised for age” 时，M8 原位换值：柱子缩成 `+0.7 pp`，数字随之倒数，区间变为 [−2.6, 3.9]（跨过 0，静态显示）。
-  3. 右侧小 DAG：Age → Insurance、Age → Diabetes 为实线，Insurance → Diabetes 为带 “?” 的虚线。
-  4. 底部标签 “Correlation ≠ causation · confounding”。本场景只用墨色：保险组不是对照基线，也不是筛查组，不借用语义色。
-- **旁白：**
-  > **A**：Correct numbers can still mislead. Insured adults show 5.3 points more diabetes than uninsured adults. Does insurance cause diabetes? That would confuse correlation with causation. In C's analysis, age confounds it: the insured are older. Standardised for age, the gap shrinks to 0.7 points, same sign.
-- **词数：** 50 / 22 s = 136 wpm
-- **屏幕文字：** “Confounding by age: +5.3 → +0.7 pp”
-- **数字：** 口述 `5.3`、`0.7` ← V5 · S4:standardisation.insured_uninsured.crude / std。仅画面：两个区间 ← 待补登 · S4:standardisation.insured_uninsured.crude_ci / std_ci
-- **衔接：** 柱图暗下，A 转为 S 版式。
-
-#### 场景 07 · A 的意外与交接 · 2:18–2:30 · 12 s · A
-
-- **版式：** S（A 在左，卡片在右）
-- **构建：** 卡片标题 “Locked before testing”；6 个方块代表 6 个真正事先注册的假设，依次出现：3 个墨色实心对勾（supported），3 个墨色虚线框加 “?”（inconclusive）。反馈只用形状，不用色相。
-- **旁白：**
-  > **A**：Most unexpected for me: of six hypotheses we locked before testing, only three were supported. Now B asks whether the data deserve the same trust.
-- **词数：** 25 / 12 s = 125 wpm
-- **屏幕文字：** “Most unexpected: 3 of 6 supported”
-- **数字：** 口述 `six`、`three` ← 待补登 · S10:verdict_counts_prereg_none.supported（3）与 inconclusive（3）。不能说成 “10 of 17 confirmed”：那 10 个 supported 中多数属于 analysis_seen。
-- **衔接：** M12 章卡 “03 · Data clues”（B 徽章）→ 切到 B 的连续录像。
-
-### B 段 · 2:30–5:03
-
-#### 场景 08 · 先看后洗：统一重编码 · 2:30–2:58 · 28 s · B
-
-- **版式：** 章卡 1.2 s → F 12 s（lower-third “B · Data quality & preparation · §3 §6 §9” 显示 4 s）→ R → X（念到 1,496 时，≤ 10 s）。
-- **构建（视觉 3 The struck 7.0，步骤 ①–④）：**
-  1. 一张小表（舒张压、脉搏、HbA1c 三列），示例值标 “illustrative”。旁边一行规则 “Rule: 7, 9, 77, 99 → missing, every column”。不出现代码。
-  2. 念到 “57 genuine codes” 时，切 X 版式：墨色描边柱 `57` 用 M2 长出，标签 “genuine codes caught”。
-  3. 念到 “deletes” 时，表中 3 个合法读数（77、99、7.0）依次被 M7 红线划掉（红 = 受损的数据）；红色斜纹柱 `1,496` 用 M2 长出，标签 “valid cells destroyed”。两柱按比例绘制。红色首次出现：图区右上角 2–3 s 图例条 “▨ red = harmed or leaked data”，随后收进底栏。
-  4. 念到 “7.0 percent” 时，M9 推近被划掉的 HbA1c 单元格 “7.0”（缩放 1.25，全片两次推近之一），停 2 s。
-- **旁白：**
-  > **B**：I'm B. I led data quality and preparation. Before cleaning anything, I looked. NHANES stores 'refused' and 'don't know' as short numeric codes. The common shortcut turns those codes into missing in every column. It catches 57 genuine codes. It also deletes 1,496 valid measurements, including HbA1c values of exactly 7.0 percent.
-- **词数：** 60 / 28 s = 129 wpm（扣除章卡后 134 wpm）
-- **屏幕文字：** “1,496 valid cells lost · 57 codes caught”
-- **数字：** 口述 `57` ← 待补登 · S3:blanket_recode.questionnaire_only_cells；`1,496` ← V2 · S3:blanket_recode.valid_cells_destroyed_cohort；`7.0 %` ← 数据值（§3.4：被删的 29 个 HbA1c 值中 28 个是 7.0 %、1 个是 9.0 %，S3:blanket_recode.per_variable.LBXGH = 29）。示例值 77、99 ← 定义（示意）。
-- **衔接：** 被划掉的 7.0 留在画面上，成为下一场景的主角。
-
-#### 场景 09 · 非显然发现：被删掉的阳性 · 2:58–3:19 · 21 s · B
-
-- **版式：** R
-- **构建（视觉 3，步骤 ⑤）：**
-  1. HbA1c 条带图，6.5 % 阈值线；7.0 与 9.0 处的点变成红色斜纹。
-  2. 账本：`721` 个 HbA1c 阳性组成一条横条，其中 `29` 个用 M5 掉出。
-  3. 掉出的 29 个里，大部分挂上 “also self-reported” 徽章、恢复为墨色；剩下 `6` 个保持红色斜纹，标签 “flipped to negative”。
-  4. 右上角出现墨色标签 “Non-obvious finding”（M3）。
-- **旁白：**
-  > **B**：Those values are diabetes by definition. The shortcut erased 29 of 721 HbA1c-based positives. Six people flipped to negative; the rest also reported a diagnosis, so self-report hid the damage. No summary table shows this. You find it only by looking.
-- **词数：** 47 / 21 s = 134 wpm
-- **屏幕文字：** “Non-obvious: 29 of 721 positives erased”
-- **数字：** 口述 `29`、`721`、`6` ← V2 · S3:blanket_recode.a1c_positives_lost / a1c_positives / l_comb_flips。被自报“救回”的人数只用图形表示，不标数（12.3 节）。
-- **衔接：** HbA1c 直方图淡入，右尾被点亮。
-
-#### 场景 10 · 离群值保留 · 3:19–3:41 · 22 s · B
-
-- **版式：** R
-- **构建：**
-  1. M1 画轴；HbA1c 直方图，右尾很长。
-  2. 6.8 % 处画出围栏，M11 箭头标 “1.5 × IQR fence”。
-  3. 围栏外的 `542` 个值以 2 px 墨色描边标出（焦点），其中 `519` 个加墨色实心点并标 “diabetic”，其余为空心点。这些值不是系统准备 S 本身，所以不用青色。
-  4. 先出现标签 “delete?”，再用 M12 溶解成三格 “Flag → Review → Keep”，“Keep” 配墨色实心对勾。
-- **旁白：**
-  > **B**：Second decision: outliers. The textbook rule deletes anything beyond one and a half interquartile ranges. For HbA1c that flags 542 adults, and 519 of them have diabetes. Those are not errors. They are the disease. We flagged them, checked them, and kept every one.
-- **词数：** 49 / 22 s = 134 wpm
-- **屏幕文字：** “519 of 542 flagged values are diabetic”
-- **数字：** 口述 `1.5` ← 定义；`542`、`519` ← V2 · S3:outliers.a1c_iqr_flagged / a1c_iqr_flagged_positive。仅画面：`6.8 %` ← 待补登 · S3:outliers.a1c_iqr_fence_upper
-- **衔接：** 保留的点缩成一张卡片，VIF 柱从旁长出。
-
-#### 场景 11 · 冗余与偏度 · 3:41–4:08 · 27 s · B（C 的发现）
-
-- **版式：** R；标题区署名标签 “found by C · §4”。
-- **构建：**
-  1. 左半：两根 VIF 柱 `95.7`（weight）、`97.6`（BMI），用 M2 长出；背后一条浅色参考带 “VIF > 10: severe”。
-  2. 右半：空腹甘油三酯直方图，右尾极长，标 `skew 6.62`。
-  3. 直方图原位形变为 Yeo-Johnson 变换后的分布，标签变成 `−0.009`。
-  4. 两个箭头收束到决定：“→ prune weight (P05)”、“→ transform skew (P08)”，旁注 “implemented by B”。
-- **旁白：**
-  > **B**：C's exploration found two structural problems. Weight and BMI are nearly the same column: their variance inflation factors, which measure how predictable a column is from the others, are 95.7 and 97.6. Fasting triglycerides have a skewness of 6.62: a few huge values dominate. So I prune weight and transform the skew.
-- **词数：** 61 / 27 s = 136 wpm
-- **屏幕文字：** “VIF 95.7 / 97.6 · skew 6.62”
-- **数字：**
-  - 口述：`95.7`、`97.6` ← V4 · S4:vif.raw_anthropometry.BMXWT / BMXBMI；`6.62` ← V4 · S4:skew.LBXTLG|fasting (WTSAF2YR > 0).raw
-  - 仅画面：`−0.009` ← V4（同一键的 `.yj`）；来源角标 “fasting n = 2,820” ← V4（同一键的 `.n`）；`10` ← 定义（VIF 参考线）
-- **衔接：** 两个决定变成两张卡片，汇入 14 张步骤卡。
-
-#### 场景 12 · 十四个准备步骤 · 4:08–4:32 · 24 s · B
-
-- **版式：** R
-- **构建：**
-  1. 14 张小卡片 P01–P14 排成两行，按 B1–B6 六个块分组，初始为墨色描边。
-  2. 旁白每念到一组，该组卡片变为青色实心（这些步骤合起来就是系统准备 S），露出纯文字证据标签：P01 “file zeros”、P02 “codes per variable”、P03 “availability rule”、P04–P05 “redundancy”、P06–P07 “top-code flags”、P08–P10 “skew · scale”、P11–P12 “class & survey weights”、P13 “splines”、P14 “waist-to-height”。
-  3. 全部点亮后，上方出现锁形标签 “no step reads the label · permuted-label test”。青色首次出现：2–3 s 图例条 “■ teal = Systematic preparation (S)”，随后收进底栏。
-- **旁白：**
-  > **B**：Every finding became a switchable preparation step, fourteen in all. Repair file-format zeros. Recode codes variable by variable. Keep only what exists at screening. Merge repeated readings and prune near-duplicate columns. Flag top-coded ages. Tame skew, scale, and weight. Each step cites its evidence, and none ever sees the label.
-- **词数：** 53 / 24 s = 133 wpm
-- **屏幕文字：** “14 steps, each with its evidence”
-- **数字：** 口述 `14` ← 待补登 · results/S6/step_catalogue.csv（14 行，P01–P14）。卡片上不放数字。
-- **衔接：** 14 张卡收成三条泳道。
-
-#### 场景 13 · 三个数据版本 · 4:32–4:50 · 18 s · B
-
-- **版式：** R
-- **构建：**
-  1. 三条泳道（参照 `figures/S6_arm_matrix.png`）：“Naive (M0)” 红色斜纹描边、内部空白，标签 “every column”；“Minimal (M1)” 灰色实心，只点亮 P03；“Systematic (S)” 青色实心，P01–P13 共 13 格点亮；P14（WHtR）留空并标 “tested separately”，因为它是单独的对照（S+WHtR），不属于 S。
-  2. 每条泳道末端标出列数（数据标签）：88 / 46 / 42 columns。
-  3. 三条泳道汇入同一个盒子 “one L2 logistic regression · same folds”，盒子上方出现挂锁 “hypotheses locked”。
-- **旁白：**
-  > **B**：We built three versions of the data. Naive, M0: every column. Minimal, M1: naive plus only the rule that bars post-diagnosis items. Systematic, S: all steps but one, which we test separately. One simple logistic regression for all three, hypotheses locked first.
-- **词数：** 43 / 18 s = 143 wpm
-- **屏幕文字：** “Naive (M0) · Minimal (M1) · Systematic (S)”
-- **术语：** L2 logistic regression（画面标注 “a simple, penalised linear model”）
-- **数字：** 不口述数字（S 实际包含 P01–P13，P14 是单独对照，见 `video/data/arms.json`）。仅画面：`88` / `46` / `42` ← 待补登 · S6:arms.M0 / M1 / S.n_features_t1
-- **衔接：** 泳道暗下，B 转为 S 版式。
-
-#### 场景 14 · B 的意外与交接 · 4:50–5:03 · 13 s · B
-
-- **版式：** S（B 在左，卡片在右）
-- **构建：** 卡片上是一个 HbA1c 结果标签 “7.0 · diabetic”，被 M7 划掉一次；计数 “29 positives erased”；小字 “self-report hid it”。
-- **旁白：**
-  > **B**：Most unexpected for me: one routine cleaning line erased 29 diabetic HbA1c results, and self-report hid it. But no cleaning fixes a bad label. C shows why.
-- **词数：** 29 / 13 s = 134 wpm
-- **屏幕文字：** “Most unexpected: 29 positives erased”
-- **数字：** 口述 `29` ← V2 · S3:blanket_recode.a1c_positives_lost
-- **衔接：** M12 章卡 “04 · Reading the data”（C 徽章）→ 切到 C 的连续录像。
-
-### C 段 · 5:03–7:47
-
-#### 场景 15 · Simpson 与 DAG · 5:03–5:32 · 29 s · C
-
-- **版式：** 章卡 → F 12 s（lower-third “C · Exploration, labels & bias · §4 §5 §8”）→ R
-- **构建：**
-  1. 224 个小方块作为一个整体出现（不逐个出现）。
-  2. 念到 “Six flipped” 时，6 块换成 “↔” 符号，加 2 px 墨色描边，其余暗到 25 %；不闪烁，不用红色。
-  3. 矩阵缩小，出现 DAG：Race → BMI → Diabetes；M11 箭头指向 BMI 节点，标签 “mediator”。
-  4. 角标 “exploratory”。
-- **旁白：**
-  > **C**：I'm C. I led exploration, labels and bias; I'll take you through a paradox, the label and the leak. We scanned 224 comparisons for Simpson's paradox, where splitting by a third variable flips a sign. Six flipped. A causal diagram, or DAG, suggests why: BMI sits between race and diabetes, so adjusting for it distorts the comparison. These stay exploratory.
-- **词数：** 63 / 29 s = 130 wpm（扣除章卡后 136 wpm）
-- **屏幕文字：** “224 scanned · 6 flips · exploratory”
-- **数字：** 口述 `224`、`6` ← V5 · S4:simpson.n_comparisons / n_flips
-- **衔接：** 章卡 “Trap 2 · Is the label the truth?”，陷阱条中的 Label 格点亮。
-
-#### 场景 16 · 陷阱二：标签即测量 · 5:32–6:02 · 30 s · C
-
-- **版式：** 章卡 → R
-- **构建（视觉 6 Label split，步骤 ①–②）：**
-  1. κ 仪表盘（0–1），指针随 M10 停在 `0.70`，刻度带标 “substantial”。
-  2. 仪表盘暗下，两个墨色描边圆按面积比例出现：“told by a doctor”（819）与 “HbA1c ≥ 6.5 %”（721），重叠区标 “both”，不标数；标题区放尺子图标（Label 的标记，不用颜色）。
-  3. 念到 “250” 时，仅自报区加 2 px 墨色描边并配尺子小图标，其余暗到 25 %，callout `250 of 819`。
-  4. 念到 “165” 时，250 中的一部分点变为墨色实心，标 “on insulin or pills”；其余为空心点，标 “untreated”，不标数。
-  5. 标题 “Low HbA1c = controlled, not healthy”。
-- **旁白：**
-  > **C**：Trap two: the label is a measurement. A doctor's diagnosis and a blood test agree only substantially: Cohen's kappa, an agreement score, is 0.70. Of the self-reported diabetics, 250 test below the diabetes threshold, and 165 of those take insulin or pills, so their blood test looks controlled. A blood-test-only label would call treated patients healthy.
-- **词数：** 67 / 30 s = 134 wpm（扣除章卡后 140 wpm）
-- **屏幕文字：** “κ = 0.70 · 250 of 819”
-- **注意：** 不能把 κ 说成 “70 percent agree”。
-- **数字：**
-  - 口述：`0.70` ← 待补登 · S5:labels.agreement_unweighted.kappa（0.6986）；`250` ← V6 · S5:masking.below_6_5；`165` ← 待补登 · S5:masking.below_6_5_on_med
-  - 仅画面：`819` ← V1 · S1:labels.L_self；`721` ← V2 · S3:blanket_recode.a1c_positives
-- **衔接：** 仅 HbA1c 区（右圆独占部分）开始发蓝。
-
-#### 场景 17 · 未确诊者与筛查组 · 6:02–6:34 · 32 s · C
-
-- **版式：** R → X（推近 152，≤ 10 s）→ R
-- **构建（视觉 6 步骤 ③–④，视觉 7）：**
-  1. 仅 HbA1c 区的 `152` 用蓝色空心方块点亮，M9 推近（缩放 1.25，全片两次推近之二），callout “152 not yet diagnosed”。蓝色首次出现：2–3 s 图例条 “□ blue = Screening group (not yet diagnosed)”，随后收进底栏。
-  2. 视觉 7：M1 画出 0 线，点 `+23.2` 落位，晶须 `6.2`–`40.1` 静态画出（不脉冲），整段在 0 右侧；标签 “pp, uninsured − insured · association · uninsured n = 49 · exploratory”。
-  3. 人群分成两轨：上轨 “All adults · 5,730”（灰色实心圆，下标 E-ALL），下轨 “Screening group (not yet diagnosed) · 4,911 · 152 positives”（蓝色空心方块，下标 E-SCREEN）。下轨加 2 px 墨色描边，之后 D 将使用它。
-- **旁白：**
-  > **C**：In total, 152 adults have a high HbA1c and no diagnosis. Among those with high HbA1c, the uninsured are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1: an association, not proof of cause. Since most positives are already diagnosed, we score two groups: all adults, and a screening group of adults not yet diagnosed, where screening has something to find.
-- **词数：** 72 / 32 s = 135 wpm
-- **屏幕文字：** “All adults · Screening group (not yet diagnosed)”
-- **数字：**
-  - 口述：`152` ← V1 · S1:e_screen.positives；`23.2` ← V6 · S5:undiagnosed_inequality.risk_differences_pp.uninsured - insured.rd_pp；`6.2 to 40.1` ← V6（同一键的 ci_low_pp / ci_high_pp）
-  - 仅画面：`5,730` ← V1；`4,911` ← V1 · S1:e_screen.rows；`49` ← 待补登 · S5:undiagnosed_inequality.proportions.uninsured.n
-  - 人群定义：H1a 的人群是 “adults with HbA1c of 6.5 or more”（`governance/hypotheses.md`），旁白与之一致。
-- **衔接：** 章卡 “Trap 1 · Is 0.961 skill?”，陷阱条中的 Leak 格点亮。
-
-#### 场景 18 · 陷阱一：泄漏门 · 6:34–7:08 · 34 s · C（D 的实验）
-
-- **版式：** 章卡 → R → X（换值时刻，≤ 15 s）；标题区署名标签 “experiment: D · §7”。
-- **构建（视觉 4 Leak gate）：**
-  1. M1 画出 All adults 的 AUC 轴，从 0.5 开始，轴底标 “axis starts at 0.5”。
-  2. “Naive (M0)” 柱长到 `0.961`，红色斜纹（泄漏的数据）。
-  3. 柱旁出现三个被移除项的标签 “treatment”、“diagnosis history”、“glucose testing”；念到 “That removes” 时，三个标签依次被 M7 墨色线划掉（墨色 = 有意移除，不是受损数据）。
-  4. 停 1.5 s。M8 原位换值：柱子缩短，数字从 `0.961` 倒数到 `0.828`，填充从红色斜纹过渡为灰色实心，柱标签变为 “Minimal (M1)”。
-  5. 右侧静态画出差值 `−0.131 [−0.148, −0.114]`，标签 “paired across folds”。次级数字 “Screening group: −0.072”。
-  6. 墨色标签 “correct deterioration”，配墨色实心对勾（反馈：成立）。
-- **旁白：**
-  > **C**：Trap one comes from D's experiments. The naive model, M0, scores 0.961. One rule: keep only what exists at a screening visit. That removes treatment, diagnosis history and prior glucose testing. Same model, same folds. The AUC falls to 0.828, 0.131 lower. A correct deterioration: the 0.961 was not skill. It was the label leaking back in.
-- **词数：** 74 / 34 s = 131 wpm（扣除章卡后 135 wpm）
-- **屏幕文字：** “0.961 → 0.828: leakage removed”
-- **数字：**
-  - 口述：`0.961`、`0.828` ← V3 · S7:headline.auc_M0_eall_T1 / auc_M1_eall_T1；`0.131` ← V3 · S7:leak_gate.T1_E-ALL.est（逐折配对差的均值；两柱相减为 0.133，所以画面标 “paired”）
-  - 仅画面：`[−0.148, −0.114]` ← V3（同一键的 lo / hi）；`−0.072` ← V3 · S7:leak_gate.T1_E-SCREEN.est
-- **衔接：** 两柱缩成角标，决策树从下方生长出来。
-
-#### 场景 19 · 插补常数 50 · 7:08–7:33 · 25 s · C（D 的树）
-
-- **版式：** R；署名标签 “experiment: D · §7”。
-- **构建（视觉 5 Tree and the 50）：**
-  1. 深度 3 的决策树自上而下出现（节点 0.3 s，边 0.4 s）。根节点是 “taking diabetes pills?”（治疗项，泄漏的数据，红色斜纹）；下一层的分裂节点是 “age at diagnosis ≈ 50”。
-  2. 左侧出现 “age at diagnosis” 直方图：`86 %` 为空白，“median” 把它们都填成 `50`，在 50 处堆出一根红色斜纹高柱。
-  3. M11 箭头从高柱指向树的分裂节点，标签 “imputed, not measured”。根节点是治疗项，不能把年龄说成根节点。
-- **旁白：**
-  > **C**：How did the model cheat? D's shallow decision tree shows it. Its root is a treatment question. Then it splits on age at diagnosis. But 86 percent were never asked that, so filling blanks with the median put 50 in all of them. The tree learned a code for 'never diagnosed'. A skip pattern became a label.
-- **词数：** 58 / 25 s = 139 wpm
-- **屏幕文字：** “86 % never asked → imputed 50”
-- **数字：** 口述 `86`、`50` ← V3 · S7:tree_m0.did040_missing_share / did040_fill
-- **衔接：** 树淡出，C 转为 S 版式。
-
-#### 场景 20 · C 的意外与交接 · 7:33–7:47 · 14 s · C
-
-- **版式：** S（C 在左，点阵卡片在右）
-- **构建（视觉 11 100 diabetics）：**
-  1. 两块 10×10 点阵：左块 “100 already diagnosed”（墨色圆点），右块 “100 in Screening group”（蓝色空心方块）。
-  2. 左块逐行点亮 `70` 个（墨色实心），右块点亮 `52` 个（蓝色方块加粗）；M10 同步计数，未点亮的为空心。
-  3. 两块相差的 18 个位置加 2 px 墨色描边，其余暗到 25 %；标签 “one shared cut-off · specificity 0.80 · rates per 100”。
-- **旁白：**
-  > **C**：Most unexpected for me: at one cut-off, the model flags 70 of 100 diagnosed diabetics, but only 52 of 100 in the screening group. D takes the last trap.
-- **词数：** 33 / 14 s = 141 wpm
-- **屏幕文字：** “Flagged: 70 vs 52 of 100”
-- **数字：** 口述 `70`、`52`（每 100 人）← V6 · S8:gap_decomposition.tpr_diagnosed（0.70）/ tpr_undiagnosed（0.52）。仅画面：`0.80` ← 待补登 · S8:spec。点阵是把比率换算成每 100 人的示意，不代表实际人数。
-- **衔接：** M12 章卡 “Trap 3 · Does preparation pay?”（D 徽章）→ 切到 D 的连续录像。
-
-### D 段 · 7:47–10:41
-
-#### 场景 21 · 陷阱三：最简准备对系统准备 · 7:47–8:20 · 33 s · D
-
-- **版式：** 章卡 → F 12 s（lower-third “D · Modelling & conclusions · §7 §10”）→ R
-- **构建（视觉 9 Preparation against the band）：**
-  1. M1 画出差值轴 −0.04 … +0.04（场景 24 复用同一根轴），轴标 “Systematic (S) − Minimal (M1)”。
-  2. SESOI 带 ±0.01 淡入（0.6 s），中性浅灰、虚线边，标签 “±0.01 margin, fixed in advance”。
-  3. 青色点 `+0.008` 落位。
-  4. M4 晶须画到 `0.000` 与 `0.016`；右端越过带边，在越界处脉冲一次（全片唯一的一次脉冲），不变色。
-  5. 次级标签 “smallest detectable: 0.011”；墨色虚线框加 “?”：“inconclusive — underpowered, not zero”。
-- **旁白：**
-  > **D**：I'm D; I led modelling and conclusions. Trap three: does careful preparation pay? Compare minimal, M1, with systematic, S, which adds B's preparation steps. AUC rises by plus 0.008, interval 0.000 to 0.016. Our margin, fixed in advance, was 0.01. The interval is neither inside it nor beyond it: inconclusive, underpowered, not proof of no effect.
-- **词数：** 72 / 33 s = 131 wpm（扣除章卡后 136 wpm）
-- **屏幕文字：** “+0.008 [0.000, 0.016] · inconclusive”
-- **数字：**
-  - 口述：`+0.008`、`0.000 to 0.016` ← V7 · S7:headline.S_minus_M1_T1_eall.est / lo / hi；`0.01` ← 定义（`governance/hypotheses.md` H2b 的 SESOI）
-  - 仅画面：`0.011` ← V7 · S7:headline.S_minus_M1_T1_eall.mdd
-- **衔接：** 差值轴缩到角落，校准图出现。
-
-#### 场景 22 · 一个恶化：类别权重与 Brier · 8:20–8:42 · 22 s · D
-
-- **版式：** R；署名标签 “class weights: B's step P11”。
-- **构建：**
-  1. 校准图（参照 `figures/S7_pr_calibration.png`）：对角线标 “predicted = observed”；“Systematic (S)” 的曲线（青色实线）远离对角线；“S without class weights”（青色虚线）贴近对角线；“Minimal (M1)” 为灰色参照线。
-  2. 下方是三行差值条，共用一根轴（青色描边柱，S 的变化；不用红色，因为这里没有受损的数据）：
-     - “Systematic − Minimal: Brier +0.074 (worse)”：主数字，配墨色 ✗；
-     - “class weights alone: +0.076”；
-     - “S without weights vs Minimal: Brier ≈ M1 · AUC +0.007”。
-- **旁白：**
-  > **D**：One of those steps did hurt. From minimal to systematic, the Brier score, which checks whether predicted risks match reality, worsens by 0.074. The cause is class weights: removing only them improves Brier by 0.076. AUC still gains 0.007.
-- **词数：** 51 / 22 s = 139 wpm
-- **屏幕文字：** “Systematic vs Minimal: Brier +0.074 (worse)”
-- **数字口径（必须一致）：**
-  - S − M1 的 Brier 变化是 **+0.074** ← V7 · S7:scoreboard_detail[hyp_id=H2b&sub=(b) Brier&role=primary].est；
-  - 类别权重单独造成 **+0.076**（S − S-B6a）← V7 · S7:scoreboard_detail[hyp_id=B6a&sub=(b) Brier&role=primary].est；
-  - 去掉类别权重后，相对 M1 的 AUC 变化为 **+0.007** ← V7 · S7:pure_preparation_S_B6a_vs_M1[pop=E-ALL&metric=roc_auc].diff；Brier 变化为 −0.002（同一键的 brier.diff），画面写 “≈ M1”。
-  - 0.074 永远配 “from minimal to systematic”，0.076 永远配 “class weights alone / removing only them”。
-- **衔接：** 标题区换成 “Whom does the score serve?”（不出章卡），哑铃图画入。
-
-#### 场景 23 · 识别与筛查 · 8:42–9:05 · 23 s · D
-
-- **版式：** R；署名标签 “Screening group: C · §5”。
-- **构建（视觉 8 Recognition vs screening）：**
-  1. M1 画出 0.5–1.0 轴，标 “axis starts at 0.5”。
-  2. “All adults” 点（灰色实心圆，下标 E-ALL）`0.836`；“Screening group” 点（蓝色空心方块，下标 E-SCREEN）`0.781`。
-  3. 两点之间连线（0.5 s），中间标 `+0.055`。
-  4. 念到 “84 percent” 时，下方出现阳性人群的堆叠条：84 % “already diagnosed”（墨色描边）与其余 “Screening group”（蓝色空心方块纹样）。标签 “spectrum bias”。
-- **旁白：**
-  > **D**：Now C's screening group. On all adults, the systematic model scores 0.836. On the screening group, the people screening must find, it scores 0.781. 84 percent of positives were already diagnosed, so the all-adults AUC mostly measures recognition. That is spectrum bias.
-- **词数：** 52 / 23 s = 136 wpm
-- **屏幕文字：** “All adults 0.836 · Screening group 0.781”
-- **数字：** 口述 `0.836`、`0.781` ← V7 · S7:headline.auc_S_eall_T1 / auc_S_escreen_T1；`84` ← V1 · S1:labels.known_share_of_comb。仅画面：`+0.055` ← V7 · S7:headline.eall_minus_escreen_S_T1.est
-- **衔接：** Screening group 点保留，复用场景 21 的差值轴。
-
-#### 场景 24 · 就诊痕迹反转 · 9:05–9:31 · 26 s · D
-
-- **版式：** R
-- **构建（视觉 10 Care traces flip）：**
-  1. 被移除的两张卡 “told high blood pressure”、“told high cholesterol” 出现，标 “traces of care”。
-  2. 复用场景 21 的轴与 ±0.01 带。“All adults” 点（灰色实心圆）落在 `−0.016`。
-  3. 停 1.5 s。“Screening group” 点（蓝色空心方块）落在 `+0.019`，晶须 [0.004, 0.034] 静态画出，整段在 0 右侧，下端落在带内（不脉冲）。
-  4. 两点之间画一条细折线，表示“换了人群，符号翻转”。墨色虚线框加 “?”：“consistent with · not settled”。
-- **旁白：**
-  > **D**：The twist: drop two traces of prior care, told high blood pressure and told high cholesterol. On all adults, AUC falls by 0.016. In the screening group, it rises by 0.019, interval 0.004 to 0.034. Consistent with recognition and screening pulling apart; not settled.
-- **词数：** 60 / 26 s = 138 wpm
-- **屏幕文字：** “Without care traces: −0.016 vs +0.019”
-- **数字：** 口述 `0.016`、`0.019` ← V7 · S7:headline.minus_care_eall.est / minus_care_escreen.est；`0.004 to 0.034` ← 待补登 · S7:headline.minus_care_escreen.lo / hi
-- **衔接：** 图区换成时间轴。
-
-#### 场景 25 · 留出集与事后核查 · 9:31–9:44 · 13 s · D（B 的核查）
-
-- **版式：** R；署名标签 “checks: B · §9”。
-- **构建：**
-  1. M1 画出时间轴，三个节点依次点亮：“hypotheses locked (SHA-256)” → “experiments frozen” → “hold-out: scored once”。
-  2. 念到 “1,146” 时，1,146 个小点作为一个整体出现，标签 “internal check, not independent”。
-  3. 账本两行：“6 issues from an external review · checked”、“no locked verdict changed”。
-- **旁白：**
-  > **D**：B's checks agree: an internal hold-out of 1,146 adults, scored once, kept the pattern; six issues raised by an external review changed no locked verdict.
-- **词数：** 31 / 13 s = 143 wpm
-- **屏幕文字：** “Hold-out 1,146 · internal check”
-- **数字：** 口述 `1,146` ← V7 · S9:holdout.log.n_test；`six` ← 待补登 · S9:postaudit.summary（6 行，register DR-S9-16 至 DR-S9-21；notebook §9.12）。不显示留出集差值 +0.060：E-SCREEN 只有 25 个阳性，差值本身无法单独检验（claims C25）。
-- **衔接：** 陷阱条回到图区中央。
-
-#### 场景 26 · 三个陷阱的回答 · 9:44–10:05 · 21 s · D
-
-- **版式：** R；标题区换成 “Three answers”（不出章卡）
-- **构建（视觉 1 Three traps，回答）：**
-  1. 陷阱条的三格用 0.9 s 形变回到图区中央，变成三张卡。
-  2. 每念到一个陷阱，对应卡片的内容用 M12 溶解成答案（不做 3D 翻转，不填语义色）。卡片用结构色细框和该陷阱的图标，结论用反馈形状：
-     - Leak（漏水的桶）：“0.961 = leakage, not skill”，墨色实心 ✓（成立）；
-     - Label（尺子）：“Label records care, too”，墨色实心 ✓（成立）；
-     - Little gain（天平）：“+0.008, inconclusive”，墨色虚线框加 “?”，下面一行 “value: 1,496 values kept · fair screening test”。
-  3. 当前念到的卡加结构色左侧细线，其余暗到 25 %。
-- **旁白：**
-  > **D**：So, three answers. Trap one: the 0.961 was leakage, not skill. Trap two: the label records care as well as disease. Trap three: preparation moved AUC by only plus 0.008; its value is valid values kept and a fair screening test.
-- **词数：** 49 / 21 s = 140 wpm
-- **屏幕文字：** “Three traps, three answers”
-- **数字：** 口述 `0.961` ← V3；`0.008` ← V7。仅画面：`1,496` ← V2
-- **衔接：** D 转为 S 版式。
-
-#### 场景 27 · D 的意外 · 10:05–10:12 · 7 s · D
-
-- **版式：** S（D 在左，卡片在右）
-- **构建：** 同一根轴上两根柱：“leakage 0.131”（红色斜纹，很高）、“preparation 0.008”（青色实心，极矮），轴标 “AUC change”。
-- **旁白：**
-  > **D**：Most unexpected for me: leakage moved the score far more than careful preparation did.
-- **词数：** 14 / 7 s = 120 wpm
-- **屏幕文字：** “Most unexpected: leakage ≫ preparation”
-- **数字：** 仅画面 `0.131` ← V3；`0.008` ← V7
-- **衔接：** 角色卡片回到图区。
-
-#### 场景 28 · 团队回顾、局限、GenAI 与结论 · 10:12–10:41 · 29 s · D
-
-- **版式：** R 21 s → F 8 s → 片尾卡（最后 2 s，与 “Thank you” 重叠）
-- **构建（视觉 12 Role cards & chain）：**
-  1. 场景 1 的四张角色卡片原位回来（墨色描边，白纸面板），每张加一行纯文字成果：A “rules · replication”，B “the deleted 7.0 · 14 switchable steps”，C “the label · fairness”，D “the leak · the traps answered”。卡片之间画出贡献链 C finds → B implements → D evaluates → C interprets，A 的外框表示 “integrates & checks every number”。念到哪位成员，哪张卡加结构色左侧细线，其余暗到 25 %。
-  2. 卡片暗下；三枚局限标签依次出现（M3）：“One survey cycle”、“Low response”、“152 Screening-group positives”（蓝色空心方块小图标）。
-  3. GenAI 声明卡：“GenAI drafted code & text · reviewed by us · no LLM in the pipeline · every number recomputed”。
-  4. 切 F：标题带 “The score is not the finding”。
-  5. 片尾卡：大号标题 “Who gets labelled diabetic?”，下方一行 mono “Group [no.] · Thank you”；留白充足，四周是与片头相同的淡问卷网格母题，静止，无色块、无渐变。链接不念。
-- **旁白：**
-  > **D**：Four roles, one audit: A's governance, B's preparation, C's labels and bias, my models. Limits: one survey cycle, low response, only 152 screening-group positives; this is a data audit, not a screening tool. Generative AI drafted much of our code and text; we reviewed it and recomputed every number. The score is not the finding; what it reveals about the data is. Thank you.
-- **词数：** 68 / 29 s = 141 wpm
-- **屏幕文字：** “Audit, not a screening tool”
-- **数字：** 口述 `152` ← V1 · S1:e_screen.positives
-- **衔接：** 片尾，无。
-
----
-
-## 5 取舍
-
-判断标准：删掉这一项后，观众还能说清核心思想及其理由吗？能说清，就收起或删除。
+判断标准：删掉这一项后，观众还能说清核心思想及其理由吗？能，就收起或删除。
 
 | 内容 | 处理 | 场景 | 理由 |
 |---|---|---|---|
-| 可用性规则与 M0→M1→S 对照 | 主线 | 13、18 | 删掉就无法解释 0.961 为何不可信 |
-| 统一重编码删掉 7.0（1,496 vs 57；29 of 721；6 个翻转） | 主线 | 8–9、14 | 非显然发现，也是陷阱三“价值在别处”的证据 |
-| DID040 插补成 50，树在它上面分裂 | 主线 | 19 | 泄漏的机制 |
-| κ、250 / 819、165、152、+23.2 pp | 主线 | 16–17 | 陷阱二的证据 |
-| 全体成人 vs 筛查组；就诊痕迹 −0.016 vs +0.019 | 主线 | 23–24 | 回答“这个分数为谁服务” |
-| 类别权重使 Brier 变差 | 主线 | 22 | 作业要求讲恶化，这是最清楚的一例 |
-| VIF、偏度、年龄混杂、Simpson | 主线，各一场景 | 6、11、15 | brief 点名，每项只讲“发现 → 决定” |
-| HbA1c 离群值 542 / 519 | 主线（22 s） | 10 | 离群值是病人，不能删 |
-| 公平性：TPR 0.70 vs 0.52 | C 的意外 | 20 | 覆盖 “bias analysis”，并与陷阱二相连 |
-| 留出集、事后六项核查 | 一句话 | 25 | 可信度证据；不念 +0.060 |
-| NCHS DB516 复现 | 一句话 + 表 | 5 | 证明调查加权代码没有错 |
-| 预注册锁定 | 一句话 | 4、7、13 | 证明结论不是事后挑选 |
-| DAG、中介调整 | 一句话 | 15 | “相关不等于因果”的另一种形式 |
-| 团队回顾、GenAI 声明 | 一句话 + 卡片 | 28 | 贡献可区分；如实声明 |
-| 响应率 34.6 % / 25.7 % | 只说 “low response”，不念数字 | 28 | 不影响三个陷阱 |
-| 片尾四段单人短片 | 删除，改为各段末尾的一句 “most unexpected” | 7、14、20、27 | 一人一段约束 |
-| 亚裔 BMI（51.1 % vs 7.2 %）、WHtR | 删除 | — | E4 探索性，n = 47；让位给公平性 |
-| 3×3 标签矩阵、H3 | 删除 | — | 结论不确定，区间都跨 0 |
-| ADA-lite 基线 | 删除 | — | 留出集没有复现（区间跨 0），口头容易听成“优于 ADA” |
+| 泄漏规则与 naive → minimal → systematic 对照 | 主线 | 12、17 | 删掉就无法解释 0.961 为何不可信 |
+| 统一重编码删掉 7.0（1,496 vs 57；29 of 721；6 个翻转） | 主线 | 08–09、13 | 非显然发现；也是“准备的价值在别处”的证据 |
+| 确诊年龄被插补成 50，树在它上面分裂 | 主线 | 18 | 泄漏的机制 |
+| κ、250 / 819、165、152、+23.2 pp | 主线 | 15–16 | RQ1 的证据 |
+| 全体成人 vs 未确诊成人；prior-care −0.016 vs +0.019 | 主线 | 22–23 | 回答“这个分数为谁服务” |
+| 类别权重使 Brier 变差 | 主线 | 21 | 作业要求讲恶化，这是最清楚的一例 |
+| VIF、偏度、年龄混杂、Simpson | 主线，各一场景 | 06、11、14 | brief 点名；每项只讲“发现 → 决定” |
+| HbA1c 离群值 542 / 519 | 主线 | 10 | 离群值是病人，不能删 |
+| 公平性：每 100 人 70 vs 52 被检出 | 第 3 段的意外 | 19 | 覆盖 bias analysis，并与 RQ1 相连 |
+| 留出集 | 一句话 | 24 | 可信度证据；不念 +0.060 |
+| NCHS DB516 复现 | 一句话 + 表 | 05 | 证明调查加权代码没有错 |
+| 预注册锁定 | 一句话 | 04、07 | 证明结论不是事后挑选 |
+| DAG、中介 | 一句话 | 14 | 谬误的另一种形式 |
+| 团队回顾、GenAI 声明 | 一句话 + 卡片 | 26 | 贡献可区分；如实声明 |
+| 响应率 34.6 % / 25.7 % | 只说 “low response”，不念数字 | 26 | 与三个研究问题无关 |
+| 亚裔 BMI（51.1 % vs 7.2 %）、WHtR | 删除；WHtR 只在 12 留脚注 | — | 探索性，n = 47 |
+| 3×3 标签矩阵、RQ3 | 删除，议程页注明在 notebook | — | 区间都跨 0 |
+| ADA-lite 基线 | 删除 | — | 留出集没有复现，容易听成“优于 ADA” |
 | 缺失机制（OR、IPW、Manski、MNAR） | 删除 | — | 结论是“基本不影响” |
-| XPT 零值、top-coding、零权重 | 只出现在步骤卡上 | 12 | 不是非显然发现 |
-| 置换检验、噪声列、种子、规格曲线、PSU 分组 CV、nested C | 删除 | — | 可信度细节，留在 notebook |
-| 系数稳定性 SD 比 | 删除 | — | 事后审计已改为“不可检验” |
-| 设计效应、jackknife、自由度 | 删除 | — | 技术上正确，但与理解无关 |
-| 树在筛查组上的 AUC 0.633 / 0.701 | 删除 | — | 只是描述性探针，容易被当成模型比较 |
-| Adult X | 删除 | — | 见 2.5 节 |
-| 合影、四人画廊、四人轮流钩子、结尾同框、回场 | 删除 | — | 单人、一人一段约束 |
+| 置换检验、噪声列、种子、规格曲线、PSU 分组 CV、nested C、设计效应 | 删除 | — | 可信度细节，留在 notebook |
+| 树在未确诊人群上的 AUC 0.633 / 0.701 | 删除 | — | 只是描述性探针 |
+| 外部评审的六项核查 | 删除 | — | 不上屏、不进旁白（10.3 节） |
+| 合影、四人画廊、回场、片尾单人短片 | 删除 | — | 一人一段 |
+
+---
+
+## 3 名字、角色与署名
+
+### 3.1 名字规则（裁定 8）
+
+- **字母 A、B、C、D 永远不出现在视频里**：不出现在屏幕上（名签、团队页、段首页、署名行、收尾回顾、片头片尾卡、字幕），也不出现在语音里。不写 “A”、“Member A”、“<A>”、“Analysis by C”。
+- **唯一来源：** `notebooks/final/team.json` 的 `members[].name`（目前是占位值 “A”–“D”）。场景、字幕和合成脚本都从这里读名字，不在任何文件里手写名字。
+- **占位：** 名字仍是占位值（单个字母，或含 “[TEAM TO FILL”）时，渲染为 “[Name]”；带职责时写成 “[Name] · Data quality & preparation”。字幕同样显示 “[Name]”。kit 审计在渲染出的文字里发现单独的 A–D 人名时报错。
+- **方案里的写法：** 旁白与屏幕文字用 `<Name>`（本场景讲者）和 `<Name:i>`（成员 i）记号；口头自我介绍 “I'm A” 一律写成 “I'm `<Name>`”。
+- **组号：** 同理来自 `team.json` 的 `group_number`，未填时显示 “[no.]”。
+
+### 3.2 角色
+
+| 成员 | 名签第 2 行（role） | 段首页 “Owns” 行 | 本人讲的部分 |
+|---|---|---|---|
+| `<Name:0>` | Governance & integration | governance, data access, reproducibility | Problem & data |
+| `<Name:1>` | Data quality & preparation | quality audit, preparation design, robustness checks | Data quality · EDA & preparation |
+| `<Name:2>` | Exploration, labels & bias | exploratory analysis, label analysis, fairness audit | Labels & bias · Experiments (leakage check) |
+| `<Name:3>` | Modelling & conclusions | experiments, synthesis of conclusions | Experiments · Results & robustness · Reflection |
+
+### 3.3 署名
+
+讲他人的工作时，旁白点名原作者，副标题行右端显示一行署名（28 px 墨色，左侧 2×28 px 墨色竖线，无框）。
+
+| 场景 | 署名行 | 旁白中的点名 |
+|---|---|---|
+| 06 | Analysis by `<Name:2>` | “In `<Name:2>`'s analysis” |
+| 11 | EDA by `<Name:2>` | “`<Name:2>`'s exploration found” |
+| 17 | Experiment by `<Name:3>` | “from `<Name:3>`'s experiments” |
+| 18 | Experiment by `<Name:3>` | “`<Name:3>`'s shallow decision tree” |
+| 20b | Preparation steps by `<Name:1>` | — |
+| 21 | Class-weight step by `<Name:1>` | “`<Name:1>`'s class weights” |
+| 22 | Population defined by `<Name:2>` | — |
+| 24 | **Robustness checks led by `<Name:1>`**（裁定 1） | 不点名 |
+
+### 3.4 自我介绍与交接
+
+| 讲者 | 自我介绍（场景） | 意外发现（场景） | 交接句 |
+|---|---|---|---|
+| `<Name:0>` | “I'm `<Name>`; I led governance and integration.”（01，团队页） | 3 of 6 hypotheses supported（07） | “Now `<Name:1>` asks whether the data deserve the same trust.” |
+| `<Name:1>` | “I'm `<Name>`; I led data quality and preparation.”（08） | 29 HbA1c results erased（13） | “But cleaning cannot fix the label itself. `<Name:2>` shows why.” |
+| `<Name:2>` | “I'm `<Name>`; I led exploration, labels and bias.”（14） | 70 vs 52 of 100（19） | “`<Name:3>` takes the last question.” |
+| `<Name:3>` | “I'm `<Name>`; I led modelling and conclusions.”（20） | leakage vs preparation（25） | —（第 4 段包含结尾） |
+
+交接时，讲者看着镜头说完交接句，停约 0.5 s；切点落在下一段段首页的第 1 帧。节号只出现在底栏指引里，不念出来。
+
+---
+
+## 4 版式
+
+### 4.1 唯一版式与网格
+
+全片只有一种版式。画布 1920×1080，外边距左右 96 px、上 40 px、下 52 px。
+
+```text
+x  96                                                                                 1824
+y  40 ┌ Problem & data   Data quality   EDA & preparation   Labels & bias   Experiments ... ┐  74  进度条
+y  96 │ Main title (64 px serif)                                                            │ 160
+y 172 │ Subtitle (34 px sans)                                    | Analysis by <Name:2>     │ 206
+y 224 ┌──────────────────────────── 图区纸面面板 1728×764 ───────────────────────────────────┐
+      │ 主区：面板 x 0–1272，y 0–648               副区：面板 x 1296–1728，y 0–408          │
+      │                                                   ┌ Presented by <Name> ───────┐    │ 656
+      │                                                   └ Data quality & preparation ┘    │ 740
+y 872 │ ┌──────────── 字幕区 x 96–1368，y 872–988 ─────────┐ ┌────────────────────────────┐  │ 748
+      │ │      Caption line one (Plex Sans, ink)           │ │   小窗 384×216（固定）      │  │
+      │ │      Caption line two                            │ └────────────────────────────┘  │ 964
+y 988 └─┴──────────────────────────────────────────────────┴──────────────────────────────────┘
+y1000   ● reference baseline  ▨ harmed or leaked data  ■ Systematic preparation  □ Not-yet-...   Notebook section 7.5  1028
+```
+
+| 区域 | x | y | 尺寸 | 规格 |
+|---|---|---|---|---|
+| 进度条 | 96–1824 | 40–74 | 1728×34 | 七段；段名 24 px IBM Plex Sans，基线 y 60；4 px 细线在 y 70–74（5.1 节） |
+| 主标题 | 96–1824 | 96–160 | 1728×64 | Source Serif 4，64 px，单行 |
+| 副标题 | 96–1824 | 172–206 | 1728×34 | IBM Plex Sans 34 px，墨色，单行；有署名时在署名左侧 48 px 处结束 |
+| 署名 | 副标题行右端 | 172–206 | 自适应 | 28 px sans，左侧 2×28 px 墨色竖线，无框 |
+| 图区纸面面板 | 96–1824 | 224–988 | 1728×764 | 白纸，8 px 圆角，1 px #E3E7EC 边，柔和阴影；面板坐标原点 (96, 224) |
+| 主图区 | 96–1368 | 224–872 | 1272×648 | 面板坐标 x 0–1272，y 0–648；证据图放这里 |
+| 副图区 | 1392–1824 | 224–632 | 432×408 | 面板坐标 x 1296–1728，y 0–408；小图、图例条、脚注 |
+| 字幕区 | 96–1368 | 872–988 | 1272×116 | 面板坐标 x 0–1272，y 648–764；只放字幕（第 8 节） |
+| 名签 | 1416–1800 | 656–740 | 384×84 | 两行 28 px：`Presented by <Name>`（semibold）/ role；纸色底，1 px 细边，直角 |
+| 小窗 | 1416–1800 | 748–964 | 384×216 | 直角；1 px #E3E7EC 细边画在外侧（1415–1801 × 747–965），由 kit 渲染；无阴影、无动画 |
+| 避让区 | 1392–1824 | 632–988 | 432×356 | 小窗与名签外扩 24 px；面板坐标 x 1296–1728，y 408–764 |
+| 底栏 | 96–1824 | 1000–1028 | 1728×28 | 左侧图例行（24 px）；右端 notebook 指引（24 px，墨色 60 %，右对齐到 x 1824） |
+
+**禁区。** 图形内容不得进入避让区或字幕区，推近（M9，缩放 ≤ 1.25）后的包围盒也不行。kit 审计会拦截（9.4 节）。
+
+### 4.2 小窗与名签
+
+- **小窗：** 384×216（16:9，画面宽度的 1/5），全片同一坐标。胸像构图下脸高约 97 px。录像尚未完成时，合成用灰色 “camera” 占位块。
+- **名签：** 全程常驻，写 “Presented by `<Name>`” 和职责（3.2 节）。
+- **切换：** 换讲者只在 2:16、4:30、6:51，都在段首页的第 1 帧。新讲者从第 1 帧起就在小窗里，名签同时换字。
+
+### 4.3 页面类型
+
+网格和小窗不变，面板里放什么分成五种页面，外加两种过渡元素。
+
+| 类型 | 用途 | 面板内容 | 规则 | 场景 |
+|---|---|---|---|---|
+| **证据页** | 数据讲解 | 一张证据图 | 一页一个主张；口述数字 ≤ 3；内容只在主区和副区 | 03–06、08b–12、14b–18、20b–23 |
+| **段首页** | 第 2–4 段的开头 | 第 1 行 56 px serif：`Presented by <Name> · <role>`；第 2 行 28 px 墨色 60 %：`Owns: …`；下面每个部分一行 | 前 1.2 s 静默（进度条在此时切换）；自我介绍句后用 M12 溶解成第一张证据页 | 08a、14a、20a |
+| **反思页** | 每段末尾的 “Most unexpected finding” | 正文一行 40 px serif（讲者的反思句）；小图缩到 ≤ 400 px 高放在下方；左下 28 px 墨色 60 % 的交接行 | ≤ 14 s；主标题固定，副标题以讲者名开头 | 07、13、19、25 |
+| **议程页** | 开场路线图；24b 的回答版与之呼应 | 栏目名 28 px（墨色 60 %）+ 内容 34 px，左对齐 | 研究问题行的字号、顺序在 02 和 24b 完全相同 | 02、24b |
+| **收尾页** | 贡献、局限与 AI、结论 | 角色卡与贡献链；局限标签与 GenAI 卡；一句 56 px 收束语 | 收束语是全片唯一以大字出现的结论 | 26a–c |
+| 过渡：**章节卡** | 不换讲者的部分开头 | 舞台色满幅（小窗、名签照常露出）：80 px 部分名、34 px 范围行、28 px 讲者行 | 1.2 s 静止，计入所在场景时长，旁白在其后开口 | 11、17、22 |
+| 过渡：**片头卡 / 片尾卡** | 开场 1.5 s、结尾 1.5 s | 片名 88 / 120 px，副标题行 “Basic models as instruments on NHANES 2021–2023” | 片尾卡：七段路线回到画面中央并全部为“已讲完”；底部一行数据来源 | 01a、26d |
+
+**靛蓝只出现一处。** 一帧里，结构靛蓝只用于进度条当前段的填充线。卡片焦点用 M3 的 2 px 墨色描边加“暗其余”。
+
+### 4.4 底栏
+
+**图例行**（左侧，24 px，常驻，只显示已出现过的颜色）：`● reference baseline` · `▨ harmed or leaked data` · `■ Systematic preparation` · `□ Not-yet-diagnosed adults`。
+
+**图例时刻**（颜色第一次出现时，副区一角出现 2–3 s，随后收进底栏；不需要旁白，在停顿处出现，不与数字 callout 同时出现）：
+
+| 颜色 | 首次出现 | 图例条文字 |
+|---|---|---|
+| 灰 | 03（All adults 末条） | “● grey = reference: all adults” |
+| 红 | 08（被误删的单元格、1,496 柱） | “▨ red = harmed or leaked data” |
+| 青 | 12（systematic 泳道） | “■ teal = systematic preparation” |
+| 蓝 | 16（152 人） | “□ blue = not-yet-diagnosed adults” |
+
+议程页（02）的设计矩阵只用墨色，不提前用语义色。
+
+**Notebook 指引**（右端，纯文字一行，裁定 2）。格式 `Notebook section 7.5`，多节时 `Notebook sections 4.7–4.8`。不写 “§”、结果键名或 notebook 原标题（原标题含 “M0 → M1”、“E-SCREEN” 等代号）。段首页、章节卡、片头卡和片尾卡不显示。下表已逐条对照 `notebooks/final/CA6003_NHANES_Diabetes.ipynb` 的标题。
+
+| 场景 | 指引 | 依据（notebook 标题） | 场景 | 指引 | 依据（notebook 标题） |
+|---|---|---|---|---|---|
+| 01 | section 7.5 | 7.5 Leak gate（0.961 出处） | 14 | sections 4.7–4.8 | 4.7 Simpson scan；4.8 Causal structure |
+| 02 | sections 1.3–1.5 | 1.3 Feature-availability rule；1.4 Evaluation populations；1.5 Research questions | 15 | sections 5.1–5.2 | 5.1 Three labels and their agreement；5.2 Treatment masking |
+| 03 | sections 1.1, 3.2 | 1.1 Analysis cohort；3.2 … the sample funnel | 16 | sections 5.3–5.4 | 5.3 What "undiagnosed" means；5.4 Who is undiagnosed |
+| 04 | sections 1.8–1.9 | 1.8 Data user agreement；1.9 Data minimisation | 17 | section 7.5 | 7.5 Leak gate |
+| 05 | section 4.3 | 4.3 External anchor: NCHS Data Brief 516 | 18 | section 7.5 | 7.5 的 “So what” 讨论树与插补的 50 |
+| 06 | sections 4.5–4.6 | 4.5 Age standardisation；4.6 Insurance | 19 | sections 8.2–8.3 | 8.2 Group metrics at the fixed threshold；8.3 Gaps |
+| 07 | section 10.2 | 10.2 Hypothesis scoreboard | 20 | sections 7.12, 10.2 | 7.12 Verdicts；10.2.1 H2b in detail |
+| 08 | section 3.4 | 3.4 Cost of a blanket recode | 21 | section 7.10 | 7.10 Precision–recall and calibration |
+| 09 | section 3.4 | 同上 | 22 | section 7.9 | 7.9 E-ALL vs E-SCREEN |
+| 10 | section 3.8 | 3.8 Outliers: a three-layer rule | 23 | section 7.8 | 7.8 Leave-one-block-out |
+| 11 | sections 4.9–4.10 | 4.9 Redundancy and collinearity；4.10 Skewness | 24 | sections 9.11, 10.6 | 9.11 Internal hold-out check；10.6 Headline findings |
+| 12 | sections 6.2, 6.9 | 6.2 Step catalogue；6.9 Arms | 25 | sections 7.5, 10.2 | 7.5 与 10.2 |
+| 13 | section 3.4 | 3.4 | 26 | Notebook: Team and contributions; section 10.9 | 无编号的 “Team and contributions” 与 10.9 Limitations register |
+
+---
+
+## 5 导航与标题
+
+### 5.1 七部分进度条
+
+场景顺序由“一人一段”锁定，所以进度条只往前走。探索性分析分散在 06、11、14：06 留在第 1 部分；11 与准备设计合为第 3 部分；14 归入 “Labels & bias”。
+
+| 段名（进度条与章节卡一字不差） | 场景 | 起止 | 时长 | 讲者 | 开头标识 | rubric 要点 |
+|---|---|---|---|---|---|---|
+| Problem & data | 01–07 | 0:00–2:16 | 136 s | `<Name:0>` | 片头卡 + 团队页（01） | 问题、设计、队列、治理、外部复现、混杂 |
+| Data quality | 08–10 | 2:16–3:19 | 63 s | `<Name:1>` | 段首页（08a） | 剖析、非显然发现、离群值 |
+| EDA & preparation | 11–13 | 3:19–4:30 | 71 s | `<Name:1>` | 章节卡（11） | 冗余、多重共线、偏度；准备设计；三条流水线 |
+| Labels & bias | 14–16 | 4:30–5:49 | 79 s | `<Name:2>` | 段首页（14a） | 谬误；标签一致性；未确诊者与第二个评估人群 |
+| Experiments | 17–21 | 5:49–7:42 | 113 s | `<Name:2>` → `<Name:3>` | 章节卡（17）；段首页（20a）不切换段 | 泄漏检查；minimal vs systematic；恶化 |
+| Results & robustness | 22–24 | 7:42–8:48 | 66 s | `<Name:3>` | 章节卡（22） | 分人群表现；消融；留出集；回答研究问题 |
+| Reflection | 25–26 | 8:48–9:26 | 38 s | `<Name:3>` | 无章节卡（25 只有 7 s） | 意外发现；贡献；局限；GenAI；结论 |
+
+合计 566 s。
+
+| 项 | 规格 |
+|---|---|
+| 位置 | x 96–1824，y 40–74 |
+| 段名 | 只写部分名，不加序号，不用图标，不用 “§” |
+| 段宽 | 段名宽 + 32 px，段间隙 16 px，从 x 96 左对齐；总宽约 1,450 px |
+| 细线 | y 70–74，每段一条，与该段同宽 |
+| 已讲完 | 段名墨色 60 %，细线墨色 |
+| 当前段 | 段名墨色 100 % semibold；细线为结构靛蓝，按本段已用时间从左往右填充（全局时间 t 的纯函数，段起止由 `timeline.json` 求和得到），未填部分为 `--line` |
+| 未讲到 | 段名墨色 60 %，细线 `--line` |
+| 切换 | 在段首页或章节卡的前 1.2 s 内完成：上一段转为“已讲完”，新段变为 semibold，靛蓝线从新段左端开始填充（0.4 s，M12） |
+| 出现 | 场景 02 末尾，议程里的七段路线用 M6（0.9 s）收缩到页顶，之后常驻到 26c；01 与 02 的前约 25 s 没有进度条 |
+| 片尾 | 26d 片尾卡上，路线回到画面中央，七段全部为“已讲完” |
+
+### 5.2 主标题与副标题
+
+**主标题。**
+- 64 px Source Serif 4，单行，最多约 5 个词。
+- 写本页主题，可用标准术语，例如 “Data leakage check”、“Label agreement: self-report vs HbA1c”。
+- 可以用问句，但只能说明本页检验什么，不能预设答案。可以：“How good is AUC 0.961?”；不可以：“How did the model cheat?”。
+- 不写结论：不用 →、=、≫，不用 “worse”、“removed”、“inconclusive” 这类判定词，不放区间。
+- 数字只在它本身就是主题时出现，全片只有 01b 一处。
+- 不用内部代号（M0 / M1 / S、E-ALL / E-SCREEN、trap、P 编号、§）；不用人名字母。
+- 一个场景一个标题，从头到尾不变。分阶段的场景每个阶段换一次：01（片头、钩子、团队）、08 / 14 / 20（段首页、正文）、24（留出集、回答）、26（贡献、局限、结论、片尾）。
+
+**副标题。** 34 px IBM Plex Sans，单行，最多约 12 个词；比主标题晚 0.3 s 淡入，之后常驻。说明这一页给观众看什么：数据、方法或比较。不写结论，最多一个数字。
+
+**结论的去处：** 旁白，或图内 ≤ 5 词的小标注，例如 17 的 “✓ correct deterioration”、23 的 “? inconclusive”。
+
+| 不要这样写 | 问题 | 改为（主标题 / 副标题） |
+|---|---|---|
+| “0.961 → 0.828: leakage removed” | 结论，带箭头和数字 | **Data leakage check** / Naive vs minimal preparation: same model, post-diagnosis items excluded |
+| “Low HbA1c = controlled, not healthy” | 结论，用 “=” | **Label agreement: self-report vs HbA1c** / Cohen's κ, and self-reported diabetics below the HbA1c threshold |
+| “Two structural problems” | 结论，又没说是什么问题 | **Redundancy and skewness** / VIF for weight and BMI; skewness of fasting triglycerides |
+| “+0.008 [0.000, 0.016] · inconclusive” | 整个标题是一个结果 | **Minimal vs systematic preparation** / Paired AUC difference and its CI, against a pre-registered equivalence margin |
+| “Age confounds: +5.3 → +0.7 pp” | 结论 | **Confounding check: insurance gap** / Diabetes prevalence, insured vs uninsured, crude and age-standardised |
+| “519 of 542 flagged are diabetic” | 结论，而且按定义就成立 | **Outlier handling** / HbA1c values beyond the 1.5 × IQR fences, by diabetes status |
+| “How did the model cheat?” | 问句预设了答案 | **What the naive model learns** / A depth-3 decision tree, and median imputation of age at diagnosis |
+| “Whom does the score serve?” | 看不出比较对象 | **AUC by evaluation population** / Systematic preparation on all adults and on not-yet-diagnosed adults |
+| “Three traps, three answers” | “trap” 是内部叫法 | **Robustness and answers** / Internal hold-out check, then answers to the three research questions |
+| 副标题 “Naive (M0) · Minimal (M1) · Systematic (S)” | 代号 | “Fourteen evidence-based steps combined into naive, minimal and systematic pipelines” |
+| “Most unexpected for” 加成员字母 | 字母代号 | **Most unexpected finding** / `<Name:3>` on AUC change from leakage vs from preparation |
+
+### 5.3 开场、段首页、章节卡与反思页
+
+**第 1 段的开头（01，裁定 4：不设段首页）。**
+- 片头卡（0–1.5 s，静默）：片名 “Who gets labelled diabetic?”；副标题行 “Basic models as instruments on NHANES 2021–2023”；第三行 28 px “Presented by `<Name:0>` · Governance & integration · Problem & data”；mono 小字 “CA6003 · Group [no.]”。
+- 钩子（约 1.5–11 s）：AUC 轴 0.5–1.0，标 “axis starts at 0.5”，无 coin flip / perfect 标注；墨色指针升到 0.961（M10）。
+- 团队页（约 11–29 s）：四张角色卡，三行：姓名 / 职责 / 本人讲的部分（3.2 节）。念到谁，谁的卡保持 100 %、加 2 px 墨色描边，其余暗到 25 %。卡片不收成徽章，结尾用 M12 溶解。
+
+**段首页**（08a、14a、20a）。面板内左对齐，起点面板坐标 x 48，全部内容在 x ≤ 1272、y ≤ 648。
+
+| 行 | 面板坐标 y（基线） | 规格 |
+|---|---|---|
+| 讲者与职责 | 110 | `Presented by <Name> · <role>`，56 px serif |
+| 负责 | 170 | `Owns: …`，28 px sans，墨色 60 % |
+| 本段覆盖的部分 | 250–420 | 每个部分一行，28 px sans：部分名 semibold，后接 2–3 个主题 |
+
+| 页 | 主标题 | 副标题 | 卡片第 1 行 | 本段覆盖的部分 |
+|---|---|---|---|---|
+| 08a | Data quality | Profiling, missing-value codes and outliers | Presented by `<Name:1>` · Data quality & preparation | **Data quality:** missing-value codes · effect on labels · outliers / **EDA & preparation:** redundancy and skewness · preparation design |
+| 14a | Labels & bias | Analytical fallacies, label agreement and undiagnosed diabetes | Presented by `<Name:2>` · Exploration, labels & bias | **Labels & bias:** Simpson's paradox scan · label agreement · undiagnosed diabetes / **Experiments:** data leakage check, with `<Name:3>`'s experiments |
+| 20a | Experiments, results and reflection | Minimal vs systematic preparation, then results, robustness and reflection | Presented by `<Name:3>` · Modelling & conclusions | **Experiments:** minimal vs systematic · calibration / **Results & robustness:** populations · prior-care ablation · hold-out · answers / **Reflection** |
+
+第 1、2 行在讲者说出姓名时用 M12 淡入；“本段覆盖的部分”在说出职责时淡入。自我介绍句结束（约 5–6 s）后，用 M12 溶解成证据页，标题随之换成证据页标题。
+
+**章节卡**（11、17、22，各 1.2 s，不写 “Part n of 7”）。
+
+| 场景 | 主标题（80 px） | 范围行（34 px） | 讲者行（28 px） |
+|---|---|---|---|
+| 11 | EDA & preparation | Redundancy, skewness, and the preparation design they inform | Presented by `<Name:1>` · EDA by `<Name:2>` |
+| 17 | Experiments | Naive, minimal and systematic preparation: one model, same folds | Presented by `<Name:2>` · experiments by `<Name:3>` |
+| 22 | Results & robustness | Performance by population, ablation, hold-out, and answers to the research questions | Presented by `<Name:3>` |
+
+**反思页 “Most unexpected finding”**（07、13、19、25）。主标题相同；副标题以讲者名开头，写主题不写结果；结果写在正文一行里，与旁白同时出现。
+
+| 页 | 副标题 | 正文一行（数据来源） | 交接行 |
+|---|---|---|---|
+| 07 | `<Name:0>` on the pre-registered hypotheses and their verdicts | Of six pre-registered hypotheses, three were supported and three inconclusive.（`hypotheses.json`：prereg_n 6，supported 3，inconclusive 3） | Next: Data quality · presented by `<Name:1>` |
+| 13 | `<Name:1>` on one routine recode line | One routine recode line erased 29 HbA1c-positive results; the either-or label hid it.（`blanket_recode.json`：a1c_lost 29） | Next: Labels & bias · presented by `<Name:2>` |
+| 19 | `<Name:2>` on detection at one cut-off, by diagnosis status | At one shared cut-off, 70 of 100 diagnosed but 52 of 100 not-yet-diagnosed diabetics are flagged.（`tpr_100.json`；小字 “specificity 0.80 · rates per 100”） | Next: Experiments, continued · presented by `<Name:3>` |
+| 25 | `<Name:3>` on AUC change from leakage vs from preparation | Leakage moved AUC by 0.131; systematic preparation moved it by 0.008.（`leak_gate.json` diff_eall；`prep_band.json` d_auc） | Next: contributions, limits and conclusion |
+
+### 5.4 屏幕术语
+
+**标准术语照用，不在画面上解释：** AUC、HbA1c、Cohen's κ、VIF、skewness、confidence interval（方括号，图注写一次 “CI”，不写 95 %，因为 `prep_band.json` 没有记录置信水平）、data leakage、median imputation、Brier score、calibration、spectrum bias、Simpson's paradox、DAG、pp、L2 logistic regression。
+
+**内部代号 → 屏幕名称。**
+
+| 内部代号 | 屏幕名称（首次） | 之后 | 旁白 | 视觉 |
+|---|---|---|---|---|
+| M0 | Naive preparation (all columns) | Naive | “naive preparation” | 红色斜纹 |
+| M1 | Minimal preparation (post-diagnosis items excluded) | Minimal | “minimal” | 灰色实心 |
+| S | Systematic preparation | Systematic | “systematic” | 青色实心 |
+| 三者的对照 | 只在 12 的泳道标签下用 24 px 灰字注一次 “notebook: M0 · M1 · S”（裁定 3） | — | — | — |
+| E-ALL | All adults | All adults | “all adults” | 灰色实心圆 |
+| E-SCREEN / Screening group | Not-yet-diagnosed adults | Not-yet-diagnosed | “adults not yet diagnosed” | 蓝色空心方块 |
+| Trap 1 / 2 / 3 | RQ2a · Leakage / RQ1 · Labels / RQ2b · Preparation | 同左 | “the leakage question” 等 | 不用图标 |
+| Leak gate | Data leakage check | — | — | — |
+| availability rule / P03 | Post-diagnosis items excluded（treatment, diagnosis history, prior glucose testing） | post-diagnosis exclusion | “drop items that exist only after a diagnosis” | 墨色划线 |
+| P01–P14、B1–B6、arm | 6 个描述性分组：File and code repair · Post-diagnosis exclusion · Redundancy · Missingness and top-codes · Skewness, splines, scaling · Class and survey weights | — | “fourteen switchable steps” | 青色 |
+| P14（WHtR） | 24 px 脚注 “waist-to-height ratio: tested separately” | — | — | — |
+| S-B6a | Systematic without class weights | — | “removing only the class weights” | 青色虚线 |
+| care traces | Prior-care items (told high blood pressure / high cholesterol) | prior-care items | “items that mark earlier contact with a doctor” | — |
+| L_comb | Label: self-report **or** HbA1c ≥ 6.5 % | the label | “the either-or label” | — |
+| SESOI | equivalence margin ±0.01 (pre-registered) | margin | “our smallest effect of interest, fixed in advance” | 中性灰带 |
+| MDD | minimum detectable difference 0.011（24 px 脚注） | — | — | — |
+| prereg / locked (SHA-256) | Pre-registered hypotheses (locked by hash) | — | “locked before …” | — |
+| DUA | Data use agreement | — | “data use agreement” | — |
+| hold-out | Internal hold-out (scored once) | — | “an internal hold-out” | — |
+| post-audit | 不上屏、不进旁白 | — | — | — |
+| 成员代号 | 真名（第 3 节） | — | 真名 | 不用字母，不用徽章 |
+
+**代号对照的去处：** YouTube 说明里放一行 “Naive = M0, Minimal = M1, Systematic = S; all adults = E-ALL; not-yet-diagnosed adults = E-SCREEN”，并附章节时间表。
 
 ---
 
@@ -689,737 +461,826 @@ D 段（2:54）仍是最长的一段，因为它包含两个陷阱之外的结�
 
 ### 6.1 原则
 
-教学网页的规则搬到不可暂停的线性视频，需要改写：
-
-1. **一场景一主张**：先写一句 “viewer can point at ___”；无关数据不上屏，细节留给 notebook。
+1. **一页一主张**：先写一句 “viewer can point at ___”；无关数据不上屏，细节留给 notebook。
 2. **亮一个、暗其余**：焦点 100 %，其余 25 %，不用模糊；由旁白触发。
 3. **渐进构建**：3–6 步，每步对应一个旁白短语；末帧自足可读，兼作缩略帧。
 4. **数字随口播出现**：不早于念出它的那个词。
-5. **画出不确定性**：效应量都带晶须，并画在 ±0.01 SESOI 带旁。
+5. **画出不确定性**：效应量都带晶须，并画在 ±0.01 margin 带旁。
 6. **对照公平**：同轴、同基线，柱从 0 起；AUC 轴从 0.5 起时标 “axis starts at 0.5”。
-7. **按比例作图**：几何与数字都由脚本从 CSV/JSON 算出，不手摆、不手敲。
-8. **文字极少**：1 个标题（≤ 6 词）+ ≤ 3 个标注（各 ≤ 5 词）；旁白不逐字读屏。
-9. **先抛问题**：陷阱章用问句章卡开场。
-10. **一个视觉动词**：每场景在 reveal、compare、split、shrink 中只选一个。
+7. **按比例作图**：几何与数字都由脚本从 JSON 算出，不手摆、不手敲。
+8. **文字极少**：主标题 + 副标题 + ≤ 3 个标注（各 ≤ 5 词）；旁白不逐字读屏。
+9. **一个视觉动词**：每场景在 reveal、compare、split、shrink 中只选一个。
 
-### 6.2 视觉识别
+### 6.2 颜色角色
 
-**颜色按角色分配：结构、语义、反馈三类分开，每种颜色只有一个含义。** 依据 knowledge-teaching-system 第五部分的“编码一致”和“配色：先定角色，再定颜色”。
+结构、语义、反馈三类分开，每种颜色只有一个含义。
 
 | 角色 | 令牌 | 色值（白底对比度） | 唯一含义 | 非颜色编码 | 首次出现 |
 |---|---|---|---|---|---|
-| 结构 | `--structure` 靛蓝 | #3B2F8F（10.6:1） | **当前位置**：陷阱条的当前格、章卡左侧细线、当前讲者徽章、当前卡片的左侧细线。从不出现在数据图形内部 | 位置 + 细线 / 实心徽章 | 1 |
-| 语义 | `--leak` 红 | #B42318（6.6:1）；浅底 #FBE7E5 | **受损或泄漏的数据**：Naive (M0)、被误删的单元格、0.961、泄漏项 | 45° 斜纹 + 警示三角 | 8 |
-| 语义 | `--systematic` 青 | #0D7A63（5.3:1）；浅底 #E2F2EE | **只表示 Systematic (S)**：S 的柱、线、点，以及组成 S 的步骤卡 | 实心填充 | 12 |
-| 语义 | `--screen` 蓝 | #1D64B0（6.0:1）；浅底 #E3EEF8 | **Screening group（not yet diagnosed）**，包括 152 人 | 空心方块 | 17 |
-| 语义 | `--reference` 灰 | #5A6672（5.9:1） | **对照基线**：Minimal (M1) 与 All adults。一句话：“灰色是用来比较的基线” | 实心圆 | 3 |
-| 反馈 | 无色相，用 `--ink` | #15202B（16.5:1） | supported = 实心 ✓；inconclusive = 虚线框 + “?”；refuted = ✗ | 形状本身 | 4 |
-| 中性 | `--ink` / `--line` | #15202B / #DCE1E6 | 正文、轴、标题、署名标签、焦点描边、有意移除的划线 / 网格、SESOI 带的虚线边 | — | — |
+| 结构 | `--structure` 靛蓝 | #3B2F8F（10.6:1） | **当前位置**：只用于进度条当前段的填充线；从不进入图形 | 位置 + 细线 | 02 |
+| 语义 | `--leak` 红 | #B42318（6.6:1）；浅底 #FBE7E5 | **受损或泄漏的数据**：Naive、被误删的单元格、泄漏项 | 45° 斜纹 + 警示三角 | 08 |
+| 语义 | `--systematic` 青 | #0D7A63（5.3:1）；浅底 #E2F2EE | **只表示 Systematic preparation** 及组成它的步骤 | 实心填充 | 12 |
+| 语义 | `--screen` 蓝 | #1D64B0（6.0:1）；浅底 #E3EEF8 | **Not-yet-diagnosed adults**，包括 152 人 | 空心方块 | 16 |
+| 语义 | `--reference` 灰 | #5A6672（5.9:1） | **对照基线**：Minimal 与 All adults | 实心圆 | 03 |
+| 反馈 | 无色相，用 `--ink` | #15202B（16.5:1） | supported = 实心 ✓；inconclusive = 虚线框 + “?”；refuted = ✗ | 形状本身 | 04 |
+| 中性 | `--ink` / `--line` | #15202B / #DCE1E6 | 正文、轴、标题、署名、焦点描边、有意移除的划线、margin 带的虚线边、字幕 | — | — |
 
-- **不设第四种暖色语义色。** 标签相关的画面用尺子图标标记（场景 2、16、26 与陷阱条），不用颜色；不确定的结论用反馈形状（虚线框 + “?”）。SESOI 带是中性浅灰加虚线边。
-- **结构色与语义蓝拉开。** 结构靛蓝色相约 248°，语义蓝约 211°，相差约 37°；并且结构色只用于界面骨架（陷阱条、章卡、徽章、卡片细线），从不进入图形内部，所以两者不会出现在同一角色里。
-- **同一张图里，颜色只编码一个变量。** 比较方案时颜色按方案（M0 红 / M1 灰 / S 青），人群用形状（圆 = All adults，方 = Screening group）；比较人群时，灰圆对蓝方。notebook 原图里 E-ALL 蓝、E-SCREEN 橙的配色不沿用。
-- **不属于任何语义的对象用墨色。** 例如保险组（场景 6）、漏斗的上层（场景 3）、已确诊者（场景 20、23）、离群值（场景 10）：墨色描边或墨色实心，不借用语义色。
-- **讲者不用颜色编码**：A–D 一律用墨色字母徽章，只有当前讲者的徽章用结构色实心。
-- **面积有主次。** 饱和色只用于线、点、数字、小色块和描边；面积较大的形状用同色相的极浅底加同色描边。语义色只出现在白色纸面面板上（舞台色上青色对比度只有 4.9:1）。
+- **没有第四种暖色语义色。** 不确定的结论用反馈形状；margin 带是中性浅灰加虚线边。
+- **结构色与语义蓝拉开。** 靛蓝色相约 248°，语义蓝约 211°；结构色只在进度条上，两者不会出现在同一角色里。
+- **同一张图里，颜色只编码一个变量。** 比较方案时颜色按方案（naive 红 / minimal 灰 / systematic 青），人群用形状（圆 = All adults，方 = Not-yet-diagnosed）；比较人群时，灰圆对蓝方。notebook 原图的 E-ALL 蓝、E-SCREEN 橙不沿用。
+- **不属于任何语义的对象用墨色**：保险组（06）、漏斗上层（03）、已确诊者（19、22）、离群值（10）。
+- **讲者不用颜色编码**：名签、角色卡一律墨色。
+- **面积有主次。** 饱和色只用于线、点、数字、小色块和描边；大面积用同色相极浅底加同色描边。语义色只出现在白色纸面面板上。
 
-**图例时刻。** 每种语义色第一次出现时，图区一角出现 2–3 s 的图例条（墨色文字 + 色样 + 形状），随后用 0.4 s 收进底栏的常驻图例行；之后的场景只显示已经出现过的颜色。
+**字体**（本地打包或 Google Fonts，离线有备用栈）：标题 Source Serif 4（主标题 64 px，章节卡 80 px，片头 88 px，片尾 120 px）；正文 IBM Plex Sans（副标题与标注 34 px，下限 28 px），字幕 IBM Plex Sans Medium；数字 IBM Plex Mono tabular-nums（主数字 120–168 px，次级 48–64 px，区间 36 px）。只有底栏的图例行与 notebook 指引、24 px 脚注可用 24 px。
 
-| 颜色 | 首次出现 | 图例条文字 |
-|---|---|---|
-| 灰 | 场景 3（All adults 末条） | “● grey = reference: all adults, Minimal (M1)” |
-| 红 | 场景 8（被误删的单元格、1,496 柱） | “▨ red = harmed or leaked data” |
-| 青 | 场景 12（14 张步骤卡） | “■ teal = Systematic preparation (S)” |
-| 蓝 | 场景 17（152 人） | “□ blue = Screening group (not yet diagnosed)” |
+### 6.3 层次与装饰
 
-图例条不需要旁白；它在旁白停顿处出现，不与数字 callout 同时出现。
-
-**字体**（本地打包，不在线加载）：标题 Source Serif 4（72–88 px；片头与片尾标题 120 px）；正文 IBM Plex Sans（标注 34 px，下限 28 px）；数字 IBM Plex Mono tabular-nums（主数字 120–168 px，次级 48–64 px，区间 36 px）；来源标签与底栏图例行用 24 px，是仅有的两处 24 px。
-
-**网格与固定元素。**
-- 画布 1920×1080，外边距左右 96 px、上下 60 px；12 列网格。标题区 y 60–150，图区 y 168–960，底栏 y 984–1020。
-- **右栏**：x 1344–1824。顶部是摄像头 480×270（画面宽度的 1/4）；下面是 lower-third；底部是 A B C D 字母徽章，当前讲者为结构色实心，其余墨色空心，下面一行写各人的节次。
-- **陷阱条**：标题区右侧，三格 Leak（漏水的桶）/ Label（尺子）/ Little gain（天平），墨色线描；当前格加结构色底线。
-- **署名标签**：讲他人的工作时，标题区左侧出现 “work: C · §4” 一类的墨色小标签，整个场景常驻。
-- **数字 callout**：大号 mono 数字加一行 28 px 标签；区间用方括号，在数字之后 0.3 s 淡入。
-- **底栏**：左侧是来源标签（24 px mono，例如 `§7.5 · V3`）；中间是常驻图例行；两者都没有动画。
-- **lower-third**：每段开头显示 4 s：字母徽章 + 两行字（“Member B” / “Data quality & preparation · §3 §6 §9”）。
-
-### 6.3 讲者版式
-
-| 版式 | 构成 | 用途 | 时长限制 |
-|---|---|---|---|
-| **F** 全屏人像 | 摄像头满幅 + lower-third | 每段开头的自我介绍（8、15、21）；场景 28 的结论 | 每次 ≤ 15 s |
-| **R** 图区 + 右栏（默认） | 左侧 1248 px 图区（白纸面板）+ 右栏摄像头 480×270 | 全部数据讲解，约 75 % 的时间 | — |
-| **X** 满屏图 | 图区占满全宽；摄像头仍是 480×270，放在右下安全区，图在那个角留空 | 高光时刻：8（1,496 vs 57）、17（152）、18（换值） | 每次 ≤ 15 s |
-| **S** 分屏 | 左侧人像 960×1080（裁成 8:9）+ 右侧卡片 960×1080 | 钩子（1）；各段末尾的 “most unexpected”（7、14、20、27） | 每次 ≤ 15 s |
-| ~~G 四人画廊~~ | — | **删除** | — |
-
-**切换规则。**
-1. 每位成员只在自己的段落里出现；任何一帧只出现一位成员。
-2. 段内切换只换版式，不换人；段与段之间只有 3 个切点（A→B 在 2:30，B→C 在 5:03，C→D 在 7:47），每个切点由交接句 + M12 章卡（1.2 s）连接。
-3. 陷阱章用章卡（场景 16、18、21），其他章只换标题区文字，不占时间。章卡计入下一场景的时长，旁白在章卡之后开口。全片共 6 张章卡（2、8、15、16、18、21）。
-4. 每位成员开口后的前 12 s 用 F（A 为 S 钩子），再退到 R。
-5. 所有成员的人像用同一种构图：胸像，双眼在上三分线，浅色中性背景，同一侧主光，1080p30。人像画面上不加任何动画；摄像头窗口加 1 px #E3E7EC 细框。
-
-### 6.4 动效语汇
-
-只用下面 12 个动作。强调在对象原位完成（描边、变暗、变色、原位换值），不用飞入或弹跳。缓动：入场用 `cubic-bezier(.2,0,0,1)`；形变、换值和推近用 `cubic-bezier(.4,0,.2,1)`；数据驱动的连续量用线性。
-
-| # | 动作 | 作用 | 时长与细节 | 场景 |
-|---|---|---|---|---|
-| M1 | 轴绘入 | 交代对象 | 0.6 s；刻度错开 30 ms，刻度标签在轴线画完后 0.3 s 淡入 | 1、3、6、10、18、21、23、25 |
-| M2 | 柱从基线生长 | 状态出现 | 0.7 s；柱间错开 120 ms；数值标签随旁白出现 | 3、8、11、18 |
-| M3 | 聚焦：描边 + 暗其余 | 标示焦点 | 0.4 s；焦点加 2 px 墨色描边（偏移 4 px），其余降到 25 %；退出后恢复 | 全片 |
-| M4 | 晶须 + SESOI 带 | 不确定性 | 点 0.3 s → 晶须 0.5 s → 带 0.6 s；越带边的端点脉冲一次。**只在场景 21 以动画呈现**；其他场景的区间静态出现 | 21 |
-| M5 | 漏斗收窄 | 状态转变 | 每级 0.5 s，级间停 0.4 s；掉出部分为墨色幽灵条，淡出到 20 % | 3、9 |
-| M6 | 集合分裂或形变 | 状态转变 | 0.9 s；圆面积 ∝ n | 1、2、11、16、26、28 |
-| M7 | 划线 | 标示删除 | 0.25 s，标签 0.3 s；**红线 = 被误删的有效值（受损数据），墨线 = 有意移除的项**；每场景 ≤ 3 次 | 8、14（红）；18（墨） |
-| M8 | 原位换值 | 状态转变 | 0.8 s；柱长缓动、数字线性倒数、填充交叉淡变同时完成，位置不动 | 6、18 |
-| M9 | 推近 | 标示焦点 | 推 0.9 s，停 ≥ 2 s，拉回 0.6 s；**缩放上限 1.25；全片只用 2 次** | 8、17 |
-| M10 | 计数 | 连续量 | 0.8 s，线性起、末尾减速 | 1、4、16、20 |
-| M11 | 标注箭头 | 标示焦点 | 箭头 0.4 s，标签 0.3 s；每次 1 个箭头 | 10、15、19 |
-| M12 | 溶解 / 章卡 | 过渡 | 溶解 0.4 s；章卡 1.2 s，静止 | 章卡 2、8、15、16、18、21；溶解 2、10、26 |
-
-**禁止无意义的动画。**
-- 每个运动都必须对应上表里的一个作用，找不到作用就保持静止。
-- 同一时刻只动一个物体；两个动作之间停 ≥ 1.5 s，供观众读数。
-- 除场景 8、17 的两次推近外，焦点一律用 M3（描边 + 暗其余），不用缩放。
-- 禁止：飞入、弹跳、旋转、视差、粒子、闪烁、持续的背景动画、打字机效果、3D 翻转、印章砸下。
-- 动效总时长不超过场景时长的 40 %；场景切走前，末帧必须能独立读懂。
-
-### 6.5 层次与装饰
-
-**纵深靠分层，不靠增加颜色。** 由远到近四层，相邻两层的差异细微而可感：
+**纵深靠分层，不靠增加颜色。**
 
 | 层 | 做法 | 数值 |
 |---|---|---|
 | 1 舞台 | 近白、略偏冷的底色 | #F6F7F9 |
-| 2 纸面面板 | 承载图形的白色面板，柔和阴影托起 | #FFFFFF；1 px 边 #E3E7EC；圆角 8 px；阴影 0 2px 16px rgba(21,32,43,0.06)（模糊 16 px，不透明度 6 %） |
+| 2 纸面面板 | 承载图形的白色面板 | #FFFFFF；1 px 边 #E3E7EC；圆角 8 px；阴影 0 2px 16px rgba(21,32,43,0.06) |
 | 3 内容 | 图形、数字、标注 | 语义色只出现在这一层 |
-| 4 焦点 | 描边或使其余变暗 | 2 px 墨色 #15202B 描边，偏移 4 px；其余降到 25 % |
+| 4 焦点 | 描边或使其余变暗 | 2 px 墨色描边，偏移 4 px；其余降到 25 % |
 
-**唯一的装饰母题：问卷 / 编码表网格。** 它取自项目本身（NHANES 的问卷与 codebook 表格）：
-- 极淡的直线网格，1 px 墨色，行高 24 px、列宽不等，像编码表；不透明度 ≤ 4 %。
-- 只出现在标题区和画面四边的外边距内，向内容方向线性渐隐到 0；从不压在面板、文字、数字或人像下面；完全静止。
-- 信息密集的场景（3、11、12、13、22）去掉网格，只留舞台色。
+**唯一的装饰母题：问卷 / 编码表网格。** 极淡的直线网格（1 px 墨色，行高 24 px，不透明度 ≤ 4 %），只出现在画面四边的外边距内，向内渐隐到 0；不压在面板、文字、数字、字幕或小窗下面；完全静止。信息密集的场景（03、11、12、21）去掉网格。片头卡与片尾卡四周用同一母题。没有方格纸纹、成员色、色块转场或深色背景。
 
-**章卡。** 舞台色底；左侧一条 4 px × 120 px 的结构色竖线；右边是 80 px 标题和一行 28 px mono 编号，像问卷题号，例如 “Trap 2 · §5”、“03 · Data clues · §3”；旁边是讲者徽章。没有其他装饰。
+### 6.4 动效语汇
 
-**片头标题卡与片尾卡。** 与内页同一舞台色；更大的标题（120 px）、更舒展的留白；四周是同一个淡网格母题（向内渐隐）；一行 mono 小字（组号）。静止；没有色块、渐变或深色背景。
+只用下面 12 个动作。强调在对象原位完成，不用飞入或弹跳。缓动：入场 `cubic-bezier(.2,0,0,1)`；形变、换值和推近 `cubic-bezier(.4,0,.2,1)`；数据驱动的连续量用线性。
 
-**删除的装饰。** 原方案的方格纸背景纹、成员专属色、色块转场一律删除；全片没有其他纹理。
+| # | 动作 | 作用 | 时长与细节 | 场景 |
+|---|---|---|---|---|
+| M1 | 轴绘入 | 交代对象 | 0.6 s；刻度错开 30 ms，刻度标签在轴线画完后 0.3 s 淡入 | 01、03、06、10、17、20、22、23 |
+| M2 | 柱从基线生长 | 状态出现 | 0.7 s；柱间错开 120 ms；数值标签随旁白出现 | 03、08、11、17、25 |
+| M3 | 聚焦：描边 + 暗其余 | 标示焦点 | 0.4 s；2 px 墨色描边（偏移 4 px），其余降到 25 % | 全片 |
+| M4 | 晶须 + margin 带 | 不确定性 | 点 0.3 s → 晶须 0.5 s → 带 0.6 s；越带边的端点脉冲一次。**只在 20 以动画呈现**；其他区间静态出现 | 20 |
+| M5 | 漏斗收窄 | 状态转变 | 每级 0.5 s，级间停 0.4 s；掉出部分为墨色幽灵条，淡出到 20 % | 03、09 |
+| M6 | 集合分裂或形变 | 状态转变 | 0.9 s；圆面积 ∝ n | 02（路线收缩成进度条）、11、15、26（路线回中） |
+| M7 | 划线 | 标示删除 | 0.25 s，标签 0.3 s；**红线 = 被误删的有效值，墨线 = 有意移除的项**；每场景 ≤ 3 次 | 08、13（红）；17（墨） |
+| M8 | 原位换值 | 状态转变 | 0.8 s；柱长缓动、数字线性倒数、填充交叉淡变同时完成，位置不动 | 06、17 |
+| M9 | 推近 | 标示焦点 | 推 0.9 s，停 ≥ 2 s，拉回 0.6 s；**缩放 ≤ 1.25，全片只用 2 次**；推近后的包围盒不得进入避让区或字幕区 | 08、16 |
+| M10 | 计数 | 连续量 | 0.8 s，线性起、末尾减速 | 01、04、15、19 |
+| M11 | 标注箭头 | 标示焦点 | 箭头 0.4 s，标签 0.3 s；每次 1 个箭头 | 10、14、18 |
+| M12 | 溶解 / 卡片 | 过渡 | 溶解 0.4 s；章节卡与段首页静默 1.2 s | 段首页 08、14、20；章节卡 11、17、22；溶解 01、02、24、26 |
 
-### 6.6 命名表
+**克制规则。**
+- 每个运动都必须对应上表的一个作用，找不到作用就保持静止。
+- 同一时刻只动一个物体；两个动作之间停 ≥ 1.5 s，供观众读数。
+- 除 08、16 的两次推近外，焦点一律用 M3，不用缩放。
+- 禁止：飞入、弹跳、旋转、视差、粒子、闪烁、持续的背景动画、打字机效果、3D 翻转、印章砸下。
+- 动效总时长不超过场景时长的 40 %；场景切走前，末帧必须能独立读懂。
+- 小窗、名签、字幕从不加动画。
 
-屏幕标签、字幕和旁白一律按下表命名。
-
-| 对象 | 统一名称 | 视觉 |
-|---|---|---|
-| 筛查组 | 首次出现写全 “Screening group (not yet diagnosed)”，之后写 “Screening group”；旁白说 “the screening group” | 蓝色空心方块；“E-SCREEN” 只作小号 mono 下标 |
-| 全体成人 | “All adults”，下标 E-ALL；旁白说 “all adults” | 灰色实心圆 |
-| M0 | “Naive (M0)” | 红色斜纹 |
-| M1 | “Minimal (M1)” | 灰色实心 |
-| S | “Systematic (S)” | 青色实心 |
-| 三个陷阱 | “Leak”、“Label”、“Little gain” | 漏水的桶、尺子、天平图标 |
-
-本次按命名表修改的地方：场景 3（“All adults”）、13（三个版本的叫法）、17（两个人群）、18（柱标签与次级数字）、20（右块）、21–24（轴标、点标签、旁白中的 M1 / S 与人群）、28（局限标签与旁白）。
-
-### 6.7 可读性与无障碍
+### 6.5 可读性与无障碍
 
 | 项 | 规则 |
 |---|---|
-| 字号 | 内容文字 ≥ 28 px；主数字 ≥ 96 px；只有来源标签和底栏图例行可以用 24 px |
+| 字号 | 内容文字 ≥ 28 px；主数字 ≥ 96 px；字幕为 ASS 字号 46；只有底栏和脚注可用 24 px |
 | 对比度 | 正文 ≥ 4.5:1，大字 ≥ 3:1；ink 16.5、structure 10.6、red 6.6、blue 6.0、grey 5.9、teal 5.3（白纸面板上） |
-| 不只靠颜色 | 红 = 斜纹 + 三角；青 = 实心填充 + “(S)” 标签；蓝 = 空心方块；灰 = 实心圆；结构色 = 位置与细线；反馈 = ✓ / 虚线框 + “?” / ✗；关键区分都有文字标签 |
-| 色觉差异 | 红与青在红绿色弱下难分，所以红色永远带斜纹，青色永远不带；结构靛蓝与语义蓝靠角色分开（结构色不进图形） |
-| 字幕 | 上传 SRT（字幕稿 = 脚本原文，每行 ≤ 42 字符、≤ 2 行），不烧录进画面 |
+| 不只靠颜色 | 红 = 斜纹 + 三角；青 = 实心填充 + 文字标签；蓝 = 空心方块；灰 = 实心圆；结构色 = 位置与细线；反馈 = ✓ / 虚线框 + “?” / ✗ |
+| 色觉差异 | 红永远带斜纹，青永远不带；结构靛蓝不进图形 |
+| 字幕 | 烧录开放字幕 + YouTube `.srt`（第 8 节） |
 | 动效敏感 | 不闪烁；每个动画 ≤ 1 s；推近只有 2 次，缩放 ≤ 1.25 |
 | 音频 | 人声 −16 LUFS；不加背景音乐，若加则 ≤ −30 LUFS 且在人声时压低 |
 
-### 6.8 整体自检
+### 6.6 整体自检
 
-每个场景渲染出末帧后，以及粗剪看完一遍后，回答下面四个问题；有一个答“否”，就回到 6.2–6.5 修改。
+每个场景渲染出末帧后，以及每段成片看完一遍后回答；有一个答“否”就回到 6.2–6.4 修改。
 
-1. **每种颜色的含义能否用一句话说清？** 靛蓝 = 当前位置；红 = 受损或泄漏的数据；青 = Systematic (S)；蓝 = Screening group；灰 = 对照基线；反馈只用墨色形状。
-2. **饱和色是否少而集中，没有大色块？** 饱和色只在线、点、数字、描边和小色块上；大面积只用极浅底；舞台和面板以白与近白为主。
-3. **去掉装饰后，内容是否依然完整、清楚？** 关掉网格母题与阴影后，每个场景的末帧仍能独立读懂；加上后只是更有层次，没有更杂乱。
-4. **整体看起来像一次数据审计、一套调查数据集吗？** 编码表网格、mono 数字、题号式章卡、来源标签，应让人联想到问卷与 codebook，而不是营销海报。
-
----
-
-## 7 签名视觉清单
-
-| # | 视觉 | 场景 | 讲者 | 上屏 | 数据来源 |
-|---|---|---|---|---|---|
-| 1 | Three traps | 2（构建）、3–25（陷阱条）、26（回答） | A、D | 0:12 + 常驻 + 0:20 | notebook §1、§10；26 中的数字来自 V2、V3、V7 |
-| 2 | Cohort funnel | 3 | A | 0:18 | V1；S1:funnel.*（待补登） |
-| 3 | The struck 7.0 | 8–9（回调 14） | B | 0:40 + 0:10 | V2；S3:blanket_recode.questionnaire_only_cells（待补登）；`figures/S3_blanket_recode_damage.png` |
-| 4 | Leak gate | 18（回调 27） | C、D | 0:25 + 0:07 | V3；`figures/S7_leak_gate.png` |
-| 5 | Tree and the 50 | 19 | C | 0:22 | V3；`figures/S7_tree_m0.png` |
-| 6 | Label split | 16–17 | C | 0:35 | V1、V2、V6；S5:masking.below_6_5_on_med（待补登）；`figures/S5_label_strata.png` |
-| 7 | Who is undiagnosed | 17 | C | 0:12 | V6；`results/S5/undiagnosed_risk_differences.csv` |
-| 8 | All adults vs Screening group | 23 | D | 0:20 | V7、V1；`figures/S10_recognition_vs_screening.png` |
-| 9 | Preparation against the band | 21（回调 26、27） | D | 0:20 | V7；`figures/S10_scoreboard_forest.png` |
-| 10 | Care traces flip | 24 | D | 0:24 | V7；S7:headline.minus_care_escreen.lo/hi（待补登） |
-| 11 | 100 diabetics | 20 | C | 0:12 | V6；S8:spec（待补登）；`figures/S8_group_tpr.png` |
-| 12 | Role cards & chain | 1（构建）、28（回顾 + 片尾） | A、D | 0:20 + 0:12 | `docs/team_roles.md`；无新数字 |
-
-**构建步骤**（细节见对应场景）。
-1. **Three traps**：三张墨色线描卡（桶 / 尺子 / 天平）原位出现 → 收成陷阱条，当前格用结构色标出 → 场景 26 回到中央，溶解成答案；不填语义色，结论用反馈形状（Leak ✓、Label ✓、Little gain 虚线框 + “?”）。
-2. **Cohort funnel**：墨色描边顶条 → 四级收窄 + 墨色幽灵条 → 末条填灰并标 “All adults”（灰色图例时刻）。
-3. **The struck 7.0**：示例表（“illustrative”）→ 57（墨色描边）vs 1,496（红斜纹）按比例两柱（红色图例时刻）→ M7 红线划掉 3 个有效值 → M9 推近 7.0（1.25）→（场景 9）721 中 29 掉出、6 个保持红色 →（场景 14）一个被红线划掉的 “7.0 · diabetic” 标签。
-4. **Leak gate**：轴从 0.5 起 → “Naive (M0)” 0.961 红斜纹柱 → 三个泄漏项被墨线依次划掉 → M8 原位换值：柱缩短、数字倒数到 0.828、填充从红斜纹过渡为灰实心（“Minimal (M1)”）→ 静态差值区间 → 墨色 ✓ “correct deterioration”。
-5. **Tree and the 50**：树自上而下（根节点是治疗项，红斜纹）→ 86 % 被填成 50 的红斜纹高柱 → 箭头指向分裂节点。
-6. **Label split**：κ 仪表盘 → 两个墨色描边圆，面积 ∝ n（半径比 0.938），尺子图标 → 250 加墨色描边 → 其中 165 为墨色实心 → 152 蓝色空心方块并推近（1.25，蓝色图例时刻）。
-7. **Who is undiagnosed**：0 线 → +23.2 → 晶须 6.2–40.1 静态画出，标 “association · n = 49 · exploratory”。
-8. **All adults vs Screening group**：哑铃图 0.836（灰圆）/ 0.781（蓝方）+ 0.055 → 84 % 已确诊（墨色描边）与 Screening group（蓝）的堆叠条。
-9. **Preparation against the band**：轴 ±0.04 → 中性灰带 ±0.01（虚线边）→ 青色点 +0.008 → 晶须越过带边，端点脉冲一次（全片唯一）→ MDD 0.011 → 墨色虚线框 + “?”。
-10. **Care traces flip**：同一根轴 → 灰圆 −0.016 → 停 1.5 s → 蓝方 +0.019 [0.004, 0.034]（静态）→ 对折线 → 虚线框 + “?”。
-11. **100 diabetics**：左块已确诊（墨色圆点）70 / 100，右块 Screening group（蓝色空心方块）52 / 100，差额 18 个位置加墨色描边；必须标 “one shared cut-off · specificity 0.80 · rates per 100”。
-12. **Role cards & chain**：无人像；场景 1 四张墨色描边卡依次出现并收成徽章（当前讲者为结构色）；场景 28 卡片回来，每张加一行成果，当前卡加结构色左侧细线，画出 C finds → B implements → D evaluates → C interprets，A 外框；随后是局限、GenAI 与片尾卡。
-
-次级图示（刻度尺、DUA 网格、DB516 表、年龄标准化、IQR 围栏、VIF 与偏度、步骤卡、泳道、Simpson 矩阵、校准与 Brier、留出集时间轴）套用同一套动作与颜色角色，数据来源写在各场景中。
+1. 每种颜色的含义能否用一句话说清？靛蓝 = 当前位置；红 = 受损或泄漏的数据；青 = Systematic；蓝 = Not-yet-diagnosed adults；灰 = 对照基线；反馈只用墨色形状。
+2. 饱和色是否少而集中，没有大色块？
+3. 去掉网格母题与阴影后，末帧是否依然完整、清楚？
+4. 整体看起来像一次数据审计、一份项目汇报，而不是营销海报？
+5. 字幕是否从不压到图形、小窗、名签或图例行？
 
 ---
 
-## 8 制作管线
+## 7 场景总表
 
-### 8.1 工具选择
+### 7.1 时间轴
 
-**采用 HTML/SVG 场景 → Playwright 逐帧截图 → ffmpeg。** 它直接复用项目页的令牌和字体，动画是时间 t 的纯函数（逐帧确定、可重复），并可直接读 CSV/JSON。其他工具的分工：OBS 录人像（也是回退方案的现场合成工具）；DaVinci Resolve 免费版做收尾；matplotlib 只作应急静帧。Manim 安装重、风格脱节，CapCut 可能带水印，都不用。
+列说明：**讲者**用名字记号；**mm:ss** 为场景起止（由 `timeline.json` 的时长求和得到）；**部分**为进度条当前段；**关键数字**为上屏的主要数字（口述 ≤ 3）。文件均在 `video/scenes/`，扩展名 `.html`。
 
-环境：本机有 ffmpeg 与 Node 24；渲染用 `playwright-core`（只装在 `video/render/`），驱动系统已安装的 Chrome，不下载浏览器。实现见 `video/`，用法见 8.5 节。
+| 场景 | 文件 | 讲者 | mm:ss | 部分 | 主标题 | 副标题 | 页面类型 | 关键数字 |
+|---|---|---|---|---|---|---|---|---|
+| 01 | `s01_hook_team` | `<Name:0>` | 0:00–0:29 | Problem & data | a Who gets labelled diabetic?<br>b How good is AUC 0.961?<br>c Team and roles | a Basic models as instruments on NHANES 2021–2023<br>b One logistic regression on all available columns, all adults<br>c Four members, their roles, and the sections each presents | 片头卡 → 证据页 → 团队页 | 0.961（墨色指针，轴 0.5–1.0） |
+| 02 | `s02_agenda` | `<Name:0>` | 0:29–0:55 | Problem & data | Overview and agenda | Question, data, design, research questions and the sections of this talk | 议程页 | 5,730；3×2 设计矩阵；RQ1 / RQ2a / RQ2b |
+| 03 | `s03_cohort_funnel` | `<Name:0>` | 0:55–1:14 | Problem & data | Cohort and label definition | NHANES 2021–23 (CDC): from participants to the analysis cohort | 证据页 | 11,933 → 5,730；HbA1c ≥ 6.5 %；14.0 % |
+| 04 | `s04_dua_minimisation` | `<Name:0>` | 1:14–1:32 | Problem & data | Data governance | Data use agreement, column minimisation, hash-verified files and locked hypotheses | 证据页 | 78 of 175 columns |
+| 05 | `s05_nchs_replication` | `<Name:0>` | 1:32–1:44 | Problem & data | Replication of official estimates | Our weighted prevalence beside NCHS Data Brief 516 | 证据页 | 15.79 % vs 15.8 %；27 estimates；脚注 max gap 0.044 pp |
+| 06 | `s06_age_confounding` | `<Name:0>` | 1:44–2:03 | Problem & data | Confounding check: insurance gap | Diabetes prevalence, insured vs uninsured, crude and age-standardised | 证据页；署名 Analysis by `<Name:2>` | +5.3 pp → +0.7 pp；脚注区间 [1.8, 8.8]、[−2.6, 3.9] |
+| 07 | `s07_reflection_hypotheses` | `<Name:0>` | 2:03–2:16 | Problem & data | Most unexpected finding | `<Name:0>` on the pre-registered hypotheses and their verdicts | 反思页 | 3 of 6 supported（3 ✓、3 虚线框 ?） |
+| 08 | `s08_missing_codes` | `<Name:1>` | 2:16–2:44 | Data quality | a Data quality<br>b Missing-value codes | a Profiling, missing-value codes and outliers<br>b One global recode of NHANES codes, applied to every column | 段首页 → 证据页 | 57 vs 1,496；被划掉的 7.0 |
+| 09 | `s09_erased_positives` | `<Name:1>` | 2:44–3:02 | Data quality | Effect on diabetes labels | HbA1c-positive cases hit by the global recode, and label flips | 证据页；“Non-obvious finding” 标签 | 29 of 721；6 flipped |
+| 10 | `s10_outliers_kept` | `<Name:1>` | 3:02–3:19 | Data quality | Outlier handling | HbA1c values beyond the 1.5 × IQR fences, by diabetes status | 证据页 | 542 flagged；519 high；upper fence 6.8 % |
+| 11 | `s11_redundancy_skew` | `<Name:1>` | 3:19–3:44 | EDA & preparation | Redundancy and skewness | VIF for weight and BMI; skewness of fasting triglycerides | 章节卡 → 证据页；署名 EDA by `<Name:2>` | VIF 95.7 / 97.6（参考线 10）；skewness 6.62 |
+| 12 | `s12_preparation_design` | `<Name:1>` | 3:44–4:17 | EDA & preparation | Preparation design | Fourteen evidence-based steps combined into naive, minimal and systematic pipelines | 证据页 | 14 steps，6 个分组；“notebook: M0 · M1 · S” |
+| 13 | `s13_reflection_recode` | `<Name:1>` | 4:17–4:30 | EDA & preparation | Most unexpected finding | `<Name:1>` on one routine recode line | 反思页 | 29 erased |
+| 14 | `s14_simpson_dag` | `<Name:2>` | 4:30–4:53 | Labels & bias | a Labels & bias<br>b Simpson's paradox scan | a Analytical fallacies, label agreement and undiagnosed diabetes<br>b 224 subgroup comparisons checked for sign reversal; a causal DAG | 段首页 → 证据页 | 6 of 224 |
+| 15 | `s15_label_agreement` | `<Name:2>` | 4:53–5:20 | Labels & bias | Label agreement: self-report vs HbA1c | Cohen's κ, and self-reported diabetics below the HbA1c threshold | 证据页 | κ 0.70；250 of 819；165 of 250 |
+| 16 | `s16_undiagnosed` | `<Name:2>` | 5:20–5:49 | Labels & bias | Undiagnosed diabetes | High HbA1c without diagnosis: insurance gap, and a second evaluation population | 证据页 | 152；+23.2 pp [6.2, 40.1]；脚注 n = 49 |
+| 17 | `s17_leak_gate` | `<Name:2>` | 5:49–6:16 | Experiments | Data leakage check | Naive vs minimal preparation: same model, post-diagnosis items excluded | 章节卡 → 证据页；署名 Experiment by `<Name:3>` | 0.961 → 0.828；−0.131 [−0.148, −0.114] paired |
+| 18 | `s18_tree_and_50` | `<Name:2>` | 6:16–6:38 | Experiments | What the naive model learns | A depth-3 decision tree, and median imputation of age at diagnosis | 证据页；署名 Experiment by `<Name:3>` | 86 % never asked；imputed 50 |
+| 19 | `s19_reflection_detection` | `<Name:2>` | 6:38–6:51 | Experiments | Most unexpected finding | `<Name:2>` on detection at one cut-off, by diagnosis status | 反思页 | 70 vs 52 per 100；specificity 0.80 |
+| 20 | `s20_prep_band` | `<Name:3>` | 6:51–7:19 | Experiments | a Experiments, results and reflection<br>b Minimal vs systematic preparation | a Minimal vs systematic preparation, then results, robustness and reflection<br>b Paired AUC difference and its CI, against a pre-registered equivalence margin | 段首页 → 证据页；署名 Preparation steps by `<Name:1>` | +0.008 [0.000, 0.016]；±0.01；脚注 MDD 0.011 |
+| 21 | `s21_brier` | `<Name:3>` | 7:19–7:42 | Experiments | Calibration and Brier score | Systematic vs minimal preparation, with and without class weights | 证据页；署名 Class-weight step by `<Name:1>` | Brier +0.074；41 % vs 17 %；AUC +0.007 |
+| 22 | `s22_recognition` | `<Name:3>` | 7:42–7:59 | Results & robustness | AUC by evaluation population | Systematic preparation on all adults and on not-yet-diagnosed adults | 章节卡 → 证据页；署名 Population defined by `<Name:2>` | 0.836 vs 0.781；84 % already diagnosed |
+| 23 | `s23_care_flip` | `<Name:3>` | 7:59–8:23 | Results & robustness | Ablation: prior-care items | AUC change after removing two 'told by a doctor' items, per population | 证据页 | −0.016；+0.019 [0.004, 0.034] |
+| 24 | `s24_robustness_answers` | `<Name:3>` | 8:23–8:48 | Results & robustness | Robustness and answers | Internal hold-out check, then answers to the three research questions | 证据页 → 议程页（回答版）；署名 Robustness checks led by `<Name:1>` | 1,146 adults；RQ1 / RQ2a ✓ / RQ2b ? |
+| 25 | `s25_reflection_leak_vs_prep` | `<Name:3>` | 8:48–8:55 | Reflection | Most unexpected finding | `<Name:3>` on AUC change from leakage vs from preparation | 反思页 | 0.131 vs 0.008 |
+| 26 | `s26_close` | `<Name:3>` | 8:55–9:26 | Reflection | a Contributions and reflection<br>b Limits and use of AI<br>c Conclusion<br>d Who gets labelled diabetic? | a Who led which part, and how the parts connect<br>b What this study cannot show, and how generative AI was used<br>c The one message we take from this audit<br>d Basic models as instruments on NHANES 2021–2023 | 收尾页 → 片尾卡 | 152 positives among not-yet-diagnosed adults |
 
-### 8.2 规格
+### 7.2 场景要点
+
+| 场景 | 画面要点（数据文件） |
+|---|---|
+| 01 | 时间段见 5.3 节；AUC 轴与 0.961 指针用墨色（红色留到 17）（`leak_gate.json`） |
+| 02 | 见 7.4 节（无数据文件；5,730 来自 `funnel.json`） |
+| 03 | 墨色描边顶条 11,933 → 逐级收窄，中间三级只写文字标签 → 末条灰色实心 “All adults” 5,730（灰色图例时刻）→ “Positive = self-report **or** HbA1c ≥ 6.5 %” → 14.0 % weighted（`funnel.json`） |
+| 04 | DUA 清单项加实心 ✓；175 个小方块中 97 个暗到 25 %，计数 175 → 78；“hash-verified” / “locked before any results”（`minimisation.json`） |
+| 05 | 只留 Total 行 15.79 % vs 15.8 %；“27 estimates”；“max gap 0.044 pp” 为脚注；表宽 ≤ 1272（`db516.json`） |
+| 06 | 墨色柱 +5.3 pp → M8 原位换成 +0.7 pp；“interval includes 0”，区间值入 24 px 脚注；小 DAG Age → Insurance / Diabetes；只用墨色（`age_std.json`） |
+| 07 | 6 个方块：3 个实心 ✓、3 个虚线框 ?；正文一行与交接行（`hypotheses.json`） |
+| 08 | 段首页 → 示例小表（标 “illustrative”）与规则 “Rule: 7, 9, 77, 99 → missing, every column” → 57（墨色实心柱）vs 1,496（红斜纹柱）同刻度同左端 → M7 红线划掉 3 个有效值 → M9 推近 7.0（红色图例时刻）（`blanket_recode.json`） |
+| 09 | HbA1c 条带图与 6.5 % 阈值线；721 横条中 29 个掉出（M5），其中 6 个保持红斜纹 “flipped to negative”；墨色标签 “Non-obvious finding”（`blanket_recode.json`） |
+| 10 | 直方图与 1.5 × IQR 围栏；标注 “upper fence 6.8 % > 6.5 % threshold”；Flag → Review → Keep 三格在主区中下部、字幕区以上（`iqr_fence.json`、`hist_geometry.json`） |
+| 11 | 章节卡 → VIF 柱（参考线 10）与甘油三酯直方图左右排在主区；变换后只写小字 “≈ 0 after”（`vif_skew.json`、`hist_geometry.json`） |
+| 12 | 6 个描述性分组 → 三条泳道 → “same L2 logistic regression · same folds”；“no step reads the label”；泳道标签下 24 px “notebook: M0 · M1 · S”；WHtR 脚注（青色图例时刻）（`arms.json`） |
+| 13 | “7.0 · diabetic” 红线划掉；正文一行与交接行（`blanket_recode.json`） |
+| 14 | 段首页 → 224 格细条，6 格描边 → DAG Race → BMI → Diabetes，标 “mediator”、“exploratory”（`simpson.json`、`hist_geometry.json`） |
+| 15 | κ 0.70 → 两个墨色描边圆（面积 ∝ n）→ 250 加描边 → “165 of 250 on insulin or pills” 小号标签；Venn 与图例分三栏放主区（`label_split.json`） |
+| 16 | 152 蓝色空心方块并推近（蓝色图例时刻）→ +23.2 pp 与静态晶须 6.2–40.1，“association · exploratory”，脚注 “uninsured n = 49” → 两条人群轨道只写文字（`label_split.json`、`undiagnosed.json`） |
+| 17 | 章节卡 → “Naive” 0.961 红斜纹柱 → 三类泄漏项被墨线划掉 → M8 换成 0.828（灰实心 “Minimal”）→ 静态差值区间 “paired” → “✓ correct deterioration”；不显示 −0.072（`leak_gate.json`） |
+| 18 | 树放在主区右部（x 560–1272）；根节点是治疗项（红斜纹）；“no” 分支上的 age 节点；86 % 被填成 50 的红斜纹柱；叶子淡到 25 %（`tree.json`） |
+| 19 | 左块已确诊 70 / 100（墨色圆点），右块未确诊 52 / 100（蓝色空心方块），差额 18 个位置加描边；“one shared cut-off · specificity 0.80 · rates per 100”（`tpr_100.json`） |
+| 20 | 段首页 → 轴 ±0.04 → 中性灰带 ±0.01 → 青色点 +0.008 → 晶须越带边，端点脉冲一次（全片唯一）→ 虚线框 + “?”；脚注 MDD 0.011（`prep_band.json`） |
+| 21 | Brier +0.074 横条与 ✗；“mean predicted risk 41 % vs observed 17 %”；无类别权重时 AUC +0.007（小号）；不显示 +0.076（`brier.json`） |
+| 22 | 章节卡 → 哑铃图 0.836（灰圆）/ 0.781（蓝方）→ 堆叠条 84 % already diagnosed；图内标注 “spectrum bias”；不显示 +0.055（`recognition.json`） |
+| 23 | 同一根差值轴 → 灰圆 −0.016 → 停顿 → 蓝方 +0.019 [0.004, 0.034]（静态）→ “? inconclusive · lower end inside ±0.01”；+0.019 及标签在副区或 x ≤ 1272（`care_flip.json`） |
+| 24 | 见 7.4 节（`holdout.json`、`leak_gate.json`、`prep_band.json`、`label_split.json`、`brier.json`） |
+| 25 | 同轴两柱：0.131（红斜纹）vs 0.008（青）；正文一行（`leak_gate.json`、`prep_band.json`） |
+| 26 | 见 7.4 节（`funnel.json`、`recognition.json`） |
+
+### 7.3 节奏与时长（裁定 5）
+
+**计算方法。** 场景语速 = 旁白词数 ÷（场景时长 − 静默卡时长）。静默卡：01 的片头卡 1.5 s；08、11、14、17、20、22 的段首页或章节卡 1.2 s；26 的片尾卡 1.5 s。停顿算在讲话时间里。目标 125–140 wpm。
+
+**调整规则。**
+- 旧时长下语速在 125–140 之间的场景不动。
+- 低于 125 的场景缩短时长，到 125–134 之间；不加填充句。最慢的是 21（118 wpm，正在约 118 的下限上），其余 14 个在 120–124 之间，也一并收紧到目标内。
+- 场景 25 只有 14 个词，7 s 为 120 wpm，6 s 为 140 wpm 且净语速达 168 wpm。保留 7 s：反思页需要读完正文一行，且 120 仍高于 118 的下限。
+- 停顿只放在关键数字或揭示之后，每次 0.8–1.5 s，写在旁白里（`{pause 1.0}`）；除段首页、章节卡和片头片尾卡外，不留超过约 1.5 s 的空白。
+- 扣除停顿后的净语速为 130–145 wpm。讲者实际语速不同时，以录像为准重新定时（8.3 节），不改字。
+
+| 场景 | 词数 | 旧时长 | 旧语速 | 新时长 | 新语速 | 停顿（s） | 变化 |
+|---|---|---|---|---|---|---|---|
+| 01 | 59 | 30 | 124 | 29 | 129 | 1.0 | −1 |
+| 02 | 56 | 28 | 120 | 26 | 129 | 0.8 | −2 |
+| 03 | 41 | 20 | 123 | 19 | 129 | 1.0 | −1 |
+| 04 | 38 | 18 | 127 | 18 | 127 | 0.8 | — |
+| 05 | 26 | 13 | 120 | 12 | 130 | 1.0 | −1 |
+| 06 | 40 | 20 | 120 | 19 | 126 | 1.2 | −1 |
+| 07 | 28 | 13 | 129 | 13 | 129 | 1.0 | — |
+| 08 | 56 | 28 | 125 | 28 | 125 | 1.2 | — |
+| 09 | 39 | 19 | 123 | 18 | 130 | 1.0 | −1 |
+| 10 | 38 | 17 | 134 | 17 | 134 | 0.8 | — |
+| 11 | 50 | 25 | 126 | 25 | 126 | 0.8 + 0.8 | — |
+| 12 | 70 | 33 | 127 | 33 | 127 | 0.8 + 0.8 | — |
+| 13 | 28 | 13 | 129 | 13 | 129 | 1.0 | — |
+| 14 | 47 | 24 | 124 | 23 | 129 | 1.0 | −1 |
+| 15 | 57 | 28 | 122 | 27 | 127 | 1.0 + 0.8 | −1 |
+| 16 | 62 | 30 | 124 | 29 | 128 | 1.0 + 1.0 | −1 |
+| 17 | 55 | 28 | 123 | 27 | 128 | 1.5 | −1 |
+| 18 | 46 | 23 | 120 | 22 | 125 | 1.0 | −1 |
+| 19 | 29 | 14 | 124 | 13 | 134 | 1.0 | −1 |
+| 20 | 57 | 29 | 123 | 28 | 128 | 1.2 | −1 |
+| 21 | 49 | 25 | 118 | 23 | 128 | 1.0 | −2 |
+| 22 | 35 | 18 | 125 | 17 | 133 | 1.2 | −1 |
+| 23 | 50 | 24 | 125 | 24 | 125 | 1.0 | — |
+| 24 | 54 | 25 | 130 | 25 | 130 | 0.8 × 3 | — |
+| 25 | 14 | 7 | 120 | 7 | 120 | 1.0 | — |
+| 26 | 65 | 31 | 132 | 31 | 132 | 1.0 | — |
+| 合计 | 1,189 | 583 | 123 | **566** | **128** | — | 15 个场景缩短，共 −17 s |
+
+“旧语速”按同一方法重算（改版方案把片头卡和片尾卡算进了讲话时间，所以 01、26 的数字与之不同）。
+
+**各成员时间。**
+
+| 讲者 | 改版方案 | 本方案 | 变化 | 场景 | 词数 | 平均语速 |
+|---|---|---|---|---|---|---|
+| `<Name:0>` | 2:22 | **2:16**（0:00–2:16） | −6 s | 01–07 | 288 | 128 |
+| `<Name:1>` | 2:15 | **2:14**（2:16–4:30） | −1 s | 08–13 | 281 | 128 |
+| `<Name:2>` | 2:27 | **2:21**（4:30–6:51） | −6 s | 14–19 | 296 | 128 |
+| `<Name:3>` | 2:39 | **2:35**（6:51–9:26，≤ 3:00） | −4 s | 20–26 | 324 | 129 |
+| 合计 | 9:43 | **9:26** | −17 s | 26 | 1,189 | 128 |
+
+全片比裁定 5 预估的 9:40–10:10 略短，因为预估按约 122 wpm 计算；按 125–140 wpm 的目标，9:26 就是结果，不为凑时长加内容。
+
+### 7.4 分阶段场景
+
+**02 议程页（26 s）。** 全幅面板，左列栏目名（28 px，墨色 60 %），右列内容（34 px），全部在面板 x 48–1272、y ≤ 648。只用墨色。
+
+| 行 | 面板坐标 y | 栏目 | 内容 |
+|---|---|---|---|
+| 1 | 24–72 | Question | Who gets labelled diabetic, and what do preparation decisions change? |
+| 2 | 92–140 | Data | NHANES 2021–23 (CDC) · 5,730 adults with an HbA1c result |
+| 3 | 160–290 | Design | “One L2 logistic regression · same folds”，下方 3×2 小矩阵：行 Naive / Minimal / Systematic，列 All adults / Not-yet-diagnosed adults（墨色细线格，不填色） |
+| 4 | 310–460 | Research questions | RQ1 · Labels / RQ2a · Leakage / RQ2b · Preparation 三行（2.3 节）；下面一行小字 “RQ3 (label matrix) and RQ4 (BMI bias): in the notebook” |
+| 5 | 490–560 | Sections | 七段路线：22 px 段名 + 细线；每段下方 22 px 讲者名（`<Name:0>` 在第 1 段下，`<Name:1>` 在 2–3，`<Name:2>` 在 4–5，`<Name:3>` 在 5–7） |
+
+构建：
+1. 0 s：第 1 行先只出现 “How accurate can a model get?”；念到 “who gets labelled” 时暗到 25 %，0.4 s 后用 M12 溶解成第 1 行的正式内容。
+2. 念到 “The design” 时第 2、3 行依次出现；念到 “naive, minimal and systematic” 时矩阵三行依次描边，念到 “all adults … not yet diagnosed” 时两列依次描边。
+3. 念到 “Our research questions” 时三行研究问题依次出现，顺序 RQ1 → RQ2a → RQ2b。
+4. 约 22.5 s 起，第 5 行路线从左往右画出。
+5. 24.8 s 起，路线用 M6（0.9 s）收缩到进度条位置，第 1 段变为当前段；其余四行暗到 25 %，留到场景切走。
+
+**24 留出集与回答（25 s）。** 0–约 8 s：面板顶部一行小号 “Internal hold-out · 1,146 adults · scored once: leakage drop repeats; preparation gain inconclusive”。之后三行研究问题按 02 的字号、顺序回到面板，每行下方用 M12 溶解出答案（2.3 节），每个答案后停 0.8 s。署名 “Robustness checks led by `<Name:1>`”。
+
+**26 收尾（31 s）。**
+- 26a 约 0–8 s：四张角色卡，第 3 行写一项成果：`<Name:0>` “Governance · official-estimate replication”；`<Name:1>` “Missing-code audit · 14 preparation steps”；`<Name:2>` “Label agreement · undiagnosed adults · fairness”；`<Name:3>` “Leakage check · experiments and verdicts”。贡献链 “`<Name:2>` finds → `<Name:1>` implements → `<Name:3>` evaluates → `<Name:2>` interprets”；`<Name:0>` 的外框标 “integrates and checks every number”。念到谁，谁的卡加描边。
+- 26b 约 8–19 s：局限标签 “One survey cycle”、“Low response”、“152 positives among not-yet-diagnosed adults”、“A data audit, not a screening tool”；GenAI 卡 “GenAI drafted code & text · reviewed by us · no LLM in the pipeline · every number recomputed”。
+- 26c 约 19–29.5 s：收束句 “The score is not the finding; what it reveals about the data is.”，56 px serif，面板 x 48–1272、y 240–400，念到 “The score” 时用 M12 淡入一次。
+- 26d 最后 1.5 s：片尾卡，片名 120 px 居中于 y 420–560，七段路线在 y 640–680，组号行 “Group [no.] · Thank you”，底部 24 px “Data: NHANES 2021–2023, CDC/NCHS public files”；全部在 x < 1392 或 y < 632；没有字幕。
+
+### 7.5 旁白全文
+
+规则：
+- `<Name>` 是本场景讲者，`<Name:i>` 是成员 i（第 3 节）；录制时念真名，字幕显示真名或 “[Name]”。
+- `{pause s}` 是读数停顿，只出现在旁白稿和 `timeline.json` 里，不进字幕。
+- 每行标注：场景 · 讲者 · 起止 · 时长 · 词数 · 语速。
+
+**01** · `<Name:0>` · 0:00–0:29 · 29 s（片头卡 1.5 s）· 59 词 · 129 wpm
+
+> A basic logistic regression separates adults with and without diabetes at an AUC of 0.961. {pause 1.0} From survey data alone, that is suspiciously high. I'm `<Name>`; I led governance and integration. `<Name:1>` led data quality and preparation, `<Name:2>` exploration, labels and bias, and `<Name:3>` modelling and conclusions. We present in that order, and the 0.961 runs through the whole talk.
+
+**02** · `<Name:0>` · 0:29–0:55 · 26 s · 56 词 · 129 wpm
+
+> Our question: who gets labelled diabetic, and what do preparation decisions change? The design: one L2 logistic regression on three preparations of the same data, naive, minimal and systematic, scored on all adults and on adults not yet diagnosed. {pause 0.8} Our research questions: what does the label measure? Is the high AUC leakage? Does systematic preparation pay?
+
+**03** · `<Name:0>` · 0:55–1:14 · 19 s · 41 词 · 129 wpm
+
+> The data: NHANES 2021 to 2023, the CDC's national health survey. Our cohort is 5,730 non-pregnant adults with an HbA1c result. The label is positive for a self-reported diagnosis, or HbA1c of 6.5 percent or more. Survey-weighted, 14.0 percent are positive. {pause 1.0}
+
+**04** · `<Name:0>` · 1:14–1:32 · 18 s · 38 词 · 127 wpm
+
+> Governance came first. The NCHS data use agreement forbids re-identification and linkage, so we did neither. We kept 78 of 175 columns, verified every raw file by hash, and locked our hypotheses by hash before running any model. {pause 0.8}
+
+**05** · `<Name:0>` · 1:32–1:44 · 12 s · 26 词 · 130 wpm
+
+> To check our survey-weighting code, we re-ran NCHS Data Brief 516: total prevalence 15.79 percent against the published 15.8, and all 27 published estimates match closely. {pause 1.0}
+
+**06** · `<Name:0>` · 1:44–2:03 · 19 s · 40 词 · 126 wpm
+
+> Correct numbers can still mislead. In `<Name:2>`'s analysis, insured adults show 5.3 points more diabetes than the uninsured. That is confounding by age: the insured are much older. Age-standardised, the gap falls to 0.7 points, and its interval includes zero. {pause 1.2}
+
+**07** · `<Name:0>` · 2:03–2:16 · 13 s · 28 词 · 129 wpm
+
+> Most unexpected for me: of six hypotheses locked before we saw any related data, only three were supported. {pause 1.0} Now `<Name:1>` asks whether the data deserve the same trust.
+
+**08** · `<Name:1>` · 2:16–2:44 · 28 s（段首页 1.2 s）· 56 词 · 125 wpm
+
+> I'm `<Name>`; I led data quality and preparation. I profiled before cleaning. NHANES stores 'refused' and 'don't know' as numeric codes such as 7, 9, 77 and 99. The common shortcut sets those values to missing in every column. That catches 57 genuine codes, and destroys 1,496 valid measurements, including HbA1c values of exactly 7.0 percent. {pause 1.2}
+
+**09** · `<Name:1>` · 2:44–3:02 · 18 s · 39 词 · 130 wpm
+
+> Each 7.0 is above the 6.5 threshold: a diabetes case. The shortcut erased 29 of 721 HbA1c-based positives. {pause 1.0} Only six changed label; the rest had also self-reported, so the either-or label hid the damage. No summary statistic shows this.
+
+**10** · `<Name:1>` · 3:02–3:19 · 17 s · 38 词 · 134 wpm
+
+> Second, outliers. The 1.5 times IQR rule flags 542 HbA1c values. {pause 0.8} Its upper fence lies above the diagnostic threshold, so the 519 high values are diabetes by definition: the disease, not errors. We reviewed and kept them all.
+
+**11** · `<Name:1>` · 3:19–3:44 · 25 s（章节卡 1.2 s）· 50 词 · 126 wpm
+
+> `<Name:2>`'s exploration found redundancy and skew. Weight and BMI show severe multicollinearity: variance inflation factors of 95.7 and 97.6. {pause 0.8} Fasting triglycerides are strongly right-skewed: skewness 6.62. {pause 0.8} Both matter for a linear model, so the systematic preparation drops weight and applies a Yeo-Johnson transform, which brings the skewness close to zero.
+
+**12** · `<Name:1>` · 3:44–4:17 · 33 s · 70 词 · 127 wpm
+
+> Each finding became a switchable step, fourteen in all, each tied to its evidence, and none reads the label. {pause 0.8} From them we built three versions of the data. Naive keeps every column. Minimal adds one rule: drop items that exist only after a diagnosis, such as treatment. Systematic adds my other steps, from per-variable recoding to transforms and class weights. All three feed the same model on the same folds. {pause 0.8}
+
+**13** · `<Name:1>` · 4:17–4:30 · 13 s · 28 词 · 129 wpm
+
+> Most unexpected for me: one routine cleaning line erased 29 diabetic HbA1c results, and the label hid it. {pause 1.0} But cleaning cannot fix the label itself. `<Name:2>` shows why.
+
+**14** · `<Name:2>` · 4:30–4:53 · 23 s（段首页 1.2 s）· 47 词 · 129 wpm
+
+> I'm `<Name>`; I led exploration, labels and bias. First, a fallacy check: we scanned 224 subgroup comparisons for Simpson's paradox, and six reversed sign. {pause 1.0} A causal diagram suggests why: BMI lies between race and diabetes, so adjusting for it distorts the comparison. We report this as exploratory.
+
+**15** · `<Name:2>` · 4:53–5:20 · 27 s · 57 词 · 127 wpm
+
+> Research question one: the label. Our label combines two sources, and they agree substantially but far from perfectly: Cohen's kappa is 0.70. {pause 1.0} Of 819 self-reported diabetics, 250 test below 6.5 percent, and two thirds of those take insulin or pills. {pause 0.8} Treatment lowers the very marker we label by, so a blood-test-only label would call treated patients healthy.
+
+**16** · `<Name:2>` · 5:20–5:49 · 29 s · 62 词 · 128 wpm
+
+> The other direction: 152 adults have HbA1c of 6.5 or more but no diagnosis. {pause 1.0} Among adults with high HbA1c, the uninsured are 23.2 percentage points more often undiagnosed, interval 6.2 to 40.1, an association from a small subgroup. {pause 1.0} So the label also records access to care. That is why we also evaluate on adults not yet diagnosed: the people screening is for.
+
+**17** · `<Name:2>` · 5:49–6:16 · 27 s（章节卡 1.2 s）· 55 词 · 128 wpm
+
+> The leakage question, from `<Name:3>`'s experiments. Naive preparation scores an AUC of 0.961. Minimal preparation removes only the post-diagnosis items: treatment, diagnosis history and prior glucose testing. Same model, same folds: the AUC falls to 0.828, a paired drop of 0.131. {pause 1.5} A deterioration we wanted: the 0.961 was the label leaking back in, not skill.
+
+**18** · `<Name:2>` · 6:16–6:38 · 22 s · 46 词 · 125 wpm
+
+> `<Name:3>`'s shallow decision tree shows the mechanism. Its root is a treatment item; one branch then splits on age at diagnosis. But 86 percent were never asked that question, and median imputation filled every blank with 50. {pause 1.0} So 'age 50' became a code for 'never diagnosed'.
+
+**19** · `<Name:2>` · 6:38–6:51 · 13 s · 29 词 · 134 wpm
+
+> Most unexpected for me: at one shared threshold, the model flags 70 of every 100 diagnosed diabetics, but only 52 of 100 undiagnosed ones. {pause 1.0} `<Name:3>` takes the last question.
+
+**20** · `<Name:3>` · 6:51–7:19 · 28 s（段首页 1.2 s）· 57 词 · 128 wpm
+
+> I'm `<Name>`; I led modelling and conclusions. Last question: does systematic preparation pay? Same model, minimal against systematic: AUC rises by 0.008, interval 0.000 to 0.016. {pause 1.2} Our smallest effect of interest, fixed in advance, was 0.01. The interval covers both no gain and a worthwhile one, so the result is inconclusive: underpowered, not evidence of no effect.
+
+**21** · `<Name:3>` · 7:19–7:42 · 23 s · 49 词 · 128 wpm
+
+> One step did harm. From minimal to systematic, the Brier score worsens by 0.074. {pause 1.0} The cause is `<Name:1>`'s class weights: the systematic model predicts an average risk of 41 percent where the observed rate is 17. Removing only the class weights restores calibration and leaves AUC 0.007 above minimal.
+
+**22** · `<Name:3>` · 7:42–7:59 · 17 s（章节卡 1.2 s）· 35 词 · 133 wpm
+
+> Who does the score serve? On all adults, the systematic model scores 0.836; on adults not yet diagnosed, 0.781. {pause 1.2} 84 percent of positives were already diagnosed, so the all-adults AUC mostly measures recognition: spectrum bias.
+
+**23** · `<Name:3>` · 7:59–8:23 · 24 s · 50 词 · 125 wpm
+
+> Next, drop two items that mark earlier contact with a doctor. On all adults, AUC falls by 0.016. On adults not yet diagnosed, it rises by 0.019, interval 0.004 to 0.034: consistent with recognition and screening pulling apart. {pause 1.0} But the lower end lies inside our margin, so it is inconclusive.
+
+**24** · `<Name:3>` · 8:23–8:48 · 25 s · 54 词 · 130 wpm
+
+> An internal hold-out of 1,146 adults, scored once, repeats the leakage drop and the inconclusive preparation result. So, three answers. The label records care as well as disease. {pause 0.8} The 0.961 was leakage, not skill. {pause 0.8} Systematic preparation barely moved AUC; its value was valid data kept and an honest test on adults not yet diagnosed. {pause 0.8}
+
+**25** · `<Name:3>` · 8:48–8:55 · 7 s · 14 词 · 120 wpm
+
+> Most unexpected for me: leakage moved the score far more than careful preparation did. {pause 1.0}
+
+**26** · `<Name:3>` · 8:55–9:26 · 31 s（片尾卡 1.5 s）· 65 词 · 132 wpm
+
+> Four roles, one audit: `<Name:0>`'s governance, `<Name:1>`'s preparation, `<Name:2>`'s labels and bias, my models. Limits: one survey cycle, low response, and only 152 undiagnosed positives; this is a data audit, not a screening tool. Generative AI drafted much of our code and text; we reviewed it and recomputed every number. {pause 1.0} The score is not the finding; what it reveals about the data is. Thank you.
+
+---
+
+## 8 字幕（裁定 7）
+
+### 8.1 样式与字幕区
+
+| 项 | 规格 |
+|---|---|
+| 形式 | 烧录进画面的开放字幕；同一份文字另出 `.srt` 供 YouTube |
+| 字幕区 | 舞台 x 96–1368，y 872–988（面板坐标 x 0–1272，y 648–764）：图区面板左下的一条，位于避让区左侧 |
+| 对齐 | 在字幕区内水平居中、底端对齐；单行时贴底 |
+| 字体 | IBM Plex Sans Medium，ASS 字号 46，墨色 #15202B，2 px 白色描边；无阴影、无底板（面板是白纸，对比度 16.5:1）；末行基线约在 y 974 |
+| 行数与长度 | 最多 2 行，每行最多 42 个字符 |
+| 显示时长 | 每条至少 1.0 s，尽量不超过 6.5 s；相邻两条间隔不足 0.3 s 时前一条延到后一条开始，避免闪烁；阅读速度 ≤ 17 字符/秒 |
+| 出入 | 直接出现、直接消失；不做动画 |
+| 不出字幕 | 片头卡、片尾卡、段首页与章节卡的静默 1.2 s、停顿期间（停顿不进字幕） |
+| 不冲突 | 字幕区不放任何图形内容；小窗、名签、图例行、notebook 指引都在字幕区之外。kit 审计在任何内容进入字幕区时报错 |
+
+### 8.2 断句规则
+
+- 文字就是该场景的旁白，名字记号换成真名（未填时为 “[Name]”），去掉 `{pause}`。
+- 优先在句末断条，其次在逗号、冒号、分号处；同一条的两行尽量等长，下行可略长。
+- 不拆开：数字与单位（“6.5 percent”）、区间（“interval 0.000 to 0.016”）、人名、“HbA1c”、“Cohen's kappa”。
+- 行首不放标点；不在冠词或介词后断行。
+- 拼写与旁白稿完全一致；数字用阿拉伯数字，与屏幕一致。
+
+### 8.3 生成与重新定时
+
+1. **生成：** `node video/subtitles/build_subs.mjs` 读 `video/timeline/timeline.json` 与 `notebooks/final/team.json`，写出 `video/subtitles/full.srt`（YouTube）、`full.ass`、每段的 `block_<n>.srt` / `block_<n>.ass`，以及 `words.json`（逐词时钟，场景的构建 cue 也从这里取）。
+2. **录像前（估计）：** 每个场景的讲话窗口是 `[silentLead + 0.3, (speechEnd 或 duration) − 0.5]`（`timeline.json` 的 `subtitles.leadIn` / `leadOut`）。窗口内按估计音节数把时间分给各词，标点处加短停顿，`{pause}` 处加读数停顿；断条在句末优先，其次在冒号、分号、逗号处。名字记号按 2 个音节计，所以填入真名不会移动 cue。
+3. **录像后（重新定时）：** 听每段录像，在 `video/subtitles/overrides.json` 里按场景写入整体平移（`shift`）、讲话结束时刻（`speechEnd`）、额外停顿或逐条字幕的起止（`chunks`），重新运行 `build_subs.mjs`，再重渲染受影响的场景并重新合成该段。动画 cue 读同一个 `words.json`，所以字幕与动画一起移动。若某个场景实测时长变化，先改 `timeline.json` 的 `duration`，进度条与起止时间会跟着变。
+4. **检查：** 抽查每段 3 处，字幕出现与开口相差 ≤ 0.3 s；没有一条超过 2 行 × 42 字符；字幕区无冲突（审计全绿）。
+
+### 8.4 烧录与 YouTube
+
+- `compose_block.mjs` 用 libass 把 `block_<n>.ass` 烧进该段成片（样式即 8.1 节）。
+- 上传时把 `video/subtitles/full.srt` 作为 English 字幕上传，避免 YouTube 自动字幕；画面已有开放字幕，YouTube 的 CC 默认保持关闭。
+- 名字填好后必须重新生成字幕、重新合成，否则画面里会留下 “[Name]”。
+
+---
+
+## 9 制作管线
+
+### 9.1 工具
+
+HTML/SVG 场景 → Playwright 逐帧截图 → ffmpeg。场景复用项目的令牌和字体，画面是时间 t 的纯函数（逐帧确定、可重复），数字从 `video/data/*.json` 读取。渲染用 `playwright-core`（只装在 `video/render/`），驱动本机 Chrome，不下载浏览器；需要 PATH 上的 ffmpeg（带 libass）。OBS 只在回退方案里使用；matplotlib 静帧只作应急。
+
+### 9.2 规格
 
 | 项 | 值 |
 |---|---|
 | 画面 | 1920×1080，30 fps，SDR，BT.709 |
-| 场景中间文件 | 无声 MP4，`libx264 -crf 14 -pix_fmt yuv420p`，BT.709 标签 |
-| 人像素材 | 每人一条连续录像，1080p30，MP4 或 MKV；音频 48 kHz |
+| 场景中间文件 | 无声 MP4，H.264 yuv420p，CRF 18，BT.709 标签 |
+| 讲者录像 | 每段一条连续录像，1080p30，MP4；音频 48 kHz；放在 `video/takes/block_<n>.mp4` |
+| 小窗 | 缩放并居中裁成 384×216，叠在 x 1416，y 748 |
 | 成片 | H.264 High 约 12 Mbps；AAC 192 kbps；−16 LUFS，真峰值 ≤ −1 dBTP |
-| 字幕 | 单独的 SRT 文件 |
+| 字幕 | 烧录（libass）+ `video/subtitles/full.srt` |
 
-### 8.3 步骤
-
-1. **锁定脚本。** 以第 4 节为准，成员只改读法，不改数字和措辞边界。
-2. **补登数字。** 12.4 节中的值进入 CSV，并通过 §10.11 的断言（见 14 节第 3 项）。
-3. **样板。** 已完成：`video/scenes/s18_leak_gate.html`（视觉 4）验证了整条管线：令牌（`video/kit/tokens.css`）、动作与图形组件（`video/kit/kit.js`）、逐帧截图、ffmpeg 合成。
-4. **录制。** 每人一次连续录完自己的段落（9.6 节），文件名如 `B_block_take2.mp4`；选用最好的一条完整 take，不在段内拼接。
-5. **标 cue。** 在每条连续录像的音频上标出每个构建步骤的时刻，写成 `cues.json`（场景、步号、秒数）。先录像再做画面，因为每人语速不同。
-6. **逐帧渲染。** 每个场景一个 HTML 页，暴露 `window.SCENE.seek(t)`；渲染器按帧调用后截图，经管道送入 ffmpeg。单个场景约等于其时长；28 个场景用 `render_all.mjs --jobs 3` 约 4–5 分钟。
-7. **合成。** 右栏的固定元素（徽章、lower-third、陷阱条、署名与来源标签）与图区一起渲染，摄像头区域留空；ffmpeg `overlay` 按剪辑清单（EDL JSON，含 F/R/X/S 版式和时间码）把每人的连续录像按原时间贴入。四段之间只有 3 个切点。
-8. **收尾。** 在 Resolve 里检查时序与响度，导出 SRT，上传。
-
-场景代码一律写成“步骤状态机”，同一份代码既支持逐帧渲染，也支持按空格键手动步进（供回退方案使用）。
-
-### 8.4 日程（截止 10/18）
-
-| 日期 | 任务 |
-|---|---|
-| 10/13 | 给讲师发邮件；锁定脚本；补登 CSV；做视觉 4 样板 |
-| 10/14 | 各人计时朗读自己的段落；录制连续 take；标 cue |
-| 10/15 | 渲染全部场景；合成粗剪 |
-| 10/16 | 对照粗剪排练；修正同步问题和超时 |
-| 10/17 | 定稿、字幕、上传、无痕窗口核验；填写 team.json |
-| 10/18 | 缓冲，提交 |
-
-
-### 8.5 已制作的动画场景（`video/`）
-
-28 个场景的画面已按第 4、6、7 节制作完毕，集中放在仓库的 `video/` 文件夹。每个场景是一个 HTML/SVG 页面，画面是时间 t 的纯函数：同一时刻永远画出同一帧，所以可以逐帧渲染，也可以在浏览器里拖到任意时刻检查。
-
-#### 文件夹结构
+### 9.3 文件
 
 | 路径 | 内容 |
 |---|---|
-| `video/kit/tokens.css` | 第 6 节的颜色角色、字体、1920×1080 网格、四层纵深、固定区域（标题区、图区、右栏摄像头预留位、底栏图例、出处标签、陷阱条） |
-| `video/kit/kit.js` | 时间轴与缓动、M1–M12 动效函数、坐标轴 / 柱 / 置信区间 / SESOI 带 / 判定形状等图形组件、章卡与 lower-third、自动检查（`window.Kit`） |
-| `video/data/build_data.py` | 只读已保存的结果，生成每个场景的数据 JSON（含屏幕标签、显示格式、出处）；并与 `numbers_on_slides.csv` 断言一致 |
-| `video/data/build_geometry_s10_11_15.py` | 场景 10、11、15 需要的直方图分箱与辛普森翻转标记（只含汇总值），与已存结果断言一致 |
-| `video/data/*.json`、`SOURCES.md` | 场景数据与逐值出处；`SOURCES.md` 末尾列出尚未登记进 `numbers_on_slides.csv` 的值 |
-| `video/scenes/sNN_*.html` | 28 个场景，文件编号 = 第 4 节场景编号；`_template.html` 是新场景模板；`_phases.js`、`_d_common.js`、`_label_venn.js` 是场景共用的小工具 |
-| `video/render/` | `render.mjs`（单个场景）、`render_all.mjs`（全部）、`snap.mjs`（指定时刻截图）、`serve.mjs`（本地预览）、`compose_example.md`（合成命令） |
-| `video/out/` | 渲染结果；git 只保留每个场景的最后一帧 `sNN_*_last.png`（用于审阅），MP4 只存本地 |
-| `video/README.md` | 写新场景的规则与完整 API |
+| `video/kit/tokens.css`、`video/kit/kit.js` | kit v2：单一版式、进度条、标题与副标题、署名、名签、小窗细边、底栏、字幕区、审计（9.4 节） |
+| `video/timeline/timeline.json` | 唯一的顺序、时长、讲者与旁白来源（9.5 节） |
+| `video/scenes/sNN_*.html` | 26 个场景，文件名见 7.1 节；`_template.html` 是模板 |
+| `video/data/*.json`、`video/data/SOURCES.md` | 场景数据与逐值出处，由 `build_data.py` 与 `build_geometry_s10_11_15.py` 生成 |
+| `video/subtitles/` | `build_subs.mjs`、`overrides.json`、生成的 `.srt` / `.ass` / `words.json` |
+| `video/render/` | `render.mjs`、`render_all.mjs`、`snap.mjs`、`serve.mjs`、`compose_block.mjs`、`compose_film.mjs` |
+| `video/takes/` | 四段讲者录像（不进 git） |
+| `video/out/` | 渲染与合成结果；git 只保留每个场景的 `_last.png` |
+| `video/README.md` | 写场景的规则与 kit API |
 
-#### 场景清单
+### 9.4 kit v2
 
-| 场景 | 文件 | 讲者 | 时长 | 版式 | 数据 |
-|---|---|---|---|---|---|
-| 01 | `s01_hook_role_cards` | A | 35 s | S→R | leak_gate |
-| 02 | `s02_question_traps` | A | 20 s | R | — |
-| 03 | `s03_cohort_funnel` | A | 22 s | R | funnel |
-| 04 | `s04_dua_minimisation` | A | 18 s | R | minimisation |
-| 05 | `s05_nchs_replication` | A | 21 s | R | db516 |
-| 06 | `s06_age_confounding` | A（C 的分析） | 22 s | R | age_std |
-| 07 | `s07_a_surprise` | A | 12 s | S | hypotheses |
-| 08 | `s08_struck_7_0` | B | 28 s | F→R→X | blanket_recode |
-| 09 | `s09_erased_positives` | B | 21 s | R | blanket_recode |
-| 10 | `s10_outliers_kept` | B | 22 s | R | iqr_fence + hist_geometry |
-| 11 | `s11_redundancy_skew` | B（C 的发现） | 27 s | R | vif_skew + hist_geometry |
-| 12 | `s12_fourteen_steps` | B | 24 s | R | arms |
-| 13 | `s13_three_versions` | B | 18 s | R | arms |
-| 14 | `s14_b_reflection` | B | 13 s | S | blanket_recode |
-| 15 | `s15_simpson_dag` | C | 29 s | F→R | simpson + hist_geometry |
-| 16 | `s16_label_trap` | C | 30 s | R | label_split |
-| 17 | `s17_undiagnosed_screening` | C | 32 s | R | label_split + undiagnosed |
-| 18 | `s18_leak_gate` | C（D 的实验） | 34 s | R | leak_gate |
-| 19 | `s19_tree_and_50` | C | 25 s | R | tree |
-| 20 | `s20_100_diabetics` | C | 14 s | S | tpr_100 |
-| 21 | `s21_prep_band` | D | 33 s | F→R | prep_band |
-| 22 | `s22_brier` | D | 22 s | R | brier |
-| 23 | `s23_recognition` | D | 23 s | R | recognition |
-| 24 | `s24_care_flip` | D | 26 s | R | care_flip |
-| 25 | `s25_holdout` | D（B 的工作） | 13 s | R | holdout |
-| 26 | `s26_three_answers` | D | 21 s | R | leak_gate 等 |
-| 27 | `s27_leak_vs_prep` | D | 7 s | S | leak_gate + prep_band |
-| 28 | `s28_close` | D | 29 s | R→F→片尾 | recognition 等 |
-| 合计 | | | 10:41 | | |
+- **网格：** 只有一种版式（4.1 节）：`panel {96, 224, 1728, 764}`、`camera {1416, 748, 384, 216}`、`nametag {1416, 656, 384, 84}`、`keepOut {1392, 632, 432, 356}`、字幕区 `{96, 872, 1272, 116}`。删除右栏、徽章、陷阱条、lower-third、F / S / X / R 版式和 alpha 模式。
+- **界面：** `buildChrome` 依次画进度条、主标题、副标题、署名、面板、小窗细边、名签、底栏；页面类型 `evidence | blockstart | reflection | agenda | closing | card`。
+- **名字：** 从 `team.json` 读；占位渲染为 “[Name]”。
+- **进度条：** 段起止由 `timeline.json` 求和得到，填充是全局时间的纯函数。
+- **审计（每帧抽查，渲染后打印）：**
+  - 文字小于 28 px（底栏与脚注除外）、文字重叠、超出面板；
+  - 任何内容进入避让区或字幕区（推近按 1.25 倍包围盒计算）；
+  - 主标题超过 1728 px、副标题与署名重叠；
+  - 渲染文字含 “§”，或匹配内部代号 `M0|M1|E-ALL|E-SCREEN|P\d{2}|B[1-6]|Trap|S7_|S10_`（白名单只有 12 的 “notebook: M0 · M1 · S”）；
+  - 渲染文字里出现单独的 A–D 人名；
+  - 一帧里结构靛蓝出现超过一处。
 
-时长与第 3、4 节一致（A 2:30、B 2:33、C 2:44、D 2:54）。
+### 9.5 `timeline.json`
 
-#### 一次性准备
+`video/timeline/timeline.json` 是顺序、时长、讲者与旁白的唯一来源；本方案 7.1、7.3、7.5 节是它的内容来源。主副标题不在其中，写在场景文件里。
 
-```bash
-cd video/render && npm install        # 只装 playwright-core，使用本机 Chrome
-```
-
-需要本机 Chrome（`C:/Program Files/Google/Chrome/Application/chrome.exe`，或设 `CHROME_PATH`）和 PATH 上的 ffmpeg。字体从 Google Fonts 加载，渲染时需联网；离线会退回备用字体。
-
-#### 预览与检查
-
-```bash
-node video/render/serve.mjs     # 浏览器打开 http://127.0.0.1:8130/scenes/s18_leak_gate.html
-```
-
-- URL 参数：`?play=1` 自动播放；`?t=12.3` 停在 12.3 s；`?static=1` 显示最后一帧。
-- 键盘：空格播放 / 暂停；← / → 跳 1 s（加 Shift 跳 1 帧）；**N / P 前后一个构建步骤**。N/P 步进模式就是 9.6 节回退方案（一次连续现场录制）时讲者手动翻步的方式。
-- 审阅时先看 `video/out/sNN_*_last.png`：最后一帧必须单独读得懂（第 6 节规则）。
-
-#### 渲染
-
-```bash
-node video/render/render.mjs video/scenes/s18_leak_gate.html     # → video/out/s18_leak_gate.mp4 + _last.png
-node video/render/render_all.mjs --jobs 3                        # 全部 28 个场景
-node video/render/render.mjs video/scenes/s08_struck_7_0.html --alpha   # 摄像头位透明 → _alpha.mov（F、S 版式用）
-node video/render/snap.mjs video/scenes/s16_label_trap.html 5 12 20     # 指定时刻的静帧
-```
-
-渲染结束会打印自动检查：文字小于 28 px、文字重叠、超出面板、压到摄像头位、标题撞到陷阱条。有任何一条都要先修。
-
-#### 数据更新
-
-若结果文件或 `numbers_on_slides.csv` 有变动：先运行 `.venv/Scripts/python video/data/build_data.py`（及 `build_geometry_s10_11_15.py`），它们会重新生成 JSON 并做一致性断言；再重新渲染受影响的场景。场景里不手敲任何数字，所以不需要改场景代码。
-
-#### 从录像到成片
-
-1. **录制**：每人一条连续 take（9.6 节），例如 `C_block_take2.mp4`。
-2. **对齐 cue**：场景里的 `cues` 目前按约 134 wpm 估算。听自己那条 take，记下每个构建步骤对应的秒数，改写对应场景的 `cues`，然后用 `snap.mjs` 或预览检查，最后重渲染。场景时长 `duration` 也按实际录音微调，四段总长仍须 ≤ 11:00。
-3. **合成**（命令见 `video/render/compose_example.md`）：
-   - R、X 版式：方法 A，直接把人像缩放后贴进摄像头位（R：x=1344, y=168, 480×270；X：x=1344, y=690）；
-   - F、S 版式，或场景中途换版式（01、08、15、21、28）：方法 B，用 `--alpha` 渲染的透明场景叠在人像上，lower-third 会压在人像上方；
-   - 每个合成片段用 `-ss <该场景在 take 中的起点>` 截取同一条录像的对应时间，所以每人的段落仍是一条连续录像，全片只有 A→B、B→C、C→D 三个切点。
-4. **拼接**：按场景顺序用 ffmpeg concat 合并（`compose_example.md` 末尾），再到 Resolve 检查响度、导出 SRT 字幕。
-
-#### 已知待办
-
-| 项 | 说明 |
+| 字段 | 内容 |
 |---|---|
-| cue 重新对时 | 录像完成后逐场景改 `cues`（见上） |
-| 数字补登 | `video/data/SOURCES.md` 末尾列出的值登记进 `numbers_on_slides.csv`（第 12 节） |
-| S 版式底栏图例 | 场景 14、20、27 在场景内缩短了图例文字；可在 kit 里统一修正 |
-| 多数据文件 | 部分场景自行加载第二个 JSON；可在 kit 增加多文件选项 |
-| 换版式工具 | `_phases.js`（01、08）与 `_d_common.js` 的 `cameraPhase`（21、28）功能重叠，可合并 |
-| 计划内的调整 | 场景 22 用平均预测风险对比实际阳性率 17.0 %（分位校准数据未保存）；场景 19 只示意“86 % 空白填成 50”（实测年龄分布未保存）；场景 11 显示 Yeo-Johnson 变换（项目实际的 P08），与 notebook 中对数变换的图不同 |
+| `version`、`fps` | 版本号；30 |
+| `sections[]` | `{n 1–7, label, scope}`（5.1 节） |
+| `members[]` | `{index 0–3, roleKey governance / quality / labels / modelling, role, owns}`（3.2 节）；名字不在这里，在 `team.json` |
+| `blocks[]` | `{n 1–4, speaker, scenes[]}` |
+| `scenes[]` | `{n, file, block, speaker（成员序号，从不用字母）, section, duration, silentLead, speechEnd?, narration}`；`narration` 用 `<Name>` / `<Name:i>` 记号和 `{pause s}` |
+| `subtitles` | `{leadIn, leadOut}` |
+
+起止时间不存，由时长求和。录像后按实测回填 `duration`。
+
+### 9.6 步骤
+
+1. **kit v2 与 `timeline.json`。** 网格、进度条、名签、字幕区、审计；时间轴按 7.3 节。
+2. **场景。** 按 7.1、7.2 节逐个改写或新做，`?t=` 预览、`snap.mjs` 检查每个构建步骤，审计全绿。
+   ```bash
+   node video/render/serve.mjs                                   # 预览 http://127.0.0.1:8130/scenes/s17_leak_gate.html
+   node video/render/render.mjs video/scenes/s17_leak_gate.html  # → video/out/s17_leak_gate.mp4 + _last.png
+   node video/render/render_all.mjs --block 1 --jobs 3           # 一段或全部场景
+   ```
+3. **字幕。** `node video/subtitles/build_subs.mjs`（8.3 节）。
+4. **按段合成。** 拼接本段场景（`timeline.json` 顺序）→ 整段叠一次讲者录像（384×216，x 1416，y 748）→ 烧录本段字幕。没有录像时用灰色占位块。
+   ```bash
+   node video/render/compose_block.mjs 1                                          # 占位小窗
+   node video/render/compose_block.mjs 2 --take video/takes/block_2.mp4 --take-offset 3.4
+   ```
+   `--take-offset` 是录像里本段第 1 帧对应的秒数。
+5. **成片。** 四段拼接并做响度归一（−16 LUFS），YouTube 字幕用 `video/subtitles/full.srt`。
+   ```bash
+   node video/render/compose_film.mjs    # → video/out/film.mp4
+   ```
+6. **录像后。** 标 cue 与字幕时刻（8.3 节）→ 回填时长 → 重渲染受影响的场景 → 重新合成该段 → 成片。
+
+场景代码一律写成“步骤状态机”，同一份代码既支持逐帧渲染，也支持按 N / P 手动步进（回退方案用）。
+
+### 9.7 场景改动分级
+
+| 级 | 场景 | 工作内容 |
+|---|---|---|
+| 高 | 01、02、24、26 | 片头卡与团队页；议程页与路线收缩成进度条；回答页复用 02 的研究问题行；收尾四阶段与片尾路线回中 |
+| 中 | 07、08、13、14、19、20、25 | 三个段首页与四个反思页 |
+| 中 | 12、16、17、21、22 | 合并的准备设计；人群轨道改文字；删次级数字；41 % vs 17 %；章节卡 |
+| 低 | 03、04、05、06、09、10、11、15、18、23 | 改标题与标签、收进主区、加脚注 |
+
+所有场景都要让出字幕区（主区高度从 764 降到 648）。快速迁移：原图形缩放后左对齐放进主区，再逐个拉宽。
+
+### 9.8 数据改动
+
+- **屏幕名称：** `build_data.py` 的 `_meta.naming` 与 `label` 改为 5.4 节的名称（例如 “Naive (M0)” → “Naive”；“Screening group” → “Not-yet-diagnosed adults”；“Systematic (S) − Minimal (M1)” → “Systematic − Minimal”），场景代码不手改。
+- **显示项（格式，不是新数字）：** `brier.json` 的 “41 %”“17 %”；`label_split.json` 的 “165 of 250”（旁白念 “two thirds”，66 %）；`iqr_fence.json` 注明高端 519、低端 23（取自 `hist_geometry.json`）。
+- **不需要新算的数字。** 所有上屏数字都已在 `video/data/*.json` 中。
+
+### 9.9 首个交付（裁定 9）
+
+改完后先渲染第 1 段（场景 01–07，2:16）：全部场景拼接，灰色占位小窗，名签与字幕里的名字为 “[Name]”，字幕烧录。输出 `video/out/block_1.mp4` 交用户审阅。第 2–4 段在用户反馈后再做。
+
+### 9.10 日程（截止 10/18）
+
+| 日期 | 任务 |
+|---|---|
+| 10/14 | 本方案定稿；kit v2 与 `timeline.json`；第 1 段场景；`block_1.mp4` 交审 |
+| 10/15 | 按反馈改；第 2–4 段场景；各人计时朗读；给讲师的邮件 |
+| 10/16 | 录制四段连续录像；标 cue 与字幕时刻；合成粗剪 |
+| 10/17 | 对照粗剪排练与修正；填真名与组号；定稿、上传、无痕窗口核验 |
+| 10/18 | 缓冲，提交 |
+
+### 9.11 制作风险
+
+| 风险 | 对策 |
+|---|---|
+| 时间不够 | 先保高级场景与审计全绿；低级场景必要时只做快速迁移加改标签 |
+| 录像后场景时长变化 | 进度条、起止、字幕都从 `timeline.json` 与 `overrides.json` 读，不写死 |
+| 名字迟迟未定 | 一律渲染 “[Name]”；名字填好后重新生成字幕并重新合成（只需重跑脚本） |
+| 小窗里人脸较小 | 胸像构图、浅色背景、同侧主光（10.5 节） |
+| 字幕区挤压图形 | 主区仍有 1272×648；密集场景（12、17、21）优先检查 |
+| 本机 ffmpeg 无 libass | 先用 `ffmpeg -filters` 确认 `subtitles` / `ass` 滤镜可用 |
 
 ---
 
-## 9 讲解与录制
+## 10 讲解与录制
 
-### 9.1 表达
+### 10.1 表达
 
-- **语速：** 平均 134 wpm，单个场景 120–145 wpm。超时就删句，不加快语速。
-- **画幅与视线：** 胸像，头顶留一拳空间，眼睛在上三分线；看镜头，脚本放在镜头正下方或贴近镜头的窗口里。
-- **状态：** 能量比日常说话高一档；重点词前停顿；句尾下沉。人像画面不做手势指向（画面是后期合成的，指向会错位）。
-- **脚本用法：** 每人把自己的段落压成“一拍一句”的卡片（10–14 拍）按拍练习。句子可以略有变化，但数字、术语、署名句和措辞边界必须一字不差。
-- **非母语表达：** 每句 ≤ 20 词；在语义组之间停顿；重读数字和否定词（not、no、barely、only）；连续录制中说错时停 1 秒，从那一句开头重说，剪辑时只去掉错误部分（若讲师要求不剪辑，则整段重录）。
-- **对齐：** 新元素出现后 0.5 s 再开口；数字的出现与念出相差 ≤ 0.5 s；关键数字后停 1 s，区间和对比后停 1.5 s。
+- **语速：** 场景平均约 128 wpm（含停顿），净语速 130–145 wpm。超时就删句，不加快语速。
+- **停顿：** 只在旁白稿标出的 `{pause}` 处停 0.8–1.5 s；其他地方不留长于约 1.5 s 的空白。
+- **画幅与视线：** 胸像，头顶留一拳空间，眼睛在上三分线；看镜头，脚本放在镜头正下方。
+- **状态：** 能量比日常说话高一档；重点词前停顿；句尾下沉。不做手势指向（画面是后期合成的）。
+- **脚本用法：** 每人把自己的段落压成“一拍一句”的卡片按拍练习。数字、术语、署名句和措辞边界必须一字不差。
+- **非母语表达：** 每句 ≤ 20 词；重读数字和否定词（not、no、barely、only）；说错时停 1 秒，从那一句开头重说，剪辑时只去掉错误部分（若讲师要求不剪辑，则整段重录）。
+- **对齐：** 新元素出现后 0.5 s 再开口；数字的出现与念出相差 ≤ 0.5 s。
 
-### 9.2 数字念法
+### 10.2 数字念法
 
-规则：念出的数字与屏幕上的完全一致（精度相同）；区间读 “interval … to …”；下降用动词（“falls by”），不读 “minus zero point”；百分点读 “percentage points”，不读成 “percent”。
+念出的数字与屏幕完全一致（精度相同）；区间读 “interval … to …”；下降用动词（“falls by”）；百分点读 “percentage points”。
 
 | 屏幕 | 念法 |
 |---|---|
 | 0.961 → 0.828 | “zero point nine six one … falls to zero point eight two eight” |
-| −0.131 | “zero point one three one lower” |
-| +0.008 [0.000, 0.016] | “plus zero point zero zero eight, interval zero to zero point zero one six” + “inconclusive” |
-| κ = 0.70 | “Cohen's kappa … is zero point seven”；不说 “70 percent agree” |
-| 1,496 | “one thousand four hundred and ninety-six”（屏幕上是精确值，不念成 “about fifteen hundred”） |
+| −0.131 | “a paired drop of zero point one three one” |
+| +0.008 [0.000, 0.016] | “rises by zero point zero zero eight, interval zero to zero point zero one six” + “inconclusive” |
+| κ = 0.70 | “Cohen's kappa is zero point seven zero”；不说 “70 percent agree” |
+| 1,496 | “one thousand four hundred and ninety-six” |
 | +23.2 pp [6.2, 40.1] | “twenty-three point two percentage points … interval six point two to forty point one” + “an association” |
-| 14.0 % | “fourteen percent” |
+| 14.0 % | “fourteen point zero percent” |
 | 15.79 vs 15.8 | “fifteen point seven nine … fifteen point eight” |
-| 70 / 52 of 100 | “70 of 100 … only 52 of 100” |
+| 70 / 52 of 100 | “70 of every 100 … only 52 of 100” |
 
-**发音表（四人统一）。** HbA1c “H-B-A-one-C”；NHANES “EN-haynz”；AUC “A-U-C”；κ “kappa”；Brier “BRY-er”；DAG “dag”；Yeo-Johnson “YO-johnson”；SHA-256 只在画面上出现，旁白说 “fingerprint”。
+**发音表（四人统一）。** HbA1c “H-B-A-one-C”；NHANES “EN-haynz”；AUC “A-U-C”；κ “kappa”；Brier “BRY-er”；DAG “dag”；Yeo-Johnson “YO-johnson”；SHA-256 只在画面上出现，旁白说 “hash”。
 
-### 9.3 自我介绍、署名与交接
-
-| 成员 | 自我介绍（场景） | 讲他人工作时的署名句（场景） | most unexpected（场景） | 交接句 |
-|---|---|---|---|---|
-| A | “I'm A: I led governance and put the project together.”（1，0:15） | “In C's analysis, age confounds it.”（6） | 3 of 6 hypotheses supported（7） | “Now B asks whether the data deserve the same trust.” |
-| B | “I'm B. I led data quality and preparation.”（8） | “C's exploration found two structural problems.”（11） | 29 positives erased（14） | “But no cleaning fixes a bad label. C shows why.” |
-| C | “I'm C. I led exploration, labels and bias; I'll take you through a paradox, the label and the leak.”（15） | “Trap one comes from D's experiments.”（18）；“D's shallow decision tree”（19） | 70 vs 52 of 100（20） | “D takes the last trap.” |
-| D | “I'm D; I led modelling and conclusions.”（21） | “B's preparation steps”（21）；“C's screening group”（23）；“B's checks agree”（25）；团队回顾（28） | leakage ≫ preparation（27） | —（D 段包含结尾） |
-
-交接时，讲者看着镜头说完交接句，停 0.5 s；切点落在章卡上。节次（§）只出现在 lower-third 和角色卡片上，不念出来，避免占用每场景 3 个数字的上限。
-
-### 9.4 措辞边界
+### 10.3 措辞边界
 
 证据等级取自 `governance/claims.csv`：E1 “confirms”，E2 “shows”，E3 “is consistent with”，E4 “suggests”。不用因果动词。
 
 | 主张 | 可以说 | 不要说 |
 |---|---|---|
-| 泄漏门（C01，E2） | “The AUC falls to 0.828, 0.131 lower. The 0.961 was not skill.” | “The model is 96 % accurate.” “Leakage is gone for good.” |
-| 统一重编码（C03–C04） | “Erased 29 of 721 HbA1c-based positives; six flipped.” | “Deleted 29 diabetic labels.” “Cleaning errors ruined the model.” |
-| 最简 vs 系统（C05，E3） | “Plus 0.008, interval 0.000 to 0.016: inconclusive, underpowered.” | “Preparation improves AUC.” “No difference.” “Equivalent.” |
-| 类别权重（C06，E2） | “From minimal to systematic, Brier worsens by 0.074; removing only the class weights improves it by 0.076.” | 把 0.074 和 0.076 混着说；把平衡准确率的上升说成改进 |
+| 泄漏检查（C01，E2） | “The AUC falls to 0.828, a paired drop of 0.131. The 0.961 was not skill.” | “The model is 96 % accurate.” “Leakage is gone for good.” |
+| 统一重编码（C03–C04） | “Erased 29 of 721 HbA1c-based positives; only six changed label.” 只说 “values of exactly 7.0”（29 个中 28 个是 7.0、1 个是 9.0） | “Deleted 29 diabetic labels.” “All 29 were 7.0.” |
+| 离群值 | “The upper fence lies above the threshold, so the 519 high values are diabetes by definition.” | 把 519 说成一个发现 |
+| minimal vs systematic（C05，E3） | “Plus 0.008, interval 0.000 to 0.016: inconclusive, underpowered.” | “Preparation improves AUC.” “No difference.” “Equivalent.” |
+| 类别权重（C06，E2） | “From minimal to systematic, the Brier score worsens by 0.074.” 0.074 只配 “from minimal to systematic” | 念 0.076；把 41 % 说成对美国成人的风险估计；把训练部分未加权的 17 % 与加权的 14.0 % 混用 |
 | 识别 vs 筛查（C07，E2） | “The all-adults AUC mostly measures recognition.” | “Our model screens diabetes at AUC 0.781.” |
-| 就诊痕迹（C08，E3） | “Consistent with recognition and screening pulling apart; not settled.” | “Care traces hurt screening.” “The best screening model.” |
-| 年龄混杂（C11，E2） | “Confounding by age; same sign.” | “Insurance has no effect.” “Insurance causes diabetes.” |
-| Simpson / DAG（C13，E3） | “Suggests BMI is a mediator; exploratory.” | “We explained Simpson's paradox.” |
-| 治疗掩盖（C14，E1） | “250 of 819 are below 6.5; 165 of them take insulin or pills.” | “All 250 are controlled by treatment.” “HbA1c is the truth.” |
-| 未确诊不平等（C15，E3） | “An association … interval 6.2 to 40.1.” | “Lacking insurance causes missed diagnoses.” |
-| 复现（C23，E2） | “Our survey code reproduces the published 15.8.” | “Our 14.0 percent matches NCHS.”（差别来自标签定义） |
-| 留出集（C25，E3） | “An internal hold-out, scored once, kept the pattern.” | “Independent validation.” “Confirmed on new data.” |
-| 预注册 | “Of six hypotheses locked before testing, three were supported.” | “10 of 17 hypotheses confirmed in advance.” |
-| 公平性 | “At one cut-off, 70 of 100 diagnosed vs 52 of 100 undiagnosed are flagged.” | 把每 100 人的点阵说成实际人数 |
-| 署名 | “C's exploration found…”，“D's experiments” | 讲他人的工作却用 “I found…” |
+| prior-care 消融（C08，E3） | “Consistent with recognition and screening pulling apart … the lower end lies inside our margin, so it is inconclusive.” | “Care items hurt screening.” “The best screening model.” |
+| 年龄混杂（C11，E2） | “Confounding by age … its interval includes zero.” | “Insurance has no effect.” “Insurance causes diabetes.” |
+| Simpson / DAG（C13，E3） | “Suggests why … We report this as exploratory.” | “We explained Simpson's paradox.” |
+| 治疗掩盖（C14，E1） | “250 test below 6.5 percent, and two thirds of those take insulin or pills.” | “All 250 are controlled by treatment.” “HbA1c is the truth.” |
+| 未确诊不平等（C15，E3） | “An association from a small subgroup, interval 6.2 to 40.1.” | “Lacking insurance causes missed diagnoses.” |
+| κ | “Cohen's kappa is 0.70.” | “70 percent agree.” |
+| 复现（C23，E2） | “All 27 published estimates match closely.” | “Reproduced all 27.”（24 of 27 落在发布区间内）；“Our 14.0 percent matches NCHS.” |
+| 留出集（C25，E3） | “An internal hold-out of 1,146 adults, scored once, repeats the leakage drop and the inconclusive preparation result.” | “Independent validation.” “Changed no locked verdict.” 提外部评审六项 |
+| 预注册 | “Of six hypotheses locked before we saw any related data, only three were supported.” | “10 of 17 hypotheses confirmed.” |
+| 公平性 | “At one shared threshold, 70 of every 100 diagnosed … only 52 of 100 undiagnosed.” | 把每 100 人的点阵说成实际人数 |
+| 树 | “One branch then splits on age at diagnosis.” | 暗示分裂的先后或因果 |
+| 署名 | “`<Name:2>`'s exploration found…”，“`<Name:3>`'s experiments” | 讲他人的工作却用 “I found…” |
 | GenAI | “Generative AI drafted much of our code and text; we reviewed it and recomputed every number.” | “No AI was used.” “The AI found the results.” |
 
-### 9.5 设备与文件
+### 10.4 设备与文件
 
-- **声音：** 耳机或有线耳机麦克风，嘴距约一拳，不用笔记本自带麦克风；峰值 −12 至 −6 dB；开录前先录 10 s 房间静音供降噪取样；关窗、关空调和风扇，回声大就挂毯子。
+- **声音：** 耳机麦克风，嘴距约一拳，不用笔记本自带麦克风；峰值 −12 至 −6 dB；开录前录 10 s 房间静音供降噪；关窗、关空调和风扇。
 - **画面：** 1080p30，摄像头与眼睛同高；窗户在前方，不背光；浅色中性背景，无个人信息，不用虚拟背景；笔记本接电源。
-- **文件：** 本地录 MKV，录完转 MP4，命名 `A_block_take2.mp4`；每人至少两条完整可用的 take；原始素材保留到成绩公布。
-- **分工：** A 录 0:00–2:30（场景 1–7）；B 录 2:30–5:03（8–14）；C 录 5:03–7:47（15–20）；D 录 7:47–10:41（21–28）。
+- **构图：** 四人同一构图：胸像，双眼在上三分线，同一侧主光。小窗只有 384×216，脸要占画面高度的约 45 %。
+- **文件：** 本地录 MKV，录完转 MP4，命名 `block_<n>_take<k>.mp4`；选定的一条复制为 `video/takes/block_<n>.mp4`。每人至少两条完整可用的 take；原始素材保留到成绩公布。
+- **分工：** `<Name:0>` 录第 1 段（01–07，2:16）；`<Name:1>` 录第 2 段（08–13，2:14）；`<Name:2>` 录第 3 段（14–19，2:21）；`<Name:3>` 录第 4 段（20–26，2:35）。
 
-### 9.6 录制方式
+### 10.5 录制方式
 
-**主方案：每人一次连续录完自己的段落，后期合成。** 每人对着提词器一口气录完 2:30–2:54 的段落，可以录多条完整 take，选最好的一条整体使用；动画按这条录像的 cue 渲染。成片只有 3 个切点，都在段落交接处。
+**主方案：每人一次连续录完自己的段落，后期合成。** 对着提词器一口气录完，可以录多条完整 take，选最好的一条整体使用；动画与字幕按这条录像定时。成片只有 3 个切点，都在段落交接处。
 
-**未决：“single continuous video” 的含义。** 这句话可以理解为“提交一个完整的视频文件”，也可以理解为“一次不间断录制、不能剪辑”。今天给讲师发邮件确认（14 节第 1 项）。一人一段的结构让两种理解都容易满足。
+**未决：“single continuous video” 的含义。** 可以理解为“提交一个完整的视频文件”，也可以理解为“一次不间断录制、不能剪辑”。发邮件问讲师（第 15 节第 1 项）。一人一段的结构让两种理解都容易满足。
 
 **回退方案：一次连续录制。** 如果讲师要求不剪辑，或到 10/15 仍未回复：
-- 用 OBS（或 Zoom 的 spotlight 视图）做一次连续录制。四人依次讲自己的段落：正在讲的成员开摄像头、开麦克风，其余成员关摄像头、静音，所以画面里始终只有一个人。
-- 渲染好的场景做成可步进的 HTML 播放器，由讲者本人或一名不出镜的成员按空格推进；OBS 中预设 F / R / X / S 四个场景并绑定热键。
-- 交接时，上一位说完交接句后关摄像头，下一位开摄像头，OBS 切到章卡；整个过程不停录。
-- 每人在本地同时录一份备份轨。画质略低于主方案，口播与画面的同步靠排练（第 10 节第 4 轮）。
+- 用 OBS 做一次连续录制。四人依次讲自己的段落：正在讲的成员开摄像头和麦克风，其余关闭，画面里始终只有一个人。OBS 把摄像头放在 x 1416，y 748，384×216，与主方案一致。
+- 场景用浏览器按 N / P 步进，由讲者本人或一名不出镜的成员推进。
+- 字幕不能现场烧录：录完后在成片上叠加 `full.ass`（不剪辑画面），或只上传 `.srt`，需在邮件里一并确认。
+- 每人在本地同时录一份备份轨。
 
 ---
 
-## 10 排练与时间控制
+## 11 排练与时间控制
 
-### 10.1 排练轮次
+### 11.1 排练轮次
 
 | 轮次 | 内容 | 目标 |
 |---|---|---|
-| 1 | 各人单独朗读自己的段落并计时 | 每段与第 3 节相差 ≤ 5 %；**D 段 ≤ 2:55**；把实测值回填到第 3 节 |
-| 2 | 四人在线顺读一遍，只听不看 | 检查交接句、署名句、发音表、措辞边界 |
-| 3 | 配合粗剪动画完整播放 | 数字出现与念出相差 ≤ 0.5 s |
-| 4 | 各人按正式方式连续录一遍自己的段落（回退方案则四人连续录一遍） | 总长 ≤ 11:00，记录卡顿点 |
+| 1 | 各人单独朗读自己的段落并计时 | 每段与 7.3 节相差 ≤ 5 %；**第 4 段 ≤ 2:50**；实测值回填 `timeline.json` |
+| 2 | 四人在线顺读一遍，只听不看 | 检查交接句、署名句、发音表、措辞边界；名字念法 |
+| 3 | 对照第 1 段成片与其余粗剪完整播放 | 数字出现与念出相差 ≤ 0.5 s；字幕与开口相差 ≤ 0.3 s |
+| 4 | 各人按正式方式连续录一遍 | 总长 ≤ 10:30，记录卡顿点 |
 | 5（可选） | 针对卡顿点补练 | — |
 
-### 10.2 时间检查点
+### 11.2 时间检查点
 
 | 检查点 | 场景 | 目标时刻 | 段长目标 | 容差 |
 |---|---|---|---|---|
-| Ch1 结束 | 1 | 0:35 | — | ±5 s |
-| A 段结束 | 7 | 2:30 | 2:30 | ±10 s |
-| B 段结束 | 14 | 5:03 | 2:33 | ±10 s |
-| Ch5 结束（Label） | 17 | 6:34 | — | ±10 s |
-| C 段结束 | 20 | 7:47 | 2:44 | ±10 s |
-| Ch7 结束（Little gain） | 22 | 8:42 | — | ±5 s |
-| Ch8 结束 | 25 | 9:44 | — | ±5 s |
-| D 段结束 | 28 | 10:41 | **2:54，硬上限 3:00** | +6 s 即触发砍减 |
-| 全片 | — | 10:41 | — | 上限 11:15 |
+| 议程结束 | 02 | 0:55 | — | ±5 s |
+| 第 1 段结束 | 07 | 2:16 | 2:16 | ±10 s |
+| 第 2 段结束 | 13 | 4:30 | 2:14 | ±10 s |
+| 泄漏检查结束 | 17 | 6:16 | — | ±10 s |
+| 第 3 段结束 | 19 | 6:51 | 2:21 | ±10 s |
+| 第 4 段结束 | 26 | 9:26 | **2:35，硬上限 3:00** | 超过 2:50 即触发砍减 |
+| 全片 | — | 9:26 | — | 上限 10:30 |
 
-### 10.3 同伴反馈（每轮，1–5 分加一句话）
+### 11.3 同伴反馈（每轮，1–5 分加一句话）
 
 1. 我能用一句话复述这一段的结论吗？
-2. 我看到的和听到的一致吗？有没有在读屏幕？
+2. 我看到的、听到的和字幕一致吗？有没有在读屏幕？
 3. 讲他人工作时，我听得出是谁做的吗？
 4. 最让我困惑的数字是哪个？哪一句最像在背稿？
-5. 语速和清晰度合适吗？
+5. 语速和停顿合适吗？有没有空等的地方？
 
-另请两位非组员看粗剪：两人都能说出三个陷阱，才算主线通过。
+另请两位非组员看第 1 段成片与粗剪：两人都能说出三个研究问题及其回答，才算主线通过。
 
-### 10.4 超时砍减顺序
+### 11.4 超时砍减顺序
 
-**第一优先：保护 D ≤ 3:00。** 只要 D 段实测超过 2:55，就按顺序砍 D 段，直到回到 2:55 以内：
-
-| 顺序 | 场景 | 砍什么 | 节省 |
-|---|---|---|---|
-| D1 | 23 | 删 “That is spectrum bias.”（画面标签保留） | 约 2 s |
-| D2 | 21 | 删 “The interval is neither inside it nor beyond it:”，直接说 “inconclusive, underpowered…” | 约 3 s |
-| D3 | 26 | 陷阱三的回答只留 “preparation moved AUC by only plus 0.008” | 约 4 s |
-| D4 | 25 | 改为 “B's checks agree: an internal hold-out, scored once, kept the pattern.”（1,146 与 6 降为小号墨色数据标签） | 约 5 s |
-| D5 | 28 | 回顾句改为 “Four roles, one audit.”（卡片仍写出四人分工） | 约 4 s |
-
-合计约 18 s。**D 段不砍：** 自我介绍、Brier 恶化（22）、就诊痕迹反转（24）、三个回答的前两句、D 的意外、局限、GenAI、结论。
-
-**第二优先：全片超过 11:00。**
+**第一优先：保护第 4 段 ≤ 3:00。** 第 4 段实测超过 2:50 时按顺序砍，直到回到 2:50 以内：
 
 | 顺序 | 场景 | 砍什么 | 节省 |
 |---|---|---|---|
-| 1 | 3、12、15 | 动画停顿从 1.5 s 缩到 1.0 s（不动内容） | 约 5 s |
-| 2 | 1 | 删 “Each of us presents one part, in that order.” | 约 3 s |
-| 3 | 12 | 步骤列举只留三个例子 | 约 6 s |
-| 4 | 5 | 删 “Diagnosed and undiagnosed shares match too.” | 约 3 s |
-| 5 | 4 | 删指纹一句（场景 13 仍说 “hypotheses locked first”） | 约 5 s |
-| 6 | 19 | 删 “How did the model cheat?”，压缩树的描述 | 约 4 s |
-| 7 | 15 | 删 DAG 一句，保留 Simpson 与 “exploratory” | 约 7 s |
+| 1 | 22 | 删 “: spectrum bias”（图内标注保留） | 约 1 s |
+| 2 | 20 | 删 “The interval covers both no gain and a worthwhile one, so”，直接说 “The result is inconclusive …” | 约 3 s |
+| 3 | 24 | 留出集一句改为 “An internal hold-out, scored once, repeats both results.”（1,146 只在画面上） | 约 3 s |
+| 4 | 26 | 回顾句改为 “Four roles, one audit.”（卡片仍写四人分工） | 约 4 s |
+| 5 | 21 | 删 “and leaves AUC 0.007 above minimal”（画面保留小号数字） | 约 2 s |
 
-**全片不砍：** 每段的自我介绍、署名句、most unexpected 与交接句；场景 8–9（非显然发现）；16–18（陷阱二与陷阱一的证据）；21–22（陷阱三与恶化）。
+合计约 13 s。**第 4 段不砍：** 自我介绍、Brier 恶化、prior-care 消融、三个回答、意外发现、局限、GenAI、结论。
+
+**第二优先：全片超过 10:30。**
+
+| 顺序 | 场景 | 砍什么 | 节省 |
+|---|---|---|---|
+| 1 | 全片 | 停顿统一缩到 0.8 s | 约 8 s |
+| 2 | 01 | 删 “We present in that order, and” | 约 2 s |
+| 3 | 12 | 删 “from per-variable recoding to transforms and class weights” | 约 3 s |
+| 4 | 05 | 删 “To check our survey-weighting code,” | 约 2 s |
+| 5 | 14 | 删 DAG 一句，保留 Simpson 与 “exploratory” | 约 7 s |
+
+**全片不砍：** 每段的自我介绍、署名句、意外发现与交接句；08–09（非显然发现）；15–17（RQ1 与 RQ2a 的证据）；20–21（RQ2b 与恶化）。
 
 ---
 
-## 11 上传前检查清单
+## 12 上传前检查清单
 
-**内容验收。**
-- [ ] 两名非组员看完都能说出三个陷阱
-- [ ] 每个场景只有一个主张、一个主图或主数字；屏幕上没有完整句子
-- [ ] 数字出现与念出相差 ≤ 0.5 s（抽查场景 3、8、18、21、23）
+**内容。**
+- [ ] 两名非组员看完都能说出三个研究问题及其回答
+- [ ] 每页一个主张；主标题写主题、副标题写展示什么，没有一个标题是结论
+- [ ] 数字出现与念出相差 ≤ 0.5 s（抽查 03、08、17、20、22）
 - [ ] 每个 AUC 后面都有一句“这说明什么”；全片没有代码画面
-- [ ] 改进和恶化都讲到：场景 18（正确的恶化）、22（Brier）、24（反转）
+- [ ] 改进和恶化都讲到：17（正确的恶化）、21（Brier）、23（消融）、24b 账本
 - [ ] 每个带区间的数字都说了区间和结论强度
-- [ ] 措辞符合 9.4 节；0.074 与 0.076 没有混用
-- [ ] **每位成员只出现在一个连续段落里**，顺序 A → B → C → D；全片没有任何同框镜头
-- [ ] 每段：开头自我介绍 + lower-third；末尾 most unexpected + 交接句（D 段为结尾）
-- [ ] 讲他人工作的场景（6、11、18、19、21、23、25）都有口头署名和屏幕署名标签
-- [ ] 颜色角色：靛蓝只标当前位置；红只表示受损或泄漏的数据；青只表示 Systematic (S)；蓝空心方块只表示 Screening group；灰实心圆只表示对照基线；反馈只用墨色 ✓ / 虚线框 + “?” / ✗；全片没有第四种暖色语义色
-- [ ] 四种语义色首次出现时都有 2–3 s 图例条（场景 3、8、12、17），之后收进底栏图例行
-- [ ] 推近只有 2 次（场景 8、17，缩放 ≤ 1.25）；晶须脉冲只有 1 次（场景 21）；M8 只做原位换值
-- [ ] 装饰只有淡问卷网格（≤ 4 %，只在标题区与边缘）；四层纵深按 6.5 节数值；6.8 节四个自检问题都答“是”
-- [ ] 屏幕标签、字幕和旁白符合 6.6 节命名表
-- [ ] **D 段 ≤ 3:00**（目标 2:54）
-- [ ] 所有上屏和口述的数字都在 CSV 中（含 12.4 节的补登行），§10.11 断言通过
+- [ ] 措辞符合 10.3 节；全片不念 0.076
+- [ ] 每位成员只出现在自己的一段里，顺序固定；全片没有同框镜头
+- [ ] 第 2–4 段以段首页和自我介绍开头；第 1 段由片头卡与团队页介绍；每段末尾有意外发现与交接句
+- [ ] 讲他人工作的场景（06、11、17、18、20、21、22、24）都有口头点名或署名行；24 署 “Robustness checks led by” 加真名
+- [ ] **屏幕、字幕和语音里没有任何字母代号 A–D**；所有名字都是真名，没有残留 “[Name]” 或 “[no.]”
+- [ ] 颜色角色：靛蓝只在进度条当前段；红只表示受损或泄漏的数据；青只表示 Systematic；蓝空心方块只表示未确诊成人；灰实心圆只表示对照基线；反馈只用墨色形状
+- [ ] 四种语义色首次出现时都有图例条（03、08、12、16）
+- [ ] 推近只有 2 次（08、16）；晶须脉冲只有 1 次（20）；M8 只做原位换值
+- [ ] 屏幕名称符合 5.4 节；内部代号只在 12 出现一次
+- [ ] **第 4 段 ≤ 3:00**（目标 2:35）
+- [ ] 所有上屏和口述的数字都在 `numbers_on_slides.csv` 中（含 13.2 节的补登行），§10.11 断言通过
 - [ ] 全部旁白由四位成员亲口录制，没有合成语音
 
+**字幕。**
+- [ ] 每条 ≤ 2 行 × 42 字符；字幕区与图形、小窗、名签、图例行无冲突（审计全绿）
+- [ ] 字幕与开口相差 ≤ 0.3 s；停顿和静默卡期间没有字幕
+- [ ] `full.srt` 与烧录字幕文字一致；HbA1c、NHANES、kappa 拼写正确
+
 **技术与合规。**
-- [ ] 总长 ≤ 12:00（目标 10:41）；上传后以 YouTube 显示的时长为准再核对
+- [ ] 总长 ≤ 12:00（目标 9:26）；上传后以 YouTube 显示的时长再核对
 - [ ] 响度约 −16 LUFS；没有爆音；四段音量一致
 - [ ] 画面里没有个人数据：姓名以外的学号、邮箱、文件路径中的用户名、浏览器书签或通知
-- [ ] SRT 已上传；自动字幕已人工校对（HbA1c、NHANES、kappa 必须手改）
+- [ ] `full.srt` 已作为 English 字幕上传
 - [ ] 可见性为 Public；标题含组号；片尾卡写组号
 - [ ] 用无痕窗口打开链接，确认未登录也能播放
-- [ ] 缩略图：一个主数字（0.961）加三陷阱简图，没有小字
+- [ ] 缩略图：一个主数字（0.961）加片名，没有小字
+- [ ] 说明里有代号对照一行和章节时间表（5.4 节）
 - [ ] 链接写入 `notebooks/final/team.json` 的 `video_url`，运行 `.venv/Scripts/python tools/build_final.py --fill-team notebooks/final/CA6003_NHANES_Diabetes.ipynb`，再运行 `--validate-only` 确认没有残留的 [TEAM TO FILL]
 - [ ] 提交前由一位非负责人再检查一遍
 
 ---
 
-## 12 数字核对与待补登
+## 13 数字核对与待补登
 
-### 12.1 核对方法
+### 13.1 核对方法
 
-逐个对照第 4 节的口述与仅画面数字：CSV 行（值与展示精度）、`final_metrics.json` 与 `metrics_S*.json` 的键、`claims.csv`、`hypotheses.md`、`results/S4/db516_replication.csv`、`results/S6/step_catalogue.csv`、`governance/register/S9.csv`。保留的数字全部有来源，没有与来源不符的值；24 个值已核实但不在 CSV（12.4 节）；定义常量与外部参考值见 12.5 节；删除项见 12.3、12.6 节。本次按“一人一段”重排时，没有新增、删除或改动任何数字，只改了场景编号和讲者。
+每个上屏或口述的数字都来自 `video/data/*.json`。这些文件由 `video/data/build_data.py` 只读已保存的结果生成，并与 `results/S10/numbers_on_slides.csv` 断言一致；逐值出处见 `video/data/SOURCES.md`。场景里不手敲数字。本方案的数字已与 `video/data/*.json` 和改版方案逐个核对，没有新增或改动数值。
 
-### 12.2 02 标记的待核项
+若结果文件或 CSV 有变动：先运行 `.venv/Scripts/python video/data/build_data.py`（及 `build_geometry_s10_11_15.py`），再重渲染受影响的场景。
 
-| 项 | 核对结果 | 来源 | 处理 |
-|---|---|---|---|
-| 漏斗中间级 7,809 / 6,064 / 5,767 | 正确 | `metrics_S1.json` funnel：Age >= 20；Interviewed and MEC-examined (RIDSTATR = 2)；HbA1c measured (LBXGH present) | 场景 3 上屏，补登 |
-| 57 | 正确，含义是“统一重编码捕获的真实拒答/不知道代码” | S3:blanket_recode.questionnaire_only_cells；notebook §3.4（“harm exceeds gain about 26-fold”） | 场景 8 口述，补登 |
-| 筛查组 AUC 0.844 / 0.772（E-SCREEN） | 正确：M0 0.8441，M1 0.77227，二者之差与 −0.072 一致 | S7:arm_metrics[arm=M0&tier=1&model=lr].escr_auc；S7:baselines.M1.escr_auc | **不使用**；场景 18 只显示差值 −0.072（已在 CSV） |
-| 165 | 正确 | S5:masking.below_6_5_on_med；claims C14 | 场景 16 口述，补登 |
+### 13.2 需补登到 `numbers_on_slides.csv` 的数字
 
-### 12.3 相对 03 的修正（场景为新编号）
-
-| 场景 | 03 原稿 | 修正 | 理由 |
-|---|---|---|---|
-| 5 | “27 published estimates are reproduced”；徽章 “27 / 27 reproduced” | “match closely”；徽章 “27 estimates · max gap 0.044 pp” | 27 个点估计中有 24 个落在发布的区间内（S4:db516.kg_matches_published_ci = 24） |
-| 6 | “almost all older adults have Medicare” | “the insured are older” | 原句没有存储的数字支持 |
-| 8 | 没有 57 | 加入 “It catches 57 genuine codes” | 让“得 57、失 1,496”的取舍可见 |
-| 9 | 画面上有 23 和 971 | 改为图形，不标数 | 23 是差值，无法写成断言键；971 不是焦点 |
-| 11 | 画面上有对数偏度 0.60 | 删除 | 每屏数字超限；值本身正确（S4:skew.….log = 0.604） |
-| 12 | 卡片上有 95.7、6.62、80、5 | 只用文字标签 | 降低数字密度 |
-| 14 | “deleted 29 diabetic labels” | “erased 29 diabetic HbA1c results” | 按组合标签只有 6 个翻转 |
-| 15 | 角标 “4 of 6 flips involve mediators” | 删除 | 只能由列表计数得到，没有可断言的键 |
-| 16 | 画面上有 30.5 %、85 | 删除 | 每屏最多 1 个主数字 + 2 个次级数字 |
-| 18 | “about 0.13 lower” | “0.131 lower”，画面标 “paired” | 念出的数字与屏幕一致 |
-| 19 | 末帧小注：树的 AUC 0.633 / 0.701 | 删除 | 只是描述性探针，容易被当成模型比较 |
-| 20 | C 的片尾短片讲亚裔 BMI 51.1 % vs 7.2 %（n = 47，E4） | C 段末尾讲 TPR 0.70 vs 0.52（每 100 人） | 覆盖偏差分析，并与陷阱二相连 |
-| 21 | “all fourteen steps” 出现在陷阱三 | “B's preparation steps” | 场景 21 已有 3 个口述数字 |
-| 22 | “Balanced class weights cause it” | 明确 +0.074 = S − M1，+0.076 = 类别权重单独造成 | 避免两个数字混淆 |
-| 25 | 画面上有 +0.060 | 删除 | 该差值无法单独检验（C25） |
-| 28 | “Generative AI helped draft code and text” | “drafted much of our code and text; we reviewed it” | 与 `docs/team_roles.md` §6 的如实表述一致 |
-
-### 12.4 制作前需补登到 `numbers_on_slides.csv` 的数字
-
-补登方式：在 `notebooks/sections/09_synthesis.py` 的 `NUM` 列表中加行（slide、label、source key、format），重跑 §10，让 §10.11 的断言覆盖这些值。CSV 由脚本生成，不能手改。标 * 的行目前还没有标量键，需要先把对应的标量存入 metrics（见 14 节第 3 项）。
+补登方式：在 `notebooks/sections/09_synthesis.py` 的 `NUM` 列表中加行（slide、label、source key、format），重跑 §10，让 §10.11 的断言覆盖这些值。CSV 由脚本生成，不能手改。标 * 的行目前还没有标量键，需要先把对应标量存入 metrics。
 
 | # | 值 | label（英文，入 CSV） | source key | slide_id | 场景 |
 |---|---|---|---|---|---|
-| 1 | 7,809 | funnel: age >= 20 | `S1:funnel.Age >= 20` | V1 | 3 |
-| 2 | 6,064 | funnel: interviewed and MEC-examined | `S1:funnel.Interviewed and MEC-examined (RIDSTATR = 2)` | V1 | 3 |
-| 3 | 5,767 | funnel: HbA1c measured | `S1:funnel.HbA1c measured (LBXGH present)` | V1 | 3 |
-| 4 | 175 | raw columns before minimisation | `S1:minimisation.raw_columns` | V1 | 4 |
-| 5 | 78 | columns kept after minimisation | `S1:minimisation.kept` | V1 | 4 |
-| 6 | 27 | DB516 estimates compared | `S4:db516.n_estimates` | V7 | 5 |
-| 7 | 0.044 | DB516 max absolute difference (pp) | `S4:db516.max_abs_diff_pp` | V7 | 5 |
-| 8* | 15.8 | DB516 published total prevalence (%) | `results/S4/db516_replication.csv`（total, All, crude, nchs）→ 建议存为 `S4:db516.nchs_total` | V7 | 5 |
-| 9 | 57 | genuine codes caught by blanket recode | `S3:blanket_recode.questionnaire_only_cells` | V2 | 8 |
-| 10 | 6.8 | HbA1c IQR fence, upper (%) | `S3:outliers.a1c_iqr_fence_upper` | V2 | 10 |
-| 11* | 14 | preparation steps | `results/S6/step_catalogue.csv`（14 行）→ 建议存为 `S6:n_steps` | V2 | 12、13 |
-| 12 | 88 | design columns, M0 | `S6:arms.M0.n_features_t1` | V2 | 13 |
-| 13 | 46 | design columns, M1 | `S6:arms.M1.n_features_t1` | V2 | 13 |
-| 14 | 42 | design columns, S | `S6:arms.S.n_features_t1` | V2 | 13 |
-| 15* | +1.8 / +8.8 | insurance gap crude CI low / high (pp) | `S4:standardisation.insured_uninsured.crude_ci`（列表 [0] / [1]，需确认 get 语法支持下标，否则另存 lo / hi） | V5 | 6 |
-| 16* | −2.6 / +3.9 | insurance gap standardised CI low / high (pp) | `S4:standardisation.insured_uninsured.std_ci`（同上） | V5 | 6 |
-| 17 | 0.70 | kappa self-report vs HbA1c (unweighted) | `S5:labels.agreement_unweighted.kappa` | V6 | 16 |
-| 18 | 165 | self-reported below 6.5 on medication | `S5:masking.below_6_5_on_med` | V6 | 16 |
-| 19 | 49 | uninsured adults with HbA1c >= 6.5 (n) | `S5:undiagnosed_inequality.proportions.uninsured.n` | V6 | 17 |
-| 20 | +0.004 / +0.034 | minus care traces E-SCREEN CI low / high | `S7:headline.minus_care_escreen.lo` / `.hi` | V7 | 24 |
-| 21* | 6 | post-audit issues checked | `S9:postaudit.summary`（6 行）→ 建议存为 `S9:postaudit.n_issues` | V7 | 25 |
-| 22 | 3 | pre-registered (prior exposure none) hypotheses supported | `S10:verdict_counts_prereg_none.supported` | V8 | 7 |
-| 23 | 3 | pre-registered (prior exposure none) hypotheses inconclusive | `S10:verdict_counts_prereg_none.inconclusive` | V8 | 7 |
-| 24 | 0.80 | specificity of the shared threshold (TPR audit) | `S8:spec` | V6 | 20 |
+| 1 | 175 | raw columns before minimisation | `S1:minimisation.raw_columns` | V1 | 04 |
+| 2 | 78 | columns kept after minimisation | `S1:minimisation.kept` | V1 | 04 |
+| 3 | 27 | DB516 estimates compared | `S4:db516.n_estimates` | V7 | 05 |
+| 4 | 0.044 | DB516 max absolute difference (pp) | `S4:db516.max_abs_diff_pp` | V7 | 05 |
+| 5* | 15.8 | DB516 published total prevalence (%) | `results/S4/db516_replication.csv`（total, All, crude, nchs）→ 建议存为 `S4:db516.nchs_total` | V7 | 05 |
+| 6* | +1.8 / +8.8 | insurance gap crude CI low / high (pp) | `S4:standardisation.insured_uninsured.crude_ci`（列表下标；不支持则另存 lo / hi） | V5 | 06 |
+| 7* | −2.6 / +3.9 | insurance gap standardised CI low / high (pp) | `S4:standardisation.insured_uninsured.std_ci`（同上） | V5 | 06 |
+| 8 | 6 | pre-registered (prior exposure none) hypotheses | 由 `S10:scoreboard` 计数 → 建议存为 `S10:prereg_none_n` | V8 | 07 |
+| 9 | 3 | pre-registered hypotheses supported | `S10:verdict_counts_prereg_none.supported` | V8 | 07 |
+| 10 | 3 | pre-registered hypotheses inconclusive | `S10:verdict_counts_prereg_none.inconclusive` | V8 | 07 |
+| 11 | 57 | genuine codes caught by blanket recode | `S3:blanket_recode.questionnaire_only_cells` | V2 | 08 |
+| 12 | 6.8 | HbA1c IQR fence, upper (%) | `S3:outliers.a1c_iqr_fence_upper` | V2 | 10 |
+| 13* | 14 | preparation steps | `results/S6/step_catalogue.csv`（14 行）→ 建议存为 `S6:n_steps` | V2 | 12 |
+| 14 | 0.70 | kappa self-report vs HbA1c (unweighted) | `S5:labels.agreement_unweighted.kappa` | V6 | 15 |
+| 15 | 165 | self-reported below 6.5 on medication | `S5:masking.below_6_5_on_med` | V6 | 15 |
+| 16 | 49 | uninsured adults with HbA1c >= 6.5 (n) | `S5:undiagnosed_inequality.proportions.uninsured.n` | V6 | 16 |
+| 17 | 0.80 | specificity of the shared threshold | `S8:spec` | V6 | 19 |
+| 18* | 40.9 % / 17.0 % | systematic mean predicted risk / observed prevalence (training part) | `results/S7/calibration.csv`（arm=S，pop=E-ALL：mean_p、prevalence）→ 建议存为 `S7:calibration.S.mean_p` / `.prevalence` | V7 | 21 |
+| 19 | +0.004 / +0.034 | prior-care removal, not-yet-diagnosed adults, CI low / high | `S7:headline.minus_care_escreen.lo` / `.hi` | V7 | 23 |
 
-### 12.5 定义常量与外部参考值（不入 CSV，脚本中以常量注明出处）
+### 13.3 定义常量与外部参考值（不入 CSV，脚本中以常量注明出处）
 
 | 值 | 含义 | 出处 | 场景 |
 |---|---|---|---|
-| 0.5 | AUC 的随机基线 | 定义 | 1 |
-| 6.5 % | HbA1c 诊断阈值（标签定义） | §5.1；`src/labels.py` | 3、16 |
+| 0.5 | AUC 轴起点（随机基线） | 定义 | 01、17、22 |
+| 6.5 % | HbA1c 诊断阈值（标签定义） | §5.1；`src/labels.py` | 03、09、15 |
 | 1.5 × IQR | 教科书的离群值规则 | §3 | 10 |
-| ±0.01 | SESOI | `governance/hypotheses.md` H2b | 21、24 |
-| 10 | VIF 参考线 | §4（“VIF > 10 class”） | 11 |
-| 7.0 %、9.0 %；示例值 77、99 | 与哨兵代码重合的真实值；示意值 | notebook §3.4 | 8、14 |
-| “of 100” | 把 TPR 换算成每 100 人 | 由 0.70 / 0.52 换算 | 20 |
+| ±0.01 | 事先固定的 margin | `governance/hypotheses.md` H2b | 20、23 |
+| 10 | VIF 参考线 | §4 | 11 |
+| 7.0 %、9.0 %；示例值 7、9、77、99 | 与哨兵代码重合的真实值；示意值 | notebook §3.4 | 08、13 |
+| “of 100” | 把 TPR 0.70 / 0.52 换算成每 100 人 | 由 `tpr_100.json` 换算 | 19 |
 
-### 12.6 删除而不使用的数字
+### 13.4 不使用的数字
 
-- **无法写成可断言的键：** 23（29 − 6）、569（819 − 250）、“4 of 6 flips involve mediators”，改为图形或删除。
-- **没有存储数字支持：** “almost all older adults have Medicare”，已改写。
-- **已核实但不用：** 0.844 / 0.772、0.60、85、30.5 %、51.1 % / 7.2 %（n = 47）、+0.060、0.633 / 0.701、133 条登记、17 条局限、26 条主张。
+- **已核实但不上屏：** −0.072（17）、+0.055（22）、+0.076（21）、+0.060（留出集差值）、0.844 / 0.772、0.60（对数偏度）、85、30.5 %、51.1 % / 7.2 %、0.633 / 0.701、88 / 46 / 42（设计列数）、7,809 / 6,064 / 5,767（漏斗中间级，改为文字）、Diagnosed / Undiagnosed 两行（05）、外部评审六项、133 条登记、17 条局限、26 条主张、响应率。
+- **无法写成可断言的键：** 23（29 − 6）、569（819 − 250），改为图形或删除。
+- **没有存储数字支持：** “almost all older adults have Medicare”，改为 “the insured are much older”（`age_std.json`：60 岁以上者占参保者 34 %、未参保者 10 %）。
 
 ---
 
-## 13 评分覆盖矩阵与风险
+## 14 评分覆盖与风险
 
-### 13.1 评分覆盖
-
-| 准则 | 场景 | 观众看到的证据 |
-|---|---|---|
-| Appropriateness（各阶段的技术与可视化） | 3、4、8、10、11、16–18、20、21、23 | 漏斗（探索）、得失对比柱（剖析）、IQR 围栏（清洗）、VIF / 偏度前后（EDA）、Venn 与风险差森林图（偏差）、泄漏门与哑铃图（评估）、点阵（公平性） |
-| Correctness & Clarity（含贡献区分） | 1、5、7、8、11、14、15、18、20、21、25、27、28 | 角色卡片；一人一段；每段的自我介绍与 lower-third；署名句与署名标签；各段的 most unexpected；结尾团队回顾；来源标签；DB516 复现 |
-| Data Interpretation | 6、11、15–17、21–24 | 冗余（VIF 95.7 / 97.6）、偏度 6.62、混杂（+5.3 → +0.7）、Simpson（224 / 6）、中介（DAG）、κ、区间与 SESOI、谱偏差 |
-| Novelty & depth | 2、8–9、18–19、23–24、26 | 7.0 被删；插补出的 50 被当成标签；全样本 AUC 度量的是“认出已确诊”；模型被当作泄漏探测器，而不是目标 |
-
-### 13.2 brief 硬性要求
+### 14.1 rubric 覆盖
 
 | 要求 | 场景 |
 |---|---|
-| 全员出镜并讲解（一人一段） | A 1–7；B 8–14；C 15–20；D 21–28 |
-| governance、profiling、EDA、preparation、对 ML 的影响 | 2–5；8–10；6、11、15；11–13；18–24 |
-| 关键数据质量问题 + 至少一个非显然发现 | 8–10；9（明确标为 “Non-obvious finding”） |
+| 全员出镜，贡献可区分 | 小窗与名签全程；01 团队页；段首页 08a、14a、20a；26a 回顾；署名 06、11、17、18、20b、21、22、24 |
+| 治理 | 04、05、07、26b（GenAI） |
+| 剖析与数据质量，含非显然发现 | 08、09（“Non-obvious finding” 标签）、10 |
+| EDA：冗余、多重共线、偏度 | 11（三个词都念出来） |
+| 谬误 | 06（混杂）、14（Simpson、中介）、22（spectrum bias） |
 | 重要准备决定的理由 | 10、11、12 |
-| 最简准备与系统准备，同一个 basic model | 13、21–22 |
-| 改进与恶化都解释 | 18、22、24 |
-| 冗余、多重共线、偏度、谬误 | 11；6、15 |
-| 偏差与标签 | 16、17、20 |
-| 主要贡献与反思（新颖、意外、有启发） | 7、14、20、26–28 |
-| ML 是证据，不是目标 | 2、26、27、28 |
+| minimal vs systematic，同一模型 | 02、12、20（“same model, same folds” 念三次） |
+| 改进与恶化 | 恶化：21 Brier +0.074（有害）、17 −0.131（预期内）、23 −0.016；改进：08 保住 1,496 个值、20 +0.008 与 23 +0.019（都 inconclusive）；24b 账本归在一起 |
+| 偏差与标签 | 15、16、19 |
+| 贡献与反思 | 07、13、19、25、26 |
+| ML 是证据，不是目标 | 01、17、24、25、26 |
+| ≤ 12:00，第 4 段 ≤ 3:00 | 9:26；第 4 段 2:35 |
 
-### 13.3 风险
+| 准则 | 场景 | 观众看到的证据 |
+|---|---|---|
+| Appropriateness | 03、04、08、10、11、15–17、19、20、22 | 漏斗、得失对比柱、IQR 围栏、VIF 与偏度、Venn 与风险差、泄漏检查与哑铃图、点阵 |
+| Correctness & Clarity | 01、05、07、08、11、13、14、17、19、20、24–26 | 团队页；一人一段；名签；段首页；署名；意外发现；收尾回顾；notebook 指引；DB516 复现 |
+| Data Interpretation | 06、11、14–16、20–23 | VIF 95.7 / 97.6、偏度 6.62、混杂、Simpson、中介、κ、区间与 margin、spectrum bias |
+| Novelty & depth | 01、08–09、17–18、22–24 | 被删的 7.0；插补出的 50；全体成人 AUC 度量的是识别；模型作为泄漏探测器 |
+
+### 14.2 内容风险
 
 | 风险 | 对策 |
 |---|---|
-| +0.008 被看成失败 | 钩子先说“分数不动”是问题的一部分；场景 21 画出区间与带，22–24、26 说明价值在别处 |
-| 陷阱顺序 2 → 1 → 3 令人困惑 | 常驻陷阱条；章卡写编号与问句；场景 26 按 1、2、3 回答 |
-| 讲他人的工作，贡献变模糊 | 口头署名 + 屏幕署名标签；每段开头自我介绍；结尾角色卡片回顾；`team.json` 记录各人负责的章节 |
-| D 段超时 | 目标 2:54；第 1 轮排练即检查 D ≤ 2:55；10.4 节 D 段砍减优先 |
-| 分段变成清单 | 每段以问题开场、以发现结尾；三个贯穿对象；结论集中在场景 26 |
-| 数字太密 | 每场景口述 ≤ 3 个；每屏 1 + 2 个；补登表之外不加数字 |
-| 不允许剪辑 | 9.6 节回退方案；一人一段的结构下切换简单 |
-| 夸大主张 | 9.4 节措辞边界；第 2 轮排练专查 |
-| 渲染管线出问题 | 先做视觉 4 样板；应急用 matplotlib 静帧 + M3 / M12 |
-| 连续录制出错多 | 按拍练习；每人至少两条完整 take；若允许剪辑，只剪错误句 |
-| 补登触碰冻结规则 | 只做 `fix` 提交，跑 FAST clean-room（14 节第 3 项） |
+| +0.008 被看成失败 | 02 先把“准备是否有用”立为研究问题；20 画出区间与 margin；21–24 说明价值在别处 |
+| 讲他人的工作，贡献变模糊 | 口头点名 + 署名行；段首页的 “Owns” 行；收尾回顾；`team.json` 记录各人负责的章节 |
+| 第 4 段超时 | 目标 2:35；第 1 轮排练即检查；11.4 节先砍第 4 段 |
+| 数字太密 | 每场景口述 ≤ 3 个；补登表之外不加数字 |
+| 不允许剪辑 | 10.5 节回退方案 |
+| 夸大主张 | 10.3 节措辞边界；第 2 轮排练专查 |
+| 名字没填就上传 | 检查清单第一组；审计拦截 “[Name]” 以外的字母人名，上传前人工核对没有 “[Name]” |
+| 补登触碰冻结规则 | 只做 `fix` 提交，跑 FAST clean-room |
 
 ---
 
-## 14 待确认事项
+## 15 待确认
 
-1. **给讲师的邮件（今天发）。** 草稿：
-   > “Dear [lecturer], our group plans to submit one YouTube video under 12 minutes. Each member presents one continuous part on camera, in turn; no shot shows more than one member. Each part is recorded in one continuous take. May the four takes be joined into one video, or must the whole video be recorded in a single session? Thank you, Group [no.]”
-   - 回复“可以拼接” → 9.6 节主方案；
-   - 回复“必须一次录制”，或 10/15 仍未回复 → 9.6 节回退方案。
-2. **同步视频分段。** `notebooks/final/team.json` 的 `video_segment` 和 `docs/team_roles.md` §5 的分段表仍是旧方案（A 0:30–2:40 等，并且写着 “plus opening and closing”）。按最终实测时长改成四个简单区间，当前值为：
+1. **给讲师的邮件。** 草稿：
+   > “Dear [lecturer], our group plans to submit one YouTube video under 12 minutes. Each member presents one continuous part, in turn, in a small camera window beside animated charts; no shot shows more than one member. Each part is recorded in one continuous take, and captions are added afterwards. May the four takes be joined into one video, or must the whole video be recorded in a single session? Thank you, Group [no.]”
+   - 回复“可以拼接” → 10.5 节主方案；
+   - 回复“必须一次录制”，或 10/15 仍未回复 → 10.5 节回退方案。
+2. **真名与组号。** 填进 `notebooks/final/team.json` 的 `members[].name` 与 `group_number`；之后重新生成字幕并重新合成。
+3. **同步仓库文档。** `team.json` 的 `video_segment`、`docs/team_roles.md` §5、notebook 团队表的 “Video” 列仍是旧值（例如 “0:30–2:40, plus opening and closing”）。按实测时长改成四个区间，当前值为：
 
    | 成员 | video_segment |
    |---|---|
-   | A | 0:00–2:30 |
-   | B | 2:30–5:03 |
-   | C | 5:03–7:47 |
-   | D | 7:47–10:41 |
+   | `members[0]` | 0:00–2:16 |
+   | `members[1]` | 2:16–4:30 |
+   | `members[2]` | 4:30–6:51 |
+   | `members[3]` | 6:51–9:26 |
 
-   `docs/team_roles.md` §5 的内容列也要更新：A 现在讲年龄混杂（C 的分析）；B 讲冗余与偏度（C 的发现）；C 讲泄漏门与插补（D 的实验）；D 讲稳健性核查（B 的工作）和结尾。更新后运行 `tools/build_final.py --fill-team` 和 `--validate-only`。
-3. **CSV 补登。** 12.4 节的 24 个值通过修改 `09_synthesis.py` 的 `NUM` 列表加入。其中 4 项（标 *）需要先把标量存入 metrics：`S4:db516.nchs_total`、`S6:n_steps`、`S9:postaudit.n_issues`，以及区间的 lo / hi（若 get 语法不支持列表下标）。仓库已过 content-freeze，按开发流程只能做 `fix` 提交，并在提交后跑 FAST clean-room 检查。
-4. **成员确认跨作者讲解。**
-   - A 讲 C 的年龄混杂（6）；B 讲 C 的冗余与偏度（11）；
-   - C 讲 D 的泄漏门和决策树（18–19）；
-   - D 讲 B 的稳健性核查（25）。
-   原作者应在第 2 轮排练时核对这些场景的措辞。
-5. **真名与组号。** 旁白中的 “I'm B”、署名句里的 “C's”、“D's” 等，以及 lower-third、角色卡片和片尾卡，都换成真名和组号；组号目前在 `team.json` 中仍是占位符。
-6. **实测时长回填。** 第 1 轮朗读后，把每个场景的实测时长回填到第 3 节，并重算检查点与 `video_segment`。
-7. **GenAI 声明。** 场景 28 的措辞须与 `governance/genai_log.csv` 和 `docs/team_roles.md` §6 保持一致，由 A 在排练时核对。
-8. **字幕。** 由谁校对 SRT 和 YouTube 自动字幕，需要指定一人（建议 A）。
-
----
-
-## 15 合并决定
-
-| # | 议题 | 冲突 | 决定 |
-|---|---|---|---|
-| 1 | 时间轴 | 01 9 章 10:50；03 28 场景 10:56；04 10:45 | 以 03 的场景为基础，按一人一段重排为 28 个场景、10:41；章边界 = 场景边界 |
-| 2 | 成员时间 | 03：A 2:36、B 2:13、C 2:29、D 3:38 | A 2:30、B 2:33、C 2:44、D 2:54 |
-| 3 | 同框镜头 | 01 开场 “all”、Ch9 四人；02 G 版式；04 “D → 全员”、Zoom 画廊 | 全部删除；角色卡片介绍团队，结尾角色卡片回顾 |
-| 4 | 贯穿对象 | 01 Adult X；03 无 | 不用 Adult X，改用 0.961、7.0、152 三个真实对象 |
-| 5 | 语速 | 01 130；03 120–150；04 140–150 wpm | 平均 134，单场景 120–145 |
-| 6 | 顺序 | 揭示 Label → Leak → Little gain | 讲者 A → B → C → D；揭示 2 → 1 → 3（2、1 都在 C 段），回答 1 → 2 → 3 |
-| 7 | 讲者标识 | 03 成员色 + 色块 wipe；02 墨色徽章 | 字母徽章，当前讲者为结构色；段间用章卡 |
-| 8 | 版式 | 02 F/R/X/S/G；03 全屏 → 右下画中画 | F/R/X/S，删 G；摄像头始终 480×270；各段的 most unexpected 用 S |
-| 9 | 章标题 | 04 3 s + 1 s 留白；02 1.2 s | 1.2 s 章卡，只用在段落交接和陷阱章（共 6 张）；其他章只换标题区文字 |
-| 10 | 屏幕文字 | 02 标题 ≤ 6 词 + 3 标注；03 ≤ 8 词；04 ≤ 12 词 | 02 的结构上限；关键文字行 ≤ 8 词 |
-| 11 | 仅画面数字 | 02 不念不上屏；03 大量“仅画面” | 允许 ≤ 2 个次级数字和小号墨色数据标签；主数字必须念出 |
-| 12 | 数字念法 | 04 取整；03 与屏幕一致 | 与屏幕一致（“about 0.13” 改为 “0.131”） |
-| 13 | 动效 | 03 打字机、滑入、翻牌、闪烁、印章、wipe | 全部改用 M1–M12（见第 34–36 条） |
-| 14 | 公平性 | 03 删去，C 讲亚裔 BMI；02 有视觉 11 | C 的 most unexpected 用视觉 11；亚裔 BMI 删除 |
-| 15 | Brier | 0.074 与 0.076 易混 | 0.074 = “from minimal to systematic”；0.076 = “removing only the class weights” |
-| 16 | 交接句 | 03、04 各一套 | 只有 3 句：A → B、B → C、C → D（9.3 节） |
-| 17 | 录制 | 02、04 分录合成；04 保守方案为四人同时在线 | 每人一条连续 take，合成时只有 3 个切点；回退为一次连续录制、轮流单独出镜 |
-| 18 | 检查点 | 04 用 team.json 旧时段 | 按段和章设检查点；砍减先保护 D ≤ 3:00 |
-| 19 | 代码画面 | 03 场景 6 有代码卡；04 禁止 | 改为文字规则 |
-| 20 | 音频码率 | 02 192 kbps；04 ≥ 128 kbps | 192 kbps |
-| 21 | 一人一段 | 上一版：B 回场讲场景 22，片尾有四段单人短片 | 每人一个连续段落 A → B → C → D；取消回场和片尾短片 |
-| 22 | 反思的位置 | 上一版在片尾集中 | 每段末尾一句 most unexpected：A 3 of 6、B 29 erased、C 70 vs 52、D leakage ≫ preparation |
-| 23 | 跨作者讲解 | 协调者建议 B 讲 VIF / 偏度，C 讲泄漏门与插补 | 采用；另把年龄混杂移到 A 段（理由见 2.3 节：故事更顺，并且 C 段从 3:03 降到 2:44） |
-| 24 | 署名 | 内容不再与作者一致 | 署名句 + 屏幕署名标签 + 开头角色卡片 + 结尾回顾（9.3 节） |
-| 25 | D ≤ 3:00 | 上一版 D 3:24 | D 段 2:54（余量 6 s）；陷阱三开场，结尾在 D 段；稳健性压到 13 s；砍减表先砍 D |
-| 26 | VIF / 偏度的位置 | 上一版在 C 段开头 | 放在 B 段的离群值之后、14 步之前：发现 → 步骤 → 三个版本 |
-| 27 | A 的开场 | 要求每段以自我介绍开头 | A 段以 15 s 钩子开场，lower-third 从 0:00 起显示，口头自我介绍在 0:15；其余三段以自我介绍开头 |
-| 28 | 节次 | 协调者示例里口述节次 | 节次只写在 lower-third 和角色卡片上，不念出来，避免超过每场景 3 个口述数字 |
-| 29 | 颜色角色 | 上一版颜色兼任结构、语义与反馈（青 = S 也 = 保留值也 = 对勾；暖黄 = 标签也 = 不确定） | 结构色靛蓝 #3B2F8F 只标当前位置；语义色红 / 青 / 蓝 / 灰各一个含义；反馈用墨色形状（✓ / 虚线框 + “?” / ✗）；语义蓝改为 #1D64B0，与结构色拉开约 37° |
-| 30 | 暖黄色 | 上一版用于标签问题与 inconclusive | 全部取消；标签用尺子图标；inconclusive 用虚线框 + “?”；SESOI 带为中性灰加虚线边 |
-| 31 | 灰色 | 上一版 muted 也用于次要文字和普通柱 | 灰色实心只表示对照基线（All adults、Minimal (M1)）；不属于任何语义的对象（保险组、漏斗上层、已确诊者、离群值）改用墨色 |
-| 32 | 三个回答 | 上一版按陷阱填红 / 暖黄 / 青 | 不填语义色；结构色细框 + 陷阱图标 + 反馈形状 |
-| 33 | 图例 | 上一版只在首次出现时说明 | 四种语义色首次出现时各有 2–3 s 图例条（场景 3、8、12、17），随后收进底栏常驻图例行；不改旁白 |
-| 34 | M8 | 上一版是数字断成两半的特效（场景 18） | 取消该特效；M8 改为 “原位换值”（场景 6、18）：泄漏项被墨线划掉，柱缩短、数字倒数、红斜纹过渡为灰实心 |
-| 35 | M9 推近 | 上一版缩放 1.6，每场景 1 次 | 缩放上限 1.25，全片只用 2 次（场景 8、17）；其他焦点用描边 + 暗其余 |
-| 36 | 晶须脉冲 | 上一版每个越带边的区间都脉冲 | 只在场景 21（S vs M1）脉冲一次；其他区间静态出现 |
-| 37 | 装饰与纵深 | 上一版用方格纸背景纹 | 唯一母题为问卷 / 编码表淡网格（≤ 4 %，只在标题区与边缘，向内渐隐，静止）；章卡为结构色左线 + 题号式 mono 行；四层纵深：舞台 #F6F7F9、白纸面板（阴影 16 px / 6 %）、内容、焦点（2 px 墨色描边） |
-| 38 | 命名 | 上一版混用 E-ALL / E-SCREEN、M0 / M1 / S、“whole-sample” | 统一按 6.6 节命名表；旁白改写场景 13、17、20、21、22、23、24、28，总词数不变（1,434） |
+   `docs/team_roles.md` §5 的内容列也要更新：第 1 段讲年龄混杂（`<Name:2>` 的分析）；第 2 段讲冗余与偏度（`<Name:2>` 的发现）；第 3 段讲泄漏检查与决策树（`<Name:3>` 的实验）；稳健性核查署 `<Name:1>`，由第 4 段讲。更新后运行 `tools/build_final.py --fill-team` 和 `--validate-only`（交 main 处理）。
+4. **CSV 补登。** 13.2 节的 19 行通过修改 `09_synthesis.py` 的 `NUM` 列表加入；标 * 的需先存标量。
+5. **成员确认跨作者讲解。** 06、11 用 `<Name:2>` 的分析；17、18 用 `<Name:3>` 的实验；21 用 `<Name:1>` 的类别权重步骤；24 署 `<Name:1>`。原作者在第 2 轮排练时核对措辞。
+6. **树的 “no” 分支。** 标签与 `tree.json` 一致。训练部分 4,584 行中有 4,044 行走 “no” 分支，其中 3,766 行是非糖尿病者；从未被问到服药问题的人在 naive 准备中也落在这一侧。是否把标签改为 “no / not asked”，由 `<Name:2>`、`<Name:3>` 在 notebook 中核实后决定；不改也不算错。
+7. **GenAI 声明。** 26 的措辞须与 `governance/genai_log.csv` 和 `docs/team_roles.md` §6 一致，由 `<Name:0>` 在排练时核对。
+8. **字幕校对人。** 指定一人校对 `full.srt` 与烧录字幕（建议 `<Name:0>`）。
