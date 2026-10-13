@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 24 · Care traces flip</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 24 · Care traces flip (signature visual 10) · docs/video_plan.md §4 scene 24, §7 visual 10.
+   Speaker D. One relation: removing two traces of prior care lowers the AUC on all adults (-0.016) but raises it in the Screening group (+0.019 [0.004, 0.034]).
+   Same axis and +/-0.01 band as scene 21 (DC.diffAxis); here every interval is static (the pulse is scene 21 only). The Screening-group lower end lies inside the band: no pulse.
+   Numbers: video/data/care_flip.json (axis and band from video/data/prep_band.json). */
+
+// Cues in scene seconds, estimated at ~138 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  cards: 1.6,     // "drop two traces of prior care,"                    two cards + "traces of care"
+  strike1: 5.2,   // "told high blood pressure"                          ink strike (removed on purpose)
+  strike2: 6.9,   // "and told high cholesterol."                        ink strike
+  all: 8.6,       // "On all adults,"                                    axis (same as scene 21), grey dot
+  allNum: 9.6,    // "AUC falls by 0.016."                               number + static interval
+  scr: 12.0,      // (after a 1.5 s stillness)                           blue hollow square lands at +0.019
+  scrNum: 13.2,   // "it rises by 0.019,"                                number
+  whisker: 14.4,  // "interval 0.004 to 0.034."                          static whisker + interval text
+  fold: 16.0,     // "pulling apart;"                                    thin fold line between the two points
+  verdict: 19.2,  // "not settled."                                      dashed box + ?
+  title: 20.4,    // title settles on the screen text
+};
+
+Kit.createScene({
+  number: 24,
+  name: 'care_flip',
+  duration: 26,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Remove the care traces' }, { at: CUES.title, text: '(set from data)' }],
+  trap: 'label',
+  source: '§7 · S7_eall_vs_escreen',
+  data: '../data/care_flip.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    const prep = DC.loadSync('../data/prep_band.json');
+    const e1 = K.interval(data, 'eall_ci'), e2 = K.interval(data, 'escreen_ci');
+    DC.setTitle(ctx, 1, 'Without care traces: ' + e1.estDisplay + ' vs ' + e2.estDisplay);
+    const g = K.svg('g', {}, fig);
+
+    // ---- the two removed items (ink strikes = removed on purpose)
+    S.cards = data.groups.removed_order.map((id, i) => {
+      const it = K.item(data, id);
+      const x = [110, 560][i], w = [400, 360][i];
+      const card = K.svg('g', {}, g);
+      K.svg('rect', { x, y: 56, width: w, height: 64, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2.5 }, card);
+      const tx = K.text(card, { x: x + 20, y: 98, text: it.label, cls: 'kit-t-min' });
+      return { card, strike: K.strike(card, tx, { color: 'ink' }) };
+    });
+    S.tag = K.text(g, { x: 110, y: 176, text: 'traces of care', cls: 'kit-t-min' });
+
+    // ---- same axis and band as scene 21
+    const A = S.A = DC.diffAxis(g, prep, { title: 'AUC change · care traces removed' });
+    S.A.title.textContent = 'AUC change · care traces removed';
+    const rowAll = 365, rowScr = 440;
+    S.e1 = e1; S.e2 = e2; S.rowAll = rowAll; S.rowScr = rowScr;
+    S.fold = K.svg('line', { x1: A.x(e1.est), y1: rowAll, x2: A.x(e2.est), y2: rowScr, stroke: K.C.ink, 'stroke-width': 2 }, g);
+    S.dwAll = K.dotWhisker(g, A.x, { orient: 'h', at: rowAll, est: e1.est, lo: e1.lo, hi: e1.hi, role: 'reference', shape: 'circle' });
+    S.dwScr = K.dotWhisker(g, A.x, { orient: 'h', at: rowScr, est: e2.est, lo: e2.lo, hi: e2.hi, role: 'screen', shape: 'hollowSquare' });
+
+    // ---- numbers (right zone) with the group marker beside each
+    const eall = K.item(data, 'eall'), escr = K.item(data, 'escreen');
+    const yA = 385, yS = 515;
+    S.mAll = K.svg('circle', { cx: 940, cy: yA - 18, r: 12, fill: K.C.reference }, g);
+    S.mScr = K.svg('rect', { x: 929.5, y: yS - 29.5, width: 21, height: 21, fill: '#fff', stroke: K.C.screen, 'stroke-width': 3 }, g);
+    S.nAll = K.callout(g, { x: 975, y: yA, size: 'second', label: eall.label });
+    S.nScr = K.callout(g, { x: 975, y: yS, size: 'second', label: escr.label });
+
+    // ---- verdict: consistent with, not settled
+    S.verdict = K.feedback(g, { kind: 'inconclusive', x: 110, y: 668, size: 64, label: 'consistent with · not settled' });
+    S.escrIntervalText = K.text(g, { x: A.x(e2.est), y: rowScr + 62, text: e2.bracket, anchor: 'middle', cls: 'kit-t-interval' });
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues, A = S.A;
+    S.cards.forEach((cd, i) => { K.op(cd.card, K.appear(t, c.cards + i * 0.3)); cd.strike.update(K.M7_strike(t, i ? c.strike2 : c.strike1)); });
+    K.op(S.tag, K.appear(t, c.cards + 0.6));
+    const ax = K.M1_axisDraw(t, c.all - 0.3);
+    A.ax.update(ax); K.op(A.title, ax.labels); K.op(A.zero, ax.labels); A.band.update(K.appear(t, c.all - 0.3 + 0.6));
+    // All adults: grey dot, then its number and static interval
+    const a = K.appear(t, c.all);
+    K.op(S.mAll, K.appear(t, c.allNum)); K.op(S.mScr, K.appear(t, c.scrNum));
+    S.dwAll.update({ dot: a, whisker: K.M4_static(t, c.allNum).whisker, opacity: a });
+    S.nAll.update({ text: K.disp(ctx.data, 'eall'), number: K.appear(t, c.allNum), label: K.appear(t, c.allNum) });
+    // Screening group lands 1.5 s later; its interval is static, entirely right of zero, lower end inside the band (no pulse)
+    const s = K.appear(t, c.scr);
+    S.dwScr.update({ dot: s, whisker: K.M4_static(t, c.whisker).whisker, opacity: s, pulse: 0 });
+    S.nScr.update({ text: K.disp(ctx.data, 'escreen'), number: K.appear(t, c.scrNum), label: K.appear(t, c.scrNum) });
+    K.op(S.escrIntervalText, K.appear(t, c.whisker));
+    // fold line: "changing the population flips the sign"
+    const f = K.appear(t, c.fold, 0.5);
+    S.fold.setAttribute('x2', K.lerp(A.x(S.e1.est), A.x(S.e2.est), f)); S.fold.setAttribute('y2', K.lerp(S.rowAll, S.rowScr, f));
+    K.op(S.fold, f > 0 ? 1 : 0);
+    S.verdict.update(K.appear(t, c.verdict)); K.op(S.verdict.label, K.appear(t, c.verdict));
+  },
+});
+</script>
+</body>
+</html>

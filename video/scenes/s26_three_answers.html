@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scene 26 · Three answers</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../kit/tokens.css">
+<script src="../kit/kit.js"></script>
+<script src="_d_common.js"></script>
+</head>
+<body>
+<script>
+/* Scene 26 · Three traps, three answers (signature visual 1 "Three traps", answer step) · docs/video_plan.md §4 scene 26, §7 visual 1.
+   Speaker D. The three trap-bar cells morph (0.9 s) into three cards in the middle of the figure; as each trap is spoken its card dissolves
+   (M12, no flip, no semantic fill) from the question into the answer, with an ink feedback shape. The card being spoken gets the structure-colour
+   left line, the others dim to 25 %. Final frame: the three answers, undimmed.
+   Numbers: video/data/leak_gate.json (0.961), prep_band.json (+0.008), blanket_recode.json (1,496). */
+
+// Cues in scene seconds, estimated at ~140 wpm; replace with the marks on D's take (§8.3 step 5).
+const CUES = {
+  morph: 0.3,      // "So, three answers."                         trap bar -> three cards (M6 0.9 s)
+  f1: 1.4, a1: 2.7, e1: 4.9,      // "Trap one: the 0.961 was leakage, not skill."      focus, dissolve to the answer
+  f2: 4.9, a2: 6.1, e2: 9.3,      // "Trap two: the label records care as well as disease."
+  f3: 9.3, a3: 10.5, e3: 16.6,    // "Trap three: preparation moved AUC by only plus 0.008;"
+  extra: 13.8,     // "its value is valid values kept and a fair screening test."   second line of card 3
+  title: 17.0,     // title settles on the screen text
+};
+
+Kit.createScene({
+  number: 26,
+  name: 'three_answers',
+  duration: 21,
+  layout: 'R',
+  speaker: 'D',
+  title: [{ at: 0, text: 'Three answers' }, { at: CUES.title, text: 'Three traps, three answers' }],
+  trap: 'leak',            // only so that the kit builds the trap bar; its underline is removed below (no current trap here)
+  source: '§10 · S10_scoreboard_forest',
+  data: '../data/leak_gate.json',
+  cues: CUES,
+
+  setup(ctx) {
+    const { fig, data } = ctx, K = Kit, S = ctx.S = {};
+    const prep = DC.loadSync('../data/prep_band.json'), blanket = DC.loadSync('../data/blanket_recode.json');
+    const rule = ctx.ui.trapbar.querySelector('.kit-trap-rule'); if (rule) rule.remove();
+    const g = K.svg('g', {}, fig);
+
+    // ---- cards (centre of the figure): icon + trap name, question -> answer + ink feedback
+    const W = 370, GAP = 28, X0 = 29, Y0 = 150, H = 500;
+    const answers = [
+      { key: 'leak', label: 'Leak', icon: 'bucket', q: ['Is the score', 'skill?'],
+        a: [K.disp(data, 'auc_m0_eall') + ' = leakage,', 'not skill'], kind: 'supported' },
+      { key: 'label', label: 'Label', icon: 'ruler', q: ['Is the label', 'the truth?'],
+        a: ['Label records', 'care, too'], kind: 'supported' },
+      { key: 'gain', label: 'Little gain', icon: 'balance', q: ['Does preparation', 'pay?'],
+        a: [K.disp(prep, 'd_auc') + ',', 'inconclusive'], kind: 'inconclusive',
+        extra: ['value: ' + K.disp(blanket, 'destroyed') + ' values', 'kept · fair', 'screening test'] },
+    ];
+    S.cards = answers.map((c, i) => {
+      const x = X0 + i * (W + GAP);
+      c.g = K.svg('g', {}, g);
+      c.body = K.svg('g', {}, c.g);
+      K.svg('rect', { x, y: Y0, width: W, height: H, rx: 8, fill: '#fff', stroke: K.C.ink, 'stroke-width': 2 }, c.body);
+      c.head = K.svg('g', {}, c.g);
+      K.icon(c.head, c.icon, { x: x + 26, y: Y0 + 26, size: 56 });
+      K.text(c.head, { x: x + 100, y: Y0 + 70, text: c.label, cls: 'kit-t-note', weight: 600 });
+      K.svg('line', { x1: x + 24, x2: x + W - 24, y1: Y0 + 104, y2: Y0 + 104, stroke: K.C.line, 'stroke-width': 2 }, c.body);
+      c.qEl = K.svg('g', {}, c.g);
+      c.q.forEach((ln, j) => K.text(c.qEl, { x: x + 28, y: Y0 + 176 + j * 46, text: ln, cls: 'kit-t-note' }));
+      c.aEl = K.svg('g', {}, c.g);
+      c.a.forEach((ln, j) => K.text(c.aEl, { x: x + 28, y: Y0 + 176 + j * 46, text: ln, cls: 'kit-t-note', weight: 600 }));
+      c.fb = K.feedback(c.aEl, { kind: c.kind, x: x + 28, y: Y0 + 270, size: 64 });
+      if (c.extra) {
+        c.exEl = K.svg('g', {}, c.g);
+        c.extra.forEach((ln, j) => K.text(c.exEl, { x: x + 28, y: Y0 + 380 + j * 38, text: ln, cls: 'kit-t-min' }));
+      }
+      c.line = K.svg('rect', { x: x - 3, y: Y0, width: 6, height: H, fill: K.C.structure }, c.g);   // structure colour: the card being spoken
+      return c;
+    });
+
+    // ---- trap bar -> cards: measure the bar once (layout units), then transform it per frame
+    const tb = ctx.ui.trapbar, band = ctx.ui.titleBand;
+    S.tb = tb;
+    band.style.zIndex = '5';   // the bar travels over the paper panel
+    S.tbFrom = { cx: band.offsetLeft + tb.offsetLeft + tb.offsetWidth / 2, cy: band.offsetTop + tb.offsetTop + tb.offsetHeight / 2 };
+    const P = ctx.ui.P;
+    S.tbTo = { cx: P.x + X0 + 1.5 * W + GAP, cy: P.y + Y0 + 62, s: 1.5 };
+  },
+
+  render(t, ctx) {
+    const K = Kit, S = ctx.S, c = ctx.cues;
+    // trap bar morphs into the three card headers (cross-dissolve while it travels)
+    const m = K.M6_morph(t, c.morph);
+    const dx = (S.tbTo.cx - S.tbFrom.cx) * m, dy = (S.tbTo.cy - S.tbFrom.cy) * m, sc = K.lerp(1, S.tbTo.s, m);
+    S.tb.style.transform = m >= 1 ? 'none' : `translate(${dx}px, ${dy}px) scale(${sc})`;   // back home once it has faded: nothing is left over the title
+    K.op(S.tb, 1 - K.clamp((m - 0.35) / 0.5));
+    // focus: structure line on the card being spoken, the others at 25 %
+    const ff = [K.M3_focus(t, c.f1, c.e1), K.M3_focus(t, c.f2, c.e2), K.M3_focus(t, c.f3, c.e3)];
+    const cardIn = K.clamp((m - 0.35) / 0.65);
+    S.cards.forEach((cd, i) => {
+      const dim = Math.min(...ff.filter((_, j) => j !== i).map((f) => f.others));
+      K.op(cd.g, cardIn * dim);
+      K.op(cd.line, ff[i].outline);
+      const a = K.M12_dissolve(t, [c.a1, c.a2, c.a3][i]);
+      K.op(cd.qEl, 1 - a); K.op(cd.aEl, a);
+      if (cd.exEl) K.op(cd.exEl, K.appear(t, c.extra));
+    });
+  },
+});
+</script>
+</body>
+</html>
